@@ -58,7 +58,7 @@ export default function AppHeader({
           <div className="flex items-center gap-2">
             <h1
               className="text-lg font-black tracking-tight text-slate-900 sm:text-2xl cursor-pointer select-none"
-              onClick={() => { window.location.href = '/' }}
+              onClick={() => { window.location.href = import.meta.env.BASE_URL }}
             >
               {t('ui.app_title')}
             </h1>

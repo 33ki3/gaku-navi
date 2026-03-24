@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "knip": {
-    "ignore": ["src/i18n/i18next.d.ts"]
+    "ignore": [
+      "src/i18n/i18next.d.ts"
+    ]
   },
   "scripts": {
     "dev": "vite",

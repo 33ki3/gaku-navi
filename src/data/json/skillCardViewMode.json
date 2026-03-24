@@ -1,0 +1,5 @@
+[
+  { "key": "unenhanced", "label": "card.view_mode.unenhanced" },
+  { "key": "enhanced", "label": "card.view_mode.enhanced" },
+  { "key": "custom", "label": "card.view_mode.custom" }
+]

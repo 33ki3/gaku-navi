@@ -1,0 +1,20 @@
+{
+  "filters": [
+    { "value": "skill_card", "label": "card.event_filter.skill_card", "order": 1, "effects": ["skill_card"], "category": "acquire" },
+    { "value": "p_item", "label": "card.event_filter.p_item", "order": 2, "effects": ["p_item"], "category": "acquire" },
+    { "value": "enhance", "label": "card.event_filter.enhance", "order": 3, "effects": ["card_enhance", "select_enhance"], "category": "modify" },
+    { "value": "delete", "label": "card.event_filter.delete", "order": 4, "effects": ["card_delete", "select_delete"], "category": "modify" },
+    { "value": "change", "label": "card.event_filter.change", "order": 5, "effects": ["card_change"], "category": "modify" },
+    { "value": "trouble_delete", "label": "card.event_filter.trouble_delete", "order": 6, "effects": ["trouble_delete"], "category": "modify" }
+  ],
+  "summary_labels": {
+    "skill_card": "card.summary.skill_card",
+    "p_item": "card.summary.p_item",
+    "card_enhance": "card.summary.card_enhance",
+    "card_change": "card.summary.card_change",
+    "pp_gain": "card.summary.pp_gain",
+    "select_enhance": "card.summary.select_enhance",
+    "select_delete": "card.summary.select_delete",
+    "trouble_delete": "card.summary.trouble_delete"
+  }
+}

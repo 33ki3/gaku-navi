@@ -1,0 +1,33 @@
+{
+  "hajime": {
+    "regular": [],
+    "pro": [],
+    "master": [],
+    "legend": [
+      { "week": 1, "fixed": true, "can_rest": false, "activities": ["class"] },
+      { "week": 2, "fixed": true, "can_rest": false, "activities": ["class"] },
+      { "week": 3, "fixed": false, "can_rest": false, "activities": ["outing", "activity_supply"] },
+      { "week": 4, "fixed": false, "can_rest": true, "activities": ["vo_lesson", "da_lesson", "vi_lesson"] },
+      { "week": 5, "fixed": false, "can_rest": true, "activities": ["outing", "consult", "activity_supply"] },
+      { "week": 6, "fixed": true, "can_rest": true, "activities": ["class"] },
+      { "week": 7, "fixed": false, "can_rest": true, "activities": ["vo_lesson", "da_lesson", "vi_lesson"] },
+      { "week": 8, "fixed": false, "can_rest": true, "activities": ["consult"] },
+      { "week": 9, "fixed": true, "can_rest": true, "activities": ["special_training"] },
+      { "week": 10, "fixed": true, "can_rest": false, "activities": ["mid_exam"] },
+      { "week": 11, "fixed": false, "can_rest": true, "activities": ["outing", "activity_supply"] },
+      { "week": 12, "fixed": false, "can_rest": true, "activities": ["vo_lesson", "da_lesson", "vi_lesson"] },
+      { "week": 13, "fixed": false, "can_rest": true, "activities": ["outing", "consult", "activity_supply"] },
+      { "week": 14, "fixed": false, "can_rest": true, "activities": ["vo_lesson", "da_lesson", "vi_lesson"] },
+      { "week": 15, "fixed": false, "can_rest": true, "activities": ["class"] },
+      { "week": 16, "fixed": false, "can_rest": true, "activities": ["vo_lesson", "da_lesson", "vi_lesson"] },
+      { "week": 17, "fixed": false, "can_rest": true, "activities": ["consult", "special_training"] },
+      { "week": 18, "fixed": true, "can_rest": false, "activities": ["final_exam"] }
+    ]
+  },
+  "nia": {
+    "regular": [],
+    "pro": [],
+    "master": [],
+    "legend": []
+  }
+}

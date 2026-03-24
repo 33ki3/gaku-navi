@@ -1,0 +1,15 @@
+# <type>(<scope>): <description>
+#
+# type: feat | fix | docs | style | refactor | perf | test | chore | ci
+# scope: 変更対象(任意) 例: score, export, filter, i18n, ui
+#
+# 例:
+#   feat(score): スコア計算にボーナス設定を追加
+#   fix(filter): フィルター状態が保存されない問題を修正
+#   refactor(score): contest_p_item を exam_p_item にリネーム
+#   chore: VS Code設定を追加
+#   ci: GitHub Pages デプロイワークフローを追加
+#   docs: SPEC.md を更新
+#
+# body(任意): 変更の詳細や理由を記載
+# footer(任意): BREAKING CHANGE: xxx

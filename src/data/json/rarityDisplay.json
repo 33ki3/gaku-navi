@@ -1,0 +1,23 @@
+[
+  {
+    "rarity": "ssr",
+    "order": 3,
+    "label": "common.rarity.ssr",
+    "gradient_color": "bg-gradient-to-r from-rose-400 via-amber-300 to-sky-400 text-white",
+    "simple_color": "bg-yellow-500 text-white"
+  },
+  {
+    "rarity": "sr",
+    "order": 2,
+    "label": "common.rarity.sr",
+    "gradient_color": "bg-gradient-to-r from-amber-400 to-yellow-500 text-white",
+    "simple_color": "bg-blue-500 text-white"
+  },
+  {
+    "rarity": "r",
+    "order": 1,
+    "label": "common.rarity.r",
+    "gradient_color": "bg-gradient-to-r from-slate-300 to-slate-400 text-white",
+    "simple_color": "bg-gray-500 text-white"
+  }
+]

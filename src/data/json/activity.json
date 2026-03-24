@@ -1,0 +1,34 @@
+{
+  "entries": [
+    { "id": "vo_lesson", "label": "score.activity.vo_lesson", "color": "bg-red-500 text-white", "actions": ["sp_lesson_vo"] },
+    { "id": "da_lesson", "label": "score.activity.da_lesson", "color": "bg-blue-500 text-white", "actions": ["sp_lesson_da"] },
+    { "id": "vi_lesson", "label": "score.activity.vi_lesson", "color": "bg-yellow-500 text-white", "actions": ["sp_lesson_vi"] },
+    { "id": "class", "label": "score.activity.class", "color": "bg-indigo-700 text-white", "actions": ["class_work"] },
+    { "id": "outing", "label": "score.activity.outing", "color": "bg-sky-400 text-white", "actions": ["outing"] },
+    { "id": "consult", "label": "score.activity.consult", "color": "bg-teal-500 text-white", "actions": ["consult"] },
+    { "id": "activity_supply", "label": "score.activity.activity_supply", "color": "bg-amber-500 text-white", "actions": ["activity_supply_gift"] },
+    { "id": "supply_gift", "label": "score.activity.supply_gift", "color": "bg-amber-500 text-white", "actions": ["activity_supply_gift"] },
+    { "id": "special_training", "label": "score.activity.special_training", "color": "bg-emerald-600 text-white", "actions": ["special_training"] },
+    { "id": "mid_exam", "label": "score.activity.mid_exam", "color": "bg-orange-600 text-white", "actions": ["exam_end", "exam_p_item_acquire"] },
+    { "id": "final_exam", "label": "score.activity.final_exam", "color": "bg-orange-600 text-white", "actions": ["exam_end"] },
+    { "id": "rest", "label": "score.activity.rest", "color": "bg-slate-400 text-white", "actions": ["rest"] }
+  ],
+  "action_map": {
+    "vo_lesson": ["sp_lesson_vo"],
+    "da_lesson": ["sp_lesson_da"],
+    "vi_lesson": ["sp_lesson_vi"],
+    "class": ["class_work"],
+    "outing": ["outing"],
+    "consult": ["consult"],
+    "activity_supply": ["activity_supply_gift"],
+    "supply_gift": ["activity_supply_gift"],
+    "special_training": ["special_training"],
+    "mid_exam": ["exam_end", "exam_p_item_acquire"],
+    "final_exam": ["exam_end"],
+    "rest": ["rest"]
+  },
+  "controlled_action_ids": [
+    "sp_lesson_vo", "sp_lesson_da", "sp_lesson_vi", "class_work", "outing", "consult",
+    "activity_supply_gift", "special_training", "exam_end", "exam_p_item_acquire", "rest"
+  ]
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed background (maskable safe zone: inner 80%) -->
+  <rect width="512" height="512" fill="#fafafa"/>
+
+  <g transform="translate(256,256)">
+    <path d="M0.00,-170.00 L31.79,-65.47 Q36.44,-50.16 52.44,-50.46 L161.68,-52.53 L72.09,10.00 Q58.97,19.16 64.20,34.28 L99.92,137.53 L12.76,71.65 Q0.00,62.00 -12.76,71.65 L-99.92,137.53 L-64.20,34.28 Q-58.97,19.16 -72.09,10.00 L-161.68,-52.53 L-52.44,-50.46 Q-36.44,-50.16 -31.79,-65.47 Z" fill="#f97316" stroke="#f97316" stroke-width="16" stroke-linejoin="round"/>
+    <g transform="translate(140,-160) scale(2.08)">
+      <path d="M0,-24 C2.5,-8 8,-2.5 24,0 C8,2.5 2.5,8 0,24 C-2.5,8 -8,2.5 -24,0 C-8,-2.5 -2.5,-8 0,-24Z" fill="#ef4444"/>
+    </g>
+    <g transform="translate(148,120) scale(2.86)">
+      <path d="M0,-22 C2,-7.5 7.5,-2 22,0 C7.5,2 2,7.5 0,22 C-2,7.5 -7.5,2 -22,0 C-7.5,-2 -2,-7.5 0,-22Z" fill="#3b82f6"/>
+    </g>
+    <g transform="translate(-170,15) scale(2.47)">
+      <path d="M0,-20 C2,-7 7,-2 20,0 C7,2 2,7 0,20 C-2,7 -7,2 -20,0 C-7,-2 -2,-7 0,-20Z" fill="#eab308"/>
+    </g>
+  </g>
+</svg>

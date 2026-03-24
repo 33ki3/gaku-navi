@@ -1,0 +1,143 @@
+/**
+ * カードリストの個別カードコンポーネント
+ *
+ * 1枚のサポートカードを表示する。
+ * カード名・レアリティ・タイプ・プラン・イベント概要・スコアなどを
+ * まとめて表示し、クリックで詳細モーダルを開く。
+ * memoでラップして、不要な再描画を防ぐ。
+ */
+import { memo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { SupportCard } from '../../types/card'
+import type { UncapType } from '../../types/enums'
+import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
+import type { TranslationKey } from '../../i18n'
+import { useCardContext } from '../../contexts/CardContext'
+import * as data from '../../data'
+import * as constant from '../../constant'
+import { getEventSummaryParts, hasSPAbility } from '../../utils/cardQuery'
+import { Badge } from '../ui/Badge'
+import { UncapSelector } from '../ui/UncapSelector'
+
+/** CardListItem コンポーネントに渡すプロパティ */
+interface CardListItemProps {
+  /** サポートカードデータ */
+  card: SupportCard
+  /** 現在の凸数 */
+  uncap: UncapType
+  /** スコア（未計算時は 0） */
+  score: number
+  /** アビリティバッジの翻訳キー一覧 */
+  abilityBadges: TranslationKey[]
+}
+
+/** カードグリッドの1枚分のカード */
+export const CardListItem = memo(function CardListItem({
+  card,
+  uncap,
+  score,
+  abilityBadges,
+}: CardListItemProps) {
+  const { t } = useTranslation()
+  const { uncapEditMode, onCardClick, onScoreClick, onUncapChange } = useCardContext()
+
+  // カードの見た目に必要な色やラベルを準備する
+  const typeEntry = data.getTypeEntry(card.type)
+  const rarityEntry = data.getRarityEntry(card.rarity)
+  const planEntry = data.PlanBadge[card.plan]
+  const eventParts = getEventSummaryParts(card)
+  const hasSP = hasSPAbility(card)
+  const sourceEntry = data.SourceBadge[card.source]
+  const typeLabel = t(typeEntry.label)
+
+  // クリックハンドラをメモ化して再描画を減らす
+  const handleClick = useCallback(() => onCardClick(card), [onCardClick, card])
+  const handleScoreClick = useCallback(
+    (e: React.MouseEvent) => onScoreClick(card, e),
+    [onScoreClick, card],
+  )
+  const handleUncapChange = useCallback(
+    (u: UncapType) => onUncapChange(card.name, u),
+    [onUncapChange, card.name],
+  )
+
+  return (
+    <div
+      onClick={handleClick}
+      className={`${constant.CARD_ITEM_CONTAINER} ${typeEntry.stripe}`}
+    >
+      {/* SPアビリティがあるカードは右上にSPバッジを表示 */}
+      {hasSP && (
+        <Badge
+          size={BadgeSizeType.Sm}
+          weight={BadgeWeightType.Black}
+          color="bg-amber-400 text-amber-900"
+          className="absolute top-2 right-2 z-[1] pointer-events-none"
+        >
+          {t('card.sp_badge')}
+        </Badge>
+      )}
+      <div className="p-2 flex-1 flex flex-col gap-1">
+        <div className={hasSP ? 'pr-8' : ''}>
+          {/* カード名 */}
+          <div className="flex items-start gap-1.5 mb-1.5">
+            <h2 className="text-[13px] font-black text-slate-800 leading-tight flex-1 min-w-0 group-hover:text-slate-900">
+              {card.name}
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {/* レアリティバッジ（SSR / SR / R） */}
+            <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color={rarityEntry.gradient_color}>
+              {t(rarityEntry.label)}
+            </Badge>
+            {/* タイプバッジ（Vo / Da / Vi） */}
+            <Badge size={BadgeSizeType.Sm} color={typeEntry.badge}>{typeLabel}</Badge>
+            {/* プランバッジ（センス / ロジック 等） */}
+            <Badge size={BadgeSizeType.Sm} color={planEntry.badge}>
+              {t(planEntry.label)}
+            </Badge>
+            {/* 入手先バッジ */}
+            <Badge size={BadgeSizeType.Sm} color={sourceEntry.badge}>
+              {t(sourceEntry.label)}
+            </Badge>
+          </div>
+        </div>
+        {/* イベント概要（「スキルカード / カード強化」 等） */}
+        <div className={`text-[10px] font-medium ${typeEntry.text} ${typeEntry.bg} rounded px-2 py-1`}>
+          {eventParts.map((key) => t(key)).join(t('ui.format.event_separator'))}
+        </div>
+        {/* スコア行 */}
+        <div
+          onClick={handleScoreClick}
+          className={constant.CARD_SCORE_ROW}
+          title={t('card.click_breakdown')}
+        >
+          {/* スコア値 */}
+          <span className={`text-xs font-black ${typeEntry.text} shrink-0`}>
+            {score}
+            {t('ui.unit.score')}
+          </span>
+          {/* アビリティバッジ */}
+          {abilityBadges.length > 0 && (
+            <div className="ml-auto flex flex-nowrap gap-0.5 justify-end overflow-hidden min-w-0">
+              {abilityBadges.map((badge, i) => (
+                <span key={i} className={constant.BADGE_ABILITY_GRID}>{t(badge)}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* 凸数編集モードのときは凸数セレクターを表示 */}
+        {uncapEditMode && (
+          <div className="pt-1 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+            <UncapSelector
+              value={uncap}
+              onChange={handleUncapChange}
+              activeClass="bg-amber-400 text-amber-900"
+              inactiveClass="bg-slate-100 text-slate-400 hover:bg-slate-200"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+})

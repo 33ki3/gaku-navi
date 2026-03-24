@@ -1,0 +1,20 @@
+{
+  "hajime": {
+    "regular": {},
+    "pro": {},
+    "master": {},
+    "legend": {
+      "4": [{ "type": "sp", "main": 140, "sub": 55 }],
+      "7": [{ "type": "sp", "main": 180, "sub": 60 }],
+      "12": [{ "type": "sp", "main": 260, "sub": 70 }],
+      "14": [{ "type": "sp", "main": 370, "sub": 90 }],
+      "16": [{ "type": "sp", "main": 570, "sub": 115 }]
+    }
+  },
+  "nia": {
+    "regular": {},
+    "pro": {},
+    "master": {},
+    "legend": {}
+  }
+}

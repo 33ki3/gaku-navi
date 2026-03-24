@@ -28,6 +28,32 @@ export default function AboutContent() {
           {t('ui.about.disclaimer_desc')}
         </p>
       </section>
+
+      {/* ご意見・ご要望 */}
+      <section>
+        <h3 className="text-xs font-black text-slate-800 mb-1.5">{t('ui.about.feedback_title')}</h3>
+        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+          {t('ui.about.feedback_desc')}
+        </p>
+        <div className="mt-2 flex gap-3">
+          <a
+            href="https://marshmallow-qa.com/wldvabeftb1ngee"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-orange-600 hover:text-orange-700 underline"
+          >
+            {t('ui.about.link_marshmallow')}
+          </a>
+          <a
+            href="https://github.com/33ki3/gaku-navi"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-orange-600 hover:text-orange-700 underline"
+          >
+            {t('ui.about.link_github')}
+          </a>
+        </div>
+      </section>
     </div>
   )
 }

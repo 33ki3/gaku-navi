@@ -10,6 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       manifest: false,
+      scope: '/gaku-navi/',
     }),
   ],
   build: {

@@ -1,0 +1,9 @@
+{
+  "sp_rate_triggers": [
+    "sp_lesson_rate",
+    "vo_sp_lesson_rate",
+    "da_sp_lesson_rate",
+    "vi_sp_lesson_rate",
+    "sp_lesson_rate_all"
+  ]
+}

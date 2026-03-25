@@ -953,6 +953,8 @@ export type UncapSelectorVariantType = (typeof UncapSelectorVariantType)[keyof t
  * フィルターバーのトグルボタンの色カテゴリ。
  */
 export const FilterButtonCategory = {
+  /** 汎用アクティブ状態（トグルボタンの ON 表示） */
+  Active: 'active',
   /** 非活性状態 */
   Inactive: 'inactive',
   /** アビリティ（初期パラ・パラボ）活性色 */
@@ -1367,3 +1369,14 @@ export const ScoreSettingsSectionKey = {
   Options: 'options',
 } as const
 export type ScoreSettingsSectionKey = (typeof ScoreSettingsSectionKey)[keyof typeof ScoreSettingsSectionKey]
+
+/**
+ * フィルタ・ソートモーダルのタブ種別。
+ */
+export const FilterSortTab = {
+  /** フィルタタブ */
+  Filter: 'filter',
+  /** ソートタブ */
+  Sort: 'sort',
+} as const
+export type FilterSortTab = (typeof FilterSortTab)[keyof typeof FilterSortTab]

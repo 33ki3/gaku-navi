@@ -11,5 +11,7 @@ export {
   getModalAlignClass,
   getParameterTextColor,
   getUncapSelectorVariantStyle,
+  getTabStyle,
 } from './uiStyle'
 export { CountTargetRows } from './countTarget'
+export { getSortModeLabel, SortModeOrder, getFilterSortTabLabel, FilterSortTabOrder } from './filterSortLabel'

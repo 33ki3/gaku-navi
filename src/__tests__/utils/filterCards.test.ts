@@ -145,6 +145,32 @@ describe('filterAndSortCards - フィルタリング', () => {
     expect(result[0].name).toBe('SPあり')
   })
 
+  it('SPフィルター: 属性別SP発生率trigger_keyにもマッチする', () => {
+    const cardsWithSP = [
+      makeCard({
+        name: 'Vo SP',
+        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.VoSpLessonRate, values: { '0': '21%' }, is_percentage: true, skip_calculation: true }],
+      }),
+      makeCard({
+        name: 'Da SP',
+        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.DaSpLessonRate, values: { '0': '21%' }, is_percentage: true, skip_calculation: true }],
+      }),
+      makeCard({
+        name: 'Vi SP',
+        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.ViSpLessonRate, values: { '0': '21%' }, is_percentage: true, skip_calculation: true }],
+      }),
+      makeCard({
+        name: 'SP全体',
+        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRateAll, trigger_key: enums.TriggerKeyType.SpLessonRateAll, values: { '0': '10.5%' }, is_percentage: true, skip_calculation: true }],
+      }),
+      makeCard({ name: 'SPなし' }),
+    ]
+    const params = { ...defaultParams(), spOnly: true }
+    const result = filterAndSortCards(cardsWithSP, params)
+    expect(result).toHaveLength(4)
+    expect(result.map((c) => c.name)).toEqual(['Vo SP', 'Da SP', 'Vi SP', 'SP全体'])
+  })
+
   it('凸数フィルター: 凸0のカードのみ', () => {
     const uncaps: Record<string, enums.UncapType> = {
       'Aカード': enums.UncapType.Four,

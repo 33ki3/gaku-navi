@@ -26,7 +26,7 @@ interface CardListProps {
 }
 
 /** 仮想スクロール付きカードリスト */
-function CardList({
+export default memo(function CardList({
   filteredCards,
   cardScores,
   abilityBadgeMap,
@@ -118,6 +118,4 @@ function CardList({
       </div>
     </div>
   )
-}
-
-export default memo(CardList)
+})

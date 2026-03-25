@@ -30,6 +30,14 @@ export default function AboutContent() {
         </p>
       </section>
 
+      {/* アクセス解析 */}
+      <section>
+        <h3 className="text-xs font-black text-slate-800 mb-1.5">{t('ui.about.analytics_title')}</h3>
+        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+          {t('ui.about.analytics_desc')}
+        </p>
+      </section>
+
       {/* ご意見・ご要望 */}
       <section>
         <h3 className="text-xs font-black text-slate-800 mb-1.5">{t('ui.about.feedback_title')}</h3>

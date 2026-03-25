@@ -6,6 +6,7 @@
  * そのままページコンポーネントに組み込める設計。
  */
 import { useTranslation } from 'react-i18next'
+import { MARSHMALLOW_URL, GITHUB_URL } from '../../constant'
 
 /** アプリの概要・免責事項を表示するコンテンツ */
 export default function AboutContent() {
@@ -37,7 +38,7 @@ export default function AboutContent() {
         </p>
         <div className="mt-2 flex gap-3">
           <a
-            href="https://marshmallow-qa.com/wldvabeftb1ngee"
+            href={MARSHMALLOW_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-orange-600 hover:text-orange-700 underline"
@@ -45,7 +46,7 @@ export default function AboutContent() {
             {t('ui.about.link_marshmallow')}
           </a>
           <a
-            href="https://github.com/33ki3/gaku-navi"
+            href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-orange-600 hover:text-orange-700 underline"

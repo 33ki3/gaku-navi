@@ -14,8 +14,6 @@ export const DEFAULT_UNCAP = UncapType.Four
 export const UNCAP_STORAGE_KEY = 'gaku-navi-card-uncaps'
 /** 点数設定の常時表示フラグの保存キー。サイドパネルをピン留めするかどうか。 */
 export const SETTINGS_PINNED_KEY = 'gaku-navi-settings-pinned'
-/** ヘッダーフィルターの開閉状態の保存キー。フィルターエリアが開いているかどうか。 */
-export const HEADER_OPEN_KEY = 'gaku-navi-header-open'
 /** フィルター・ソート状態の保存キー。フィルター条件とソート順を JSON で保存する。 */
 export const FILTER_STORAGE_KEY = 'gaku-navi-filter-state'
 /** 点数設定の保存キー。ScoreSettings オブジェクトを JSON で保存する。 */
@@ -47,5 +45,11 @@ export const DEFAULT_DIFFICULTY = DifficultyType.Legend
 
 /** インポート成功後のリロード遅延（ms）。ユーザーに「完了」を見せてからリロードする。 */
 export const IMPORT_RELOAD_DELAY = 1500
+
+/** マシュマロ（匿名フィードバック）の URL */
+export const MARSHMALLOW_URL = 'https://marshmallow-qa.com/wldvabeftb1ngee'
+/** GitHub リポジトリの URL */
+export const GITHUB_URL = 'https://github.com/33ki3/gaku-navi'
+
 /** パーセント→倍率変換の除数。100% → 1.0 に変換するときに使う。 */
 export const PERCENT_DIVISOR = 100

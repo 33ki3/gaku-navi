@@ -1,0 +1,12 @@
+{
+  "sort_mode": [
+    { "value": "rarity", "label": "ui.sort.rarity" },
+    { "value": "date", "label": "ui.sort.date" },
+    { "value": "score", "label": "ui.sort.score" },
+    { "value": "uncap", "label": "ui.sort.uncap" }
+  ],
+  "filter_sort_tab": [
+    { "value": "sort", "label": "ui.filter_sort.tab_sort" },
+    { "value": "filter", "label": "ui.filter_sort.tab_filter" }
+  ]
+}

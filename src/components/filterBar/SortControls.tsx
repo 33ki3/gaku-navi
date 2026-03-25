@@ -1,27 +1,22 @@
 /**
- * ソート操作バーコンポーネント
+ * カード一覧上部のコントロールバー
  *
- * カード一覧の上に表示される。
- * 左側に表示件数、右側にソート方法のセレクトと逆順ボタン。
+ * 左に表示件数、右にソートモード表示ボタン・昇降順トグル・フィルタボタンを配置。
  */
 import { useTranslation } from 'react-i18next'
-import type { SortModeType } from '../../hooks'
+import type { CardFiltersReturn } from '../../hooks'
+import { getFilterButtonStyle, getSortModeLabel } from '../../data/ui'
+import { FilterButtonCategory } from '../../types/enums'
 import * as constant from '../../constant'
-import * as enums from '../../types/enums'
-import { ToggleButton } from '../ui/ToggleButton'
 
 /** SortControls コンポーネントに渡すプロパティ */
 interface SortControlsProps {
   /** 現在の表示件数 */
   count: number
-  /** 現在のソート方法 */
-  sortMode: SortModeType
-  /** ソート方法が変わった時に呼ばれる関数 */
-  onSortModeChange: (mode: SortModeType) => void
-  /** 今逆順かどうか */
-  sortReverse: boolean
-  /** 逆順のON/OFFを切り替える関数 */
-  onToggleSortReverse: () => void
+  /** フィルターの状態 */
+  filters: CardFiltersReturn
+  /** フィルタ・ソートモーダルを開く関数 */
+  onOpenFilterSort: () => void
   /** 点数設定を開く関数 */
   onOpenScoreSettings: () => void
   /** スケジュールが設定済みかどうか */
@@ -30,22 +25,35 @@ interface SortControlsProps {
   scoreSettingsVisible: boolean
 }
 
-/** 件数表示 + ソートセレクト + 順序切替ボタン */
+/** 件数表示 + ソート・フィルタボタン */
 export default function SortControls({
   count,
-  sortMode,
-  onSortModeChange,
-  sortReverse,
-  onToggleSortReverse,
+  filters,
+  onOpenFilterSort,
   onOpenScoreSettings,
   scheduleConfigured,
   scoreSettingsVisible,
 }: SortControlsProps) {
   const { t } = useTranslation()
 
+  // アクティブなフィルター条件の数を計算する
+  const activeFilterCount =
+    filters.selectedRarities.size +
+    filters.selectedTypes.size +
+    filters.selectedPlans.size +
+    (filters.spOnly ? 1 : 0) +
+    filters.selectedAbilityKeywords.size +
+    filters.selectedEventFilters.size +
+    filters.selectedUncaps.size +
+    (filters.searchTerm.length > 0 ? 1 : 0)
+
+  // ヘッダーボタンのスタイル
+  const inactiveStyle = getFilterButtonStyle(FilterButtonCategory.Inactive)
+  const activeStyle = getFilterButtonStyle(FilterButtonCategory.Active)
+
   return (
     <div className="mb-3">
-      {/* スマホ: ヒントをソートバーの上に表示 */}
+      {/* スマホ: ヒントをバーの上に表示 */}
       {!scheduleConfigured && !scoreSettingsVisible && (
         <div className="text-center mb-1 sm:hidden">
           <button
@@ -70,40 +78,38 @@ export default function SortControls({
             {t('ui.message.score_settings_hint')}
           </button>
         )}
-        {/* 右: ソート方法セレクト + 逆順ボタン */}
-        <div className="flex items-center gap-2">
-        {/* ソート方法を選ぶドロップダウン */}
-        <select
-          value={sortMode}
-          onChange={(e) => onSortModeChange(e.target.value as SortModeType)}
-          className={constant.SELECT_XS}
-        >
-          <option value={enums.SortModeType.Rarity}>{t('ui.sort.rarity')}</option>
-          <option value={enums.SortModeType.Date}>{t('ui.sort.date')}</option>
-          <option value={enums.SortModeType.Score}>{t('ui.sort.score')}</option>
-          <option value={enums.SortModeType.Uncap}>{t('ui.sort.uncap')}</option>
-        </select>
-        {/* 逆順トグルボタン（矢印アイコンが180度回転する） */}
-        <ToggleButton
-          isActive={sortReverse}
-          onClick={onToggleSortReverse}
-          activeClass="bg-slate-700 text-white border border-transparent"
-          className="p-1"
-        >
-          <svg
-            className={`w-4 h-4 transition-transform ${sortReverse ? 'rotate-180' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* 右: ソートモードボタン + 昇降順トグル */}
+        <div className="flex items-center gap-1.5">
+          {/* ソートモード名ボタン（フィルタアクティブ時は暗く + バッジ表示） */}
+          <button
+            onClick={onOpenFilterSort}
+            className={`${constant.BTN_HEADER_ACTION} ${activeFilterCount > 0 ? activeStyle : inactiveStyle}`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-            />
-          </svg>
-        </ToggleButton>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            {t(getSortModeLabel(filters.sortMode))}
+            {activeFilterCount > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-slate-700 text-[9px] font-black">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {/* 昇降順トグル */}
+          <button
+            onClick={filters.toggleSortReverse}
+            className={`${constant.BTN_HEADER_ACTION} ${filters.sortReverse ? activeStyle : inactiveStyle}`}
+            title={t('ui.sort.reverse')}
+          >
+            <svg
+              className={`w-3.5 h-3.5 transition-transform ${filters.sortReverse ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

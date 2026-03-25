@@ -34,7 +34,7 @@ export function getEventSummaryParts(card: SupportCard): TranslationKey[] {
  * @returns SP レッスン発生率アビリティがあれば true
  */
 export function hasSPAbility(card: SupportCard): boolean {
-  return card.abilities.some((a) => a.trigger_key === enums.TriggerKeyType.SpLessonRate)
+  return card.abilities.some((a) => data.SpRateTriggers.has(a.trigger_key))
 }
 
 /**

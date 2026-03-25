@@ -2,7 +2,7 @@
  * データ転送ユーティリティ
  *
  * ユーザーの設定データ（凸数・スコア設定・プリセット・フィルター状態・
- * ピン固定・ヘッダー開閉状態）を JSON ファイルとしてエクスポート/
+ * ピン固定）を JSON ファイルとしてエクスポート/
  * インポートする機能。端末間のデータ移行やバックアップに使う。
  */
 import * as constant from '../constant'
@@ -12,7 +12,6 @@ import i18n from '../i18n'
 const EXPORT_KEYS = [
   constant.UNCAP_STORAGE_KEY,
   constant.SETTINGS_PINNED_KEY,
-  constant.HEADER_OPEN_KEY,
   constant.SCORE_SETTINGS_STORAGE_KEY,
   constant.SCORE_PRESETS_STORAGE_KEY,
   constant.FILTER_STORAGE_KEY,

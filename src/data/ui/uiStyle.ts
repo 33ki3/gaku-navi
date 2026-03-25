@@ -41,6 +41,12 @@ interface BadgeStyle {
   weight: Record<BadgeWeightType, string>
 }
 
+/** タブのスタイル（アクティブ・非アクティブ） */
+interface TabStyle {
+  active: string
+  inactive: string
+}
+
 const data = rawData as {
   parameter_text_color: Record<ParameterType, string>
   modal_style: Record<ModalAlignType, string>
@@ -49,6 +55,7 @@ const data = rawData as {
   badge_style: BadgeStyle
   collapsible_style: Record<CollapsibleVariantType, string>
   button_style: Record<ButtonSizeType, ButtonSizeStyle>
+  tab_style: TabStyle
 }
 
 /**
@@ -140,4 +147,14 @@ export function getCloseButtonSizeStyle(size: ButtonSizeType): CloseButtonSizeSt
  */
 export function getToggleButtonSizeStyle(size: ButtonSizeType): string {
   return data.button_style[size].toggle
+}
+
+/**
+ * タブボタンの active/inactive に応じたスタイルを返す。
+ *
+ * @param active - タブが選択中かどうか
+ * @returns Tailwind CSS クラス文字列
+ */
+export function getTabStyle(active: boolean): string {
+  return active ? data.tab_style.active : data.tab_style.inactive
 }

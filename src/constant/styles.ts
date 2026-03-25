@@ -19,10 +19,6 @@ export const SECTION_HEADING_SM_PX = 'text-[10px] font-black text-slate-400 uppe
 export const INPUT_TEXT_XS =
   'block w-full pl-7 pr-2 py-1.5 border border-slate-200 rounded-xl bg-white shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-xs'
 
-/** セレクトボックス（小） */
-export const SELECT_XS =
-  'px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500'
-
 /** アクションボタン（白背景、小テキスト） */
 export const BTN_HEADER_ACTION =
   'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all'
@@ -50,10 +46,6 @@ export const PANEL_PINNED =
 /** オーバーレイパネル */
 export const PANEL_OVERLAY =
   'relative w-full max-w-md bg-white shadow-2xl overflow-y-auto animate-slide-in-right'
-
-/** フィルター折りたたみトグルボタン */
-export const BTN_FILTER_TOGGLE =
-  'flex items-center gap-1 px-3 py-0.5 rounded-full text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors'
 
 /** ドロップダウンパネル */
 export const DROPDOWN_PANEL =
@@ -85,10 +77,13 @@ export const INPUT_LOCKED = 'bg-blue-50 border-blue-200 text-blue-600 cursor-not
 export const MODAL_BACKDROP = 'absolute inset-0 bg-black/40 backdrop-blur-sm'
 
 /** モーダル白パネル（カード詳細用） */
-export const MODAL_PANEL_DETAIL = 'relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'
+export const MODAL_PANEL_DETAIL = 'relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[90vh] overflow-y-auto'
 
 /** モーダル白パネル（スコア内訳用） */
-export const MODAL_PANEL_SCORE = 'relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col overflow-hidden'
+export const MODAL_PANEL_SCORE = 'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[80vh] flex flex-col overflow-hidden'
+
+/** モーダル白パネル（フィルタ・ソート用） */
+export const MODAL_PANEL_FILTER = 'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[85vh] flex flex-col overflow-hidden'
 
 /** SpinnerInput: +/- ボタン（通常時） */
 export const SPINNER_BTN = 'w-6 h-6 flex items-center justify-center rounded text-xs font-bold'

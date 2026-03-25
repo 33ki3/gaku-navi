@@ -566,8 +566,6 @@
     },
     "accessibility": {
       "menu": "メニュー",
-      "filter_close": "フィルターを閉じる",
-      "filter_open": "フィルターを開く",
       "help": "ヘルプ"
     },
     "data_management": {
@@ -581,7 +579,12 @@
       "rarity": "レア度順",
       "date": "新着順",
       "score": "点数順",
-      "uncap": "凸数順"
+      "uncap": "凸数順",
+      "reverse": "逆順"
+    },
+    "filter_sort": {
+      "tab_filter": "フィルタ",
+      "tab_sort": "ソート"
     },
     "filter": {
       "rarity_type_plan": "レアリティ / タイプ / プラン",

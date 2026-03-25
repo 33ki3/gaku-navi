@@ -20,6 +20,7 @@ import { hasAllScheduleSelections } from './utils/scoreSettings'
 const CardDetailModal = lazy(() => import('./components/cardDetailModal/CardDetailModal'))
 const ScoreDetailModal = lazy(() => import('./components/scoreDetailModal/ScoreDetailModal'))
 const ScoreSettingsPanel = lazy(() => import('./components/scoreSettingsPanel/ScoreSettingsPanel'))
+const FilterSortModal = lazy(() => import('./components/filterBar/FilterSortModal'))
 
 /**
  * メインアプリケーションコンポーネント
@@ -50,24 +51,19 @@ function App() {
     <div
       className={`min-h-screen bg-[#f8fafc] text-slate-900 font-sans transition-all duration-300 ${state.ui.settingsPinned ? 'md:pr-96' : ''}`}
     >
-      {/* ヘッダー（タイトル・フィルター・アクションボタン） */}
+      {/* ヘッダー（タイトル・アクションボタン） */}
       <AppHeader
-        filters={state.filters}
         onOpenScoreSettings={() => state.ui.setScoreSettingsOpen(true)}
         onPinScoreSettings={() => state.ui.setSettingsPinned(!state.ui.settingsPinned)}
         settingsPinned={state.ui.settingsPinned}
-        headerOpen={state.ui.headerOpen}
-        onToggleHeaderOpen={() => state.ui.setHeaderOpen(!state.ui.headerOpen)}
       />
 
       <main className={`mx-auto px-4 py-5 sm:px-6 lg:px-8 ${state.ui.settingsPinned ? '' : 'max-w-7xl'}`}>
-        {/* 件数表示 + ソート */}
+        {/* 件数表示 + フィルタ・ソートボタン */}
         <SortControls
           count={state.filters.filteredCards.length}
-          sortMode={state.filters.sortMode}
-          onSortModeChange={state.filters.setSortMode}
-          sortReverse={state.filters.sortReverse}
-          onToggleSortReverse={state.filters.toggleSortReverse}
+          filters={state.filters}
+          onOpenFilterSort={() => state.ui.setFilterSortOpen(true)}
           onOpenScoreSettings={() => {
             // PC（md以上）はピン留めモード、モバイルはオーバーレイモード
             if (window.matchMedia('(min-width: 768px)').matches) {
@@ -96,6 +92,18 @@ function App() {
       <footer className={`mx-auto px-4 py-6 sm:px-6 lg:px-8 text-center ${state.ui.settingsPinned ? '' : 'max-w-7xl'}`}>
         <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('ui.footer')}</p>
       </footer>
+      {/* フィルタ・ソートモーダル */}
+      {state.ui.filterSortOpen && (
+        <Suspense fallback={null}>
+          <FilterSortModal
+            onClose={() => state.ui.setFilterSortOpen(false)}
+            filters={state.filters}
+            settingsPinned={state.ui.settingsPinned}
+            activeTab={state.ui.filterSortTab}
+            onTabChange={state.ui.setFilterSortTab}
+          />
+        </Suspense>
+      )}
       {/* カード詳細モーダル（カード選択時のみ表示） */}
       {state.ui.selectedCard && (
         <Suspense fallback={null}>

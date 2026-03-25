@@ -6,7 +6,7 @@
  */
 import { useState, useEffect } from 'react'
 import type { SupportCard, CardCalculationResult } from '../types/card'
-import * as constant from '../constant'
+import { FilterSortTab } from '../types/enums'
 
 /** useUIState の返却型 */
 interface UIState {
@@ -19,9 +19,12 @@ interface UIState {
   /** 点数設定パネルのピン固定（trueなら常に表示） */
   settingsPinned: boolean
   setSettingsPinned: (pinned: boolean) => void
-  /** ヘッダーのフィルターエリアが開いているか */
-  headerOpen: boolean
-  setHeaderOpen: (open: boolean) => void
+  /** フィルタ・ソートモーダルが開いているか */
+  filterSortOpen: boolean
+  setFilterSortOpen: (open: boolean) => void
+  /** フィルタ・ソートモーダルの選択中タブ */
+  filterSortTab: FilterSortTab
+  setFilterSortTab: (tab: FilterSortTab) => void
   /** 凸数を編集できるモードかどうか */
   uncapEditMode: boolean
   setUncapEditMode: (mode: boolean) => void
@@ -33,9 +36,6 @@ interface UIState {
 /**
  * UI 表示状態をまとめて返すフック
  *
- * ヘッダーの開閉状態だけ localStorage に保存して、
- * ページを開き直しても前の状態を復元する。
- *
  * @returns 各 UI 状態と、それを変更する関数のセット
  */
 export function useUIState(): UIState {
@@ -43,23 +43,13 @@ export function useUIState(): UIState {
   const [selectedCard, setSelectedCard] = useState<SupportCard | null>(null)
   const [scoreSettingsOpen, setScoreSettingsOpen] = useState(false)
   const [settingsPinned, setSettingsPinned] = useState(false)
-
-  // ヘッダーだけ localStorage から復元（初回レンダリング時に読み込む）
-  const [headerOpen, setHeaderOpen] = useState(() => {
-    const saved = localStorage.getItem(constant.HEADER_OPEN_KEY)
-    return saved !== null ? saved === 'true' : false
-  })
-
+  const [filterSortOpen, setFilterSortOpen] = useState(false)
+  const [filterSortTab, setFilterSortTab] = useState<FilterSortTab>(FilterSortTab.Sort)
   const [uncapEditMode, setUncapEditMode] = useState(false)
   const [scoreBreakdown, setScoreBreakdown] = useState<{
     card: SupportCard
     result: CardCalculationResult
   } | null>(null)
-
-  // ヘッダー開閉が変わったら localStorage に保存する
-  useEffect(() => {
-    localStorage.setItem(constant.HEADER_OPEN_KEY, String(headerOpen))
-  }, [headerOpen])
 
   // モバイル幅（md未満）になったらピン留めを自動解除する
   useEffect(() => {
@@ -80,8 +70,10 @@ export function useUIState(): UIState {
     setScoreSettingsOpen,
     settingsPinned,
     setSettingsPinned,
-    headerOpen,
-    setHeaderOpen,
+    filterSortOpen,
+    setFilterSortOpen,
+    filterSortTab,
+    setFilterSortTab,
     uncapEditMode,
     setUncapEditMode,
     scoreBreakdown,

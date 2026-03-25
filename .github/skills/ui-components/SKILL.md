@@ -54,7 +54,7 @@ UIコンポーネントを作成・更新する際は以下を守る:
 3. **ドメインコンポーネントの利用**: フィーチャー別サブディレクトリのドメイン特化コンポーネントを活用する。
    - `src/components/cardList/` — カード一覧表示（仮想スクロール付き）
    - `src/components/cardDetailModal/` — カード詳細モーダル（イベント・アビリティ・Pアイテム・スキルカード）
-   - `src/components/filterBar/` — フィルターバー（検索・トグル・ソート）
+   - `src/components/filterBar/` — フィルターバー・フィルタ/ソートモーダル（検索・トグル・ソート・フィルタ）
    - `src/components/scoreSettingsPanel/` — スコア設定パネル
    - `src/components/scoreDetailModal/` — スコア内訳モーダル
    - `src/components/header/` — アプリヘッダー・データ管理

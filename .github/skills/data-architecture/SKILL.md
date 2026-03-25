@@ -15,7 +15,7 @@ description: Data layer architecture for the gaku-navi project (types + constant
 | 層 | ディレクトリ | 責務 | 例 |
 |----|-------------|------|-----|
 | **types** | `src/types/` | 型定義（`as const` enum + interface / type） | `CardType`, `RarityType`, `SupportCard` |
-| **constant** | `src/constant/` | 環境定数・スタイル定数（ストレージキー・CSSクラス・デフォルト値等） | `DEFAULT_UNCAP`, `FILTER_SECTION_LABEL`, `HEADER_OPEN_KEY` |
+| **constant** | `src/constant/` | 環境定数・スタイル定数（ストレージキー・CSSクラス・デフォルト値等） | `DEFAULT_UNCAP`, `FILTER_SECTION_LABEL`, `BTN_HEADER_ACTION` |
 
 ### 各層のルール
 

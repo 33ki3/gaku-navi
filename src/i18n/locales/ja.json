@@ -372,8 +372,8 @@
         "debuff_null": "低下状態無効{{count}}回",
         "move_drowsiness": "ランダムな山札か{{card_zone}}の眠気を除外に移動",
         "generate_enhanced_card": "ランダムな強化済みスキルカードを、手札に生成",
-        "change_stance": "{{keyword}}に変更",
-        "change_stance_stage": "{{keyword}}{{stage}}段階目に変更",
+        "change_policy": "{{keyword}}に変更",
+        "change_policy_stage": "{{keyword}}{{stage}}段階目に変更",
         "select_hold": "山札にあるスキルカードを選択し、保留に移動",
         "select_hold_deck_discard": "山札か捨札にあるスキルカードを選択し、保留に移動"
       }
@@ -398,8 +398,8 @@
       "lesson_start_in_hand": "レッスン開始時手札に入る",
       "lesson_limit": "レッスン中{{count}}回",
       "enhance_all_hand": "手札をすべてレッスン中強化",
-      "change_stance": "{{keyword}}に変更",
-      "change_stance_stage": "{{keyword}}{{stage}}段階目に変更",
+      "change_policy": "{{keyword}}に変更",
+      "change_policy_stage": "{{keyword}}{{stage}}段階目に変更",
       "condition_keyword_turns_gte": "{{keyword}}が{{turns}}ターン以上の場合",
       "condition_keyword_gte": "{{keyword}}が{{value}}以上の場合"
     },

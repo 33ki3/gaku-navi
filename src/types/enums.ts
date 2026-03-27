@@ -1245,10 +1245,10 @@ export const EffectTemplateKeyType = {
   /** 前のアクティブカード条件 */
   PrevActiveCard: 'prev_active_card',
 
-  /** キーワード変更 */
-  ChangeStance: 'change_stance',
-  /** キーワード段階変更 */
-  ChangeStanceStage: 'change_stance_stage',
+  /** 指針変更（全力・温存・強気の切り替え） */
+  ChangePolicy: 'change_policy',
+  /** 指針段階変更 */
+  ChangePolicyStage: 'change_policy_stage',
   /** 低下状態無効 */
   DebuffNull: 'debuff_null',
   /** 固定キーワード上昇 */

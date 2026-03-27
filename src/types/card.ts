@@ -239,7 +239,7 @@ export interface CustomSlotNameStructured {
 
 /** カスタムスロット効果の構造化データ（分解済み）。 */
 export interface CustomSlotEffectStructured {
-  /** テンプレートキー（card.customSlotEffect.* に対応）（例: "keyword_up", "change_stance", "cost_reduce_turns", "null"） */
+  /** テンプレートキー（card.customSlotEffect.* に対応）（例: "keyword_up", "change_policy", "cost_reduce_turns", "null"） */
   template: EffectTemplateKeyType
   /** テンプレート補間パラメータ（「全力値+4」→{ keyword: "full_power_value", value: "4" }） */
   params?: CustomSlotParams

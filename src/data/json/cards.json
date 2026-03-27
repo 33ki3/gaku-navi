@@ -2746,7 +2746,8 @@
           "effect": {
             "use_condition": {
               "key": "keyword_eq",
-              "keyword": "vitality"
+              "keyword": "vitality",
+              "value": 0
             },
             "groups": [
               {
@@ -2781,7 +2782,8 @@
           "effect": {
             "use_condition": {
               "key": "keyword_eq",
-              "keyword": "vitality"
+              "keyword": "vitality",
+              "value": 0
             },
             "groups": [
               {

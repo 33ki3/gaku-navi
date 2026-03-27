@@ -363,7 +363,7 @@
         "max_hp_pct_recovery": "最大体力の{{pct}}%分体力回復",
         "cost_reduce_turns": "消費体力減少{{turns}}ターン",
         "cost_reduce_flat": "消費体力削減{{value}}",
-        "next_card_cost_zero": "次に使用したスキルカードの消費体力を{{value}}にする（{{count}}回）",
+        "next_card_cost_zero": "次に使用したスキルカードの消費体力を0にする（{{count}}回）",
         "draw_card": "スキルカードを引く",
         "draw_cards": "スキルカードを{{count}}枚引く",
         "replace_all_hand": "手札をすべて入れ替える",

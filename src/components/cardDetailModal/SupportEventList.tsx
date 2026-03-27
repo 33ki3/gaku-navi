@@ -42,12 +42,12 @@ export function SupportEventList({ card, colors }: SupportEventListProps) {
               <p className={`text-sm font-bold ${colors.text}`}>{getEventEffectLabel(evt, t)}</p>
               {evt.effect_type === EventEffectType.SkillCard && card.skill_card && (
                 (() => {
-                  const rEntry = data.getRarityEntry(card.skill_card.rarity)
+                  const rEntry = data.getSkillCardRarityEntry(card.skill_card.rarity)
                   const sEntry = data.SkillTypeBadge[card.skill_card.type]
                   return (
                     <>
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${rEntry.simple_color}`}
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${rEntry.color}`}
                       >
                         {t(rEntry.label)}
                       </span>

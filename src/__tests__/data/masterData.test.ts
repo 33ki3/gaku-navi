@@ -16,10 +16,10 @@ describe('maxLevel', () => {
   const rarities = Object.values(enums.RarityType)
   const uncaps = Object.values(enums.UncapType).filter((u) => u !== enums.UncapType.NotOwned)
 
-  it.each(rarities.flatMap((r) => uncaps.map((u) => [r, u])))(
+  it.each(rarities.flatMap((r) => uncaps.map((u) => [r, u] as const)))(
     'getMaxLevel(%s, %s) が正の数を返す',
     (rarity, uncap) => {
-      const level = data.getMaxLevel(rarity as enums.RarityType, uncap as enums.UncapType)
+      const level = data.getMaxLevel(rarity, uncap)
       expect(level).toBeGreaterThan(0)
     },
   )
@@ -30,7 +30,7 @@ describe('abilityValue', () => {
   const tiers = Object.values(enums.RarityTierType)
 
   it.each(tiers)('getSchedule(%s, 1) が値を返す', (tier) => {
-    const schedule = getSchedule(tier as enums.RarityTierType, 1)
+    const schedule = getSchedule(tier, 1)
     expect(Array.isArray(schedule)).toBe(true)
     expect(schedule.length).toBeGreaterThan(0)
   })
@@ -41,12 +41,35 @@ describe('rarityDisplay', () => {
   const rarities = Object.values(enums.RarityType)
 
   it.each(rarities)('getRarityEntry(%s) がエントリを返す', (rarity) => {
-    const entry = data.getRarityEntry(rarity as enums.RarityType)
+    const entry = data.getRarityEntry(rarity)
     expect(entry).toBeDefined()
     expect(typeof entry.order).toBe('number')
     expect(typeof entry.label).toBe('string')
-    expect(typeof entry.gradient_color).toBe('string')
-    expect(typeof entry.simple_color).toBe('string')
+    expect(typeof entry.color).toBe('string')
+  })
+})
+
+/** スキルカードレアリティに表示エントリが存在すること */
+describe('skillCardRarityDisplay', () => {
+  const rarities = Object.values(enums.SkillCardRarityType)
+
+  it.each(rarities)('getSkillCardRarityEntry(%s) がエントリを返す', (rarity) => {
+    const entry = data.getSkillCardRarityEntry(rarity)
+    expect(entry).toBeDefined()
+    expect(typeof entry.label).toBe('string')
+    expect(typeof entry.color).toBe('string')
+  })
+})
+
+/** Pアイテムレアリティに表示エントリが存在すること */
+describe('pItemRarityDisplay', () => {
+  const rarities = Object.values(enums.PItemRarityType)
+
+  it.each(rarities)('getPItemRarityEntry(%s) がエントリを返す', (rarity) => {
+    const entry = data.getPItemRarityEntry(rarity)
+    expect(entry).toBeDefined()
+    expect(typeof entry.label).toBe('string')
+    expect(typeof entry.color).toBe('string')
   })
 })
 
@@ -55,7 +78,7 @@ describe('typeDisplay', () => {
   const types = Object.values(enums.CardType)
 
   it.each(types)('getTypeEntry(%s) がエントリを返す', (type) => {
-    const entry = data.getTypeEntry(type as enums.CardType)
+    const entry = data.getTypeEntry(type)
     expect(entry).toBeDefined()
     expect(typeof entry.display_label).toBe('string')
     expect(typeof entry.bg).toBe('string')
@@ -65,28 +88,28 @@ describe('typeDisplay', () => {
 /** Pアイテムメモリー・スキルタイプ・入手先・プランのバッジ色・ラベルが定義されていること */
 describe('badge', () => {
   it.each(Object.values(enums.PItemMemoryType))('MemoryBadge[%s] がエントリを返す', (memory) => {
-    const entry = data.MemoryBadge[memory as enums.PItemMemoryType]
+    const entry = data.MemoryBadge[memory]
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')
   })
 
   it.each(Object.values(enums.SkillCardType))('SkillTypeBadge[%s] がエントリを返す', (type) => {
-    const entry = data.SkillTypeBadge[type as enums.SkillCardType]
+    const entry = data.SkillTypeBadge[type]
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')
   })
 
   it.each(Object.values(enums.SourceType))('SourceBadge[%s] がエントリを返す', (source) => {
-    const entry = data.SourceBadge[source as enums.SourceType]
+    const entry = data.SourceBadge[source]
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')
   })
 
   it.each(Object.values(enums.PlanType))('PlanBadge[%s] がエントリを返す', (plan) => {
-    const entry = data.PlanBadge[plan as enums.PlanType]
+    const entry = data.PlanBadge[plan]
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.active_color).toBe('string')
@@ -135,7 +158,7 @@ describe('abilityKeyword', () => {
   const keywords = Object.values(enums.AbilityKeywordType)
 
   it.each(keywords)('AbilityKeywordMap.get(%s) がエントリを返す', (keyword) => {
-    const entry = data.AbilityKeywordMap.get(keyword as enums.AbilityKeywordType)
+    const entry = data.AbilityKeywordMap.get(keyword)
     expect(entry).toBeDefined()
     expect(typeof entry!.badge).toBe('string')
     expect(Array.isArray(entry!.triggers)).toBe(true)
@@ -152,7 +175,7 @@ describe('actionCategory', () => {
   })
 
   it.each(Object.values(enums.ActionGroupType))('getActionGroupLabel(%s) が文字列を返す', (group) => {
-    expect(typeof data.getActionGroupLabel(group as enums.ActionGroupType)).toBe('string')
+    expect(typeof data.getActionGroupLabel(group)).toBe('string')
   })
 })
 
@@ -215,13 +238,13 @@ describe('abilityException', () => {
 /** 全TriggerKeyTypeがtriggerActionMapに存在し、マッピング先が有効なActionIdTypeであること */
 describe('triggerActionMap', () => {
   it.each(Object.values(enums.TriggerKeyType))('TriggerKeyType "%s" が triggerActionMap に存在する', (key) => {
-    expect(TriggerActionMap[key as enums.TriggerKeyType]).toBeDefined()
+    expect(TriggerActionMap[key]).toBeDefined()
   })
 
   it('全マッピング値が有効な ActionIdType である', () => {
     const validActions = new Set(Object.values(enums.ActionIdType))
     for (const [key, value] of Object.entries(TriggerActionMap)) {
-      expect(validActions.has(value as enums.ActionIdType), `${key} → ${value} は無効な ActionIdType`).toBe(true)
+      expect(validActions.has(value), `${key} → ${value} は無効な ActionIdType`).toBe(true)
     }
   })
 })

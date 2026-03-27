@@ -402,6 +402,20 @@ export const PItemRarityType = {
 export type PItemRarityType = (typeof PItemRarityType)[keyof typeof PItemRarityType]
 
 /**
+ * スキルカードレアリティ定数。
+ * スキルカードのレアリティ。SSR / SR / R の 3 段階。
+ */
+export const SkillCardRarityType = {
+  /** SSRランク */
+  SSR: 'ssr',
+  /** SRランク */
+  SR: 'sr',
+  /** Rランク */
+  R: 'r',
+} as const
+export type SkillCardRarityType = (typeof SkillCardRarityType)[keyof typeof SkillCardRarityType]
+
+/**
  * スキルカードの強化段階定数。
  * Base = 未強化、Plus = 強化済み（+マーク付き）。
  */

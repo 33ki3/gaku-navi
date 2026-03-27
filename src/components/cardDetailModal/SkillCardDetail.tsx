@@ -40,7 +40,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
       ? (skillCard.effects.find((e) => e.level === targetLevel) ?? null)
       : null
   // スキルカードのレアリティ表示情報
-  const skillRarityEntry = data.getRarityEntry(skillCard.rarity)
+  const skillRarityEntry = data.getSkillCardRarityEntry(skillCard.rarity)
   const skillTypeEntry = data.SkillTypeBadge[skillCard.type]
 
   return (
@@ -50,7 +50,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
         {/* スキルカード名 */}
         <p className="text-sm font-black text-slate-800">{skillCard.name}</p>
         {/* レアリティバッジ（R / SR / SSR） */}
-        <Badge color={skillRarityEntry.simple_color}>
+        <Badge color={skillRarityEntry.color}>
           {t(skillRarityEntry.label)}
         </Badge>
         {/* 種別バッジ（アクティブ / メンタル） */}

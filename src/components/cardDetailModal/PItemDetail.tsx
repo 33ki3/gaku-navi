@@ -31,11 +31,9 @@ export function PItemDetail({ pItem, colors }: PItemDetailProps) {
         {/* Pアイテム名 */}
         <p className="text-sm text-slate-800">{pItem.name}</p>
         {/* レアリティバッジ（「SSR」など） */}
-        {rarityEntry && (
-          <Badge color={rarityEntry.badge_color}>
-            {t(rarityEntry.label)}
-          </Badge>
-        )}
+        <Badge color={rarityEntry.color}>
+          {t(rarityEntry.label)}
+        </Badge>
         {/* メモリ化可否バッジ（「メモリ化可」など） */}
         {memoryEntry && (
           <Badge color={memoryEntry.badge}>

@@ -61,7 +61,7 @@ export default function CardDetailModal({
             <h2 className="text-lg font-black text-slate-900 leading-tight">{card.name}</h2>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {/* レアリティを示すバッジ */}
-              <Badge size={BadgeSizeType.MdRounded} weight={BadgeWeightType.Black} color={rarityEntry.simple_color}>
+              <Badge size={BadgeSizeType.MdRounded} weight={BadgeWeightType.Black} color={rarityEntry.color}>
                 {t(rarityEntry.label)}
               </Badge>
               {/* カードタイプを示すバッジ */}

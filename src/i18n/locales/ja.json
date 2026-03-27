@@ -21,6 +21,11 @@
       "ssr": "SSR",
       "sr": "SR"
     },
+    "skill_card_rarity": {
+      "ssr": "SSR",
+      "sr": "SR",
+      "r": "R"
+    },
     "rarity": {
       "ssr": "SSR",
       "sr": "SR",

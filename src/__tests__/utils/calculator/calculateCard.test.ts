@@ -12,7 +12,7 @@ function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {
     plan: enums.PlanType.Free,
     type: enums.CardType.Vocal,
     parameter_type: enums.ParameterType.Vocal,
-    source: 'gacha' as enums.SourceType,
+    source: enums.SourceType.Gacha,
     release_date: '2024/01/01',
     abilities: [],
     events: [],
@@ -40,7 +40,7 @@ describe('calculateCardParameter', () => {
   it('イベントパラメータ上昇のみ（ブーストなし）', () => {
     const card = makeCard({
       events: [
-        { release: 'lv20' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
       ],
     })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
@@ -63,7 +63,7 @@ describe('calculateCardParameter', () => {
         },
       ],
       events: [
-        { release: 'lv20' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
       ],
     })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
@@ -246,7 +246,7 @@ describe('calculateCardParameter', () => {
   it('selfTrigger ボーナスが加算される（スキルカード提供カード）', () => {
     const card = makeCard({
       events: [
-        { release: 'initial' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
       abilities: [
         {
@@ -266,7 +266,7 @@ describe('calculateCardParameter', () => {
   it('includeSelfTrigger = false なら自己ボーナスなし', () => {
     const card = makeCard({
       events: [
-        { release: 'initial' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
       abilities: [
         {
@@ -286,8 +286,8 @@ describe('calculateCardParameter', () => {
     const card = makeCard({
       p_item: {
         name: 'テストアイテム',
-        rarity: 'sr' as enums.PItemRarityType,
-        memory: 'memorizable' as enums.PItemMemoryType,
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
         boost: {
           trigger_key: enums.TriggerKeyType.VoLessonEnd,
           parameter_type: enums.ParameterType.Vocal,
@@ -305,8 +305,8 @@ describe('calculateCardParameter', () => {
     const card = makeCard({
       p_item: {
         name: 'テストアイテム',
-        rarity: 'sr' as enums.PItemRarityType,
-        memory: 'memorizable' as enums.PItemMemoryType,
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
         boost: {
           trigger_key: enums.TriggerKeyType.LessonEnd,
           parameter_type: enums.ParameterType.Vocal,
@@ -346,7 +346,7 @@ describe('calculateCardParameter', () => {
         },
       ],
       events: [
-        { release: 'lv20' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
       ],
     })
     const actions = { [enums.ActionIdType.Lesson]: 3 }
@@ -431,7 +431,7 @@ describe('calculateCardParameter', () => {
     const card = makeCard({ name: 'テスト花咲', parameter_type: enums.ParameterType.Dance })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
     expect(result.cardName).toBe('テスト花咲')
-    expect(result.parameterType).toBe('dance')
+    expect(result.parameterType).toBe(enums.ParameterType.Dance)
   })
 
   it('visual カードは visual の bonusBase を使う', () => {
@@ -486,7 +486,7 @@ describe('calculateCardParameter', () => {
         },
       ],
       events: [
-        { release: 'lv20' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
       ],
     })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
@@ -499,7 +499,7 @@ describe('calculateCardParameter', () => {
     const card = makeCard({
       rarity: enums.RarityType.SSR,
       events: [
-        { release: 'initial' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
       skill_card: { name: 'テスト', rarity: enums.RarityType.SSR, type: enums.SkillCardType.Active, lesson_limit: 0, no_duplicate: false, effects: [], custom_cap: 0, custom_slot: [] },
       abilities: [
@@ -521,8 +521,8 @@ describe('calculateCardParameter', () => {
     const card = makeCard({
       p_item: {
         name: 'テストアイテム',
-        rarity: 'sr' as enums.PItemRarityType,
-        memory: 'memorizable' as enums.PItemMemoryType,
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
         boost: {
           trigger_key: enums.TriggerKeyType.VoLessonEnd,
           parameter_type: enums.ParameterType.Vocal,
@@ -548,8 +548,8 @@ describe('calculateCardParameter', () => {
       ],
       p_item: {
         name: 'テストアイテム',
-        rarity: 'sr' as enums.PItemRarityType,
-        memory: 'memorizable' as enums.PItemMemoryType,
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
         boost: {
           trigger_key: enums.TriggerKeyType.LessonEnd,
           parameter_type: enums.ParameterType.Vocal,

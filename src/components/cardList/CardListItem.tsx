@@ -87,7 +87,7 @@ export const CardListItem = memo(function CardListItem({
           </div>
           <div className="flex flex-wrap gap-1">
             {/* レアリティバッジ（SSR / SR / R） */}
-            <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color={rarityEntry.gradient_color}>
+            <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color={rarityEntry.color}>
               {t(rarityEntry.label)}
             </Badge>
             {/* タイプバッジ（Vo / Da / Vi） */}

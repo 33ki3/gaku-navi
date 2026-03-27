@@ -402,6 +402,20 @@ export const PItemRarityType = {
 export type PItemRarityType = (typeof PItemRarityType)[keyof typeof PItemRarityType]
 
 /**
+ * スキルカードレアリティ定数。
+ * スキルカードのレアリティ。SSR / SR / R の 3 段階。
+ */
+export const SkillCardRarityType = {
+  /** SSRランク */
+  SSR: 'ssr',
+  /** SRランク */
+  SR: 'sr',
+  /** Rランク */
+  R: 'r',
+} as const
+export type SkillCardRarityType = (typeof SkillCardRarityType)[keyof typeof SkillCardRarityType]
+
+/**
  * スキルカードの強化段階定数。
  * Base = 未強化、Plus = 強化済み（+マーク付き）。
  */
@@ -1231,10 +1245,10 @@ export const EffectTemplateKeyType = {
   /** 前のアクティブカード条件 */
   PrevActiveCard: 'prev_active_card',
 
-  /** キーワード変更 */
-  ChangeStance: 'change_stance',
-  /** キーワード段階変更 */
-  ChangeStanceStage: 'change_stance_stage',
+  /** 指針変更（全力・温存・強気の切り替え） */
+  ChangePolicy: 'change_policy',
+  /** 指針段階変更 */
+  ChangePolicyStage: 'change_policy_stage',
   /** 低下状態無効 */
   DebuffNull: 'debuff_null',
   /** 固定キーワード上昇 */

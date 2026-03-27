@@ -76,7 +76,7 @@ describe('useCardScores', () => {
       plan: enums.PlanType.Free,
       type: enums.CardType.Vocal,
       parameter_type: enums.ParameterType.Vocal,
-      source: 'gacha' as enums.SourceType,
+      source: enums.SourceType.Gacha,
       release_date: '2024/01/01',
       abilities: [],
       events: [],

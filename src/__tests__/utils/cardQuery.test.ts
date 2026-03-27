@@ -11,7 +11,7 @@ function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {
     plan: enums.PlanType.Free,
     type: enums.CardType.Vocal,
     parameter_type: enums.ParameterType.Vocal,
-    source: 'gacha' as enums.SourceType,
+    source: enums.SourceType.Gacha,
     release_date: '2024/01/01',
     abilities: [],
     events: [],
@@ -32,8 +32,8 @@ describe('getEventSummaryParts', () => {
   it('イベントのラベルキーを配列で返す', () => {
     const card = makeCard({
       events: [
-        { release: 'initial' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.PItem, title: 'テスト' },
-        { release: 'lv20' as enums.ReleaseConditionType, effect_type: enums.EventEffectType.SkillCard, title: 'テスト2' },
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.PItem, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.SkillCard, title: 'テスト2' },
       ],
     })
     const parts = getEventSummaryParts(card)
@@ -45,7 +45,7 @@ describe('getEventSummaryParts', () => {
   it('未マッピングのイベントタイプはスキップ', () => {
     const card = makeCard({
       events: [
-        { release: 'initial' as enums.ReleaseConditionType, effect_type: 'unknown_type' as enums.EventEffectType, title: 'テスト' },
+        { release: enums.ReleaseConditionType.Initial, effect_type: 'unknown_type' as enums.EventEffectType, title: 'テスト' },
       ],
     })
     const parts = getEventSummaryParts(card)

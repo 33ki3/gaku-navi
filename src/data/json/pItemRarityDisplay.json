@@ -1,0 +1,12 @@
+[
+  {
+    "rarity": "ssr",
+    "label": "common.p_item_rarity.ssr",
+    "color": "bg-gradient-to-r from-rose-400 via-amber-300 to-sky-400 text-white"
+  },
+  {
+    "rarity": "sr",
+    "label": "common.p_item_rarity.sr",
+    "color": "bg-gradient-to-r from-amber-400 to-yellow-500 text-white"
+  }
+]

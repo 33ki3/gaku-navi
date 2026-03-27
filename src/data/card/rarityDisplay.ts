@@ -12,8 +12,7 @@ interface RarityEntry {
   rarity: RarityType
   order: number
   label: TranslationKey
-  gradient_color: string
-  simple_color: string
+  color: string
 }
 
 const map = new Map<string, RarityEntry>(

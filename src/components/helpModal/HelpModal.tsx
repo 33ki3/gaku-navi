@@ -62,7 +62,7 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
             {Object.values(RarityType).map((r) => {
               const entry = data.getRarityEntry(r)
               return (
-                <Badge key={r} size={BadgeSizeType.Sm} color={entry.gradient_color}>
+                <Badge key={r} size={BadgeSizeType.Sm} color={entry.color}>
                   {t(entry.label)}
                 </Badge>
               )

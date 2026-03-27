@@ -116,7 +116,7 @@ describe('parseAbility', () => {
       values: { '0': '5' },
     }
     const parsed = parseAbility(ability, enums.UncapType.Zero)
-    expect(parsed.parameterType).toBe('dance')
+    expect(parsed.parameterType).toBe(enums.ParameterType.Dance)
   })
 
   it('空文字の値は 0 として扱われる', () => {

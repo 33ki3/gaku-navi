@@ -1129,7 +1129,7 @@
               "stage": 1,
               "cost": 70,
               "effect": {
-                "template": "change_stance",
+                "template": "change_policy",
                 "params": {
                   "keyword": "reserve"
                 }
@@ -2746,7 +2746,8 @@
           "effect": {
             "use_condition": {
               "key": "keyword_eq",
-              "keyword": "vitality"
+              "keyword": "vitality",
+              "value": 0
             },
             "groups": [
               {
@@ -2781,7 +2782,8 @@
           "effect": {
             "use_condition": {
               "key": "keyword_eq",
-              "keyword": "vitality"
+              "keyword": "vitality",
+              "value": 0
             },
             "groups": [
               {
@@ -8896,7 +8898,7 @@
                   "key": "next_turn"
                 },
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 },
                 "temporal_first": true
@@ -8936,7 +8938,7 @@
                   "key": "next_turn"
                 },
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 },
                 "temporal_first": true
@@ -9608,7 +9610,7 @@
             "groups": [
               {
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "aggressive"
                 }
               },
@@ -9646,7 +9648,7 @@
             "groups": [
               {
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "aggressive"
                 }
               },
@@ -9709,7 +9711,7 @@
               "stage": 1,
               "cost": 70,
               "effect": {
-                "template": "change_stance_stage",
+                "template": "change_policy_stage",
                 "params": {
                   "keyword": "aggressive",
                   "stage": "2"
@@ -12406,7 +12408,7 @@
             "groups": [
               {
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 }
               },
@@ -12437,7 +12439,7 @@
             "groups": [
               {
                 "action": {
-                  "key": "change_stance_stage",
+                  "key": "change_policy_stage",
                   "keyword": "reserve",
                   "stage": 2
                 }
@@ -16159,7 +16161,7 @@
               },
               {
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 }
               },
@@ -16172,7 +16174,7 @@
                   "key": "turn_start"
                 },
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 },
                 "temporal_first": true
@@ -16195,7 +16197,7 @@
               },
               {
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 }
               },
@@ -16208,7 +16210,7 @@
                   "key": "turn_start"
                 },
                 "action": {
-                  "key": "change_stance",
+                  "key": "change_policy",
                   "keyword": "reserve"
                 },
                 "temporal_first": true
@@ -16445,7 +16447,7 @@
             "groups": [
               {
                 "action": {
-                  "key": "change_stance_stage",
+                  "key": "change_policy_stage",
                   "keyword": "reserve",
                   "stage": 2
                 }
@@ -16474,7 +16476,7 @@
             "groups": [
               {
                 "action": {
-                  "key": "change_stance_stage",
+                  "key": "change_policy_stage",
                   "keyword": "reserve",
                   "stage": 2
                 }
@@ -20318,7 +20320,7 @@
               "stage": 1,
               "cost": 70,
               "effect": {
-                "template": "change_stance",
+                "template": "change_policy",
                 "params": {
                   "keyword": "reserve"
                 }

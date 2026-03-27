@@ -55,7 +55,7 @@ export function RarityTypePlanFilter({
               key={rarity}
               isActive={selectedRarities.has(rarity)}
               onClick={() => toggleRarity(rarity)}
-              activeClass={`${entry.gradient_color} border border-transparent bg-clip-padding`}
+              activeClass={`${entry.color} border border-transparent bg-clip-padding`}
             >
               {t(entry.label)}
             </ToggleButton>

@@ -81,7 +81,7 @@ describe('parsePItemParameterBoost', () => {
     expect(result).toHaveLength(1)
     expect(result[0].triggerKey).toBe('lesson_end')
     expect(result[0].value).toBe(6)
-    expect(result[0].parameterType).toBe('vocal')
+    expect(result[0].parameterType).toBe(enums.ParameterType.Vocal)
     expect(result[0].description).toBe('テストアイテム')
   })
 

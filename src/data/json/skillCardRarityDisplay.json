@@ -1,20 +1,17 @@
 [
   {
     "rarity": "ssr",
-    "order": 3,
-    "label": "common.rarity.ssr",
+    "label": "common.skill_card_rarity.ssr",
     "color": "bg-gradient-to-r from-rose-400 via-amber-300 to-sky-400 text-white"
   },
   {
     "rarity": "sr",
-    "order": 2,
-    "label": "common.rarity.sr",
+    "label": "common.skill_card_rarity.sr",
     "color": "bg-gradient-to-r from-amber-400 to-yellow-500 text-white"
   },
   {
     "rarity": "r",
-    "order": 1,
-    "label": "common.rarity.r",
+    "label": "common.skill_card_rarity.r",
     "color": "bg-gradient-to-r from-slate-300 to-slate-400 text-white"
   }
 ]

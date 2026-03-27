@@ -19,6 +19,7 @@ import type {
   ActionIdType,
   ActivityIdType,
   SkillCardType,
+  SkillCardRarityType,
   SkillCardLevelType,
   CostType,
   TriggerKeyType,
@@ -238,7 +239,7 @@ export interface CustomSlotNameStructured {
 
 /** カスタムスロット効果の構造化データ（分解済み）。 */
 export interface CustomSlotEffectStructured {
-  /** テンプレートキー（card.customSlotEffect.* に対応）（例: "keyword_up", "change_stance", "cost_reduce_turns", "null"） */
+  /** テンプレートキー（card.customSlotEffect.* に対応）（例: "keyword_up", "change_policy", "cost_reduce_turns", "null"） */
   template: EffectTemplateKeyType
   /** テンプレート補間パラメータ（「全力値+4」→{ keyword: "full_power_value", value: "4" }） */
   params?: CustomSlotParams
@@ -262,6 +263,8 @@ export interface CustomSlotParams {
   threshold?: string
   /** 補足説明テキスト（例: "2回目の元気を追加"） */
   note?: string
+  /** 指針段階番号（例: "2"）— 強気・温存などの指針変更時に使用 */
+  stage?: string
 }
 
 /** 獲得スキルカードの情報 */
@@ -269,7 +272,7 @@ export interface SkillCardInfo {
   /** スキルカード名（例: "愛情レインボー"） */
   name: string
   /** スキルカードのレアリティ（SSR / SR）（例: "sr", "ssr"） */
-  rarity: RarityType
+  rarity: SkillCardRarityType
   /** カードタイプ（メンタル / アクティブ）（例: "mental", "active"） */
   type: SkillCardType
   /** レッスン中の回数制限（0 = 制限なし）（例: 0, 1） */

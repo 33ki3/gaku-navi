@@ -171,7 +171,7 @@ function buildSkillInterpolation(
 ): Record<string, string | number> {
   const result: Record<string, string | number> = {}
   // 効果値（「+{value}」「{value}%」等の数値パラメータ）
-  if (action.value !== undefined && action.value !== 0) result.value = action.value
+  if (action.value !== undefined) result.value = action.value
   if (action.value2 !== undefined && action.value2 !== 0) result.value2 = action.value2
   // ターン数（「{turns}ターン」等の持続期間）
   if (action.turns !== undefined && action.turns !== 0) result.turns = action.turns
@@ -318,6 +318,7 @@ export function getCustomSlotEffectLabel(
   if (params.count) interpolation.count = params.count
   if (params.threshold) interpolation.threshold = params.threshold
   if (params.note) interpolation.note = params.note
+  if (params.stage) interpolation.stage = params.stage
 
   return t(key, interpolation)
 }

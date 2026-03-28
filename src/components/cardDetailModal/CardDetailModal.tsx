@@ -45,6 +45,7 @@ export default function CardDetailModal({
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
   const planEntry = data.PlanBadge[card.plan]
+  const sourceEntry = data.SourceBadge[card.source]
 
   // 凸数が変わったら点数内訳を再計算する
   const scoreResult = useMemo(() => {
@@ -73,8 +74,8 @@ export default function CardDetailModal({
                 {t(planEntry.label)}
               </Badge>
               {/* 入手カテゴリを示すバッジ */}
-              <Badge size={BadgeSizeType.MdRounded} color="bg-slate-100 text-slate-600 border border-slate-200">
-                {t(data.SourceBadge[card.source].label)}
+              <Badge size={BadgeSizeType.MdRounded} color={sourceEntry.badge}>
+                {t(sourceEntry.label)}
               </Badge>
             </div>
             {/* 入手先の詳細情報（イベント名・ショップ名等） */}

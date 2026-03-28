@@ -22,7 +22,7 @@ interface PItemDetailProps {
 /** Pアイテムの詳細表示 */
 export function PItemDetail({ pItem, colors }: PItemDetailProps) {
   const { t } = useTranslation()
-  const memoryEntry = pItem.memory ? data.MemoryBadge[pItem.memory] : undefined
+  const memoryEntry = pItem.memory ? data.getMemoryBadge(pItem.memory) : undefined
   const rarityEntry = data.getPItemRarityEntry(pItem.rarity)
 
   return (

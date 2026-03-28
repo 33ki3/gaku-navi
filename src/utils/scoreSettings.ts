@@ -33,7 +33,7 @@ function createDefaultSettings(): ScoreSettings {
   const scheduleSelections: Record<number, enums.ActivityIdType> = {}
   const scheduleData = data.getScheduleData(constant.DEFAULT_SCENARIO, constant.DEFAULT_DIFFICULTY)
   for (const week of scheduleData) {
-    if (week.fixed && !week.can_rest && week.activities.length > 0) {
+    if (week.fixed && !week.canRest && week.activities.length > 0) {
       scheduleSelections[week.week] = week.activities[0].id
     }
   }
@@ -60,7 +60,7 @@ function createDefaultSettings(): ScoreSettings {
 export function hasAllScheduleSelections(settings: ScoreSettings): boolean {
   const scheduleData = data.getScheduleData(settings.scenario, settings.difficulty)
   for (const week of scheduleData) {
-    const isFullyFixed = week.fixed && !week.can_rest
+    const isFullyFixed = week.fixed && !week.canRest
     if (!isFullyFixed && !settings.scheduleSelections[week.week]) {
       return false
     }
@@ -226,6 +226,6 @@ export function formatScheduleSummary(
   t: (key: TranslationKey, options?: Record<string, string | number>) => string,
 ): string {
   return data.ActionSummaryList.filter(({ id }) => (counts[id] ?? 0) > 0)
-    .map(({ id, label }) => t('ui.format.summary_entry', { label: t(label), count: counts[id] ?? 0 }))
+    .map(({ id, summaryLabel }) => t('ui.format.summary_entry', { label: t(summaryLabel), count: counts[id] ?? 0 }))
     .join(t('ui.format.summary_separator'))
 }

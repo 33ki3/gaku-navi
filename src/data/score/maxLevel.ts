@@ -5,10 +5,13 @@
  * レベル上限を定義する。
  */
 
-import rawData from './maxLevel.json'
-import { type RarityType, type UncapType } from '../../types/enums'
+import { RarityType, UncapType } from '../../types/enums'
 
-const data = rawData as Record<RarityType, Record<UncapType, number>>
+const data = {
+  [RarityType.SSR]: { [UncapType.Zero]: 40, [UncapType.One]: 45, [UncapType.Two]: 50, [UncapType.Three]: 55, [UncapType.Four]: 60 },
+  [RarityType.SR]: { [UncapType.Zero]: 30, [UncapType.One]: 35, [UncapType.Two]: 40, [UncapType.Three]: 45, [UncapType.Four]: 50 },
+  [RarityType.R]: { [UncapType.Zero]: 20, [UncapType.One]: 25, [UncapType.Two]: 30, [UncapType.Three]: 35, [UncapType.Four]: 40 },
+} as Record<RarityType, Record<UncapType, number>>
 
 /**
  * カードレベル上限を取得する。

@@ -6,7 +6,7 @@
  * サマリ: イベント効果タイプからカード一覧に表示するラベルを取得する。
  */
 
-import { type EventFilterType, EventFilterCategoryType, type EventEffectType } from '../../types/enums'
+import { EventFilterType, EventFilterCategoryType, EventEffectType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
 const filterEntries: {
@@ -16,12 +16,12 @@ const filterEntries: {
   effects: EventEffectType[]
   category: EventFilterCategoryType
 }[] = [
-  { value: 'skill_card', label: 'card.event_filter.skill_card', order: 1, effects: ['skill_card'], category: 'acquire' },
-  { value: 'p_item', label: 'card.event_filter.p_item', order: 2, effects: ['p_item'], category: 'acquire' },
-  { value: 'enhance', label: 'card.event_filter.enhance', order: 3, effects: ['card_enhance', 'select_enhance'], category: 'modify' },
-  { value: 'delete', label: 'card.event_filter.delete', order: 4, effects: ['card_delete', 'select_delete'], category: 'modify' },
-  { value: 'change', label: 'card.event_filter.change', order: 5, effects: ['card_change'], category: 'modify' },
-  { value: 'trouble_delete', label: 'card.event_filter.trouble_delete', order: 6, effects: ['trouble_delete'], category: 'modify' },
+  { value: EventFilterType.SkillCard, label: 'card.event_filter.skill_card', order: 1, effects: [EventEffectType.SkillCard], category: EventFilterCategoryType.Acquire },
+  { value: EventFilterType.PItem, label: 'card.event_filter.p_item', order: 2, effects: [EventEffectType.PItem], category: EventFilterCategoryType.Acquire },
+  { value: EventFilterType.Enhance, label: 'card.event_filter.enhance', order: 3, effects: [EventEffectType.CardEnhance, EventEffectType.SelectEnhance], category: EventFilterCategoryType.Modify },
+  { value: EventFilterType.Delete, label: 'card.event_filter.delete', order: 4, effects: [EventEffectType.CardDelete, EventEffectType.SelectDelete], category: EventFilterCategoryType.Modify },
+  { value: EventFilterType.Change, label: 'card.event_filter.change', order: 5, effects: [EventEffectType.CardChange], category: EventFilterCategoryType.Modify },
+  { value: EventFilterType.TroubleDelete, label: 'card.event_filter.trouble_delete', order: 6, effects: [EventEffectType.TroubleDelete], category: EventFilterCategoryType.Modify },
 ]
 
 /** イベントフィルター → 効果タイプのルックアップマップ */
@@ -44,16 +44,18 @@ export const EventFilterModifyList = filterEntries.filter((e) => e.category === 
 /** 獲得系カテゴリの値 Set（フィルタリング判定用） */
 export const EventCategoryAcquire = new Set<string>(EventFilterAcquireList.map((e) => e.value))
 
-const summaryData: Partial<Record<EventEffectType, TranslationKey>> = {
-  skill_card: 'card.summary.skill_card',
-  p_item: 'card.summary.p_item',
-  card_enhance: 'card.summary.card_enhance',
-  card_change: 'card.summary.card_change',
-  pp_gain: 'card.summary.pp_gain',
-  select_enhance: 'card.summary.select_enhance',
-  select_delete: 'card.summary.select_delete',
-  trouble_delete: 'card.summary.trouble_delete',
-}
+const summaryEntries: { id: EventEffectType; label: TranslationKey }[] = [
+  { id: EventEffectType.SkillCard, label: 'card.summary.skill_card' },
+  { id: EventEffectType.PItem, label: 'card.summary.p_item' },
+  { id: EventEffectType.CardEnhance, label: 'card.summary.card_enhance' },
+  { id: EventEffectType.CardChange, label: 'card.summary.card_change' },
+  { id: EventEffectType.PpGain, label: 'card.summary.pp_gain' },
+  { id: EventEffectType.SelectEnhance, label: 'card.summary.select_enhance' },
+  { id: EventEffectType.SelectDelete, label: 'card.summary.select_delete' },
+  { id: EventEffectType.TroubleDelete, label: 'card.summary.trouble_delete' },
+]
+
+const summaryMap = new Map(summaryEntries.map((e) => [e.id, e.label]))
 
 /**
  * イベント効果タイプからサマリ表示ラベルを取得する。
@@ -62,5 +64,5 @@ const summaryData: Partial<Record<EventEffectType, TranslationKey>> = {
  * @returns i18n キー。マップに含まれない効果タイプは undefined
  */
 export function getEventSummaryLabel(effectType: EventEffectType): TranslationKey | undefined {
-  return summaryData[effectType]
+  return summaryMap.get(effectType)
 }

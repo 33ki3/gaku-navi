@@ -96,3 +96,12 @@ export const CHECKBOX_INPUT = 'w-3.5 h-3.5 rounded border-slate-300 text-blue-50
 
 /** セクションラベル（フォーム用） */
 export const FORM_SECTION_LABEL = 'text-xs font-bold text-slate-500 mb-1.5 flex items-center gap-1.5'
+
+/** SSR のバッジグラデーション */
+export const RARITY_COLOR_SSR = 'bg-gradient-to-r from-rose-400 via-amber-300 to-sky-400 text-white'
+
+/** SR のバッジグラデーション */
+export const RARITY_COLOR_SR = 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white'
+
+/** R のバッジグラデーション */
+export const RARITY_COLOR_R = 'bg-gradient-to-r from-slate-300 to-slate-400 text-white'

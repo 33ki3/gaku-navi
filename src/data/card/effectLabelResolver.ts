@@ -8,61 +8,78 @@
  */
 import { TypeDisplayEntries } from './typeDisplay'
 import type { TranslationKey } from '../../i18n'
-import type { ParameterType, CardZoneType, SkillCardType, EventEffectType, ReleaseConditionType, CostType, EffectTemplateKeyType, AbilityNameKeyType, TriggerKeyType } from '../../types/enums'
+import { CardZoneType, SkillCardType, EventEffectType, ReleaseConditionType, CostType, EffectSectionType } from '../../types/enums'
+import type { ParameterType } from '../../types/enums'
 
-const PARAM_LABEL_MAP = new Map(TypeDisplayEntries.map((e) => [e.card_type, e.display_label]))
+const PARAM_LABEL_MAP = new Map(TypeDisplayEntries.map((e) => [e.cardType, e.displayLabel]))
 
-const data = {
-  card_zone: {
-    hand: 'card.card_zone.hand',
-    discard: 'card.card_zone.discard',
-  } as Record<CardZoneType, TranslationKey>,
-  skill_type: {
-    mental: 'card.skill.mental',
-    active: 'card.skill.active',
-  } as Record<SkillCardType, TranslationKey>,
-  event_effect: {
-    param_boost: 'card.event_effect.param_boost',
-    skill_card: 'card.event_effect.skill_card',
-    p_item: 'card.event_effect.p_item',
-    hp_recovery: 'card.event_effect.hp_recovery',
-    card_enhance: 'card.event_effect.card_enhance',
-    card_delete: 'card.event_effect.card_delete',
-    card_change: 'card.event_effect.card_change',
-    pp_gain: 'card.event_effect.pp_gain',
-    select_enhance: 'card.event_effect.select_enhance',
-    select_delete: 'card.event_effect.select_delete',
-    trouble_delete: 'card.event_effect.trouble_delete',
-  } as Record<EventEffectType, TranslationKey>,
-  event_release: {
-    initial: 'card.event_release.initial',
-    lv20: 'card.event_release.lv20',
-    lv40: 'card.event_release.lv40',
-  } as Record<ReleaseConditionType, TranslationKey>,
-  cost_type: {
-    none: 'card.cost_type.none',
-    vitality: 'card.cost_type.vitality',
-    hp: 'card.cost_type.hp',
-    motivation: 'card.cost_type.motivation',
-    good_condition: 'card.cost_type.good_condition',
-  } as Record<CostType, TranslationKey>,
-  effect_section_prefix: {
-    ability_name: 'card.ability_name',
-    pitem_restriction: 'card.pitem_restriction',
-    pitem_trigger: 'card.pitem_trigger',
-    pitem_condition: 'card.pitem_condition',
-    pitem_body: 'card.pitem_body',
-    pitem_limit: 'card.pitem_limit',
-    skill_use_condition: 'card.skill_effect.use_condition',
-    skill_pre_modifier: 'card.skill_effect.pre_modifier',
-    skill_temporal: 'card.skill_effect.temporal',
-    skill_trigger: 'card.skill_effect.trigger',
-    skill_condition: 'card.skill_effect.condition',
-    skill_action: 'card.skill_effect.action',
-    custom_slot_name: 'card.custom_slot_name',
-    custom_slot_effect: 'card.custom_slot_effect',
-  } as Record<string, string>,
+/** enum値→i18nキーのエントリ型 */
+interface LabelEntry<T> {
+  id: T
+  label: TranslationKey
 }
+
+const cardZoneEntries: LabelEntry<CardZoneType>[] = [
+  { id: CardZoneType.Hand, label: 'card.card_zone.hand' },
+  { id: CardZoneType.Discard, label: 'card.card_zone.discard' },
+]
+
+const skillTypeEntries: LabelEntry<SkillCardType>[] = [
+  { id: SkillCardType.Mental, label: 'card.skill.mental' },
+  { id: SkillCardType.Active, label: 'card.skill.active' },
+]
+
+const eventEffectEntries: LabelEntry<EventEffectType>[] = [
+  { id: EventEffectType.ParamBoost, label: 'card.event_effect.param_boost' },
+  { id: EventEffectType.SkillCard, label: 'card.event_effect.skill_card' },
+  { id: EventEffectType.PItem, label: 'card.event_effect.p_item' },
+  { id: EventEffectType.HpRecovery, label: 'card.event_effect.hp_recovery' },
+  { id: EventEffectType.CardEnhance, label: 'card.event_effect.card_enhance' },
+  { id: EventEffectType.CardDelete, label: 'card.event_effect.card_delete' },
+  { id: EventEffectType.CardChange, label: 'card.event_effect.card_change' },
+  { id: EventEffectType.PpGain, label: 'card.event_effect.pp_gain' },
+  { id: EventEffectType.SelectEnhance, label: 'card.event_effect.select_enhance' },
+  { id: EventEffectType.SelectDelete, label: 'card.event_effect.select_delete' },
+  { id: EventEffectType.TroubleDelete, label: 'card.event_effect.trouble_delete' },
+]
+
+const eventReleaseEntries: LabelEntry<ReleaseConditionType>[] = [
+  { id: ReleaseConditionType.Initial, label: 'card.event_release.initial' },
+  { id: ReleaseConditionType.Lv20, label: 'card.event_release.lv20' },
+  { id: ReleaseConditionType.Lv40, label: 'card.event_release.lv40' },
+]
+
+const costTypeEntries: LabelEntry<CostType>[] = [
+  { id: CostType.None, label: 'card.cost_type.none' },
+  { id: CostType.Vitality, label: 'card.cost_type.vitality' },
+  { id: CostType.Hp, label: 'card.cost_type.hp' },
+  { id: CostType.Motivation, label: 'card.cost_type.motivation' },
+  { id: CostType.GoodCondition, label: 'card.cost_type.good_condition' },
+]
+
+const effectSectionPrefixEntries = [
+  { id: EffectSectionType.AbilityName, prefix: 'card.ability_name' },
+  { id: EffectSectionType.PitemRestriction, prefix: 'card.pitem_restriction' },
+  { id: EffectSectionType.PitemTrigger, prefix: 'card.pitem_trigger' },
+  { id: EffectSectionType.PitemCondition, prefix: 'card.pitem_condition' },
+  { id: EffectSectionType.PitemBody, prefix: 'card.pitem_body' },
+  { id: EffectSectionType.PitemLimit, prefix: 'card.pitem_limit' },
+  { id: EffectSectionType.SkillUseCondition, prefix: 'card.skill_effect.use_condition' },
+  { id: EffectSectionType.SkillPreModifier, prefix: 'card.skill_effect.pre_modifier' },
+  { id: EffectSectionType.SkillTemporal, prefix: 'card.skill_effect.temporal' },
+  { id: EffectSectionType.SkillTrigger, prefix: 'card.skill_effect.trigger' },
+  { id: EffectSectionType.SkillCondition, prefix: 'card.skill_effect.condition' },
+  { id: EffectSectionType.SkillAction, prefix: 'card.skill_effect.action' },
+  { id: EffectSectionType.CustomSlotName, prefix: 'card.custom_slot_name' },
+  { id: EffectSectionType.CustomSlotEffect, prefix: 'card.custom_slot_effect' },
+] as const
+
+const cardZoneMap = new Map(cardZoneEntries.map((e) => [e.id, e.label]))
+const skillTypeMap = new Map(skillTypeEntries.map((e) => [e.id, e.label]))
+const eventEffectMap = new Map(eventEffectEntries.map((e) => [e.id, e.label]))
+const eventReleaseMap = new Map(eventReleaseEntries.map((e) => [e.id, e.label]))
+const costTypeMap = new Map(costTypeEntries.map((e) => [e.id, e.label]))
+const effectSectionPrefixMap = new Map(effectSectionPrefixEntries.map((e) => [e.id, e.prefix] as const))
 
 /**
  * パラメータタイプの i18n ラベルキーを返す。
@@ -81,7 +98,7 @@ export function getParamLabel(param: ParameterType): TranslationKey {
  * @returns i18n キー
  */
 export function getCardZoneLabel(zone: CardZoneType): TranslationKey {
-  return data.card_zone[zone]
+  return cardZoneMap.get(zone)!
 }
 
 /**
@@ -91,7 +108,7 @@ export function getCardZoneLabel(zone: CardZoneType): TranslationKey {
  * @returns i18n キー
  */
 export function getSkillTypeLabel(skillType: SkillCardType): TranslationKey {
-  return data.skill_type[skillType]
+  return skillTypeMap.get(skillType)!
 }
 
 /**
@@ -101,7 +118,7 @@ export function getSkillTypeLabel(skillType: SkillCardType): TranslationKey {
  * @returns i18n キー
  */
 export function getEventEffectLabelKey(effectType: EventEffectType): TranslationKey {
-  return data.event_effect[effectType]
+  return eventEffectMap.get(effectType)!
 }
 
 /**
@@ -111,7 +128,7 @@ export function getEventEffectLabelKey(effectType: EventEffectType): Translation
  * @returns i18n キー
  */
 export function getEventReleaseLabelKey(release: ReleaseConditionType): TranslationKey {
-  return data.event_release[release]
+  return eventReleaseMap.get(release)!
 }
 
 /**
@@ -121,21 +138,15 @@ export function getEventReleaseLabelKey(release: ReleaseConditionType): Translat
  * @returns i18n キー
  */
 export function getCostTypeLabelKey(costType: CostType): TranslationKey {
-  return data.cost_type[costType]
+  return costTypeMap.get(costType)!
 }
 
-/** エフェクトセクションの識別型 */
-type EffectSectionType = keyof typeof data.effect_section_prefix
-
 /**
- * エフェクトテンプレートの i18n ラベルキーを返す。
+ * エフェクトセクション種別の i18n キープレフィックスを返す。
  *
- * セクションプレフィックスとキーを結合して i18n パスを構築する。
- *
- * @param section - セクション識別子
- * @param key - テンプレートキー
- * @returns i18n キー（例: "card.pitem_body.param_boost"）
+ * @param section - セクション種別（例: EffectSectionType.SkillAction）
+ * @returns i18n プレフィックス（例: "card.skill_effect.action"）
  */
-export function getEffectLabelKey(section: EffectSectionType, key: EffectTemplateKeyType | AbilityNameKeyType | TriggerKeyType): TranslationKey {
-  return `${data.effect_section_prefix[section]}.${key}` as TranslationKey
+export function getEffectSectionPrefix(section: EffectSectionType): string {
+  return effectSectionPrefixMap.get(section)!
 }

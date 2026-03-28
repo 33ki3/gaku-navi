@@ -4,7 +4,7 @@
  * ソートモード・タブのラベル情報を定義し、
  * enum 値をキーにした i18n キーのルックアップと表示順配列を提供する。
  */
-import type { SortModeType, FilterSortTab } from '../../types/enums'
+import { SortModeType, FilterSortTab } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
 /** ラベルエントリ */
@@ -15,10 +15,10 @@ interface LabelEntry<T extends string = string> {
 
 /** ソートモードエントリ配列 */
 const sortModeEntries: LabelEntry<SortModeType>[] = [
-  { value: 'rarity', label: 'ui.sort.rarity' },
-  { value: 'date', label: 'ui.sort.date' },
-  { value: 'score', label: 'ui.sort.score' },
-  { value: 'uncap', label: 'ui.sort.uncap' },
+  { value: SortModeType.Rarity, label: 'ui.sort.rarity' },
+  { value: SortModeType.Date, label: 'ui.sort.date' },
+  { value: SortModeType.Score, label: 'ui.sort.score' },
+  { value: SortModeType.Uncap, label: 'ui.sort.uncap' },
 ]
 
 /** ソートモードの value→label ルックアップマップ */
@@ -41,8 +41,8 @@ export function getSortModeLabel(mode: SortModeType): TranslationKey {
 
 /** フィルタ・ソートタブエントリ配列 */
 const filterSortTabEntries: LabelEntry<FilterSortTab>[] = [
-  { value: 'sort', label: 'ui.filter_sort.tab_sort' },
-  { value: 'filter', label: 'ui.filter_sort.tab_filter' },
+  { value: FilterSortTab.Sort, label: 'ui.filter_sort.tab_sort' },
+  { value: FilterSortTab.Filter, label: 'ui.filter_sort.tab_filter' },
 ]
 
 /** フィルタ・ソートタブの value→label ルックアップマップ */

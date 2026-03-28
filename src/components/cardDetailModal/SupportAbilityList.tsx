@@ -9,7 +9,7 @@ import type { SupportCard } from '../../types/card'
 import type { UncapType } from '../../types/enums'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
-import { resolveAbilityValue } from '../../utils/display/effectLabels'
+import { resolveAbilityValue, getAbilityNameLabelKey } from '../../utils/display/effectLabels'
 
 /** SupportAbilityList コンポーネントに渡すプロパティ */
 interface SupportAbilityListProps {
@@ -33,7 +33,7 @@ export function SupportAbilityList({ card, colors, uncap }: SupportAbilityListPr
         const param = ability.parameter_type
           ? t(data.getParamLabel(ability.parameter_type))
           : ''
-        const template = t(data.getEffectLabelKey('ability_name', ability.name_key), {
+        const template = t(getAbilityNameLabelKey(ability.name_key), {
           param,
           count: ability.max_count ?? 0,
         })

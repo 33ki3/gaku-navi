@@ -5,7 +5,7 @@ description: Data layer architecture for the gaku-navi project (types + constant
 
 # gaku-navi データアーキテクチャ
 
-データ層を **types / constant** の2層に分離し、
+データ層を **types / constant / data** の3層に分離し、
 各層の責務を明確にするためのルールを定義する。
 
 ---
@@ -29,10 +29,11 @@ description: Data layer architecture for the gaku-navi project (types + constant
 ```
 src/
   data/                    # マスタデータ（表示ラベル・ルックアップ・リスト）
-    json/                  # マスタデータJSON（cards.json は自動生成で編集不可、他は手動管理のマスタ定義）
+    json/                  # ツール自動生成JSONデータ
+      cards.json
     card/                  # カード画面専用マスタデータ
-    score/                 # スコア計算画面専用マスタデータ
-    ui/                    # UIコンポーネントスタイルデータ（サイズ・色・バリアント）
+    score/                 # スコア計算データ + 設定定数
+    ui/                    # UIコンポーネントスタイル・ラベルデータ
   types/                   # 型定義（as const enum + interface / type）
   constant/                # 環境定数・スタイル定数（変更頻度の低い固定値）
 ```
@@ -41,9 +42,27 @@ src/
 
 ---
 
-## 3. マスタデータの定義パターン（JSON + TS ラッパー）
+## 3. JSON と TS の使い分け
 
-データは `data/json/xxx.json` に格納し、TS ファイルは import + 型アサーション + getter のみの薄いラッパーにする。
+### 判断基準
+
+| 形式 | 使い分け | 例 |
+|------|----------|-----|
+| **JSON** | ツール自動生成データのみ | `cards.json` |
+| **Pure TS** | それ以外すべて（手動管理データ・ゲームルール・UI設定） | `schedule.ts`, `badge.ts`, `parameterStyle.ts`, `event.ts` |
+
+### JSON を使うケース
+
+- **ツール生成データのみ**: `json/cards.json`
+
+### Pure TS を使うケース
+
+- **ゲームルール数値テーブル**: スコア計算用のデータ（TS ファイル内にインライン定義）
+  - `abilityValue.ts`（スケジュール・ステージ値）, `abilityException.ts`, `schedule.ts`, `lesson.ts`, `maxLevel.ts`, `triggerActionMap.ts`, `actionCategory.ts`
+- **表示ラベル + enum参照**: i18nキー・enum computed keys を含む定義
+- **派生データ**: Map・Set・フィルタ済みリスト等をエクスポートするもの
+- **UIスタイル定数**: コンポーネントスタイルの Record 定義
+- **少量データ**: エントリ数が少なく、JSON分離のメリットがないもの
 
 ### JSON 構造の設計原則
 
@@ -51,66 +70,72 @@ src/
 2. **配列には数値フィールドを持たせる**: 週番号等のインデックスは文字列キーではなく配列の数値フィールドに格納する（TS 側の `Number()` 変換不要）。
 3. **派生データも JSON に含める**: 逆引きマップ (`action_map`) やセット化対象リスト (`controlled_action_ids`) を JSON に直接記述し、TS 側の即時関数構築を不要にする。
 
-### JSON 構造の使い分け
+### データ定義パターン
 
-| 構造 | 用途 | 例 |
-|------|------|-----|
-| **配列** `[{key, ...}]` | 順序付きリスト・フィルタ選択肢・表示用一覧。TS側で `Map` を構築して高速ルックアップ | `rarityDisplay.json`, `pItemRarityLabel.json`, `schedule.json`（週配列） |
-| **オブジェクト** `{key: value}` | 多次元ルックアップ・複数セクション・ネストが必要な構造 | `schedule.json`（シナリオ×難易度）, `abilityValue.json`（名前×凸段階） |
-| **グループ配列** `{groups: [{id, label, items}]}` | カテゴリ別にグループ化されたデータ。TS側の `reduce` グループ分けが不要 | `actionCategory.json` |
-| **複合構造** `{entries, action_map, controlled_ids}` | 表示用配列 + 逆引きマップ + 派生セットを同一ファイルに格納 | `activity.json` |
+マスタデータの定義は以下の2パターンを用途に応じて使い分ける:
 
-**判断基準**: 単一キーで引くだけなら配列 → `Map`。複数軸のネストが必要ならオブジェクト。TS 側で加工が必要になったら JSON 構造を見直す。
+| パターン | 構造 | 用途 | 例 |
+|----------|------|------|-----|
+| **entries[]** | 配列 `{ id, label, ... }[]` + `Map` | 正規化マスタ。リスト表示・フィルタ選択肢・getter ルックアップ | `badge.ts`, `effectLabelResolver.ts`, `event.ts`, `abilityKeyword.ts`, `activity.ts`, `typeDisplay.ts` |
+| **Record** | `Record<K, V>` | 多次元ルックアップテーブル・ネスト構造・UI config | `abilityValue.ts`, `lesson.ts`, `schedule.ts`, `parameterStyle.ts`, `badgeStyle.ts` |
 
-### TS ラッパーの5パターン
+**判断基準**:
+- **entries[] を使う場合**: データが「レコードの一覧」として意味を持つ場合（一覧表示・イテレーション・派生リスト生成する場合）。i18n ラベル付きのマスタデータはこちら。
+- **Record を使う場合**: 多次元キーで引く構造（scenario×difficulty×week 等）、UI config（enum→style の単純マッピング）、1:1 のフラットマッピング（triggerActionMap 等）。
 
-| パターン | 用途 | 変換レベル | 例 |
-|---------|------|-----------|-----|
-| **A: 型assert + 直接export** | 構造がそのまま使える場合 | なし | `badge.ts`, `scoreOption.ts`, `triggerActionMap.ts` |
-| **B: 型assert + getter** | 単一キーでのルックアップが必要な場合 | 軽い（Map構築 or find） | `rarityDisplay.ts`, `maxLevel.ts`, `uiStyle.ts` |
-| **C: グループ展開 + 派生データ** | グループ化済みJSON から flat 配列やサマリを導出 | 中程度 | `actionCategory.ts`, `event.ts`, `abilityKeyword.ts` |
-| **D: 複数JSON統合** | 2つ以上のJSONを束ねてgetterを提供 | 中程度 | `effectLabelResolver.ts`（例外的） |
-| **E: 外部util変換** | 別モジュールの変換関数を適用 | 重い | `cards.ts`（`inflateCards` 呼び出し） |
+**entries[] の標準パターン**:
+```ts
+interface FooEntry { id: FooType; label: TranslationKey }
+const entries: FooEntry[] = [
+  { id: FooType.A, label: 'ns.foo.a' },
+  { id: FooType.B, label: 'ns.foo.b' },
+]
+const entryMap = new Map(entries.map((e) => [e.id, e]))
+export function getFoo(id: FooType): FooEntry { return entryMap.get(id)! }
+```
+
+### TS データファイルのパターン
+
+| パターン | 用途 | 例 |
+|---------|------|-----|
+| **A: entries[] + Map + getter** | 正規化マスタの標準パターン | `badge.ts`, `effectLabelResolver.ts`, `rarityDisplay.ts`, `event.ts` |
+| **B: entries[] + 派生データ** | 配列からリスト・Set・Record等を派生 | `activity.ts`, `abilityKeyword.ts`, `actionCategory.ts` |
+| **C: Record + getter** | 多次元テーブルのルックアップ | `abilityValue.ts`, `lesson.ts`, `schedule.ts`, `maxLevel.ts` |
+| **D: Record直接export** | enum→値の単純マッピング（UI config） | `parameterStyle.ts`, `badgeStyle.ts`, `triggerActionMap.ts` |
+| **E: JSON import + 変換** | ツール生成JSONの型付け・変換 | `cards.ts`（`inflateCards` 呼び出し） |
 
 ```ts
-// --- パターン A: 型assert + 直接 export ---
-import rawData from '../json/xxx.json'
-import { type FooType } from '../../types/enums'
+// --- パターン A: entries[] + Map + getter ---
+interface FooEntry { id: FooType; label: TranslationKey; color: string }
+const entries: FooEntry[] = [
+  { id: FooType.A, label: 'ns.foo.a', color: 'bg-red-100' },
+  { id: FooType.B, label: 'ns.foo.b', color: 'bg-blue-100' },
+]
+const entryMap = new Map(entries.map((e) => [e.id, e]))
+export function getFoo(id: FooType): FooEntry { return entryMap.get(id)! }
 
-const data = rawData as Record<FooType, BarType>
-export const XxxMap = data
+// --- パターン B: entries[] + 派生データ ---
+const entries: ActivityEntry[] = [...]
+export function getActivityLabel(id: ActivityIdType) { return entries.find((e) => e.id === id)!.label }
+export const ActivityActionMap = Object.fromEntries(entries.map((e) => [e.id, e.actions]))
+export const ControlledIds = new Set(entries.flatMap((e) => e.actions))
 
-// --- パターン B: 型assert + getter（Map ルックアップ） ---
-import rawData from '../json/xxx.json'
-import { type SomeType } from '../../types/enums'
-import type { TranslationKey } from '../../i18n'
-
-interface XxxEntry { key: SomeType; label: TranslationKey }
-
-const entries = rawData as XxxEntry[]
-const ENTRY_MAP = new Map(entries.map((e) => [e.key, e]))
-
-export function getXxxEntry(key: SomeType): XxxEntry {
-  return ENTRY_MAP.get(key)!
-}
-
-// --- パターン B: 型assert + getter（Record ネスト） ---
-import rawData from '../json/xxx.json'
-
-type Data = Record<ScenarioType, Record<DifficultyType, SomeValue[]>>
-const data = rawData as Data
-
+// --- パターン C: Record + getter（多次元テーブル） ---
+const data: Record<ScenarioType, Record<DifficultyType, SomeValue[]>> = { ... }
 export function getXxx(scenario: ScenarioType, difficulty: DifficultyType): SomeValue[] {
   return data[scenario][difficulty]
 }
 
-// --- パターン C: グループ展開 + 派生データ ---
-import rawData from '../json/xxx.json'
+// --- パターン D: Record 直接 export（UI config） ---
+const style: Record<SizeType, string> = {
+  [SizeType.Sm]: 'px-1 text-xs',
+  [SizeType.Md]: 'px-2 text-sm',
+}
+export function getStyle(size: SizeType): string { return style[size] }
 
-const data = rawData as { groups: GroupEntry[] }
-
-export const FlatList = data.groups.flatMap((g) => g.categories)
-export const GroupMap = Object.fromEntries(data.groups.map((g) => [g.id, g.categories]))
+// --- パターン E: JSON import + 変換 ---
+import rawCards from '../json/cards.json'
+export const AllCards = inflateCards(rawCards as RawCard[])
 ```
 
 ---
@@ -127,15 +152,30 @@ export const GroupMap = Object.fromEntries(data.groups.map((g) => [g.id, g.categ
 
 `data/` 配下のファイルはすべてマスタデータであるため、ファイル名に `Master` 接尾辞を付けない。
 
-- **JSON**: `data/json/<name>.json`（例: `abilityValue.json`, `maxLevel.json`）
-- **TS ラッパー**: `data/<category>/<name>.ts`（例: `data/card/abilityValue.ts`）
+- **JSON**: `data/json/<name>.json`（例: `cards.json`）
+- **TS**: `data/<category>/<name>.ts`（例: `data/card/badge.ts`, `data/score/activity.ts`）
 - 名前はデータの内容を端的に表す camelCase。`Master` / `Data` / `Config` 等の冗長な接尾辞は不要。
 
-### JSON キー命名
+### キー・プロパティ命名
 
-- JSON の構造キー・フィールド名はすべて **snake_case** にする。
-- i18n キー（`ja.json`）もすべて **snake_case** にする。
+| 対象 | ルール | 例 |
+|------|--------|-----|
+| **JSON キー** | snake_case | `can_rest`, `action_map`, `trigger_key` |
+| **TS プロパティ（公開）** | camelCase | `canRest`, `isParamCategory`, `activeColor` |
+| **i18n キー** | snake_case（ドット区切り） | `card.ability.initial_param` |
+
+- JSON → TS の変換時は TS ラッパー内で snake_case → camelCase にマッピングする。
 - ゲーム用語・ラベルのコメントは **i18n の日本語ラベル** と一致させる。
+
+### 識別子カラム名
+
+エントリの識別子（discriminator）プロパティは用途に応じて使い分ける:
+
+| カラム名 | 用途 | 例 |
+|----------|------|-----|
+| `id` | エンティティの一意識別子（ルックアップ・Map キー） | `effectKeyword.id`, `abilityKeyword.id`, `skillCardViewMode.id` |
+| `value` | フォーム入力の値（select/radio の value 属性） | `eventFilter.value`, `scoreOption.value`, `filterSortLabel.value` |
+| ドメイン固有名 | そのフィールド自体がドメイン概念を表す場合 | `typeDisplay.cardType`, `rarityDisplay.rarity` |
 
 ---
 

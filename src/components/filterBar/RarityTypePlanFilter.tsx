@@ -64,12 +64,12 @@ export function RarityTypePlanFilter({
         {/* 区切り線 */}
         <span className={constant.FILTER_SEPARATOR} />
         {/* タイプ（Vo / Da / Vi / アシスト）のトグルボタン */}
-        {data.TypeFilterList.map((tf) => (
+        {data.TypeDisplayEntries.map((tf) => (
           <ToggleButton
-            key={tf.value}
-            isActive={selectedTypes.has(tf.value)}
-            onClick={() => toggleType(tf.value)}
-            activeClass={`${tf.activeColor} border border-transparent`}
+            key={tf.cardType}
+            isActive={selectedTypes.has(tf.cardType)}
+            onClick={() => toggleType(tf.cardType)}
+            activeClass={`${tf.badge} border border-transparent`}
           >
             {t(tf.label)}
           </ToggleButton>
@@ -78,13 +78,13 @@ export function RarityTypePlanFilter({
         <span className={constant.FILTER_SEPARATOR} />
         {/* プラン（センス / ロジック）のトグルボタン */}
         {Object.values(enums.PlanType).map((plan) => {
-          const entry = data.PlanBadge[plan]
+          const entry = data.getPlanBadge(plan)
           return (
             <ToggleButton
               key={plan}
               isActive={selectedPlans.has(plan)}
               onClick={() => togglePlan(plan)}
-              activeClass={`${entry.active_color} border border-transparent`}
+              activeClass={`${entry.activeColor} border border-transparent`}
             >
               {t(entry.label)}
             </ToggleButton>

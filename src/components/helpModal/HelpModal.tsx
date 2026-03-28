@@ -82,7 +82,7 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           {/* プランバッジ例 */}
           <div className="flex flex-wrap gap-1.5">
             {Object.values(PlanType).map((plan) => {
-              const entry = data.PlanBadge[plan]
+              const entry = data.getPlanBadge(plan)
               return (
                 <Badge key={plan} size={BadgeSizeType.Sm} color={entry.badge}>
                   {t(entry.label)}

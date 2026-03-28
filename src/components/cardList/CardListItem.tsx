@@ -85,7 +85,7 @@ export const CardListItem = memo(function CardListItem({
               {card.name}
             </h2>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-nowrap gap-1 overflow-hidden">
             {/* レアリティバッジ（SSR / SR / R） */}
             <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color={rarityEntry.color}>
               {t(rarityEntry.label)}
@@ -119,9 +119,9 @@ export const CardListItem = memo(function CardListItem({
           </span>
           {/* アビリティバッジ */}
           {abilityBadges.length > 0 && (
-            <div className="ml-auto flex flex-nowrap gap-0.5 justify-end overflow-hidden min-w-0">
+            <div className="flex-1 flex flex-nowrap gap-0.5 overflow-x-auto scrollbar-none min-w-0" style={{ direction: 'rtl' }}>
               {abilityBadges.map((badge, i) => (
-                <span key={i} className={constant.BADGE_ABILITY_GRID}>{t(badge)}</span>
+                <span key={i} className={constant.BADGE_ABILITY_GRID} style={{ direction: 'ltr' }}>{t(badge)}</span>
               ))}
             </div>
           )}

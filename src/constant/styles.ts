@@ -53,7 +53,7 @@ export const DROPDOWN_PANEL =
 
 /** アビリティバッジ（グリッドカード用） */
 export const BADGE_ABILITY_GRID =
-  'px-1 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap'
+  'px-1 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap shrink-0'
 
 /** フィルターグループ間の縦線 */
 export const FILTER_SEPARATOR = 'w-px h-5 bg-slate-200'
@@ -80,7 +80,7 @@ export const MODAL_BACKDROP = 'absolute inset-0 bg-black/40 backdrop-blur-sm'
 export const MODAL_PANEL_DETAIL = 'relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[90vh] overflow-y-auto'
 
 /** モーダル白パネル（スコア内訳用） */
-export const MODAL_PANEL_SCORE = 'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[80vh] flex flex-col overflow-hidden'
+export const MODAL_PANEL_SCORE = 'relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col overflow-hidden'
 
 /** モーダル白パネル（フィルタ・ソート用） */
 export const MODAL_PANEL_FILTER = 'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[85vh] flex flex-col overflow-hidden'

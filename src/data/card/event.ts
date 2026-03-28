@@ -6,17 +6,23 @@
  * サマリ: イベント効果タイプからカード一覧に表示するラベルを取得する。
  */
 
-import rawData from './event.json'
 import { type EventFilterType, EventFilterCategoryType, type EventEffectType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
-const filterEntries = rawData.filters as {
+const filterEntries: {
   value: EventFilterType
   label: TranslationKey
   order: number
   effects: EventEffectType[]
   category: EventFilterCategoryType
-}[]
+}[] = [
+  { value: 'skill_card', label: 'card.event_filter.skill_card', order: 1, effects: ['skill_card'], category: 'acquire' },
+  { value: 'p_item', label: 'card.event_filter.p_item', order: 2, effects: ['p_item'], category: 'acquire' },
+  { value: 'enhance', label: 'card.event_filter.enhance', order: 3, effects: ['card_enhance', 'select_enhance'], category: 'modify' },
+  { value: 'delete', label: 'card.event_filter.delete', order: 4, effects: ['card_delete', 'select_delete'], category: 'modify' },
+  { value: 'change', label: 'card.event_filter.change', order: 5, effects: ['card_change'], category: 'modify' },
+  { value: 'trouble_delete', label: 'card.event_filter.trouble_delete', order: 6, effects: ['trouble_delete'], category: 'modify' },
+]
 
 /** イベントフィルター → 効果タイプのルックアップマップ */
 const EVENT_FILTER_EFFECT_MAP = new Map(filterEntries.map((e) => [e.value, e.effects as readonly EventEffectType[]]))
@@ -38,7 +44,16 @@ export const EventFilterModifyList = filterEntries.filter((e) => e.category === 
 /** 獲得系カテゴリの値 Set（フィルタリング判定用） */
 export const EventCategoryAcquire = new Set<string>(EventFilterAcquireList.map((e) => e.value))
 
-const summaryData = rawData.summary_labels as Partial<Record<EventEffectType, TranslationKey>>
+const summaryData: Partial<Record<EventEffectType, TranslationKey>> = {
+  skill_card: 'card.summary.skill_card',
+  p_item: 'card.summary.p_item',
+  card_enhance: 'card.summary.card_enhance',
+  card_change: 'card.summary.card_change',
+  pp_gain: 'card.summary.pp_gain',
+  select_enhance: 'card.summary.select_enhance',
+  select_delete: 'card.summary.select_delete',
+  trouble_delete: 'card.summary.trouble_delete',
+}
 
 /**
  * イベント効果タイプからサマリ表示ラベルを取得する。

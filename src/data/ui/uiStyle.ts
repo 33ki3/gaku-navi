@@ -1,10 +1,9 @@
 /**
  * UI コンポーネントスタイルマスタデータ。
  *
- * 全コンポーネントのスタイル定義を uiStyle.json に統合し、
+ * 全コンポーネントのスタイル定義を統合し、
  * セクション別のアクセサ関数を提供する。
  */
-import rawData from './uiStyle.json'
 import {
   type ParameterType,
   type ModalAlignType,
@@ -47,7 +46,7 @@ interface TabStyle {
   inactive: string
 }
 
-const data = rawData as {
+const data: {
   parameter_text_color: Record<ParameterType, string>
   modal_style: Record<ModalAlignType, string>
   uncap_selector_style: Record<UncapSelectorVariantType, UncapSelectorStyle>
@@ -56,6 +55,64 @@ const data = rawData as {
   collapsible_style: Record<CollapsibleVariantType, string>
   button_style: Record<ButtonSizeType, ButtonSizeStyle>
   tab_style: TabStyle
+} = {
+  parameter_text_color: {
+    vocal: 'text-red-500',
+    dance: 'text-blue-500',
+    visual: 'text-yellow-500',
+  },
+  modal_style: {
+    center: 'items-center justify-center',
+    end: 'justify-end',
+  },
+  uncap_selector_style: {
+    compact: { gap: 'gap-1', button: 'px-2 py-0.5 rounded text-[10px] font-bold' },
+    detail: { gap: 'gap-2', button: 'px-4 py-1.5 rounded-lg text-sm font-bold' },
+  },
+  filter_button_style: {
+    active: 'bg-slate-700 text-white shadow border border-transparent',
+    inactive: 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200',
+    ability_param: 'bg-indigo-500 text-white shadow border border-transparent',
+    ability_effect: 'bg-purple-500 text-white shadow border border-transparent',
+    event_acquire: 'bg-teal-500 text-white shadow border border-transparent',
+    event_modify: 'bg-cyan-600 text-white shadow border border-transparent',
+  },
+  badge_style: {
+    size: {
+      sm: 'px-1.5 py-0.5 rounded-full text-[9px]',
+      md: 'px-2 py-0.5 rounded text-[10px]',
+      md_rounded: 'px-2 py-0.5 rounded-full text-[10px]',
+    },
+    weight: {
+      bold: 'font-bold',
+      black: 'font-black',
+    },
+  },
+  collapsible_style: {
+    modal: 'flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors',
+    panel: 'flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-500 uppercase tracking-widest py-1 hover:text-slate-700 transition-colors',
+  },
+  button_style: {
+    sm: {
+      close_button: 'text-slate-400 hover:text-slate-600',
+      close_icon: 'w-3.5 h-3.5',
+      toggle: 'px-2 py-1 text-xs',
+    },
+    md: {
+      close_button: 'w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/10 text-slate-500',
+      close_icon: 'w-4 h-4',
+      toggle: 'px-3 py-1 text-xs',
+    },
+    lg: {
+      close_button: 'w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/10 text-slate-500',
+      close_icon: 'w-5 h-5',
+      toggle: 'px-4 py-1.5 text-xs',
+    },
+  },
+  tab_style: {
+    active: 'text-sm font-black pb-2 border-b-2 transition-colors text-slate-800 border-slate-800',
+    inactive: 'text-sm font-black pb-2 border-b-2 transition-colors text-slate-400 border-transparent hover:text-slate-500',
+  },
 }
 
 /**

@@ -3,7 +3,6 @@
  *
  * Vo/Da/Vi の入力欄に使うラベルキーを定義する。
  */
-import rawData from './parameterInput.json'
 import type { TranslationKey } from '../../i18n'
 import { type ParameterType } from '../../types/enums'
 
@@ -14,4 +13,8 @@ interface ParameterInputEntry {
 }
 
 /** パラメータボーナス入力欄マスタ */
-export const ParameterInputList: readonly ParameterInputEntry[] = rawData as ParameterInputEntry[]
+export const ParameterInputList: readonly ParameterInputEntry[] = [
+  { key: 'vocal', label: 'ui.settings.attr_vo' },
+  { key: 'dance', label: 'ui.settings.attr_da' },
+  { key: 'visual', label: 'ui.settings.attr_vi' },
+] as const satisfies readonly ParameterInputEntry[]

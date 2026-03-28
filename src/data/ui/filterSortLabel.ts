@@ -1,10 +1,9 @@
 /**
  * フィルタ・ソート用ラベルマスタ。
  *
- * JSON マスタからソートモード・タブのラベル情報を読み込み、
+ * ソートモード・タブのラベル情報を定義し、
  * enum 値をキーにした i18n キーのルックアップと表示順配列を提供する。
  */
-import rawData from './filterSortLabel.json'
 import type { SortModeType, FilterSortTab } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
@@ -14,8 +13,13 @@ interface LabelEntry<T extends string = string> {
   label: TranslationKey
 }
 
-/** ソートモード JSON エントリ配列 */
-const sortModeEntries = rawData.sort_mode as LabelEntry<SortModeType>[]
+/** ソートモードエントリ配列 */
+const sortModeEntries: LabelEntry<SortModeType>[] = [
+  { value: 'rarity', label: 'ui.sort.rarity' },
+  { value: 'date', label: 'ui.sort.date' },
+  { value: 'score', label: 'ui.sort.score' },
+  { value: 'uncap', label: 'ui.sort.uncap' },
+]
 
 /** ソートモードの value→label ルックアップマップ */
 const sortModeMap = new Map<SortModeType, TranslationKey>(
@@ -35,8 +39,11 @@ export function getSortModeLabel(mode: SortModeType): TranslationKey {
   return sortModeMap.get(mode)!
 }
 
-/** フィルタ・ソートタブ JSON エントリ配列 */
-const filterSortTabEntries = rawData.filter_sort_tab as LabelEntry<FilterSortTab>[]
+/** フィルタ・ソートタブエントリ配列 */
+const filterSortTabEntries: LabelEntry<FilterSortTab>[] = [
+  { value: 'sort', label: 'ui.filter_sort.tab_sort' },
+  { value: 'filter', label: 'ui.filter_sort.tab_filter' },
+]
 
 /** フィルタ・ソートタブの value→label ルックアップマップ */
 const filterSortTabMap = new Map<FilterSortTab, TranslationKey>(

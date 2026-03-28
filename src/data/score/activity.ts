@@ -4,7 +4,6 @@
  * 各活動の表示名・ボタン色・対応アクション一覧を統合的に定義する。
  */
 
-import rawData from './activity.json'
 import { type ActivityIdType, type ActionIdType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
@@ -16,11 +15,20 @@ interface ActivityEntry {
   actions: ActionIdType[]
 }
 
-const data = rawData as {
-  entries: ActivityEntry[]
-  action_map: Record<ActivityIdType, ActionIdType[]>
-  controlled_action_ids: ActionIdType[]
-}
+const entries: ActivityEntry[] = [
+  { id: 'vo_lesson', label: 'score.activity.vo_lesson', color: 'bg-red-500 text-white', actions: ['sp_lesson_vo'] },
+  { id: 'da_lesson', label: 'score.activity.da_lesson', color: 'bg-blue-500 text-white', actions: ['sp_lesson_da'] },
+  { id: 'vi_lesson', label: 'score.activity.vi_lesson', color: 'bg-yellow-500 text-white', actions: ['sp_lesson_vi'] },
+  { id: 'class', label: 'score.activity.class', color: 'bg-indigo-700 text-white', actions: ['class_work'] },
+  { id: 'outing', label: 'score.activity.outing', color: 'bg-sky-400 text-white', actions: ['outing'] },
+  { id: 'consult', label: 'score.activity.consult', color: 'bg-teal-500 text-white', actions: ['consult'] },
+  { id: 'activity_supply', label: 'score.activity.activity_supply', color: 'bg-amber-500 text-white', actions: ['activity_supply_gift'] },
+  { id: 'supply_gift', label: 'score.activity.supply_gift', color: 'bg-amber-500 text-white', actions: ['activity_supply_gift'] },
+  { id: 'special_training', label: 'score.activity.special_training', color: 'bg-emerald-600 text-white', actions: ['special_training'] },
+  { id: 'mid_exam', label: 'score.activity.mid_exam', color: 'bg-orange-600 text-white', actions: ['exam_end', 'exam_p_item_acquire'] },
+  { id: 'final_exam', label: 'score.activity.final_exam', color: 'bg-orange-600 text-white', actions: ['exam_end'] },
+  { id: 'rest', label: 'score.activity.rest', color: 'bg-slate-400 text-white', actions: ['rest'] },
+]
 
 /**
  * 活動IDから表示名を取得する。
@@ -29,7 +37,7 @@ const data = rawData as {
  * @returns i18n キー
  */
 export function getActivityLabel(id: ActivityIdType): TranslationKey {
-  return data.entries.find((e) => e.id === id)!.label
+  return entries.find((e) => e.id === id)!.label
 }
 
 /**
@@ -39,11 +47,15 @@ export function getActivityLabel(id: ActivityIdType): TranslationKey {
  * @returns Tailwind CSS のボタン色クラス
  */
 export function getActivityColor(activityId: ActivityIdType): string {
-  return data.entries.find((e) => e.id === activityId)!.color
+  return entries.find((e) => e.id === activityId)!.color
 }
 
-/** 活動ID→アクションIDリストの逆引きマップ（JSON から直接取得） */
-export const ActivityActionMap: Record<ActivityIdType, ActionIdType[]> = data.action_map
+/** 活動ID→アクションIDリストの逆引きマップ（entries から派生） */
+export const ActivityActionMap: Record<ActivityIdType, ActionIdType[]> = Object.fromEntries(
+  entries.map((e) => [e.id, e.actions]),
+) as Record<ActivityIdType, ActionIdType[]>
 
-/** スケジュール自動計算で制御されるアクションIDの集合（JSON から直接取得） */
-export const ScheduleControlledIds: ReadonlySet<ActionIdType> = new Set(data.controlled_action_ids)
+/** スケジュール自動計算で制御されるアクションIDの集合（entries から派生） */
+export const ScheduleControlledIds: ReadonlySet<ActionIdType> = new Set(
+  entries.flatMap((e) => e.actions),
+)

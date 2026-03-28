@@ -3,13 +3,17 @@
  *
  * カード詳細モーダルでスキルカードの効果表示を切り替えるモードのラベルを定義する。
  */
-
-import rawData from './skillCardViewMode.json'
 import { type SkillCardViewModeType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
+const entries: { key: SkillCardViewModeType; label: TranslationKey }[] = [
+  { key: 'unenhanced', label: 'card.view_mode.unenhanced' },
+  { key: 'enhanced', label: 'card.view_mode.enhanced' },
+  { key: 'custom', label: 'card.view_mode.custom' },
+]
+
 const map = new Map<SkillCardViewModeType, TranslationKey>(
-  (rawData as { key: SkillCardViewModeType; label: TranslationKey }[]).map((e) => [e.key, e.label]),
+  entries.map((e) => [e.key, e.label]),
 )
 
 /**

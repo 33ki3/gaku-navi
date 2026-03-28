@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_GITHUB_URL: string
   /** アプリのベースパス */
   readonly VITE_BASE_PATH: string
+  /** サイトの公開URL（末尾スラッシュ付き、OGPメタタグ用） */
+  readonly VITE_SITE_URL: string
 }
 
 interface ImportMeta {

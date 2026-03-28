@@ -4,7 +4,7 @@
  * スキルカード固有の SSR / SR / R バッジ色を定義する。
  * サポートカード用の rarityDisplay とは独立して管理する。
  */
-import rawData from '../json/skillCardRarityDisplay.json'
+import rawData from './skillCardRarityDisplay.json'
 import { type SkillCardRarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

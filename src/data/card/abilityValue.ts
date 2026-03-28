@@ -5,7 +5,7 @@
  * JSON から読み込み、プロパティアクセスで引けるようにする。
  */
 
-import rawData from '../json/abilityValue.json'
+import rawData from './abilityValue.json'
 import { type RarityTierType, type AbilityNameKeyType } from '../../types/enums'
 
 const schedules = rawData.schedules as Record<RarityTierType, number[][]>

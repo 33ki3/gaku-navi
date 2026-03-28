@@ -4,7 +4,7 @@
  * JSON マスタからソートモード・タブのラベル情報を読み込み、
  * enum 値をキーにした i18n キーのルックアップと表示順配列を提供する。
  */
-import rawData from '../json/filterSortLabel.json'
+import rawData from './filterSortLabel.json'
 import type { SortModeType, FilterSortTab } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

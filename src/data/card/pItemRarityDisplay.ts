@@ -4,7 +4,7 @@
  * Pアイテム固有の SSR / SR バッジ色を定義する。
  * サポートカード用の rarityDisplay とは独立して管理する。
  */
-import rawData from '../json/pItemRarityDisplay.json'
+import rawData from './pItemRarityDisplay.json'
 import { type PItemRarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

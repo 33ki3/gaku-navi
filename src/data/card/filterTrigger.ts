@@ -4,7 +4,7 @@
  * カードフィルタリングに必要なトリガーキーの定義を
  * JSON マスタから読み込み、Set として提供する。
  */
-import rawData from '../json/filterTrigger.json'
+import rawData from './filterTrigger.json'
 import type { TriggerKeyType } from '../../types/enums'
 
 const data = rawData as { sp_rate_triggers: TriggerKeyType[] }

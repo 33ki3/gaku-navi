@@ -4,7 +4,7 @@
  * 点数計算の「アクション回数設定」セクションに表示する
  * 全アクションの一覧・グループ分類・グループラベルを統合的に定義する。
  */
-import rawData from '../json/actionCategory.json'
+import rawData from './actionCategory.json'
 import { type ActionIdType, type ActionGroupType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

@@ -4,7 +4,7 @@
  * SSR / SR / R それぞれのソート順、グラデーションバッジ色、
  * シンプルバッジ色を定義する。
  */
-import rawData from '../json/rarityDisplay.json'
+import rawData from './rarityDisplay.json'
 import { type RarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

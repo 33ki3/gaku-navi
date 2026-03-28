@@ -6,8 +6,8 @@
  * イベント解放条件・コスト種別のラベルと、
  * エフェクトテンプレートセクションのプレフィックスを提供する。
  */
-import rawTypeData from '../json/typeDisplay.json'
-import rawEffectLabel from '../json/effectLabel.json'
+import rawTypeData from './typeDisplay.json'
+import rawEffectLabel from './effectLabel.json'
 import type { TranslationKey } from '../../i18n'
 import type { ParameterType, CardZoneType, SkillCardType, EventEffectType, ReleaseConditionType, CostType, EffectTemplateKeyType, AbilityNameKeyType, TriggerKeyType } from '../../types/enums'
 

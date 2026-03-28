@@ -4,7 +4,7 @@
  * カード詳細モーダルでスキルカードの効果表示を切り替えるモードのラベルを定義する。
  */
 
-import rawData from '../json/skillCardViewMode.json'
+import rawData from './skillCardViewMode.json'
 import { type SkillCardViewModeType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

@@ -4,7 +4,7 @@
  * シナリオ×難易度ごとの週間スケジュールを定義する。
  */
 
-import rawData from '../json/schedule.json'
+import rawData from './schedule.json'
 import { type ActivityIdType, type ScenarioType, type DifficultyType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 import { getActivityLabel } from './activity'

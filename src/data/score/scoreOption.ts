@@ -3,7 +3,7 @@
  *
  * プロデュースの難易度・シナリオのラベルと選択肢を管理する。
  */
-import rawData from '../json/scoreOption.json'
+import rawData from './scoreOption.json'
 import { type DifficultyType, type ScenarioType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

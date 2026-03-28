@@ -4,7 +4,7 @@
  * 各活動の表示名・ボタン色・対応アクション一覧を統合的に定義する。
  */
 
-import rawData from '../json/activity.json'
+import rawData from './activity.json'
 import { type ActivityIdType, type ActionIdType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

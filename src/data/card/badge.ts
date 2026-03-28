@@ -4,7 +4,7 @@
  * コンテスト・スキルカード種別・入手方法・プランの4カテゴリの
  * バッジ色・ラベルを統合的に定義する。
  */
-import rawData from '../json/badge.json'
+import rawData from './badge.json'
 import type {
   PItemMemoryType,
   SkillCardType,

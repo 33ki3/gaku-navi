@@ -6,7 +6,7 @@
  * フィルター UI、カード一覧バッジ、キーワード検索に使用。
  */
 
-import rawData from '../json/abilityKeyword.json'
+import rawData from './abilityKeyword.json'
 import { type AbilityKeywordType, type TriggerKeyType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

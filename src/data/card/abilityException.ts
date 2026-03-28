@@ -5,7 +5,7 @@
  * 外側キー: カード名、内側キー: スロット番号(1-based)。
  */
 
-import rawData from '../json/abilityException.json'
+import rawData from './abilityException.json'
 
 /** アビリティ値の辞書型。キー: 凸レベル(0-4)、値: 効果量。 */
 type AbilityValues = Record<string, string>

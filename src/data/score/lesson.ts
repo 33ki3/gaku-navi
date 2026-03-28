@@ -4,7 +4,7 @@
  * シナリオ×難易度×週番号ごとのレッスン情報（SP / 追い込み）を定義する。
  * 通常レッスンは計算に不要のため含まない。
  */
-import rawData from '../json/lesson.json'
+import rawData from './lesson.json'
 import { type LessonType, type DifficultyType, type ScenarioType } from '../../types/enums'
 
 /** 1レッスンのデータ */

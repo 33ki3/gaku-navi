@@ -5,7 +5,7 @@
  * バッジ色、ストライプ色などのカラー設定を定義する。
  */
 
-import rawData from '../json/typeDisplay.json'
+import rawData from './typeDisplay.json'
 import { type CardType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

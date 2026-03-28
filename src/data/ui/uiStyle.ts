@@ -4,7 +4,7 @@
  * 全コンポーネントのスタイル定義を uiStyle.json に統合し、
  * セクション別のアクセサ関数を提供する。
  */
-import rawData from '../json/uiStyle.json'
+import rawData from './uiStyle.json'
 import {
   type ParameterType,
   type ModalAlignType,

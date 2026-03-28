@@ -5,7 +5,7 @@
  * レベル上限を定義する。
  */
 
-import rawData from '../json/maxLevel.json'
+import rawData from './maxLevel.json'
 import { type RarityType, type UncapType } from '../../types/enums'
 
 const data = rawData as Record<RarityType, Record<UncapType, number>>

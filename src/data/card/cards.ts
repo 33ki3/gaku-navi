@@ -7,7 +7,7 @@
 
 import type { SupportCard } from '../../types/card'
 import { resolveAbilityValues } from '../../utils/abilityValueResolver'
-import rawCards from '../json/cards.json'
+import rawCards from '../master/cards.json'
 
 /**
  * 生カードデータにアビリティ値を補完して、実行時の SupportCard 配列に変換する。

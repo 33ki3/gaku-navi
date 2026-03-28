@@ -3,7 +3,7 @@
  *
  * Vo/Da/Vi の入力欄に使うラベルキーを定義する。
  */
-import rawData from '../json/parameterInput.json'
+import rawData from './parameterInput.json'
 import type { TranslationKey } from '../../i18n'
 import { type ParameterType } from '../../types/enums'
 

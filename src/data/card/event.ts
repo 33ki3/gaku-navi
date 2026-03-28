@@ -6,7 +6,7 @@
  * サマリ: イベント効果タイプからカード一覧に表示するラベルを取得する。
  */
 
-import rawData from '../json/event.json'
+import rawData from './event.json'
 import { type EventFilterType, EventFilterCategoryType, type EventEffectType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 

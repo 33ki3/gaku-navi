@@ -47,11 +47,11 @@
   },
   "card": {
     "source": {
-      "gacha": "ガシャ",
-      "coin_gacha": "コインガシャ",
-      "season_limited": "季節限定",
-      "unit_limited": "ユニット限定",
-      "live_tour_limited": "ライブツアー限定",
+      "gacha": "恒常",
+      "coin_gacha": "コイン",
+      "season_limited": "季節",
+      "unit_limited": "ユニット",
+      "live_tour_limited": "ライブツアー",
       "hatsuboshi_fes": "フェス",
       "event": "イベント",
       "initial": "初期",

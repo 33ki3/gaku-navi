@@ -7,8 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import * as enums from '../../types/enums'
 import * as data from '../../data'
-import { getSchedule } from '../../data/card/abilityValue'
-import { AbilityExceptionMap } from '../../data/card/abilityException'
+import { getSchedule } from '../../data/score/abilityValue'
+import { AbilityExceptionMap } from '../../data/score/abilityException'
 import { TriggerActionMap } from '../../data/score'
 
 /** レアリティ×凸数の全組み合わせで最大レベルが正しく定義されていること */

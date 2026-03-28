@@ -5,7 +5,6 @@ export { AbilityKeywordList, AbilityParamKeywords, AbilityEffectKeywords, Abilit
 export { AllCards } from './cards'
 export { MemoryBadge, SkillTypeBadge, SourceBadge, PlanBadge } from './badge'
 export { EventFilterAcquireList, EventFilterModifyList, getEventFilterEffects, EventCategoryAcquire, getEventSummaryLabel } from './event'
-export { getMaxLevel } from './maxLevel'
 export { getPItemRarityEntry } from './pItemRarityDisplay'
 export { getRarityEntry } from './rarityDisplay'
 export { getSkillCardRarityEntry } from './skillCardRarityDisplay'

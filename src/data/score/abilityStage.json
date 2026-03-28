@@ -1,0 +1,550 @@
+{
+  "ssr": {
+    "a_skill_acquire": [
+      "2",
+      "3"
+    ],
+    "a_skill_delete": [
+      "17",
+      "22"
+    ],
+    "a_skill_enhance": [
+      "7",
+      "9"
+    ],
+    "change": [
+      "16",
+      "21"
+    ],
+    "class_work_end": [
+      "5",
+      "7"
+    ],
+    "concentration_card_acquire": [
+      "3",
+      "4"
+    ],
+    "consult": [
+      "14",
+      "18"
+    ],
+    "customize": [
+      "8",
+      "11"
+    ],
+    "delete": [
+      "8",
+      "11"
+    ],
+    "event_boost": [
+      "50%",
+      "75%",
+      "100%"
+    ],
+    "event_recovery_boost": [
+      "50%",
+      "75%",
+      "100%"
+    ],
+    "exam_end": [
+      "17",
+      "22"
+    ],
+    "exam_hp": [
+      "6",
+      "8"
+    ],
+    "good_condition_card_acquire": [
+      "3",
+      "4"
+    ],
+    "good_impression_card_acquire": [
+      "3",
+      "4"
+    ],
+    "initial_pp": [
+      "30",
+      "40"
+    ],
+    "initial_stat": [
+      "52",
+      "55",
+      "59",
+      "62",
+      "65"
+    ],
+    "lesson_bonus": [
+      "6.5%",
+      "7.0%",
+      "7.5%",
+      "8.0%",
+      "8.5%"
+    ],
+    "lesson_end": [
+      "4",
+      "6"
+    ],
+    "lesson_pp_boost": [
+      "16.5%",
+      "22%"
+    ],
+    "m_skill_acquire": [
+      "2",
+      "3"
+    ],
+    "m_skill_delete": [
+      "17",
+      "22"
+    ],
+    "m_skill_enhance": [
+      "7",
+      "9"
+    ],
+    "max_hp": [
+      "6",
+      "7",
+      "8",
+      "9",
+      "9"
+    ],
+    "outing": [
+      "11",
+      "15"
+    ],
+    "p_drink_acquire": [
+      "4",
+      "5"
+    ],
+    "p_drink_exchange": [
+      "8",
+      "11"
+    ],
+    "p_item_acquire": [
+      "11",
+      "15"
+    ],
+    "parameter_bonus": [
+      "6.5%",
+      "7.0%",
+      "7.5%",
+      "8.0%",
+      "8.5%"
+    ],
+    "reserve_card_acquire": [
+      "3",
+      "4"
+    ],
+    "rest": [
+      "17",
+      "22"
+    ],
+    "skill_enhance": [
+      "3",
+      "4"
+    ],
+    "sp_lesson_20": [
+      "15",
+      "21"
+    ],
+    "sp_lesson_end": [
+      "13",
+      "17"
+    ],
+    "sp_lesson_hp": [
+      "5",
+      "7"
+    ],
+    "sp_lesson_hp_all": [
+      "3",
+      "4"
+    ],
+    "sp_lesson_pp": [
+      "33%",
+      "45%"
+    ],
+    "sp_lesson_rate": [
+      "21%",
+      "28%"
+    ],
+    "sp_lesson_rate_all": [
+      "10.5%",
+      "14%"
+    ],
+    "ssr_card_acquire": [
+      "5",
+      "6"
+    ],
+    "activity_supply_gift": [
+      "12",
+      "17"
+    ],
+    "support_rate": [
+      "66.1%",
+      "74.6%",
+      "83.1%",
+      "91.5%",
+      "100%"
+    ],
+    "vitality_card_acquire": [
+      "3",
+      "4"
+    ]
+  },
+  "event_ssr": {
+    "a_skill_acquire": [
+      "1",
+      "2"
+    ],
+    "a_skill_enhance": [
+      "5",
+      "7"
+    ],
+    "class_work_end": [
+      "4",
+      "5"
+    ],
+    "consult": [
+      "9",
+      "14"
+    ],
+    "delete": [
+      "6",
+      "8"
+    ],
+    "event_boost": [
+      "50%",
+      "75%",
+      "100%"
+    ],
+    "exam_end": [
+      "11",
+      "17"
+    ],
+    "exam_hp": [
+      "4",
+      "6"
+    ],
+    "initial_pp": [
+      "20",
+      "30"
+    ],
+    "initial_stat": [
+      "52",
+      "55",
+      "59",
+      "62",
+      "65"
+    ],
+    "lesson_end": [
+      "3",
+      "4"
+    ],
+    "m_skill_acquire": [
+      "1",
+      "2"
+    ],
+    "m_skill_enhance": [
+      "5",
+      "7"
+    ],
+    "outing": [
+      "8",
+      "11"
+    ],
+    "p_item_acquire": [
+      "8",
+      "11"
+    ],
+    "parameter_bonus": [
+      "6.5%",
+      "7.0%",
+      "7.5%",
+      "8.0%",
+      "8.5%"
+    ],
+    "sp_lesson_20": [
+      "15",
+      "21"
+    ],
+    "sp_lesson_end": [
+      "9",
+      "13"
+    ],
+    "sp_lesson_hp": [
+      "4",
+      "5"
+    ],
+    "sp_lesson_hp_all": [
+      "3",
+      "4"
+    ],
+    "sp_lesson_pp": [
+      "22%",
+      "33%"
+    ],
+    "sp_lesson_rate": [
+      "14%",
+      "21%"
+    ],
+    "ssr_card_acquire": [
+      "3",
+      "5"
+    ],
+    "activity_supply_gift": [
+      "9",
+      "12"
+    ],
+    "activity_supply_gift_hp": [
+      "3",
+      "4"
+    ],
+    "support_rate": [
+      "66.1%",
+      "74.6%",
+      "83.1%",
+      "91.5%",
+      "100%"
+    ],
+    "vitality_card_acquire": [
+      "2",
+      "3"
+    ]
+  },
+  "sr": {
+    "change": [
+      "8",
+      "16"
+    ],
+    "class_work_end": [
+      "3",
+      "5"
+    ],
+    "concentration_card_acquire": [
+      "2",
+      "3"
+    ],
+    "consult": [
+      "7",
+      "14"
+    ],
+    "customize": [
+      "5",
+      "8"
+    ],
+    "delete": [
+      "4",
+      "8"
+    ],
+    "discount": [
+      "7.9%",
+      "15.8%"
+    ],
+    "event_boost": [
+      "50%",
+      "75%",
+      "100%"
+    ],
+    "event_pp_boost": [
+      "50%",
+      "75%",
+      "100%"
+    ],
+    "exam_end": [
+      "9",
+      "17"
+    ],
+    "good_impression_card_acquire": [
+      "2",
+      "3"
+    ],
+    "initial_pp": [
+      "65",
+      "71",
+      "76",
+      "81",
+      "86"
+    ],
+    "initial_stat": [
+      "37",
+      "40",
+      "43",
+      "46",
+      "49"
+    ],
+    "lesson_bonus": [
+      "4.4%",
+      "4.9%",
+      "5.4%",
+      "5.9%",
+      "6.4%"
+    ],
+    "lesson_end": [
+      "2",
+      "4"
+    ],
+    "lesson_pp_boost": [
+      "8.3%",
+      "16.5%"
+    ],
+    "m_skill_delete": [
+      "8",
+      "16"
+    ],
+    "m_skill_enhance": [
+      "4",
+      "6"
+    ],
+    "max_hp": [
+      "2",
+      "3"
+    ],
+    "motivation_card_acquire": [
+      "2",
+      "3"
+    ],
+    "normal_lesson_end": [
+      "7",
+      "13"
+    ],
+    "outing": [
+      "5",
+      "10"
+    ],
+    "p_drink_exchange": [
+      "4",
+      "8"
+    ],
+    "p_item_acquire": [
+      "6",
+      "11"
+    ],
+    "parameter_bonus": [
+      "4.4%",
+      "4.9%",
+      "5.4%",
+      "5.9%",
+      "6.4%"
+    ],
+    "reserve_card_acquire": [
+      "2",
+      "3"
+    ],
+    "rest": [
+      "9",
+      "17"
+    ],
+    "skill_acquire": [
+      "1",
+      "2"
+    ],
+    "skill_enhance": [
+      "2",
+      "3"
+    ],
+    "sp_lesson_20": [
+      "8",
+      "15"
+    ],
+    "sp_lesson_end": [
+      "7",
+      "13"
+    ],
+    "sp_lesson_hp": [
+      "3",
+      "5"
+    ],
+    "sp_lesson_rate": [
+      "10.5%",
+      "21%"
+    ],
+    "sp_lesson_rate_all": [
+      "5.2%",
+      "10.5%"
+    ],
+    "special_training": [
+      "9",
+      "18"
+    ],
+    "ssr_card_acquire": [
+      "3",
+      "5"
+    ],
+    "activity_supply_gift": [
+      "6",
+      "11"
+    ],
+    "support_rate": [
+      "59.2%",
+      "69.4%",
+      "79.6%",
+      "89.8%",
+      "100%"
+    ]
+  },
+  "r": {
+    "class_work_end": [
+      "2",
+      "3"
+    ],
+    "event_boost": [
+      "50%",
+      "75%",
+      "100%"
+    ],
+    "initial_pp": [
+      "20"
+    ],
+    "initial_stat": [
+      "23",
+      "26",
+      "28",
+      "31",
+      "33"
+    ],
+    "lesson_bonus": [
+      "2.8%",
+      "3.2%",
+      "3.6%",
+      "4.0%",
+      "4.3%"
+    ],
+    "lesson_end": [
+      "1",
+      "3"
+    ],
+    "normal_lesson_end": [
+      "5",
+      "9"
+    ],
+    "outing": [
+      "4",
+      "7"
+    ],
+    "parameter_bonus": [
+      "2.8%",
+      "3.2%",
+      "3.6%",
+      "4.0%",
+      "4.3%"
+    ],
+    "rest": [
+      "6",
+      "11"
+    ],
+    "special_training": [
+      "7",
+      "13"
+    ],
+    "activity_supply_gift": [
+      "4",
+      "8"
+    ],
+    "support_rate": [
+      "48.7%",
+      "61.5%",
+      "74.4%",
+      "87.2%",
+      "100%"
+    ]
+  }
+}

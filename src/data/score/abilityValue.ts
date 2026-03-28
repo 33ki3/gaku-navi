@@ -5,11 +5,12 @@
  * JSON から読み込み、プロパティアクセスで引けるようにする。
  */
 
-import rawData from './abilityValue.json'
+import scheduleData from './abilitySchedule.json'
+import stageData from './abilityStage.json'
 import { type RarityTierType, type AbilityNameKeyType } from '../../types/enums'
 
-const schedules = rawData.schedules as Record<RarityTierType, number[][]>
-const stages = rawData.stages as Record<RarityTierType, Partial<Record<AbilityNameKeyType, string[]>>>
+const schedules = scheduleData as Record<RarityTierType, number[][]>
+const stages = stageData as Record<RarityTierType, Partial<Record<AbilityNameKeyType, string[]>>>
 
 /**
  * スロット段階スケジュールを取得する。

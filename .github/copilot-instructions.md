@@ -10,40 +10,18 @@
 | data-architecture | `.github/skills/data-architecture/` | データ層アーキテクチャ（types + config 2層・i18n・ディレクトリ構造） |
 | coding-conventions | `.github/skills/coding-conventions/` | コーディング規約（import・コメント・ファイル分割・ベストプラクティス） |
 | ui-components | `.github/skills/ui-components/` | UIコンポーネント構築ガイドライン（スタイル・パターン流用・メンテナンス） |
+| git-workflow | `.github/skills/git-workflow/` | Gitブランチ・PR作成・マージ・テンプレート運用 |
 
 ## 詳細仕様
 - UI/UXおよびコンポーネント仕様は **ui-components** スキルを参照。
 
-## コミットメッセージ規約
+## PR・Issueテンプレート・コミット規約
 
-`.gitmessage` テンプレートを参照。
+詳細は **git-workflow** スキルを参照。
 
-```
-<type>(<scope>): <description>
-```
- 
-### type 一覧
-
-| type | 用途 | 例 |
-|------|------|-----|
-| `feat` | ユーザーに見える新機能 | フィルター追加、エクスポート機能 |
-| `fix` | ユーザーに見えるバグ修正 | スコア計算の不具合修正 |
-| `refactor` | 機能変更なしのコード改善 | 変数名リネーム、型定義追加 |
-| `docs` | ドキュメントのみ | README更新、SPEC.md更新 |
-| `style` | コードフォーマットのみ | prettier適用 |
-| `chore` | ビルド・ツール・設定系 | .vscode/settings.json追加 |
-| `ci` | CI/CD設定 | deploy.yml作成 |
-| `perf` | パフォーマンス改善 | バンドルサイズ削減 |
-| `test` | テスト追加・修正 | テストケース追加 |
-
-### scope（任意）
-
-変更対象を示す: `score`, `export`, `filter`, `i18n`, `ui` など。
-
-### 判断基準
-
-- ユーザーに影響する → `feat`（新機能）or `fix`（バグ修正）
-- ユーザーに影響しない → `refactor` / `chore` / `docs` 等
+- **PR作成時**: `.github/PULL_REQUEST_TEMPLATE.md` に従う。
+- **Issue作成時**: `.github/ISSUE_TEMPLATE/` のテンプレートを使用。
+- **コミットメッセージ**: `<type>(<scope>): <description>` 形式（`.gitmessage` 参照）。
 
 ## 作業フロー
 
@@ -107,4 +85,4 @@ todo ファイルは「対応中タスク」「Q&A管理」「追加の指示」
 
 ### スクリプト作業ディレクトリ
 
-一時スクリプトを書く必要がある場合は `tmp/` ディレクトリで作業する（git管理外）。
+**coding-conventions** スキルの「一時ファイル・スクリプト」セクションを参照。

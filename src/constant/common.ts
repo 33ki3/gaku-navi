@@ -47,9 +47,9 @@ export const DEFAULT_DIFFICULTY = DifficultyType.Legend
 export const IMPORT_RELOAD_DELAY = 1500
 
 /** マシュマロ（匿名フィードバック）の URL */
-export const MARSHMALLOW_URL = 'https://marshmallow-qa.com/wldvabeftb1ngee'
+export const MARSHMALLOW_URL = import.meta.env.VITE_FEEDBACK_URL
 /** GitHub リポジトリの URL */
-export const GITHUB_URL = 'https://github.com/33ki3/gaku-navi'
+export const GITHUB_URL = import.meta.env.VITE_GITHUB_URL
 
 /** パーセント→倍率変換の除数。100% → 1.0 に変換するときに使う。 */
 export const PERCENT_DIVISOR = 100

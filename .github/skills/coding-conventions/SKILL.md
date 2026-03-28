@@ -141,3 +141,8 @@ export const FOO = 42
 | TypeScript | 未使用ローカル・パラメータ | `npx tsc --noEmit` |
 | ESLint | `no-unused-vars` | `npx eslint src/` |
 | knip | 未使用 export・ファイル・依存 | `npx knip` |
+
+### 一時ファイル・スクリプト
+
+- **作業ディレクトリ**: 一時ファイルが必要な場合は必ずプロジェクトルートの `./tmp/` を使用する（git管理外）。
+- **システム `/tmp` 使用禁止**: データ消失リスクがあるため、システムの `/tmp` は絶対に使わない。`pre-tool-check.sh` hook でブロック済み。

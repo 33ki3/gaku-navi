@@ -3,6 +3,11 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
+      - '.vscode/**'
+      - 'LICENSE'
   workflow_dispatch:
 
 permissions:
@@ -25,6 +30,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
+          VITE_FEEDBACK_URL: ${{ secrets.VITE_FEEDBACK_URL }}
+          VITE_GITHUB_URL: ${{ secrets.VITE_GITHUB_URL }}
+          VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH || '/gaku-navi/' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

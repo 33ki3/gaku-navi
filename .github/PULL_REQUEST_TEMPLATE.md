@@ -9,9 +9,4 @@
 - 
 
 ## 確認事項
-
-- [ ] `npx tsc -p tsconfig.app.json --noEmit` エラーなし
-- [ ] `npm run lint` エラーなし
-- [ ] `npx knip --reporter compact` 不要コードなし
-- [ ] `npm test -- --run` 全テスト通過
 - [ ] 動作確認済み

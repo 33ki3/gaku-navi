@@ -1,7 +1,27 @@
 /// <reference types="vitest" />
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+
+// GA4 gtagスニペットを<head>に挿入するプラグイン
+function gtagPlugin(gaId: string): Plugin {
+  return {
+    name: 'gtag',
+    transformIndexHtml(html) {
+      if (!gaId) return html
+      const snippet = [
+        `  <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>`,
+        '    <script>',
+        '      window.dataLayer = window.dataLayer || [];',
+        '      function gtag(){dataLayer.push(arguments);}',
+        "      gtag('js', new Date());",
+        `      gtag('config', '${gaId}');`,
+        '    </script>',
+      ].join('\n')
+      return html.replace('</head>', `${snippet}\n    </head>`)
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -12,6 +32,7 @@ export default defineConfig(({ mode }) => {
     base: basePath,
     plugins: [
       react(),
+      gtagPlugin(env.VITE_GA_ID || ''),
       VitePWA({
         manifest: false,
         scope: basePath,

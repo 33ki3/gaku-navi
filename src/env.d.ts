@@ -15,8 +15,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
-
-/** GA4 の dataLayer グローバル変数 */
-interface Window {
-  dataLayer: unknown[]
-}

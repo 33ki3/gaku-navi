@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,7 +14,61 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+  typecheck:
+    name: TypeScript
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
       - run: npx tsc -p tsconfig.app.json --noEmit
+
+  lint:
+    name: ESLint
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
       - run: npm run lint
+
+  unused:
+    name: Knip
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
       - run: npx knip --reporter compact
+
+  test:
+    name: Vitest
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
       - run: npm test -- --run
+
+  check:
+    needs: [typecheck, lint, unused, test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All checks passed"

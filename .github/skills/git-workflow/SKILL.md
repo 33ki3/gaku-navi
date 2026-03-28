@@ -79,10 +79,6 @@ description: Gitブランチ・PR作成・マージ・テンプレート運用
 <!-- 主な変更点をリストで記載 -->
 
 ## 確認事項
-- [ ] `npx tsc -p tsconfig.app.json --noEmit` エラーなし
-- [ ] `npm run lint` エラーなし
-- [ ] `npx knip --reporter compact` 不要コードなし
-- [ ] `npm test -- --run` 全テスト通過
 - [ ] 動作確認済み
 ```
 
@@ -132,7 +128,9 @@ git stash && git pull origin main && git stash pop
 ### Branch Protection
 
 - `main` ブランチには Branch Protection が設定されている。
-- `required_status_checks.contexts: ["check"]` — CI の `check` ジョブが通過必須。
+- `required_status_checks`:
+  - `check` — CI の `All Checks` ジョブ（`typecheck`, `lint`, `unused`, `test` の全ジョブ完了を待つ）。
+  - `Analyze (javascript-typescript)` — CodeQL セキュリティスキャン。
 - squash merge のみ使用する。
 
 ---

@@ -1028,6 +1028,44 @@ export const EffectKeywordType = {
 export type EffectKeywordType = (typeof EffectKeywordType)[keyof typeof EffectKeywordType]
 
 /**
+ * エフェクトセクション定数。
+ * カード効果テンプレートの各セクション（Pアイテム効果・スキルカード効果・
+ * カスタムスロット効果・アビリティ名など）を区別する。
+ * i18n プレフィックスと 1:1 で対応する。
+ */
+export const EffectSectionType = {
+  /** アビリティ名 */
+  AbilityName: 'ability_name',
+  /** Pアイテム制限条件 */
+  PitemRestriction: 'pitem_restriction',
+  /** Pアイテムトリガー */
+  PitemTrigger: 'pitem_trigger',
+  /** Pアイテム条件 */
+  PitemCondition: 'pitem_condition',
+  /** Pアイテム本体効果 */
+  PitemBody: 'pitem_body',
+  /** Pアイテム回数制限 */
+  PitemLimit: 'pitem_limit',
+  /** スキルカード使用条件 */
+  SkillUseCondition: 'skill_use_condition',
+  /** スキルカード前修飾 */
+  SkillPreModifier: 'skill_pre_modifier',
+  /** スキルカード時制 */
+  SkillTemporal: 'skill_temporal',
+  /** スキルカードトリガー */
+  SkillTrigger: 'skill_trigger',
+  /** スキルカード条件 */
+  SkillCondition: 'skill_condition',
+  /** スキルカードアクション */
+  SkillAction: 'skill_action',
+  /** カスタムスロット名 */
+  CustomSlotName: 'custom_slot_name',
+  /** カスタムスロット効果 */
+  CustomSlotEffect: 'custom_slot_effect',
+} as const
+export type EffectSectionType = (typeof EffectSectionType)[keyof typeof EffectSectionType]
+
+/**
  * カードゾーン定数。
  * スキルカード効果で参照するカードの存在場所。
  */

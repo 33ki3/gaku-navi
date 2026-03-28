@@ -27,17 +27,17 @@ export function ParameterBonusInputs({ settings, onSettingsChange, isLocked }: P
   return (
     <div className="grid grid-cols-3 gap-2">
       {data.ParameterInputList.map((p) => (
-        <div key={p.key}>
+        <div key={p.id}>
           {/* 属性ラベル（Vo/Da/Vi） */}
-          <span className={`text-[10px] font-bold ${data.getParameterTextColor(p.key)} mb-0.5 block`}>{t(p.label)}</span>
+          <span className={`text-[10px] font-bold ${data.getParameterTextColor(p.id)} mb-0.5 block`}>{t(p.label)}</span>
           {/* 数値入力欄（スケジュール有効時はロック） */}
           <input
             type="number"
-            value={settings.parameterBonusBase[p.key]}
+            value={settings.parameterBonusBase[p.id]}
             onChange={(e) =>
               onSettingsChange({
                 ...settings,
-                parameterBonusBase: { ...settings.parameterBonusBase, [p.key]: parseInt(e.target.value) || 0 },
+                parameterBonusBase: { ...settings.parameterBonusBase, [p.id]: parseInt(e.target.value) || 0 },
               })
             }
             disabled={isLocked}

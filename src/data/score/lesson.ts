@@ -4,8 +4,7 @@
  * シナリオ×難易度×週番号ごとのレッスン情報（SP / 追い込み）を定義する。
  * 通常レッスンは計算に不要のため含まない。
  */
-import rawData from '../json/lesson.json'
-import { type LessonType, type DifficultyType, type ScenarioType } from '../../types/enums'
+import { LessonType, DifficultyType, ScenarioType } from '../../types/enums'
 
 /** 1レッスンのデータ */
 interface LessonEntry {
@@ -18,9 +17,28 @@ interface LessonEntry {
 type WeekMap = Record<string, LessonEntry[]>
 
 /** 難易度→週マップ */
-type DifficultyMap = Record<string, WeekMap>
+type DifficultyMap = Record<DifficultyType, WeekMap>
 
-const data = rawData as Record<string, DifficultyMap>
+const data: Record<ScenarioType, DifficultyMap> = {
+  [ScenarioType.Hajime]: {
+    [DifficultyType.Regular]: {},
+    [DifficultyType.Pro]: {},
+    [DifficultyType.Master]: {},
+    [DifficultyType.Legend]: {
+      '4': [{ type: LessonType.Sp, main: 140, sub: 55 }],
+      '7': [{ type: LessonType.Sp, main: 180, sub: 60 }],
+      '12': [{ type: LessonType.Sp, main: 260, sub: 70 }],
+      '14': [{ type: LessonType.Sp, main: 370, sub: 90 }],
+      '16': [{ type: LessonType.Sp, main: 570, sub: 115 }],
+    },
+  },
+  [ScenarioType.Nia]: {
+    [DifficultyType.Regular]: {},
+    [DifficultyType.Pro]: {},
+    [DifficultyType.Master]: {},
+    [DifficultyType.Legend]: {},
+  },
+}
 
 /** 1週分のレッスン情報（コンパイル済み構造） */
 interface LessonData {

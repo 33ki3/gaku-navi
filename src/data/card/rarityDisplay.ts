@@ -4,9 +4,9 @@
  * SSR / SR / R それぞれのソート順、グラデーションバッジ色、
  * シンプルバッジ色を定義する。
  */
-import rawData from '../json/rarityDisplay.json'
-import { type RarityType } from '../../types/enums'
+import { RarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { RARITY_COLOR_SSR, RARITY_COLOR_SR, RARITY_COLOR_R } from '../../constant/styles'
 
 interface RarityEntry {
   rarity: RarityType
@@ -15,8 +15,14 @@ interface RarityEntry {
   color: string
 }
 
+const entries: RarityEntry[] = [
+  { rarity: RarityType.SSR, order: 3, label: 'common.rarity.ssr', color: RARITY_COLOR_SSR },
+  { rarity: RarityType.SR, order: 2, label: 'common.rarity.sr', color: RARITY_COLOR_SR },
+  { rarity: RarityType.R, order: 1, label: 'common.rarity.r', color: RARITY_COLOR_R },
+]
+
 const map = new Map<string, RarityEntry>(
-  (rawData as RarityEntry[]).map((e) => [e.rarity, e]),
+  entries.map((e) => [e.rarity, e]),
 )
 
 /**

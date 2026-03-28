@@ -7,9 +7,10 @@
 
 import type { TFunction } from 'i18next'
 import type { CardCalculationResult } from '../../types/card'
+import { EffectSectionType } from '../../types/enums'
 import * as data from '../../data'
 import * as constant from '../../constant'
-import { getPItemEffectLabel } from './effectLabels'
+import { getPItemEffectLabel, getEffectLabelKey } from './effectLabels'
 
 /** アビリティ詳細データの型エイリアス */
 type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]
@@ -27,7 +28,7 @@ type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]
  */
 export function getAbilityDisplayName(ab: AbilityDetail, t: TFunction): string {
   const rawName = ab.nameKey
-    ? t(data.getEffectLabelKey('ability_name', ab.nameKey), {
+    ? t(getEffectLabelKey(EffectSectionType.AbilityName, ab.nameKey), {
         param: ab.parameterType ? t(data.getParamLabel(ab.parameterType)) : '',
         count: ab.maxCount ?? 0,
       })

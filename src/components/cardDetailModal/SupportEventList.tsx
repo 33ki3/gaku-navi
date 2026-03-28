@@ -43,7 +43,7 @@ export function SupportEventList({ card, colors }: SupportEventListProps) {
               {evt.effect_type === EventEffectType.SkillCard && card.skill_card && (
                 (() => {
                   const rEntry = data.getSkillCardRarityEntry(card.skill_card.rarity)
-                  const sEntry = data.SkillTypeBadge[card.skill_card.type]
+                  const sEntry = data.getSkillTypeBadge(card.skill_card.type)
                   return (
                     <>
                       <span

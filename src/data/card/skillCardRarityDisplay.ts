@@ -4,9 +4,9 @@
  * スキルカード固有の SSR / SR / R バッジ色を定義する。
  * サポートカード用の rarityDisplay とは独立して管理する。
  */
-import rawData from '../json/skillCardRarityDisplay.json'
-import { type SkillCardRarityType } from '../../types/enums'
+import { SkillCardRarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { RARITY_COLOR_SSR, RARITY_COLOR_SR, RARITY_COLOR_R } from '../../constant/styles'
 
 /** スキルカードレアリティの表示情報 */
 interface SkillCardRarityEntry {
@@ -15,8 +15,14 @@ interface SkillCardRarityEntry {
   color: string
 }
 
+const entries: SkillCardRarityEntry[] = [
+  { rarity: SkillCardRarityType.SSR, label: 'common.skill_card_rarity.ssr', color: RARITY_COLOR_SSR },
+  { rarity: SkillCardRarityType.SR, label: 'common.skill_card_rarity.sr', color: RARITY_COLOR_SR },
+  { rarity: SkillCardRarityType.R, label: 'common.skill_card_rarity.r', color: RARITY_COLOR_R },
+]
+
 const map = new Map<string, SkillCardRarityEntry>(
-  (rawData as SkillCardRarityEntry[]).map((e) => [e.rarity, e]),
+  entries.map((e) => [e.rarity, e]),
 )
 
 /**

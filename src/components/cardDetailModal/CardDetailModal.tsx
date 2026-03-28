@@ -44,8 +44,8 @@ export default function CardDetailModal({
   const [uncap, setUncap] = useState<UncapType>(initialUncap)
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
-  const planEntry = data.PlanBadge[card.plan]
-  const sourceEntry = data.SourceBadge[card.source]
+  const planEntry = data.getPlanBadge(card.plan)
+  const sourceEntry = data.getSourceBadge(card.source)
 
   // 凸数が変わったら点数内訳を再計算する
   const scoreResult = useMemo(() => {
@@ -67,7 +67,7 @@ export default function CardDetailModal({
               </Badge>
               {/* カードタイプを示すバッジ */}
               <Badge size={BadgeSizeType.MdRounded} color={typeEntry.badge}>
-                {t(typeEntry.display_label)}
+                {t(typeEntry.displayLabel)}
               </Badge>
               {/* プラン制限を示すバッジ */}
               <Badge size={BadgeSizeType.MdRounded} color={planEntry.badge}>

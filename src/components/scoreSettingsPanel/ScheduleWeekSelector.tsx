@@ -36,11 +36,11 @@ export function ScheduleWeekSelector({
       {scheduleData.map((week) => {
         const selected = scheduleSelections[week.week] ?? ''
         // 固定週（試験など）は選択できない
-        const isFixed = week.fixed && !week.can_rest
+        const isFixed = week.fixed && !week.canRest
         // お休みできる週は「お休み」ボタンを追加
         const allOptions = [
           ...week.activities,
-          ...(week.can_rest
+          ...(week.canRest
             ? [{ id: enums.ActionIdType.Rest, label: 'score.activity.rest' as TranslationKey }]
             : []),
         ]

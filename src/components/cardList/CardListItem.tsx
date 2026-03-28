@@ -44,10 +44,10 @@ export const CardListItem = memo(function CardListItem({
   // カードの見た目に必要な色やラベルを準備する
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
-  const planEntry = data.PlanBadge[card.plan]
+  const planEntry = data.getPlanBadge(card.plan)
   const eventParts = getEventSummaryParts(card)
   const hasSP = hasSPAbility(card)
-  const sourceEntry = data.SourceBadge[card.source]
+  const sourceEntry = data.getSourceBadge(card.source)
   const typeLabel = t(typeEntry.label)
 
   // クリックハンドラをメモ化して再描画を減らす

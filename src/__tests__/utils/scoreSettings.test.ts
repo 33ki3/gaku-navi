@@ -49,9 +49,9 @@ describe('hasAllScheduleSelections', () => {
 describe('calculateCountsFromSchedule', () => {
   // 簡易的なスケジュールデータ
   const schedule: ScheduleWeekData[] = [
-    { week: 1, fixed: false, can_rest: false, activities: [{ id: enums.ActivityIdType.VoLesson, label: '' as never }] },
-    { week: 2, fixed: false, can_rest: false, activities: [{ id: enums.ActivityIdType.DaLesson, label: '' as never }] },
-    { week: 3, fixed: false, can_rest: false, activities: [{ id: enums.ActivityIdType.ViLesson, label: '' as never }] },
+    { week: 1, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.VoLesson, label: '' as never }] },
+    { week: 2, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.DaLesson, label: '' as never }] },
+    { week: 3, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.ViLesson, label: '' as never }] },
   ]
 
   it('選択なしの場合は空オブジェクト', () => {
@@ -74,8 +74,8 @@ describe('calculateCountsFromSchedule', () => {
   it('授業と特別指導が別アクションとして集計される', () => {
     const extendedSchedule: ScheduleWeekData[] = [
       ...schedule,
-      { week: 4, fixed: false, can_rest: false, activities: [{ id: enums.ActivityIdType.Class, label: '' as never }] },
-      { week: 5, fixed: false, can_rest: false, activities: [{ id: enums.ActivityIdType.SpecialTraining, label: '' as never }] },
+      { week: 4, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.Class, label: '' as never }] },
+      { week: 5, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.SpecialTraining, label: '' as never }] },
     ]
     const selections = {
       4: enums.ActivityIdType.Class,
@@ -102,7 +102,7 @@ describe('calculateCountsFromSchedule', () => {
 /** 手動入力とスケジュール算出のアクション回数マージテスト */
 describe('mergeScheduleCounts', () => {
   const schedule: ScheduleWeekData[] = [
-    { week: 1, fixed: false, can_rest: false, activities: [{ id: enums.ActivityIdType.VoLesson, label: '' as never }] },
+    { week: 1, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.VoLesson, label: '' as never }] },
   ]
 
   const baseSettings: ScoreSettings = {

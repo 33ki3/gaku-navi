@@ -12,8 +12,8 @@ import {
   RarityTierType,
   UncapType,
 } from '../types/enums'
-import { getStages, getSchedule } from '../data/card/abilityValue'
-import { AbilityExceptionMap } from '../data/card/abilityException'
+import { getStages, getSchedule } from '../data/score/abilityValue'
+import { AbilityExceptionMap } from '../data/score/abilityException'
 
 /** values の辞書型。 */
 type AbilityValues = Record<string, string>

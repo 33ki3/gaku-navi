@@ -7,8 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import * as enums from '../../types/enums'
 import * as data from '../../data'
-import { getSchedule } from '../../data/card/abilityValue'
-import { AbilityExceptionMap } from '../../data/card/abilityException'
+import { getSchedule } from '../../data/score/abilityValue'
+import { AbilityExceptionMap } from '../../data/score/abilityException'
 import { TriggerActionMap } from '../../data/score'
 
 /** レアリティ×凸数の全組み合わせで最大レベルが正しく定義されていること */
@@ -80,39 +80,39 @@ describe('typeDisplay', () => {
   it.each(types)('getTypeEntry(%s) がエントリを返す', (type) => {
     const entry = data.getTypeEntry(type)
     expect(entry).toBeDefined()
-    expect(typeof entry.display_label).toBe('string')
+    expect(typeof entry.displayLabel).toBe('string')
     expect(typeof entry.bg).toBe('string')
   })
 })
 
 /** Pアイテムメモリー・スキルタイプ・入手先・プランのバッジ色・ラベルが定義されていること */
 describe('badge', () => {
-  it.each(Object.values(enums.PItemMemoryType))('MemoryBadge[%s] がエントリを返す', (memory) => {
-    const entry = data.MemoryBadge[memory]
+  it.each(Object.values(enums.PItemMemoryType))('getMemoryBadge(%s) がエントリを返す', (memory) => {
+    const entry = data.getMemoryBadge(memory)
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')
   })
 
-  it.each(Object.values(enums.SkillCardType))('SkillTypeBadge[%s] がエントリを返す', (type) => {
-    const entry = data.SkillTypeBadge[type]
+  it.each(Object.values(enums.SkillCardType))('getSkillTypeBadge(%s) がエントリを返す', (type) => {
+    const entry = data.getSkillTypeBadge(type)
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')
   })
 
-  it.each(Object.values(enums.SourceType))('SourceBadge[%s] がエントリを返す', (source) => {
-    const entry = data.SourceBadge[source]
+  it.each(Object.values(enums.SourceType))('getSourceBadge(%s) がエントリを返す', (source) => {
+    const entry = data.getSourceBadge(source)
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')
   })
 
-  it.each(Object.values(enums.PlanType))('PlanBadge[%s] がエントリを返す', (plan) => {
-    const entry = data.PlanBadge[plan]
+  it.each(Object.values(enums.PlanType))('getPlanBadge(%s) がエントリを返す', (plan) => {
+    const entry = data.getPlanBadge(plan)
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
-    expect(typeof entry.active_color).toBe('string')
+    expect(typeof entry.activeColor).toBe('string')
   })
 })
 

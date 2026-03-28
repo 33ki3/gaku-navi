@@ -41,7 +41,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
       : null
   // スキルカードのレアリティ表示情報
   const skillRarityEntry = data.getSkillCardRarityEntry(skillCard.rarity)
-  const skillTypeEntry = data.SkillTypeBadge[skillCard.type]
+  const skillTypeEntry = data.getSkillTypeBadge(skillCard.type)
 
   return (
     <div className={`p-4 rounded-xl ${colors.bg} border ${colors.border}`}>

@@ -13,11 +13,36 @@ import type {
   CustomSlotEffectStructured,
   CustomSlotNameStructured,
 } from '../../types/card'
-import type { UncapType, EffectKeywordType, ParameterType } from '../../types/enums'
-import { EventEffectType } from '../../types/enums'
+import type { UncapType, EffectKeywordType, ParameterType, EffectTemplateKeyType, AbilityNameKeyType, TriggerKeyType } from '../../types/enums'
+import { EventEffectType, EffectSectionType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 import type { TFunction } from 'i18next'
 import * as data from '../../data'
+
+/**
+ * エフェクトテンプレートの i18n ラベルキーを返す。
+ *
+ * セクションプレフィックスとキーを結合して i18n パスを構築する。
+ *
+ * @param section - セクション識別子
+ * @param key - テンプレートキー
+ * @returns i18n キー（例: "card.pitem_body.param_boost"）
+ */
+export function getEffectLabelKey(section: EffectSectionType, key: EffectTemplateKeyType | AbilityNameKeyType | TriggerKeyType): TranslationKey {
+  return `${data.getEffectSectionPrefix(section)}.${key}` as TranslationKey
+}
+
+/**
+ * アビリティ名の i18n ラベルキーを返す。
+ *
+ * `getEffectLabelKey('ability_name', key)` のショートハンド。
+ *
+ * @param key - アビリティ名キー
+ * @returns i18n キー（例: "card.ability_name.vitality"）
+ */
+export function getAbilityNameLabelKey(key: AbilityNameKeyType): TranslationKey {
+  return getEffectLabelKey(EffectSectionType.AbilityName, key)
+}
 
 /**
  * キーワードキーを i18n 翻訳済みの表示名に変換する
@@ -129,29 +154,29 @@ export function getPItemEffectLabel(effect: PItemEffect, t: TFunction): string {
 
   // 制限条件（例: "センス編のみ"）
   if (effect.restriction) {
-    const key = data.getEffectLabelKey('pitem_restriction', effect.restriction.key)
+    const key = getEffectLabelKey(EffectSectionType.PitemRestriction, effect.restriction.key)
     parts.push(t(key, buildPItemInterpolation(effect.restriction, t)))
   }
 
   // トリガー（例: "レッスン開始時"）
-  const triggerKey = data.getEffectLabelKey('pitem_trigger', effect.trigger.key)
+  const triggerKey = getEffectLabelKey(EffectSectionType.PitemTrigger, effect.trigger.key)
   parts.push(t(triggerKey, buildPItemInterpolation(effect.trigger, t)))
 
   // 条件（例: "体力が50%以上の時"）
   if (effect.condition) {
-    const condKey = data.getEffectLabelKey('pitem_condition', effect.condition.key)
+    const condKey = getEffectLabelKey(EffectSectionType.PitemCondition, effect.condition.key)
     parts.push(t(condKey, buildPItemInterpolation(effect.condition, t)))
   }
 
   // 本体効果（例: "パラメータ+10"）— 複数ある場合もある
   for (const action of effect.body) {
-    const bodyKey = data.getEffectLabelKey('pitem_body', action.key)
+    const bodyKey = getEffectLabelKey(EffectSectionType.PitemBody, action.key)
     parts.push(t(bodyKey, buildPItemInterpolation(action, t)))
   }
 
   // 回数制限（例: "（プロデュース中3回）"）
   if (effect.limit) {
-    const limitKey = data.getEffectLabelKey('pitem_limit', effect.limit.key)
+    const limitKey = getEffectLabelKey(EffectSectionType.PitemLimit, effect.limit.key)
     parts.push(t(limitKey, buildPItemInterpolation(effect.limit, t)))
   }
 
@@ -215,13 +240,13 @@ export function getSkillCardEffectLabel(
 
   // 使用条件（例: "レッスン中1回"）
   if (effect.use_condition) {
-    const key = data.getEffectLabelKey('skill_use_condition', effect.use_condition.key)
+    const key = getEffectLabelKey(EffectSectionType.SkillUseCondition, effect.use_condition.key)
     parts.push(t(key, buildSkillInterpolation(effect.use_condition, t)))
   }
 
   // 前修飾（例: "次のターン"）
   if (effect.pre_modifier) {
-    const key = data.getEffectLabelKey('skill_pre_modifier', effect.pre_modifier.key)
+    const key = getEffectLabelKey(EffectSectionType.SkillPreModifier, effect.pre_modifier.key)
     parts.push(t(key, buildSkillInterpolation(effect.pre_modifier, t)))
   }
 
@@ -230,36 +255,36 @@ export function getSkillCardEffectLabel(
     if (group.temporal_first) {
       // 時制が先に来るパターン（例: "次のターン、○○時、△△する"）
       if (group.temporal) {
-        const key = data.getEffectLabelKey('skill_temporal', group.temporal.key)
+        const key = getEffectLabelKey(EffectSectionType.SkillTemporal, group.temporal.key)
         parts.push(t(key, buildSkillInterpolation(group.temporal, t)))
       }
       if (group.trigger) {
-        const key = data.getEffectLabelKey('skill_trigger', group.trigger.key)
+        const key = getEffectLabelKey(EffectSectionType.SkillTrigger, group.trigger.key)
         parts.push(t(key, buildSkillInterpolation(group.trigger, t)))
       }
       if (group.condition) {
-        const key = data.getEffectLabelKey('skill_condition', group.condition.key)
+        const key = getEffectLabelKey(EffectSectionType.SkillCondition, group.condition.key)
         parts.push(t(key, buildSkillInterpolation(group.condition, t)))
       }
     } else {
       // 条件が先に来るパターン（例: "○○時、次のターン、△△する"）
       if (group.condition) {
-        const key = data.getEffectLabelKey('skill_condition', group.condition.key)
+        const key = getEffectLabelKey(EffectSectionType.SkillCondition, group.condition.key)
         parts.push(t(key, buildSkillInterpolation(group.condition, t)))
       }
       if (group.temporal) {
-        const key = data.getEffectLabelKey('skill_temporal', group.temporal.key)
+        const key = getEffectLabelKey(EffectSectionType.SkillTemporal, group.temporal.key)
         parts.push(t(key, buildSkillInterpolation(group.temporal, t)))
       }
       if (group.trigger) {
-        const key = data.getEffectLabelKey('skill_trigger', group.trigger.key)
+        const key = getEffectLabelKey(EffectSectionType.SkillTrigger, group.trigger.key)
         parts.push(t(key, buildSkillInterpolation(group.trigger, t)))
       }
     }
 
     // アクション（実際の効果本体）
     if (group.action) {
-      const key = data.getEffectLabelKey('skill_action', group.action.key)
+      const key = getEffectLabelKey(EffectSectionType.SkillAction, group.action.key)
       parts.push(t(key, buildSkillInterpolation(group.action, t)))
     }
   }
@@ -282,7 +307,7 @@ export function getCustomSlotNameLabel(
   name: CustomSlotNameStructured,
   t: TFunction,
 ): string {
-  const key = data.getEffectLabelKey('custom_slot_name', name.key)
+  const key = getEffectLabelKey(EffectSectionType.CustomSlotName, name.key)
   if (!name.keyword) return t(key)
   return t(key, { keyword: resolveKeyword(name.keyword, t) })
 }
@@ -301,7 +326,7 @@ export function getCustomSlotEffectLabel(
 ): string {
   if (!effect) return ''
   const { template, params } = effect
-  const key = data.getEffectLabelKey('custom_slot_effect', template)
+  const key = getEffectLabelKey(EffectSectionType.CustomSlotEffect, template)
 
   // パラメータがなければそのまま翻訳する
   if (!params || Object.keys(params).length === 0) {

@@ -1,8 +1,6 @@
 /**
  * スコア計算画面用マスタデータのバレルエクスポート。
  */
-export { getSchedule, getStages } from './abilityValue'
-export { AbilityExceptionMap } from './abilityException'
 export { ActionCategoryList, ActionGroups, ActionSummaryList, getActionGroupLabel } from './actionCategory'
 export { ActivityActionMap, ScheduleControlledIds, getActivityColor } from './activity'
 export { DifficultyOptionList, ScenarioOptionList } from './scoreOption'

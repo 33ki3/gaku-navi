@@ -13,6 +13,7 @@ import CardList from './components/cardList/CardList'
 import SortControls from './components/filterBar/SortControls'
 import EmptyState from './components/cardList/EmptyState'
 import { useAppState } from './hooks'
+import { createEmptyResult } from './utils/calculator/calculateCard'
 import { CardProvider } from './contexts/CardContext'
 import type { CardContextValue } from './contexts/CardContext'
 import { hasAllScheduleSelections } from './utils/scoreSettings'
@@ -81,6 +82,7 @@ function App() {
           filteredCards={state.filters.filteredCards}
           cardScores={state.scores.cardScores}
           abilityBadgeMap={state.filters.abilityBadgeMap}
+          cardCountOverrides={state.scores.countOverrides.cardCountOverrides}
           settingsPinned={state.ui.settingsPinned}
         />
         {/* フィルタ結果が空のときの案内表示 */}
@@ -110,7 +112,7 @@ function App() {
           <CardDetailModal
             card={state.ui.selectedCard}
             uncap={state.scores.getCardUncap(state.ui.selectedCard.name)}
-            scoreResult={state.scores.cardResults.get(state.ui.selectedCard.name)!}
+            scoreResult={state.scores.cardResults.get(state.ui.selectedCard.name) ?? createEmptyResult(state.ui.selectedCard)}
             calculateForCard={state.scores.calculateForCard}
             onClose={() => state.ui.setSelectedCard(null)}
           />
@@ -121,7 +123,12 @@ function App() {
         <Suspense fallback={null}>
           <ScoreDetailModal
             card={state.ui.scoreBreakdown.card}
-            result={state.ui.scoreBreakdown.result}
+            result={state.scores.cardResults.get(state.ui.scoreBreakdown.card.name) ?? createEmptyResult(state.ui.scoreBreakdown.card)}
+            countOverrides={state.scores.countOverrides.cardCountOverrides[state.ui.scoreBreakdown.card.name] ?? {}}
+            onSelfTriggerChange={(actionId, count) => state.scores.countOverrides.setSelfTrigger(state.ui.scoreBreakdown!.card.name, actionId, count)}
+            onPItemCountChange={(actionId, count) => state.scores.countOverrides.setPItemCount(state.ui.scoreBreakdown!.card.name, actionId, count)}
+            onClearCardOverrides={() => state.scores.countOverrides.clearCardOverrides(state.ui.scoreBreakdown!.card.name)}
+            includeSelfTrigger={state.scores.scoreSettings.includeSelfTrigger}
             onClose={() => state.ui.setScoreBreakdown(null)}
           />
         </Suspense>

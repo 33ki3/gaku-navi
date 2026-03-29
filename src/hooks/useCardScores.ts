@@ -14,6 +14,7 @@ import { getPerLessonParameterValues } from '../utils/calculator/parameterBonus'
 import * as data from '../data'
 import * as constant from '../constant'
 import * as enums from '../types/enums'
+import type { CardCountOverrides, CardOverrideData } from './useCardCountOverrides'
 
 // AllCards は不変なので、モジュールスコープで1回だけ Map 化する
 const cardByName = new Map(data.AllCards.map((c) => [c.name, c]))
@@ -25,7 +26,7 @@ interface ScoreCalculationResult {
   /** カード名 → 合計スコア（表示用の数値のみ） */
   cardScores: Map<string, number>
   /** 任意のカード・凸数でスコアを個別計算する関数 */
-  calculateForCard: (card: SupportCard, uncap: UncapType) => CardCalculationResult | undefined
+  calculateForCard: (card: SupportCard, uncap: UncapType, overrides?: CardOverrideData) => CardCalculationResult | undefined
 }
 
 /**
@@ -36,11 +37,13 @@ interface ScoreCalculationResult {
  *
  * @param scoreSettings - ユーザーの点数設定（シナリオ・難易度・アクション回数など）
  * @param cardUncaps - カード名 → 凸数のマップ
+ * @param cardCountOverrides - カード名 → アクション回数オーバーライドのマップ
  * @returns 全カードの計算結果と合計スコア
  */
 export function useCardScores(
   scoreSettings: ScoreSettings,
   cardUncaps: Record<string, UncapType>,
+  cardCountOverrides: CardCountOverrides = {},
 ): ScoreCalculationResult {
   // スコア設定から共有の計算入力を導出する（scoreSettings のみに依存）
   const calcContext = useMemo(() => {
@@ -92,38 +95,41 @@ export function useCardScores(
     return results
   }, [calcContext, scoreSettings])
 
-  // 凸数オーバーレイ: デフォルト凸以外のカードだけ再計算して上書きする。
-  // cardUncaps が変わったときに走るが、calculateCardParameter を呼ぶのは
-  // デフォルト凸(4凸)以外のカードのみなので、通常は 0〜数枚で済む。
-  // useFixedUncap が有効なら全カード4凸で計算するためオーバーレイ不要。
+  // 凸数・カウントオーバーレイ: デフォルト凸以外のカードやカウントオーバーライドがあるカードだけ再計算して上書きする。
   const cardResults = useMemo(() => {
     if (baseResults.size === 0) return baseResults
 
-    // 4凸固定モードならベース結果（全4凸）をそのまま使う
-    if (scoreSettings.useFixedUncap) return baseResults
+    // 4凸固定モードでもカウントオーバーライドは適用する
+    const hasCountOverrides = Object.keys(cardCountOverrides).length > 0
 
     // デフォルト凸以外のエントリを抽出する（未所持は計算をスキップ）
-    const overrides = Object.entries(cardUncaps).filter(
-      ([, uncap]) => uncap !== constant.DEFAULT_UNCAP && uncap !== enums.UncapType.NotOwned,
-    )
+    const uncapOverrides = scoreSettings.useFixedUncap
+      ? []
+      : Object.entries(cardUncaps).filter(
+          ([, uncap]) => uncap !== constant.DEFAULT_UNCAP && uncap !== enums.UncapType.NotOwned,
+        )
 
-    // 全カードがデフォルト凸ならベース結果をそのまま返す（コピー不要）
-    const hasNotOwned = Object.values(cardUncaps).some((u) => u === enums.UncapType.NotOwned)
-    if (overrides.length === 0 && !hasNotOwned) return baseResults
+    // 全カードがデフォルト凸でカウントオーバーライドもなければベース結果をそのまま返す
+    const hasNotOwned = !scoreSettings.useFixedUncap && Object.values(cardUncaps).some((u) => u === enums.UncapType.NotOwned)
+    if (uncapOverrides.length === 0 && !hasNotOwned && !hasCountOverrides) return baseResults
 
     // ベースをコピーして、変更カードだけ再計算で差し替える
     const results = new Map(baseResults)
 
     // 未所持カードの結果を削除する
-    for (const [cardName, uncap] of Object.entries(cardUncaps)) {
-      if (uncap === enums.UncapType.NotOwned) {
-        results.delete(cardName)
+    if (!scoreSettings.useFixedUncap) {
+      for (const [cardName, uncap] of Object.entries(cardUncaps)) {
+        if (uncap === enums.UncapType.NotOwned) {
+          results.delete(cardName)
+        }
       }
     }
 
-    for (const [cardName, uncap] of overrides) {
+    // 凸数変更カードを再計算する（カウントオーバーライドも適用）
+    for (const [cardName, uncap] of uncapOverrides) {
       const card = cardByName.get(cardName)
       if (card) {
+        const ovr = cardCountOverrides[cardName]
         results.set(
           cardName,
           calculateCardParameter(
@@ -135,18 +141,49 @@ export function useCardScores(
             scoreSettings.includeSelfTrigger,
             scoreSettings.includePItem,
             calcContext.perLessonValues,
+            ovr?.selfTrigger,
+            ovr?.pItemCount,
           ),
         )
       }
     }
+
+    // カウントオーバーライドのみのカード（凸数はデフォルト）を再計算する
+    const alreadyRecalculated = new Set(uncapOverrides.map(([name]) => name))
+    for (const cardName of Object.keys(cardCountOverrides)) {
+      if (alreadyRecalculated.has(cardName)) continue
+      const card = cardByName.get(cardName)
+      if (!card) continue
+      // 未所持カードはスキップ
+      if (!scoreSettings.useFixedUncap && cardUncaps[cardName] === enums.UncapType.NotOwned) continue
+      const ovr = cardCountOverrides[cardName]
+      results.set(
+        cardName,
+        calculateCardParameter(
+          card,
+          constant.DEFAULT_UNCAP,
+          calcContext.effectiveCounts,
+          {},
+          scoreSettings.parameterBonusBase,
+          scoreSettings.includeSelfTrigger,
+          scoreSettings.includePItem,
+          calcContext.perLessonValues,
+          ovr?.selfTrigger,
+          ovr?.pItemCount,
+        ),
+      )
+    }
+
     return results
-  }, [baseResults, cardUncaps, calcContext, scoreSettings])
+  }, [baseResults, cardUncaps, cardCountOverrides, calcContext, scoreSettings])
 
   // cardResults から合計スコアだけ取り出した簡易マップ（表示・ソート用）
+  // 未所持カードは 0 点として扱う
   const cardScores = useMemo(() => {
     const scores = new Map<string, number>()
-    for (const [name, result] of cardResults) {
-      scores.set(name, result.totalIncrease)
+    for (const card of data.AllCards) {
+      const result = cardResults.get(card.name)
+      scores.set(card.name, result ? result.totalIncrease : 0)
     }
     return scores
   }, [cardResults])
@@ -158,7 +195,7 @@ export function useCardScores(
    * 計算入力（アクション回数等）が無い場合は undefined を返す。
    */
   const calculateForCard = useCallback(
-    (card: SupportCard, uncap: UncapType): CardCalculationResult | undefined => {
+    (card: SupportCard, uncap: UncapType, overrides?: CardOverrideData): CardCalculationResult | undefined => {
       if (!calcContext.hasAnyAction && !calcContext.hasAnyBonus) return undefined
       return calculateCardParameter(
         card,
@@ -169,6 +206,8 @@ export function useCardScores(
         scoreSettings.includeSelfTrigger,
         scoreSettings.includePItem,
         calcContext.perLessonValues,
+        overrides?.selfTrigger,
+        overrides?.pItemCount,
       )
     },
     [calcContext, scoreSettings],

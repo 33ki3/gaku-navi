@@ -15,6 +15,7 @@ const EXPORT_KEYS = [
   constant.SCORE_SETTINGS_STORAGE_KEY,
   constant.SCORE_PRESETS_STORAGE_KEY,
   constant.FILTER_STORAGE_KEY,
+  constant.CARD_COUNT_OVERRIDES_KEY,
 ] as const
 
 /** エクスポートされる JSON の構造 */

@@ -20,6 +20,10 @@ export const FILTER_STORAGE_KEY = 'gaku-navi-filter-state'
 export const SCORE_SETTINGS_STORAGE_KEY = 'gaku-navi-score-settings'
 /** 点数設定プリセットの保存キー。ScorePreset[] を JSON で保存する。 */
 export const SCORE_PRESETS_STORAGE_KEY = 'gaku-navi-score-presets'
+/** カード別カウント設定の保存キー。カード名→アクションID→回数の Map を JSON で保存する。 */
+export const CARD_COUNT_OVERRIDES_KEY = 'gaku-navi-card-count-overrides'
+/** フィルタ・ソートモーダルのタブ選択状態の保存キー */
+export const FILTER_SORT_TAB_KEY = 'gaku-navi-filter-sort-tab'
 /** フィルター保存のデバウンス待機時間（ms）。連続でフィルターが変更されたときに保存回数を減らす。 */
 export const FILTER_SAVE_DEBOUNCE_MS = 300
 

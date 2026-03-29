@@ -8,10 +8,9 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SupportCard, CardCalculationResult } from '../../types/card'
-import type { UncapType } from '../../types/enums'
 import * as data from '../../data'
 import * as constant from '../../constant'
-import { BadgeSizeType, BadgeWeightType, ButtonSizeType } from '../../types/enums'
+import { BadgeSizeType, BadgeWeightType, ButtonSizeType, UncapType } from '../../types/enums'
 import { Badge } from '../ui/Badge'
 import CloseButton from '../ui/CloseButton'
 import ModalOverlay from '../ui/ModalOverlay'
@@ -40,8 +39,10 @@ export default function CardDetailModal({
   onClose,
 }: CardDetailModalProps) {
   const { t } = useTranslation()
-  // モーダル内で凸数を切り替えられるように state で管理（永続保存はしない）
-  const [uncap, setUncap] = useState<UncapType>(initialUncap)
+  // 未所持カードは4凸で表示する（モーダル内で凸数を切り替え可能、永続保存はしない）
+  const [uncap, setUncap] = useState<UncapType>(
+    initialUncap === UncapType.NotOwned ? constant.DEFAULT_UNCAP : initialUncap,
+  )
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
   const planEntry = data.getPlanBadge(card.plan)
@@ -67,7 +68,7 @@ export default function CardDetailModal({
               </Badge>
               {/* カードタイプを示すバッジ */}
               <Badge size={BadgeSizeType.MdRounded} color={typeEntry.badge}>
-                {t(typeEntry.displayLabel)}
+                {t(typeEntry.label)}
               </Badge>
               {/* プラン制限を示すバッジ */}
               <Badge size={BadgeSizeType.MdRounded} color={planEntry.badge}>

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { parseEventParameterBoost, parsePItemParameterBoost, getSelfAcquisitionBonus } from '../../../utils/calculator/events'
 import type { SupportCard } from '../../../types/card'
 import * as enums from '../../../types/enums'
+import { AllCards } from '../../../data'
+import { getActionCategory } from '../../../data/score'
 
 // --- テスト用ヘルパー ---
 
@@ -564,5 +566,18 @@ describe('getSelfAcquisitionBonus', () => {
     const bonus = getSelfAcquisitionBonus(card)
     expect(bonus[enums.ActionIdType.SkillEnhance]).toBe(1)
     expect(bonus[enums.ActionIdType.Change]).toBe(1)
+  })
+
+  it('全カードの自動カウントactionIdがActionCategoryに存在する', () => {
+    const missingLabels: string[] = []
+    for (const card of AllCards) {
+      const bonus = getSelfAcquisitionBonus(card)
+      for (const actionId of Object.keys(bonus) as enums.ActionIdType[]) {
+        if (!getActionCategory(actionId)) {
+          missingLabels.push(`${card.name}: ${actionId}`)
+        }
+      }
+    }
+    expect(missingLabels).toEqual([])
   })
 })

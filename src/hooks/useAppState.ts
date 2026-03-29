@@ -9,8 +9,10 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import type { SupportCard, ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
 import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
+import { createEmptyResult } from '../utils/calculator/calculateCard'
 import { useUIState } from './useUIState'
 import { useCardUncaps } from './useCardUncaps'
+import { useCardCountOverrides } from './useCardCountOverrides'
 import { useFilteredCards } from './useFilteredCards'
 import { useCardScores } from './useCardScores'
 import * as data from '../data'
@@ -31,6 +33,7 @@ export function useAppState() {
   const ui = useUIState()
   const { setSelectedCard, setScoreBreakdown, setUncapEditMode } = ui
   const uncaps = useCardUncaps()
+  const countOverrides = useCardCountOverrides()
   const { setCardUncap } = uncaps
 
   // スコア設定（変更時に localStorage にも保存する）
@@ -41,7 +44,7 @@ export function useAppState() {
   }, [])
 
   // スコア計算とフィルタリングを実行する
-  const { cardResults, cardScores, calculateForCard } = useCardScores(scoreSettings, uncaps.cardUncaps)
+  const { cardResults, cardScores, calculateForCard } = useCardScores(scoreSettings, uncaps.cardUncaps, countOverrides.cardCountOverrides)
   const filters = useFilteredCards(data.AllCards, cardScores, uncaps.cardUncaps, scoreSettings)
 
   // cardResults を ref で保持し、useCallback の依存配列から除外する
@@ -57,12 +60,12 @@ export function useAppState() {
     setSelectedCard(card)
   }, [setSelectedCard])
 
-  /** スコアをクリックしたとき → スコア内訳モーダルを開く */
+  /** スコアをクリックしたとき → スコア内訳モーダルを開く（未所持カードも0点で表示） */
   const handleScoreClick = useCallback(
     (card: SupportCard, e: React.MouseEvent) => {
       e.stopPropagation()
-      const result = cardResultsRef.current.get(card.name)
-      if (result) setScoreBreakdown({ card, result })
+      const result = cardResultsRef.current.get(card.name) ?? createEmptyResult(card)
+      setScoreBreakdown({ card, result })
     },
     [setScoreBreakdown],
   )
@@ -97,6 +100,7 @@ export function useAppState() {
       cardResults,
       cardScores,
       calculateForCard,
+      countOverrides,
     },
     // フィルター・並び替え
     filters,

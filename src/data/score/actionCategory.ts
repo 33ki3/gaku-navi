@@ -106,10 +106,25 @@ const data: ActionGroupEntry[] = [
 /** 全カテゴリのフラット配列（表示順を保持） */
 export const ActionCategoryList: readonly ActionCountCategory[] = data.flatMap((g) => g.categories)
 
-/** グループ別に分類された辞書 */
-export const ActionGroups: Record<string, ActionCountCategory[]> = Object.fromEntries(
-  data.map((g) => [g.id, g.categories]),
+/** アクションID → カテゴリの逆引きマップ（内部用） */
+const categoryMap = new Map<ActionIdType, ActionCountCategory>(
+  ActionCategoryList.map((c) => [c.id, c]),
 )
+
+/**
+ * アクションIDに対応するカテゴリを返す。
+ *
+ * @param actionId - アクションID
+ * @returns 見つからなければ undefined
+ */
+export function getActionCategory(actionId: ActionIdType): ActionCountCategory | undefined {
+  return categoryMap.get(actionId)
+}
+
+/** グループ別に分類された辞書 */
+export const ActionGroups: Record<ActionGroupType, ActionCountCategory[]> = Object.fromEntries(
+  data.map((g) => [g.id, g.categories]),
+) as Record<ActionGroupType, ActionCountCategory[]>
 
 /**
  * アクショングループの表示ラベル（i18n キー）を返す。

@@ -578,13 +578,13 @@ describe('統合テスト: 実スケジュール × 実カード', () => {
       expect(result.totalIncrease).toBe(248)
     })
 
-    it('ひとりごとです: 自己発火 ON（card_change → change+1）', () => {
+    it('ひとりごとです: 自己発火 ON（card_change → change+1, p_item delete → a_skill_delete+2）', () => {
       // initial_stat: 65
       // change: 21 * min(2+1, 3) = 63
       // sp_lesson_end: 17 * 0 = 0（sp_lesson_vi=0、Pattern1にViなし）
-      // a_skill_delete: 22 * min(1, 3) = 22
+      // a_skill_delete: 22 * min(1+2, 3) = 66（Pアイテム delete → +2）
       // event_boost: 100% → 20 * 2.0 = 40
-      // total = 40 + 65 + 63 + 0 + 22 = 190
+      // total = 40 + 65 + 63 + 0 + 66 = 234
       const result = calculateCardParameter(
         hitorigoto, enums.UncapType.Four, merged1, emptyExtra, zeroBonusBase,
         true,
@@ -592,7 +592,7 @@ describe('統合テスト: 実スケジュール × 実カード', () => {
       expect(result.eventBoost).toBe(40)
       const change = result.abilityBoosts.find(b => b.nameKey === enums.AbilityNameKeyType.Change)
       expect(change?.count).toBe(3)
-      expect(result.totalIncrease).toBe(190)
+      expect(result.totalIncrease).toBe(234)
     })
 
     it('ひとりごとです: 自己発火 OFF', () => {

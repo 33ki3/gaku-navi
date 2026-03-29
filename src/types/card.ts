@@ -397,6 +397,8 @@ export interface CardCalculationResult {
   eventBoostPercent: number
   /** 総パラメータ上昇量 */
   totalIncrease: number
+  /** アクション別の自動計算回数（maxCount制限前。カウント設定UI用） */
+  autoActionCounts: Partial<Record<ActionIdType, number>>
 }
 
 /**

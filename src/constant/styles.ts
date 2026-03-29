@@ -9,9 +9,6 @@
 /** フィルターセクションラベル（10px） */
 export const FILTER_SECTION_LABEL = 'text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5'
 
-/** モーダル内セクション見出し（xs, widest） */
-export const SECTION_HEADING_XS = 'text-xs font-black text-slate-400 uppercase tracking-widest mb-2'
-
 /** セクション見出し（小・パディング付き） */
 export const SECTION_HEADING_SM_PX = 'text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1'
 

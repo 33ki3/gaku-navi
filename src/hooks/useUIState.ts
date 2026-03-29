@@ -4,9 +4,10 @@
  * アプリ全体の「見た目に関する状態」をまとめて管理する。
  * モーダルの開閉・パネルの表示/非表示・編集モードの切り替えなど。
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { SupportCard, CardCalculationResult } from '../types/card'
 import { FilterSortTab } from '../types/enums'
+import * as constant from '../constant'
 
 /** useUIState の返却型 */
 interface UIState {
@@ -44,12 +45,23 @@ export function useUIState(): UIState {
   const [scoreSettingsOpen, setScoreSettingsOpen] = useState(false)
   const [settingsPinned, setSettingsPinned] = useState(false)
   const [filterSortOpen, setFilterSortOpen] = useState(false)
-  const [filterSortTab, setFilterSortTab] = useState<FilterSortTab>(FilterSortTab.Sort)
+  const [filterSortTab, setFilterSortTabRaw] = useState<FilterSortTab>(() => {
+    // localStorage から前回のタブ選択を復元する
+    const saved = localStorage.getItem(constant.FILTER_SORT_TAB_KEY)
+    if (saved === FilterSortTab.Filter || saved === FilterSortTab.Sort) return saved
+    return FilterSortTab.Sort
+  })
   const [uncapEditMode, setUncapEditMode] = useState(false)
   const [scoreBreakdown, setScoreBreakdown] = useState<{
     card: SupportCard
     result: CardCalculationResult
   } | null>(null)
+
+  /** タブ変更時に localStorage にも保存する */
+  const setFilterSortTab = useCallback((tab: FilterSortTab) => {
+    setFilterSortTabRaw(tab)
+    localStorage.setItem(constant.FILTER_SORT_TAB_KEY, tab)
+  }, [])
 
   // モバイル幅（md未満）になったらピン留めを自動解除する
   useEffect(() => {

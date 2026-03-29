@@ -1423,6 +1423,15 @@ export const ScoreSettingsSectionKey = {
 export type ScoreSettingsSectionKey = (typeof ScoreSettingsSectionKey)[keyof typeof ScoreSettingsSectionKey]
 
 /**
+ * スコア詳細モーダルのセクションキー。
+ */
+export const ScoreDetailSectionKey = {
+  /** カウント調整 */
+  CountOverride: 'countOverride',
+} as const
+export type ScoreDetailSectionKey = (typeof ScoreDetailSectionKey)[keyof typeof ScoreDetailSectionKey]
+
+/**
  * フィルタ・ソートモーダルのタブ種別。
  */
 export const FilterSortTab = {

@@ -105,14 +105,14 @@ export function useFilteredCards(
     ],
   )
 
-  // 各カードのアビリティバッジを計算する（cards は不変なので初回のみ実行される）
+  // 各カードのアビリティバッジを計算する（点数に寄与するアビリティのみ対象）
   const abilityBadgeMap = useMemo(() => {
     const map = new Map<string, TranslationKey[]>()
     for (const card of cards) {
       // カードごとに、マスターのキーワード一覧と照合してバッジを集める
       const badges: TranslationKey[] = []
       for (const kw of data.AbilityKeywordList) {
-        if (hasAbilityKeyword(card, kw)) {
+        if (hasAbilityKeyword(card, kw, true)) {
           badges.push(data.AbilityKeywordMap.get(kw)!.badge)
         }
       }

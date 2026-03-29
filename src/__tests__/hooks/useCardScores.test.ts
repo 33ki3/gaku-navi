@@ -22,10 +22,14 @@ function emptySettings(): ScoreSettings {
 
 /** useCardScores フックの点数算出テスト */
 describe('useCardScores', () => {
-  it('アクション回数・ボーナスが全て0なら結果は空', () => {
+  it('アクション回数・ボーナスが全て0なら計算結果は空でスコアは全て0', () => {
     const { result } = renderHook(() => useCardScores(emptySettings(), {}))
     expect(result.current.cardResults.size).toBe(0)
-    expect(result.current.cardScores.size).toBe(0)
+    // cardScores は全カードを含む（結果なしのカードは 0 点）
+    expect(result.current.cardScores.size).toBeGreaterThan(0)
+    for (const score of result.current.cardScores.values()) {
+      expect(score).toBe(0)
+    }
   })
 
   it('アクション回数を設定すると全カードにスコアが算出される', () => {

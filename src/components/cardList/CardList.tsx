@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState, memo } from 'react'
 import type { SupportCard } from '../../types/card'
 import type { TranslationKey } from '../../i18n'
+import type { CardCountOverrides } from '../../hooks/useCardCountOverrides'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useCardContext } from '../../contexts/CardContext'
 import * as constant from '../../constant'
@@ -21,6 +22,8 @@ interface CardListProps {
   cardScores: ReadonlyMap<string, number>
   /** カード名 → アビリティバッジ一覧のマップ */
   abilityBadgeMap: ReadonlyMap<string, TranslationKey[]>
+  /** カード別カウントオーバーライド */
+  cardCountOverrides: CardCountOverrides
   /** 設定パネルがピン留めされているか */
   settingsPinned: boolean
 }
@@ -30,6 +33,7 @@ export default memo(function CardList({
   filteredCards,
   cardScores,
   abilityBadgeMap,
+  cardCountOverrides,
   settingsPinned,
 }: CardListProps) {
   // カードの凸数取得用コンテキスト
@@ -109,6 +113,7 @@ export default memo(function CardList({
                     uncap={uncap}
                     score={score}
                     abilityBadges={abilityBadges}
+                    hasCountOverride={card.name in cardCountOverrides}
                   />
                 )
               })}

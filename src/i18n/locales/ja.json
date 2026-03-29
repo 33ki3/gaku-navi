@@ -218,6 +218,7 @@
       "no_duplicate": "重複不可"
     },
     "sp_badge": "SP",
+    "count_adjusted": "カウント調整済み",
     "click_breakdown": "クリックで内訳を表示",
     "custom_cap": "カスタム上限:",
     "pitem_restriction": {
@@ -531,6 +532,9 @@
       "scenario_difficulty": "シナリオ・難易度",
       "schedule": "スケジュール",
       "action_counts": "アクション回数",
+      "count_override": "カウント設定",
+      "self_trigger_count": "自動カウント",
+      "p_item_count": "Pアイテム",
       "options": "オプション",
       "preset": "プリセット"
     },
@@ -572,6 +576,9 @@
     "accessibility": {
       "menu": "メニュー",
       "help": "ヘルプ"
+    },
+    "button": {
+      "reset": "リセット"
     },
     "data_management": {
       "title": "データ管理",
@@ -676,7 +683,9 @@
       "tooltip_schedule": "各週のアクションを選択すると回数が自動計算されます",
       "tooltip_param_bonus": "スケジュール有効時は自動計算。\n手動入力も可能です",
       "tooltip_actions": "スケジュール設定時は自動入力。\n未設定分は手動で入力できます",
-      "tooltip_options": "点数計算に含める要素を選択します"
+      "tooltip_options": "点数計算に含める要素を選択します",
+      "tooltip_score_detail": "点数設定のアクション回数×アビリティ効果量で算出。\nイベントブースト・パラメータボーナスも反映されます",
+      "tooltip_count_override": "自動カウント（サポートイベントとPアイテムの効果）とPアイテムの発動回数をカード別に調整できます"
     },
     "about": {
       "title": "このサイトについて",

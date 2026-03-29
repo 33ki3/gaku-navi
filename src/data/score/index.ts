@@ -1,7 +1,7 @@
 /**
  * スコア計算画面用マスタデータのバレルエクスポート。
  */
-export { ActionCategoryList, ActionGroups, ActionSummaryList, getActionGroupLabel } from './actionCategory'
+export { ActionCategoryList, ActionGroups, ActionSummaryList, getActionCategory, getActionGroupLabel } from './actionCategory'
 export { ActivityActionMap, ScheduleControlledIds, getActivityColor } from './activity'
 export { DifficultyOptionList, ScenarioOptionList } from './scoreOption'
 export { getLessonData } from './lesson'

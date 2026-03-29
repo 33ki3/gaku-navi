@@ -39,6 +39,7 @@ interface CardDetailSectionsProps {
 export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreResult }: CardDetailSectionsProps) {
   const { t } = useTranslation()
   // 各セクションの開閉状態
+  const [uncapOpen, setUncapOpen] = useState(true)
   const [eventsOpen, setEventsOpen] = useState(true)
   const [abilitiesOpen, setAbilitiesOpen] = useState(true)
   const [pItemOpen, setPItemOpen] = useState(true)
@@ -50,23 +51,20 @@ export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreRe
   return (
     <div className="p-6 space-y-6">
       {/* 凸数セレクター + 最大レベル表示 */}
-      <div>
-        <h3 className={constant.SECTION_HEADING_XS}>{t('ui.header.uncap')}</h3>
-        <div className="flex items-center gap-2">
-          <UncapSelector
-            value={uncap}
-            onChange={onUncapChange}
-            variant={UncapSelectorVariantType.Detail}
-            showNotOwned={false}
-            activeClass={`${colors.badge} shadow-md`}
-            inactiveClass={constant.BTN_TOGGLE_INACTIVE}
-          />
-          <span className="ml-2 text-xs text-slate-400">
-            {t('ui.unit.level')}
-            {maxLevel}
-          </span>
-        </div>
-      </div>
+      <CollapsibleSection
+        title={`${t('ui.header.uncap')}${t('ui.format.summary_separator')}${t('ui.unit.level')}${maxLevel}`}
+        isOpen={uncapOpen}
+        onToggle={() => setUncapOpen(!uncapOpen)}
+      >
+        <UncapSelector
+          value={uncap}
+          onChange={onUncapChange}
+          variant={UncapSelectorVariantType.Detail}
+          showNotOwned={false}
+          activeClass={`${colors.badge} shadow-md`}
+          inactiveClass={constant.BTN_TOGGLE_INACTIVE}
+        />
+      </CollapsibleSection>
 
       {/* サポートイベント一覧 */}
       <CollapsibleSection

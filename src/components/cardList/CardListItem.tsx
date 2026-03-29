@@ -29,6 +29,8 @@ interface CardListItemProps {
   score: number
   /** アビリティバッジの翻訳キー一覧 */
   abilityBadges: TranslationKey[]
+  /** カウントオーバーライドが設定されているか */
+  hasCountOverride: boolean
 }
 
 /** カードグリッドの1枚分のカード */
@@ -37,6 +39,7 @@ export const CardListItem = memo(function CardListItem({
   uncap,
   score,
   abilityBadges,
+  hasCountOverride,
 }: CardListItemProps) {
   const { t } = useTranslation()
   const { uncapEditMode, onCardClick, onScoreClick, onUncapChange } = useCardContext()
@@ -117,6 +120,13 @@ export const CardListItem = memo(function CardListItem({
             {score}
             {t('ui.unit.score')}
           </span>
+          {/* カウント調整済みアイコン */}
+          {hasCountOverride && (
+            <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <title>{t('card.count_adjusted')}</title>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+            </svg>
+          )}
           {/* アビリティバッジ */}
           {abilityBadges.length > 0 && (
             <div className="flex-1 flex flex-nowrap gap-0.5 overflow-x-auto scrollbar-none min-w-0" style={{ direction: 'rtl' }}>

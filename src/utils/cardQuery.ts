@@ -40,17 +40,23 @@ export function hasSPAbility(card: SupportCard): boolean {
 /**
  * カードが特定のアビリティキーワードに対応するアビリティを持っているか判定する
  *
- * trigger_key ベースの判定に加え、レッスン/授業のように trigger_key を
- * 共有するキーワードは name_key でも判定する。
+ * trigger_key ベースの判定を行う。scoreRelevantOnly が true の場合、
+ * skip_calculation や is_percentage のアビリティ（体力回復・SP率など）は
+ * 点数に影響しないため除外する。
  *
  * @param card - チェックするカード
  * @param keyword - アビリティキーワード名
+ * @param scoreRelevantOnly - true なら点数に寄与するアビリティのみ対象
  * @returns キーワードに対応するアビリティがあれば true
  */
-export function hasAbilityKeyword(card: SupportCard, keyword: enums.AbilityKeywordType): boolean {
+export function hasAbilityKeyword(card: SupportCard, keyword: enums.AbilityKeywordType, scoreRelevantOnly = false): boolean {
   const triggers = data.AbilityKeywordMap.get(keyword)?.triggers ?? []
   const triggerSet = new Set(triggers)
-  return card.abilities.some((a) => triggerSet.has(a.trigger_key))
+  return card.abilities.some((a) => {
+    if (!triggerSet.has(a.trigger_key)) return false
+    if (scoreRelevantOnly && (a.skip_calculation || a.is_percentage)) return false
+    return true
+  })
 }
 
 /**

@@ -125,9 +125,19 @@ export function getSelfAcquisitionBonus(card: SupportCard): Partial<Record<Actio
 
   // イベント・Pアイテム両方がソースになりうるルール
   // [イベント条件, Pアイテム条件, トリガーキー, アクションID]
+  const enhanceEvent = hasEventEffectType(enums.EventEffectType.CardEnhance, enums.EventEffectType.SelectEnhance)
+  const enhancePItem = pActions.includes(enums.PItemActionType.Enhance)
+  const deleteEvent = hasEventEffectType(enums.EventEffectType.CardDelete, enums.EventEffectType.SelectDelete)
+  const deletePItem = pActions.includes(enums.PItemActionType.Delete)
   const dualSourceRules: [boolean, boolean, enums.TriggerKeyType, enums.ActionIdType][] = [
-    [hasEventEffectType(enums.EventEffectType.CardEnhance, enums.EventEffectType.SelectEnhance), pActions.includes(enums.PItemActionType.Enhance), enums.TriggerKeyType.SkillEnhance, enums.ActionIdType.SkillEnhance],
-    [hasEventEffectType(enums.EventEffectType.CardDelete, enums.EventEffectType.SelectDelete), pActions.includes(enums.PItemActionType.Delete), enums.TriggerKeyType.Delete, enums.ActionIdType.Delete],
+    // 汎用 + タイプ固有の強化ルール（Pアイテムの select_enhance はM/Aどちらも対象になりうる）
+    [enhanceEvent, enhancePItem, enums.TriggerKeyType.SkillEnhance, enums.ActionIdType.SkillEnhance],
+    [enhanceEvent, enhancePItem, enums.TriggerKeyType.MSkillEnhance, enums.ActionIdType.MSkillEnhance],
+    [enhanceEvent, enhancePItem, enums.TriggerKeyType.ASkillEnhance, enums.ActionIdType.ASkillEnhance],
+    // 汎用 + タイプ固有の削除ルール（Pアイテムの select_delete はM/Aどちらも対象になりうる）
+    [deleteEvent, deletePItem, enums.TriggerKeyType.Delete, enums.ActionIdType.Delete],
+    [deleteEvent, deletePItem, enums.TriggerKeyType.MSkillDelete, enums.ActionIdType.MSkillDelete],
+    [deleteEvent, deletePItem, enums.TriggerKeyType.ASkillDelete, enums.ActionIdType.ASkillDelete],
     [hasEventEffectType(enums.EventEffectType.TroubleDelete), pActions.includes(enums.PItemActionType.TroubleDelete), enums.TriggerKeyType.TroubleDelete, enums.ActionIdType.TroubleDelete],
     [hasEventEffectType(enums.EventEffectType.CardChange), pActions.includes(enums.PItemActionType.Change), enums.TriggerKeyType.Change, enums.ActionIdType.Change],
   ]

@@ -12,6 +12,14 @@ import type { CardCountCustom } from '../hooks/useCardCountCustom'
 import * as enums from '../types/enums'
 import { TriggerActionMap, LinkedActionGroups } from '../data/score'
 
+/** getProvidedActions のオプション */
+interface ProvidedActionsOptions {
+  /** サポート自身のイベントによるアクション提供を含めるか（デフォルト: true） */
+  includeSelfTrigger?: boolean
+  /** P-itemによるアクション提供を含めるか（デフォルト: true） */
+  includePItem?: boolean
+}
+
 /**
  * サポートAが編成内にいることで提供するアクション回数増加を返す
  *
@@ -19,20 +27,27 @@ import { TriggerActionMap, LinkedActionGroups } from '../data/score'
  * 対応するアクションIDごとの追加回数マップを返す。
  *
  * @param card - 提供元のサポート
+ * @param options - 設定オプション（省略時はすべて含む）
  * @returns アクションID → 追加回数
  */
-export function getProvidedActions(card: SupportCard): Partial<Record<ActionIdType, number>> {
+export function getProvidedActions(
+  card: SupportCard,
+  options?: ProvidedActionsOptions,
+): Partial<Record<ActionIdType, number>> {
+  const { includeSelfTrigger = true, includePItem = true } = options ?? {}
   const provided: Partial<Record<ActionIdType, number>> = {}
 
   // イベントのフラグを判定する
-  const givesSkillCard = card.events.some((e: SupportEvent) => e.effect_type === enums.EventEffectType.SkillCard)
-  const givesPItem = card.events.some((e: SupportEvent) => e.effect_type === enums.EventEffectType.PItem)
+  const givesSkillCard =
+    includeSelfTrigger && card.events.some((e: SupportEvent) => e.effect_type === enums.EventEffectType.SkillCard)
+  const givesPItem =
+    includeSelfTrigger && card.events.some((e: SupportEvent) => e.effect_type === enums.EventEffectType.PItem)
   const hasEventEffectType = (...types: enums.EventEffectType[]) =>
-    card.events.some((e: SupportEvent) => types.includes(e.effect_type))
+    includeSelfTrigger && card.events.some((e: SupportEvent) => types.includes(e.effect_type))
 
-  const pActions = card.p_item?.actions ?? []
+  const pActions = includePItem ? (card.p_item?.actions ?? []) : []
   // フォールバック0: 実データでは全サポートに定義済みだが、未定義時は回数0として扱う
-  const pItemLimitCount = card.p_item?.effect?.limit?.count ?? 0
+  const pItemLimitCount = includePItem ? (card.p_item?.effect?.limit?.count ?? 0) : 0
   const pDrinkBodyCount =
     card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount)?.count ?? 0
   const pDrinkTotalCount = pItemLimitCount * pDrinkBodyCount
@@ -137,8 +152,6 @@ interface SynergyResult {
 }
 
 /**
- * デュアルソースルールで連動するアクショングループ
-/**
  * 編成全体のサポート間連携を合算する
  *
  * 全ペア (i≠j) について getSupportSynergy を計算し、
@@ -146,12 +159,17 @@ interface SynergyResult {
  *
  * @param members - 編成メンバーのサポート配列
  * @param cardCountCustom - サポート別カウント調整（省略可）
+ * @param options - 提供アクション算出オプション（省略可）
  * @returns サポート間連携マップと提供元詳細
  */
-export function computeUnitSupportSynergy(members: SupportCard[], cardCountCustom?: CardCountCustom): SynergyResult {
+export function computeUnitSupportSynergy(
+  members: SupportCard[],
+  cardCountCustom?: CardCountCustom,
+  options?: ProvidedActionsOptions,
+): SynergyResult {
   // 提供アクションを事前計算する（カウント調整があれば差分を反映）
   const providerActionMap = members.map((card) => {
-    const provided = getProvidedActions(card)
+    const provided = getProvidedActions(card, options)
     if (cardCountCustom?.[card.name]?.selfTrigger) {
       const customs = cardCountCustom[card.name].selfTrigger!
       // カウント調整値は提供回数そのものを表す（ベースラインは getProvidedActions の値）

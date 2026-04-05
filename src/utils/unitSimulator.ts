@@ -130,10 +130,10 @@ function prepareCandidates(input: OptimizeInput): CandidateCard[] {
     // タイプ制限
     if (!effectiveLocked && settings.allowedTypes.length > 0 && !settings.allowedTypes.includes(card.type)) continue
 
-    // 凸数（レンタル枠は4凸、自分の枠は実際の凸数）
-    const uncap = cardUncaps[card.name] ?? constant.DEFAULT_UNCAP
+    // 凸数（4凸固定モードでは全カード4凸、通常は実際の凸数を使用）
+    const uncap = scoreSettings.useFixedUncap ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
 
-    // 未所持サポートはスキップする
+    // 未所持サポートはスキップする（4凸固定モードでは全カードが候補）
     if (!scoreSettings.useFixedUncap && uncap === enums.UncapType.NotOwned) continue
 
     // ベーススコアを計算する
@@ -158,7 +158,10 @@ function prepareCandidates(input: OptimizeInput): CandidateCard[] {
       baseResult,
       spCategory: getSpCategory(card),
       paramBonusPercent: getParamBonusPercent(card, uncap),
-      providedActions: getProvidedActions(card),
+      providedActions: getProvidedActions(card, {
+        includeSelfTrigger: scoreSettings.includeSelfTrigger,
+        includePItem: scoreSettings.includePItem,
+      }),
     })
   }
 
@@ -196,7 +199,10 @@ function meetsSpConstraint(members: CandidateCard[], constraint: SpRateConstrain
  */
 function evaluateUnit(members: CandidateCard[], input: OptimizeInput): number {
   const cards = members.map((m) => m.card)
-  const { bonusMap: synergyMap } = computeUnitSupportSynergy(cards, input.cardCountCustom)
+  const { bonusMap: synergyMap } = computeUnitSupportSynergy(cards, input.cardCountCustom, {
+    includeSelfTrigger: input.scoreSettings.includeSelfTrigger,
+    includePItem: input.scoreSettings.includePItem,
+  })
 
   // ベーススコア合算 + サポート間連携による追加スコア概算
   // 個別パラボは差し引き、ユニット全体のパラメータボーナスを後から加算する（buildResult と同一ロジック）
@@ -235,7 +241,7 @@ function evaluateUnit(members: CandidateCard[], input: OptimizeInput): number {
     }
   }
 
-  // ユニット全体のパラメータボーナスを加算する（サポート外パラボ%を含む）
+  // ユニット全体のパラメータボーナスを加算する（入力値はサポート外なので加算のみ）
   const supportPercent: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   for (const m of members) {
     for (const key of Object.values(enums.ParameterType)) {
@@ -244,7 +250,7 @@ function evaluateUnit(members: CandidateCard[], input: OptimizeInput): number {
   }
   const base = input.scoreSettings.parameterBonusBase
   for (const key of Object.values(enums.ParameterType)) {
-    const totalPercent = supportPercent[key] + Math.max(0, input.settings.paramBonusPercent[key] - supportPercent[key])
+    const totalPercent = supportPercent[key] + input.settings.paramBonusPercent[key]
     total += Math.floor((base[key] * totalPercent) / constant.PERCENT_DIVISOR)
   }
 
@@ -526,6 +532,10 @@ function buildResult(members: CandidateCard[], input: OptimizeInput, autoRentalN
   const { bonusMap: synergyMap, providerMap: synergyProviderMap } = computeUnitSupportSynergy(
     cards,
     input.cardCountCustom,
+    {
+      includeSelfTrigger: scoreSettings.includeSelfTrigger,
+      includePItem: scoreSettings.includePItem,
+    },
   )
 
   // サポートカードのパラボ%を合計する
@@ -536,12 +546,8 @@ function buildResult(members: CandidateCard[], input: OptimizeInput, autoRentalN
     }
   }
 
-  // サポート外パラボ%: 入力% - サポートカードの合計%（下限0）
-  const outsidePercent: ParameterValues = {
-    vocal: Math.max(0, settings.paramBonusPercent.vocal - supportPercent.vocal),
-    dance: Math.max(0, settings.paramBonusPercent.dance - supportPercent.dance),
-    visual: Math.max(0, settings.paramBonusPercent.visual - supportPercent.visual),
-  }
+  // 入力値はサポート外パラボ%なのでそのまま使用する
+  const outsidePercent: ParameterValues = { ...settings.paramBonusPercent }
 
   // パラメータボーナス%: サポートのパラボ% + サポート外のパラボ%
   const totalParamBonusPercent: ParameterValues = {
@@ -659,9 +665,10 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
     const card = data.AllCards.find((c) => c.name === cardName)
     if (!card) continue
 
-    // レンタル枠は4凸固定、それ以外は設定された凸数を使用する
+    // 凸数: 4凸固定モード or レンタル枠なら4凸、それ以外は設定された凸数
     const isRental = settings.manualRental && settings.rentalCardName === cardName
-    const uncap = isRental ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
+    const uncap =
+      scoreSettings.useFixedUncap || isRental ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
     const customData = input.cardCountCustom?.[card.name]
     const baseResult = calculateCardParameter(
       card,
@@ -683,7 +690,10 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
       baseResult,
       spCategory: getSpCategory(card),
       paramBonusPercent: getParamBonusPercent(card, uncap),
-      providedActions: getProvidedActions(card),
+      providedActions: getProvidedActions(card, {
+        includeSelfTrigger: scoreSettings.includeSelfTrigger,
+        includePItem: scoreSettings.includePItem,
+      }),
     })
   }
 

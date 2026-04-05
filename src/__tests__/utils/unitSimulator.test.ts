@@ -173,10 +173,16 @@ describe('最適編成', () => {
 
     it('cardCountCustom で提供回数が変動する', () => {
       // 他サポートに何かを提供していて、かつ自身も同じアクションの自動ボーナスを持つサポートを探す
+      // provided > 0 条件で ZERO_DEFAULT_ACTIONS（MSkillEnhance 等）を除外する
       const providerCard = AllCards.find((c) => {
         const provided = getProvidedActions(c)
         const selfBonus = getSelfAcquisitionBonus(c)
-        return Object.keys(provided).some((aid) => aid in selfBonus && (selfBonus[aid as enums.ActionIdType] ?? 0) > 0)
+        return Object.keys(provided).some(
+          (aid) =>
+            (provided[aid as enums.ActionIdType] ?? 0) > 0 &&
+            aid in selfBonus &&
+            (selfBonus[aid as enums.ActionIdType] ?? 0) > 0,
+        )
       })
 
       if (!providerCard) return
@@ -184,7 +190,10 @@ describe('最適編成', () => {
       const provided = getProvidedActions(providerCard)
       const selfBonus = getSelfAcquisitionBonus(providerCard)
       const commonAction = Object.keys(provided).find(
-        (aid) => aid in selfBonus && (selfBonus[aid as enums.ActionIdType] ?? 0) > 0,
+        (aid) =>
+          (provided[aid as enums.ActionIdType] ?? 0) > 0 &&
+          aid in selfBonus &&
+          (selfBonus[aid as enums.ActionIdType] ?? 0) > 0,
       ) as enums.ActionIdType
 
       // receiverCard: commonAction をトリガーにするアビリティを持つサポート

@@ -22,7 +22,7 @@ if ! npx prettier --check "src/**/*.{ts,tsx}" 2>&1; then
 fi
 
 # --- 3. 型チェック ---
-echo "[3/3] 型チェック (tsc --noEmit) ...""
+echo "[3/3] 型チェック (tsc --noEmit) ..."
 if ! npx tsc -p tsconfig.app.json --noEmit 2>&1; then
   echo ""
   echo "⚠ コンパイルエラーがあります。修正してください。"

@@ -1,7 +1,7 @@
 /**
  * サポートカードに関する型定義。
  *
- * カードの全情報（SupportCard）、アビリティ、イベント、Pアイテム、
+ * サポートの全情報（SupportCard）、アビリティ、イベント、Pアイテム、
  * スキルカード、そしてスコア計算結果など、アプリケーション全体の
  * データ構造をインターフェースとして定義するファイル。
  * cards.json から読み込んだデータはここの型で型付けされる。
@@ -38,7 +38,7 @@ import type {
  * データフロー: cards.json → AllCards → コンポーネント
  */
 export interface SupportCard {
-  /** カード名（例: "いめーじとれーにんぐ"） */
+  /** サポート名（例: "いめーじとれーにんぐ"） */
   name: string
   /** レアリティ（例: "ssr", "sr", "r"） */
   rarity: RarityType
@@ -46,7 +46,7 @@ export interface SupportCard {
   plan: PlanType
   /** パラメータタイプ（例: "vocal", "dance", "visual", "assist"） */
   type: CardType
-  /** パラメータタイプ（Vo/Da/Vi のいずれか。assist カードでも abilities から決定済み。例: "vocal"） */
+  /** パラメータタイプ（Vo/Da/Vi のいずれか。assist サポートでも abilities から決定済み。例: "vocal"） */
   parameter_type: ParameterType
   /** 入手方法（例: "gacha", "event", "season_limited"） */
   source: SourceType
@@ -334,14 +334,14 @@ export interface PerLessonParameterValues {
 }
 
 /**
- * カード計算結果。
+ * サポート計算結果。
  *
  * calculateCardParameter() の戻り値。ScoreBreakdownModal で内訳表示に使う。
  */
 export interface CardCalculationResult {
-  /** カード名 */
+  /** サポート名 */
   cardName: string
-  /** このカードのパラメータタイプ */
+  /** このサポートのパラメータタイプ */
   parameterType: ParameterType
   /** サポートイベントによるパラメータ上昇量 */
   eventBoost: number
@@ -374,8 +374,8 @@ export interface CardCalculationResult {
     maxCount?: number
     /** 直接表示テキスト（Pアイテム用） */
     displayName?: string
-    /** 発動トリガーキー（Pアイテム用。score.action.*のラベルに対応） */
-    triggerKey?: TriggerKeyType
+    /** 発動トリガーキー */
+    trigger: TriggerKeyType
     /** Pアイテム効果の構造化データ（UIで全文テキストを生成する用） */
     effectData?: PItemEffect
     /** 発動回数 */
@@ -389,7 +389,7 @@ export interface CardCalculationResult {
   parameterBonus: number
   /** パラメータボーナスの倍率（%）— 0 ならボーナスアビリティ無し */
   paramBonusPercent: number
-  /** パラメータボーナスの対象値（Vo/Da/Vi からカードタイプで選択された値） */
+  /** パラメータボーナスの対象値（Vo/Da/Vi からサポートタイプで選択された値） */
   paramBonusBase: number
   /** イベント上昇の元値（ブースト前） */
   eventBoostBase: number
@@ -397,8 +397,8 @@ export interface CardCalculationResult {
   eventBoostPercent: number
   /** 総パラメータ上昇量 */
   totalIncrease: number
-  /** アクション別の自動計算回数（maxCount制限前。カウント設定UI用） */
-  autoActionCounts: Partial<Record<ActionIdType, number>>
+  /** アクション別の自動カウント回数（maxCount制限前。カウント設定UI用） */
+  autoCounts: Partial<Record<ActionIdType, number>>
 }
 
 /**

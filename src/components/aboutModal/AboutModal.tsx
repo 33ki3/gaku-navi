@@ -16,16 +16,16 @@ import AboutContent from './AboutContent'
 interface AboutModalProps {
   /** モーダルを閉じる関数 */
   onClose: () => void
-  /** 点数設定パネルがピン留めされているか */
-  settingsPinned: boolean
+  /** パネルの幅分だけ右を空けるためのCSSクラス */
+  panelRightOffset: string
 }
 
 /** アプリの概要・使い方・免責事項を表示するモーダル */
-export default function AboutModal({ onClose, settingsPinned }: AboutModalProps) {
+export default function AboutModal({ onClose, panelRightOffset }: AboutModalProps) {
   const { t } = useTranslation()
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL} className={settingsPinned ? 'md:right-96' : ''}>
+    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL} className={panelRightOffset}>
       {/* ヘッダー */}
       <div className="sticky top-0 bg-white z-10 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
         <h2 className="text-sm font-black text-slate-800">{t('ui.about.title')}</h2>

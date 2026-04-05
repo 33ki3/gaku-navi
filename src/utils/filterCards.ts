@@ -1,12 +1,20 @@
 /**
- * カードフィルタリング・ソートの純粋ロジック
+ * サポートフィルタリング・ソートの純粋ロジック
  *
- * ユーザーが選んだ検索条件（名前、レアリティ、タイプ、プラン等）でカードを絞り込み、
+ * ユーザーが選んだ検索条件（名前、レアリティ、タイプ、プラン等）でサポートを絞り込み、
  * 指定されたソート方法で並び替える。
  * UIの状態に依存しない「純粋関数」として設計されている。
  */
 import type { SupportCard } from '../types/card'
-import type { AbilityKeywordType, CardType, EventFilterType, PlanType, RarityType, SortModeType, UncapType } from '../types/enums'
+import type {
+  AbilityKeywordType,
+  CardType,
+  EventFilterType,
+  PlanType,
+  RarityType,
+  SortModeType,
+  UncapType,
+} from '../types/enums'
 import * as data from '../data'
 import * as constant from '../constant'
 import * as enums from '../types/enums'
@@ -18,7 +26,7 @@ import { hasSPAbility, hasAbilityKeyword } from './cardQuery'
  * UIコンポーネントから渡される検索条件やソート設定を1つにまとめている。
  */
 interface FilterSortParams {
-  /** ユーザーが入力したテキスト検索語（カード名等で部分一致検索） */
+  /** ユーザーが入力したテキスト検索語（サポート名等で部分一致検索） */
   searchTerm: string
   /** 選択されているレアリティ（SSR、SR、R）のセット */
   selectedRarities: Set<RarityType>
@@ -34,24 +42,24 @@ interface FilterSortParams {
   selectedEventFilters: Set<EventFilterType>
   /** 選択されている凸数のセット */
   selectedUncaps: Set<UncapType>
-  /** カード名 → 現在の凸数のマッピング（フィルタリング用） */
+  /** サポート名 → 現在の凸数のマッピング（フィルタリング用） */
   cardUncaps: Record<string, UncapType>
-  /** カード名 → ソート用凸数のマッピング（ソート条件変更時のみ更新） */
+  /** サポート名 → ソート用凸数のマッピング（ソート条件変更時のみ更新） */
   sortCardUncaps: Record<string, UncapType>
   /** 現在のソートモード（レアリティ順、スコア順、日付順、凸数順） */
   sortMode: SortModeType
   /** ソートを逆順にするかどうか */
   sortReverse: boolean
-  /** カード名 → 計算スコアのマッピング（スコアソート用） */
+  /** サポート名 → 計算スコアのマッピング（スコアソート用） */
   cardScores: Map<string, number>
 }
 
 /**
- * カードが指定されたイベント種別フィルターに一致するか判定する
+ * サポートが指定されたイベント種別フィルターに一致するか判定する
  *
- * カードが持つイベントのうち、1つでも指定された効果タイプに一致すればtrue。
+ * サポートが持つイベントのうち、1つでも指定された効果タイプに一致すればtrue。
  *
- * @param card - 判定対象のカード
+ * @param card - 判定対象のサポート
  * @param filter - チェックするイベントフィルター種別
  * @returns 一致したらtrue
  */
@@ -70,7 +78,7 @@ function matchesEventFilter(card: SupportCard, filter: EventFilterType): boolean
  * 同じカテゴリ内で複数選択 → OR（どれか1つあればOK）
  * 異なるカテゴリで選択 → AND（両方のカテゴリで1つ以上マッチ必要）
  *
- * @param card - 判定対象のカード
+ * @param card - 判定対象のサポート
  * @param keywords - 選択されたキーワードのセット
  * @returns フィルター条件を満たしたらtrue
  */
@@ -101,7 +109,7 @@ function matchesAbilityFilter(card: SupportCard, keywords: Set<AbilityKeywordTyp
  *
  * 同じカテゴリ内 → OR、異なるカテゴリ → AND。
  *
- * @param card - 判定対象のカード
+ * @param card - 判定対象のサポート
  * @param filters - 選択されたイベントフィルターのセット
  * @returns フィルター条件を満たしたらtrue
  */
@@ -124,16 +132,16 @@ function matchesEventTypeFilter(card: SupportCard, filters: Set<EventFilterType>
 }
 
 /**
- * カード一覧に対してフィルタリングとソートを行う
+ * サポート一覧に対してフィルタリングとソートを行う
  *
  * 処理の流れ:
- * 1. すべてのフィルター条件を順番にチェックして、条件に合わないカードを除外する
+ * 1. すべてのフィルター条件を順番にチェックして、条件に合わないサポートを除外する
  * 2. 選択されたソートモードに従って並び替える
  * 3. 逆順フラグが立っていれば最後にひっくり返す
  *
- * @param cards - フィルター前の全カード一覧
+ * @param cards - フィルター前の全サポート一覧
  * @param params - フィルター＆ソートの条件パラメータ
- * @returns フィルター＆ソート後のカード配列
+ * @returns フィルター＆ソート後のサポート配列
  */
 export function filterAndSortCards(cards: SupportCard[], params: FilterSortParams): SupportCard[] {
   const {
@@ -154,7 +162,7 @@ export function filterAndSortCards(cards: SupportCard[], params: FilterSortParam
 
   // ---- ステップ1: フィルタリング ----
   let result = cards.filter((card) => {
-    // テキスト検索: カード名・Pアイテム名・スキルカード名・イベント名のどれかに部分一致
+    // テキスト検索: サポート名・Pアイテム名・スキルカード名・イベント名のどれかに部分一致
     const term = searchTerm.toLowerCase()
     if (
       term &&
@@ -174,7 +182,7 @@ export function filterAndSortCards(cards: SupportCard[], params: FilterSortParam
     if (!matchesAbilityFilter(card, selectedAbilityKeywords)) return false
     if (!matchesEventTypeFilter(card, selectedEventFilters)) return false
 
-    // 凸数フィルター: カードの現在の凸数が選択に含まれているか
+    // 凸数フィルター: サポートの現在の凸数が選択に含まれているか
     const cardUncap = cardUncaps[card.name] ?? constant.DEFAULT_UNCAP
     if (selectedUncaps.size > 0 && !selectedUncaps.has(cardUncap)) return false
     return true

@@ -20,8 +20,8 @@ import { useAccordionState } from '../../hooks'
 interface HelpModalProps {
   /** モーダルを閉じる関数 */
   onClose: () => void
-  /** 点数設定パネルがピン留めされているか */
-  settingsPinned: boolean
+  /** パネルの幅分だけ右を空けるためのCSSクラス */
+  panelRightOffset: string
 }
 
 /** 各セクションの初期開閉状態（すべて閉じた状態） */
@@ -32,15 +32,16 @@ const initialSections: Record<HelpSectionKey, boolean> = {
   [HelpSectionKey.CountTarget]: false,
   [HelpSectionKey.Uncap]: false,
   [HelpSectionKey.Data]: false,
+  [HelpSectionKey.UnitSimulator]: false,
 }
 
 /** 各セクションの初期開閉状態（すべて閉じた状態） */
-export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
+export default function HelpModal({ onClose, panelRightOffset }: HelpModalProps) {
   const { t } = useTranslation()
   const { state: sections, toggle } = useAccordionState(initialSections)
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL} className={settingsPinned ? 'md:right-96' : ''}>
+    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL} className={panelRightOffset}>
       {/* ヘッダー */}
       <div className="sticky top-0 bg-white z-10 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
         <h2 className="text-sm font-black text-slate-800">{t('ui.help.title')}</h2>
@@ -54,9 +55,7 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           isOpen={sections.filter}
           onToggle={() => toggle(HelpSectionKey.Filter)}
         >
-          <p className="text-xs text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
-            {t('ui.help.filter_desc')}
-          </p>
+          <p className="text-xs text-slate-600 leading-relaxed mb-3 whitespace-pre-line">{t('ui.help.filter_desc')}</p>
           {/* レアリティバッジ例 */}
           <div className="flex flex-wrap gap-1.5 mb-2">
             {Object.values(RarityType).map((r) => {
@@ -92,15 +91,13 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           </div>
         </HelpSection>
 
-        {/* カード一覧の見方 */}
+        {/* サポート一覧の見方 */}
         <HelpSection
           title={t('ui.help.card_list_title')}
           isOpen={sections.cardList}
           onToggle={() => toggle(HelpSectionKey.CardList)}
         >
-          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-            {t('ui.help.card_list_desc')}
-          </p>
+          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{t('ui.help.card_list_desc')}</p>
         </HelpSection>
 
         {/* 点数設定 */}
@@ -109,9 +106,7 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           isOpen={sections.score}
           onToggle={() => toggle(HelpSectionKey.Score)}
         >
-          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-            {t('ui.help.score_desc')}
-          </p>
+          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{t('ui.help.score_desc')}</p>
         </HelpSection>
 
         {/* カウント対象の対応表 */}
@@ -126,8 +121,12 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           <table className="w-full text-[10px] text-slate-700 border-collapse">
             <thead>
               <tr className="bg-slate-100">
-                <th className="px-2 py-1 text-left border border-slate-200 font-bold">{t('ui.help.count_target_table.header_effect')}</th>
-                <th className="px-2 py-1 text-left border border-slate-200 font-bold">{t('ui.help.count_target_table.header_trigger')}</th>
+                <th className="px-2 py-1 text-left border border-slate-200 font-bold">
+                  {t('ui.help.count_target_table.header_effect')}
+                </th>
+                <th className="px-2 py-1 text-left border border-slate-200 font-bold">
+                  {t('ui.help.count_target_table.header_trigger')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -139,9 +138,7 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
               ))}
             </tbody>
           </table>
-          <p className="text-[10px] text-slate-500 mt-2">
-            {t('ui.help.count_target_table.note_count')}
-          </p>
+          <p className="text-[10px] text-slate-500 mt-2">{t('ui.help.count_target_table.note_count')}</p>
         </HelpSection>
 
         {/* 凸数 */}
@@ -150,9 +147,7 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           isOpen={sections.uncap}
           onToggle={() => toggle(HelpSectionKey.Uncap)}
         >
-          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-            {t('ui.help.uncap_desc')}
-          </p>
+          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{t('ui.help.uncap_desc')}</p>
         </HelpSection>
 
         {/* データ管理 */}
@@ -161,8 +156,16 @@ export default function HelpModal({ onClose, settingsPinned }: HelpModalProps) {
           isOpen={sections.data}
           onToggle={() => toggle(HelpSectionKey.Data)}
         >
+          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{t('ui.help.data_desc')}</p>
+        </HelpSection>
+        {/* 最適編成 */}
+        <HelpSection
+          title={t('ui.help.unit_simulator_title')}
+          isOpen={sections.unitSimulator}
+          onToggle={() => toggle(HelpSectionKey.UnitSimulator)}
+        >
           <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-            {t('ui.help.data_desc')}
+            {t('ui.help.unit_simulator_desc')}
           </p>
         </HelpSection>
       </div>

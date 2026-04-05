@@ -56,9 +56,7 @@ export function ActionCountsSection({
               const isControlled =
                 settings.useScheduleLimits && scheduleData != null && data.ScheduleControlledIds.has(cat.id)
               // スケジュール制御下なら自動計算値、そうでなければ手動値
-              const displayValue = isControlled
-                ? (scheduleCounts?.[cat.id] ?? 0)
-                : (settings.actionCounts[cat.id] ?? 0)
+              const displayValue = isControlled ? (scheduleCounts?.[cat.id] ?? 0) : (settings.actionCounts[cat.id] ?? 0)
 
               return (
                 <div key={cat.id} className="flex items-center gap-2">

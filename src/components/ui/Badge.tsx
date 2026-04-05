@@ -33,7 +33,9 @@ export function Badge({
   className = '',
 }: BadgeProps) {
   return (
-    <span className={`${getBadgeSizeStyle(size)} ${getBadgeWeightClass(weight)} ${color} shrink-0 whitespace-nowrap ${className}`.trim()}>
+    <span
+      className={`${getBadgeSizeStyle(size)} ${getBadgeWeightClass(weight)} ${color} shrink-0 whitespace-nowrap ${className}`.trim()}
+    >
       {children}
     </span>
   )

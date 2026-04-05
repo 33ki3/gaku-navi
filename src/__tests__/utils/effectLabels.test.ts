@@ -1,7 +1,7 @@
 /**
  * エフェクトラベル補間テスト
  *
- * 全カードのイベント・Pアイテム・スキルカード・カスタムスロットについて、
+ * 全サポートのイベント・Pアイテム・スキルカード・カスタムスロットについて、
  * テンプレート補間後に未解決の {{}} プレースホルダーが残っていないことを検証する。
  * また、存在しない i18n キーが参照された場合はテスト失敗として検出する。
  */
@@ -50,7 +50,7 @@ function expectNoMissingKeys(context: string) {
   expect(missingKeys, `${context}: 欠落キー [${missingKeys.join(', ')}]`).toHaveLength(0)
 }
 describe('effectLabels テンプレート補間', () => {
-  describe('全カードのイベント効果に未解決プレースホルダーがない', () => {
+  describe('全サポートのイベント効果に未解決プレースホルダーがない', () => {
     for (const card of AllCards) {
       for (const [i, event] of card.events.entries()) {
         it(`${card.name} events[${i}]`, () => {
@@ -62,7 +62,7 @@ describe('effectLabels テンプレート補間', () => {
     }
   })
 
-  describe('全カードのPアイテム効果に未解決プレースホルダーがない', () => {
+  describe('全サポートのPアイテム効果に未解決プレースホルダーがない', () => {
     for (const card of AllCards) {
       if (!card.p_item?.effect) continue
       it(`${card.name} p_item`, () => {
@@ -73,7 +73,7 @@ describe('effectLabels テンプレート補間', () => {
     }
   })
 
-  describe('全カードのスキルカード効果に未解決プレースホルダーがない', () => {
+  describe('全サポートのスキルカード効果に未解決プレースホルダーがない', () => {
     for (const card of AllCards) {
       if (!card.skill_card) continue
       for (const [i, eff] of card.skill_card.effects.entries()) {
@@ -87,7 +87,7 @@ describe('effectLabels テンプレート補間', () => {
     }
   })
 
-  describe('全カードのカスタムスロット名に未解決プレースホルダーがない', () => {
+  describe('全サポートのカスタムスロット名に未解決プレースホルダーがない', () => {
     for (const card of AllCards) {
       if (!card.skill_card) continue
       for (const [si, slot] of card.skill_card.custom_slot.entries()) {
@@ -100,7 +100,7 @@ describe('effectLabels テンプレート補間', () => {
     }
   })
 
-  describe('全カードのカスタムスロット効果に未解決プレースホルダーがない', () => {
+  describe('全サポートのカスタムスロット効果に未解決プレースホルダーがない', () => {
     for (const card of AllCards) {
       if (!card.skill_card) continue
       for (const [si, slot] of card.skill_card.custom_slot.entries()) {

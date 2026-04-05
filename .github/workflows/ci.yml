@@ -43,6 +43,18 @@ jobs:
           key: node-modules-${{ hashFiles('package-lock.json') }}
       - run: npm run lint
 
+  format:
+    name: Prettier
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+      - run: npx prettier --check "src/**/*.{ts,tsx}"
+
   unused:
     name: Knip
     needs: setup
@@ -68,7 +80,7 @@ jobs:
       - run: npm test -- --run
 
   check:
-    needs: [typecheck, lint, unused, test]
+    needs: [typecheck, lint, format, unused, test]
     runs-on: ubuntu-latest
     steps:
       - run: echo "All checks passed"

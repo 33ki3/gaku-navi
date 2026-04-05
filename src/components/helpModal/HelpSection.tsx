@@ -35,11 +35,7 @@ export function HelpSection({ title, isOpen, onToggle, children }: HelpSectionPr
         </svg>
         {title}
       </button>
-      {isOpen && (
-        <div className="px-3 py-2.5 bg-white">
-          {children}
-        </div>
-      )}
+      {isOpen && <div className="px-3 py-2.5 bg-white">{children}</div>}
     </div>
   )
 }

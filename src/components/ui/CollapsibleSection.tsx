@@ -2,7 +2,7 @@
  * 折りたたみセクション
  *
  * タイトルをクリックすると、中身の表示/非表示を切り替える。
- * カード詳細モーダルやスコア設定パネルで使われる。
+ * サポート詳細モーダルやスコア設定パネルで使われる。
  * タイトルの左に ▶ アイコンがあり、開くと ▼ に回転する。
  */
 import type { ReactNode } from 'react'
@@ -34,7 +34,18 @@ export default function CollapsibleSection({
 }: CollapsibleSectionProps) {
   return (
     <div>
-      <div role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }} className={getCollapsibleVariantClass(variant)}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onToggle()
+          }
+        }}
+        className={getCollapsibleVariantClass(variant)}
+      >
         <svg
           className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`}
           fill="none"

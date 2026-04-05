@@ -3,15 +3,11 @@
  *
  * cards.json の values は空オブジェクトで出力されるため、
  * 効果段階マスタ + スロットスケジュールマスタ から復元する。
- * 例外カードだけはカード名ベースの例外マップで上書きする。
+ * 例外サポートだけはサポート名ベースの例外マップで上書きする。
  */
 
 import type { Ability, SupportCard } from '../types/card'
-import {
-  RarityType,
-  RarityTierType,
-  UncapType,
-} from '../types/enums'
+import { RarityType, RarityTierType, UncapType } from '../types/enums'
 import { getStages, getSchedule } from '../data/score/abilityValue'
 import { AbilityExceptionMap } from '../data/score/abilityException'
 
@@ -19,9 +15,9 @@ import { AbilityExceptionMap } from '../data/score/abilityException'
 type AbilityValues = Record<string, string>
 
 /**
- * カードの rarity_tier をマスタ参照用の RarityTierType に変換する。
+ * サポートの rarity_tier をマスタ参照用の RarityTierType に変換する。
  *
- * @param card - 対象カード
+ * @param card - 対象サポート
  * @returns RarityTierType
  */
 function getRarityTier(card: SupportCard): RarityTierType {
@@ -31,14 +27,12 @@ function getRarityTier(card: SupportCard): RarityTierType {
   return card.is_event_source ? RarityTierType.EventSSR : RarityTierType.SSR
 }
 
-
-
 /**
  * アビリティの凸別値を解決する。
  *
  * values が空オブジェクトの場合はマスタから復元する。
  *
- * @param card - 対象カード
+ * @param card - 対象サポート
  * @param ability - 対象アビリティ
  * @param slotIndex - 0-based のスロット番号
  * @returns 凸別値辞書
@@ -49,7 +43,7 @@ export function resolveAbilityValues(card: SupportCard, ability: Ability, slotIn
     return ability.values
   }
 
-  // カード個別例外を先にチェック
+  // サポート個別例外を先にチェック
   const slot = slotIndex + 1
   const exception = AbilityExceptionMap.get(card.name)?.get(slot)
   if (exception != null) {

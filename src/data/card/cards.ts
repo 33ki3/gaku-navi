@@ -1,7 +1,7 @@
 /**
- * カードマスタデータ。
+ * サポートマスタデータ。
  *
- * cards.json を型付きの全カード配列としてエクスポートする。
+ * cards.json を型付きの全サポート配列としてエクスポートする。
  * アビリティの凸別値は cards.json では空オブジェクトで出力され、読み込み時にマスタから復元する。
  */
 
@@ -10,19 +10,19 @@ import { resolveAbilityValues } from '../../utils/abilityValueResolver'
 import rawCards from '../json/cards.json'
 
 /**
- * 生カードデータにアビリティ値を補完して、実行時の SupportCard 配列に変換する。
+ * 生サポートデータにアビリティ値を補完して、実行時の SupportCard 配列に変換する。
  *
  * @param cards - cards.json から読み込んだ生データ
- * @returns アビリティ値補完後のカード配列
+ * @returns アビリティ値補完後のサポート配列
  */
 function inflateCards(cards: SupportCard[]): SupportCard[] {
-	return cards.map((card) => ({
-		...card,
-		abilities: card.abilities.map((ability, index) => ({
-			...ability,
-			values: resolveAbilityValues(card, ability, index),
-		})),
-	}))
+  return cards.map((card) => ({
+    ...card,
+    abilities: card.abilities.map((ability, index) => ({
+      ...ability,
+      values: resolveAbilityValues(card, ability, index),
+    })),
+  }))
 }
 
 /**

@@ -21,9 +21,7 @@ const entries: SkillCardRarityEntry[] = [
   { rarity: SkillCardRarityType.R, label: 'common.skill_card_rarity.r', color: RARITY_COLOR_R },
 ]
 
-const map = new Map<string, SkillCardRarityEntry>(
-  entries.map((e) => [e.rarity, e]),
-)
+const map = new Map<string, SkillCardRarityEntry>(entries.map((e) => [e.rarity, e]))
 
 /**
  * スキルカードレアリティの表示エントリを返す。

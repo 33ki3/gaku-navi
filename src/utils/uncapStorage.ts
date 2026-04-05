@@ -1,7 +1,7 @@
 /**
- * カード凸数の永続化ユーティリティ
+ * サポート凸数の永続化ユーティリティ
  *
- * localStorage を使ったカード凸数データの読み込み・保存を行う。
+ * localStorage を使ったサポート凸数データの読み込み・保存を行う。
  */
 import type { UncapType } from '../types/enums'
 import * as enums from '../types/enums'
@@ -10,10 +10,10 @@ import * as constant from '../constant'
 const VALID_UNCAPS = new Set(Object.values(enums.UncapType))
 
 /**
- * localStorage に保存されたカード凸数データを読み込む
+ * localStorage に保存されたサポート凸数データを読み込む
  * 保存データがなければ空のオブジェクトを返す
  *
- * @returns カード名 → 凸数のマッピング
+ * @returns サポート名 → 凸数のマッピング
  */
 export function loadCardUncaps(): Record<string, UncapType> {
   try {
@@ -34,9 +34,9 @@ export function loadCardUncaps(): Record<string, UncapType> {
 }
 
 /**
- * カード凸数データを localStorage に保存する
+ * サポート凸数データを localStorage に保存する
  *
- * @param uncaps - カード名 → 凸数のマッピング
+ * @param uncaps - サポート名 → 凸数のマッピング
  */
 export function saveCardUncaps(uncaps: Record<string, UncapType>) {
   localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify(uncaps))

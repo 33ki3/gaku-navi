@@ -41,28 +41,44 @@ export function ParamBonusBreakdown({ breakdown, bonusBase }: ParamBonusBreakdow
         <tbody>
           {breakdown.map((row, i) => (
             <tr key={i} className="border-b border-slate-50">
-              <td className="py-0.5 text-slate-600">{row.week}{t('ui.unit.week')}</td>
+              <td className="py-0.5 text-slate-600">
+                {row.week}
+                {t('ui.unit.week')}
+              </td>
               <td className={`py-0.5 font-bold ${getParameterTextColor(row.attribute)}`}>
-                {row.attribute === enums.ParameterType.Vocal ? t('ui.settings.attr_vo')
-                : row.attribute === enums.ParameterType.Dance ? t('ui.settings.attr_da')
-                : t('ui.settings.attr_vi')}
+                {row.attribute === enums.ParameterType.Vocal
+                  ? t('ui.settings.attr_vo')
+                  : row.attribute === enums.ParameterType.Dance
+                    ? t('ui.settings.attr_da')
+                    : t('ui.settings.attr_vi')}
               </td>
               {/* Vo/Da/Vi の値。対象属性のみ太字+カラー、その他は薄色 */}
-              <td className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Vocal ? `font-bold ${voColor}` : 'text-slate-400'}`}>
-                {t('ui.symbol.plus')}{row.vocal}
+              <td
+                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Vocal ? `font-bold ${voColor}` : 'text-slate-400'}`}
+              >
+                {t('ui.symbol.plus')}
+                {row.vocal}
               </td>
-              <td className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Dance ? `font-bold ${daColor}` : 'text-slate-400'}`}>
-                {t('ui.symbol.plus')}{row.dance}
+              <td
+                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Dance ? `font-bold ${daColor}` : 'text-slate-400'}`}
+              >
+                {t('ui.symbol.plus')}
+                {row.dance}
               </td>
-              <td className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Visual ? `font-bold ${viColor}` : 'text-slate-400'}`}>
-                {t('ui.symbol.plus')}{row.visual}
+              <td
+                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Visual ? `font-bold ${viColor}` : 'text-slate-400'}`}
+              >
+                {t('ui.symbol.plus')}
+                {row.visual}
               </td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr className="border-t border-slate-200 font-black">
-            <td className="py-1 text-slate-600" colSpan={2}>{t('ui.settings.total')}</td>
+            <td className="py-1 text-slate-600" colSpan={2}>
+              {t('ui.settings.total')}
+            </td>
             {/* フッター合計行: 各属性のボーナス合計値 */}
             <td className={`text-right py-1 ${voColor}`}>{bonusBase.vocal}</td>
             <td className={`text-right py-1 ${daColor}`}>{bonusBase.dance}</td>
@@ -71,9 +87,7 @@ export function ParamBonusBreakdown({ breakdown, bonusBase }: ParamBonusBreakdow
         </tfoot>
       </table>
       {/* 全週がレッスン以外（お出かけ/休む等）のとき内訳が空になる */}
-      {breakdown.length === 0 && (
-        <p className="text-slate-400 text-center py-2">{t('ui.message.no_lessons')}</p>
-      )}
+      {breakdown.length === 0 && <p className="text-slate-400 text-center py-2">{t('ui.message.no_lessons')}</p>}
     </div>
   )
 }

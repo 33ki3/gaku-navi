@@ -45,7 +45,7 @@ export function ToggleButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${getToggleButtonSizeStyle(size)} rounded-lg font-bold transition-all ${stateClass} ${className}`}
+      className={`${getToggleButtonSizeStyle(size)} rounded-lg font-bold transition-colors ${stateClass} ${className}`}
     >
       {children}
     </button>

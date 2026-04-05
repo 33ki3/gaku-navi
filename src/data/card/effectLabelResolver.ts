@@ -8,7 +8,14 @@
  */
 import { TypeDisplayEntries } from './typeDisplay'
 import type { TranslationKey } from '../../i18n'
-import { CardZoneType, SkillCardType, EventEffectType, ReleaseConditionType, CostType, EffectSectionType } from '../../types/enums'
+import {
+  CardZoneType,
+  SkillCardType,
+  EventEffectType,
+  ReleaseConditionType,
+  CostType,
+  EffectSectionType,
+} from '../../types/enums'
 import type { ParameterType } from '../../types/enums'
 
 const PARAM_LABEL_MAP = new Map(TypeDisplayEntries.map((e) => [e.cardType, e.displayLabel]))

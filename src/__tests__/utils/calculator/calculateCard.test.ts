@@ -1,13 +1,23 @@
+/**
+ * calculateCardParameter のユニットテスト
+ *
+ * 1枚のサポートカードに対して、アクション回数・凸数・パラメータボーナス基礎値を
+ * 入力としてパラメータ上昇量を計算する関数を検証する。
+ * イベントパラメータ上昇 × ブースト倍率、アビリティ × トリガー回数、
+ * 初期値上昇、max_count 制限、Pアイテム効果、自己発火（selfTrigger）など
+ * 各計算パスを網羅する。点数詳細モーダルの内訳表示やスコア順ソートの根拠となるため、
+ * 計算ロジックの正確性が最重要。
+ */
 import { describe, expect, it } from 'vitest'
 import { calculateCardParameter } from '../../../utils/calculator/calculateCard'
 import type { SupportCard } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
 
-/** 最小限のカードを作るファクトリ */
+/** 最小限のサポートを作るファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {
   return {
-    name: 'テストカード',
+    name: 'テストサポート',
     rarity: enums.RarityType.SR,
     plan: enums.PlanType.Free,
     type: enums.CardType.Vocal,
@@ -40,7 +50,12 @@ describe('calculateCardParameter', () => {
   it('イベントパラメータ上昇のみ（ブーストなし）', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Lv20,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 20,
+          title: 'テスト',
+        },
       ],
     })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
@@ -63,7 +78,12 @@ describe('calculateCardParameter', () => {
         },
       ],
       events: [
-        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Lv20,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 20,
+          title: 'テスト',
+        },
       ],
     })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
@@ -187,7 +207,7 @@ describe('calculateCardParameter', () => {
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, bonusBase)
     expect(result.parameterBonus).toBe(43)
     expect(result.paramBonusPercent).toBeCloseTo(4.3)
-    expect(result.paramBonusBase).toBe(1000) // vocal カードなので vocal の値
+    expect(result.paramBonusBase).toBe(1000) // vocal サポートなので vocal の値
     expect(result.totalIncrease).toBe(43)
   })
 
@@ -204,7 +224,11 @@ describe('calculateCardParameter', () => {
       ],
     })
     // vocal bonusBase = 100, 2.8% → 100 * 2.8 / 100 = 2.8 → floor(2.8) = 2
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, { vocal: 100, dance: 0, visual: 0 })
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, {
+      vocal: 100,
+      dance: 0,
+      visual: 0,
+    })
     expect(result.parameterBonus).toBe(2)
   })
 
@@ -243,7 +267,7 @@ describe('calculateCardParameter', () => {
     expect(result.totalIncrease).toBe(50)
   })
 
-  it('selfTrigger ボーナスが加算される（スキルカード提供カード）', () => {
+  it('selfTrigger ボーナスが加算される（スキルカード提供サポート）', () => {
     const card = makeCard({
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
@@ -346,7 +370,12 @@ describe('calculateCardParameter', () => {
         },
       ],
       events: [
-        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Lv20,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 20,
+          title: 'テスト',
+        },
       ],
     })
     const actions = { [enums.ActionIdType.Lesson]: 3 }
@@ -356,7 +385,7 @@ describe('calculateCardParameter', () => {
     // イベント: 20 * 1.5 = 30
     expect(result.eventBoost).toBe(30)
     // アビリティ: 5 * 3 = 15
-    expect(result.abilityBoosts.find(b => b.nameKey === enums.AbilityNameKeyType.LessonEnd)?.total).toBe(15)
+    expect(result.abilityBoosts.find((b) => b.nameKey === enums.AbilityNameKeyType.LessonEnd)?.total).toBe(15)
     // パラメータボーナス: 200 * 10 / 100 = 20
     expect(result.parameterBonus).toBe(20)
     // 合計: 30 + 15 + 20 = 65
@@ -381,7 +410,16 @@ describe('calculateCardParameter', () => {
     // 17 * 10 / 100 = 1.7 → 1
     // 合計 = 3
     const perLesson = { vocal: [15, 13, 17], dance: [5, 5, 5], visual: [5, 5, 5] }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase, true, true, perLesson)
+    const result = calculateCardParameter(
+      card,
+      enums.UncapType.Zero,
+      emptyActions,
+      emptyExtra,
+      zeroBonusBase,
+      true,
+      true,
+      perLesson,
+    )
     expect(result.parameterBonus).toBe(3)
   })
 
@@ -405,9 +443,35 @@ describe('calculateCardParameter', () => {
     const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
     expect(result.abilityBoosts).toHaveLength(1) // lesson のみ
     expect(result.allAbilityDetails).toHaveLength(2) // lesson + consult 両方
-    const consultDetail = result.allAbilityDetails.find(d => d.nameKey === enums.AbilityNameKeyType.Consult)
+    const consultDetail = result.allAbilityDetails.find((d) => d.nameKey === enums.AbilityNameKeyType.Consult)
     expect(consultDetail?.total).toBe(0)
     expect(consultDetail?.count).toBe(0)
+  })
+
+  it('allAbilityDetails の各エントリに trigger フィールドが含まれる', () => {
+    const card = makeCard({
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.LessonEnd,
+          trigger_key: enums.TriggerKeyType.LessonEnd,
+          values: { '0': '5' },
+        },
+        {
+          name_key: enums.AbilityNameKeyType.Consult,
+          trigger_key: enums.TriggerKeyType.Consult,
+          values: { '0': '10' },
+        },
+      ],
+    })
+    const actions = { [enums.ActionIdType.Lesson]: 3 }
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    for (const detail of result.allAbilityDetails) {
+      expect(detail.trigger).toBeDefined()
+    }
+    const lessonDetail = result.allAbilityDetails.find((d) => d.nameKey === enums.AbilityNameKeyType.LessonEnd)
+    expect(lessonDetail?.trigger).toBe(enums.TriggerKeyType.LessonEnd)
+    const consultDetail2 = result.allAbilityDetails.find((d) => d.nameKey === enums.AbilityNameKeyType.Consult)
+    expect(consultDetail2?.trigger).toBe(enums.TriggerKeyType.Consult)
   })
 
   it('パーセンテージアビリティは abilityBoosts に含まれない', () => {
@@ -434,7 +498,7 @@ describe('calculateCardParameter', () => {
     expect(result.parameterType).toBe(enums.ParameterType.Dance)
   })
 
-  it('visual カードは visual の bonusBase を使う', () => {
+  it('visual サポートは visual の bonusBase を使う', () => {
     const card = makeCard({
       parameter_type: enums.ParameterType.Visual,
       abilities: [
@@ -454,7 +518,7 @@ describe('calculateCardParameter', () => {
     expect(result.paramBonusBase).toBe(300)
   })
 
-  it('dance カードは dance の bonusBase を使う', () => {
+  it('dance サポートは dance の bonusBase を使う', () => {
     const card = makeCard({
       parameter_type: enums.ParameterType.Dance,
       abilities: [
@@ -486,7 +550,12 @@ describe('calculateCardParameter', () => {
         },
       ],
       events: [
-        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 20, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Lv20,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 20,
+          title: 'テスト',
+        },
       ],
     })
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
@@ -501,7 +570,16 @@ describe('calculateCardParameter', () => {
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
-      skill_card: { name: 'テスト', rarity: enums.RarityType.SSR, type: enums.SkillCardType.Active, lesson_limit: 0, no_duplicate: false, effects: [], custom_cap: 0, custom_slot: [] },
+      skill_card: {
+        name: 'テスト',
+        rarity: enums.RarityType.SSR,
+        type: enums.SkillCardType.Active,
+        lesson_limit: 0,
+        no_duplicate: false,
+        effects: [],
+        custom_cap: 0,
+        custom_slot: [],
+      },
       abilities: [
         {
           name_key: enums.AbilityNameKeyType.SsrCardAcquire,
@@ -562,7 +640,7 @@ describe('calculateCardParameter', () => {
     // アビリティ: 5*3=15, Pアイテム: 6*3=18 → total=33
     expect(result.totalIncrease).toBe(33)
     expect(result.allAbilityDetails).toHaveLength(2)
-    const pItemDetail = result.allAbilityDetails.find(d => d.displayName === 'テストアイテム')
+    const pItemDetail = result.allAbilityDetails.find((d) => d.displayName === 'テストアイテム')
     expect(pItemDetail).toBeDefined()
     expect(pItemDetail?.total).toBe(18)
   })
@@ -589,5 +667,76 @@ describe('calculateCardParameter', () => {
     const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
     expect(result.totalIncrease).toBe(50)
     expect(result.abilityBoosts).toHaveLength(2)
+  })
+
+  it('max_count が指定されたアビリティは回数が上限を超えない', () => {
+    const card = makeCard({
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.SpecialTraining,
+          trigger_key: enums.TriggerKeyType.SpecialTraining,
+          values: { '0': '10' },
+          max_count: 3,
+        },
+      ],
+    })
+    // baseCount=5 で max_count=3 を超過するが、キャップされる
+    const actions = { [enums.ActionIdType.SpecialTraining]: 5 }
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    expect(result.abilityBoosts[0].count).toBe(3)
+    expect(result.totalIncrease).toBe(30) // 10 * 3
+    expect(result.allAbilityDetails[0].maxCount).toBe(3)
+  })
+
+  it('max_count キャップは selfBonus 含む合計に適用される', () => {
+    const card = makeCard({
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
+      ],
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.SkillAcquire,
+          trigger_key: enums.TriggerKeyType.SkillAcquire,
+          values: { '0': '10' },
+          max_count: 4,
+        },
+      ],
+    })
+    // base=3, selfBonus=1(SkillCard提供) → total=4 → ちょうど max_count=4
+    const actions = { [enums.ActionIdType.SkillAcquire]: 3 }
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    expect(result.abilityBoosts[0].count).toBe(4)
+    expect(result.totalIncrease).toBe(40)
+  })
+  it('max_count キャップは selfBonusCustom 含む場合もカバーする', () => {
+    const card = makeCard({
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
+      ],
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.SkillAcquire,
+          trigger_key: enums.TriggerKeyType.SkillAcquire,
+          values: { '0': '10' },
+          max_count: 3,
+        },
+      ],
+    })
+    // base=2, selfBonusCustom=5 → total=7 → max_count=3 でキャップ
+    const actions = { [enums.ActionIdType.SkillAcquire]: 2 }
+    const selfBonusCustom = { [enums.ActionIdType.SkillAcquire]: 5 }
+    const result = calculateCardParameter(
+      card,
+      enums.UncapType.Zero,
+      actions,
+      emptyExtra,
+      zeroBonusBase,
+      true,
+      true,
+      undefined,
+      selfBonusCustom,
+    )
+    expect(result.abilityBoosts[0].count).toBe(3)
+    expect(result.totalIncrease).toBe(30) // 10 * 3
   })
 })

@@ -27,7 +27,13 @@ interface ModalOverlayProps {
 }
 
 /** モーダルオーバーレイを描画する */
-export default function ModalOverlay({ onClose, align = ModalAlignEnum.Center, panelClassName, className = '', children }: ModalOverlayProps) {
+export default function ModalOverlay({
+  onClose,
+  align = ModalAlignEnum.Center,
+  panelClassName,
+  className = '',
+  children,
+}: ModalOverlayProps) {
   /** Escキーが押されたら閉じるハンドラ */
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -51,7 +57,9 @@ export default function ModalOverlay({ onClose, align = ModalAlignEnum.Center, p
       {/* 半透明の背景 */}
       <div className={MODAL_BACKDROP} />
       {/* stopPropagation でモーダル内側のクリックが背景に伝わらないようにする */}
-      <div className={panelClassName} onClick={(e) => e.stopPropagation()}>{children}</div>
+      <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
     </div>
   )
 }

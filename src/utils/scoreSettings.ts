@@ -112,7 +112,10 @@ export function calculateCountsFromSchedule(
  * @param schedule - スケジュール週データ
  * @returns マージ後のアクション回数
  */
-export function mergeScheduleCounts(settings: ScoreSettings, schedule: ScheduleWeekData[]): Partial<Record<enums.ActionIdType, number>> {
+export function mergeScheduleCounts(
+  settings: ScoreSettings,
+  schedule: ScheduleWeekData[],
+): Partial<Record<enums.ActionIdType, number>> {
   // スケジュール自動計算が無効なら、手動入力の値をそのまま返す
   if (!settings.useScheduleLimits) {
     return settings.actionCounts

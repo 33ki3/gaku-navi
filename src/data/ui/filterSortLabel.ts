@@ -22,9 +22,7 @@ const sortModeEntries: LabelEntry<SortModeType>[] = [
 ]
 
 /** ソートモードの value→label ルックアップマップ */
-const sortModeMap = new Map<SortModeType, TranslationKey>(
-  sortModeEntries.map((e) => [e.value, e.label]),
-)
+const sortModeMap = new Map<SortModeType, TranslationKey>(sortModeEntries.map((e) => [e.value, e.label]))
 
 /** ソートモードの表示順 */
 export const SortModeOrder: readonly SortModeType[] = sortModeEntries.map((e) => e.value)
@@ -46,9 +44,7 @@ const filterSortTabEntries: LabelEntry<FilterSortTab>[] = [
 ]
 
 /** フィルタ・ソートタブの value→label ルックアップマップ */
-const filterSortTabMap = new Map<FilterSortTab, TranslationKey>(
-  filterSortTabEntries.map((e) => [e.value, e.label]),
-)
+const filterSortTabMap = new Map<FilterSortTab, TranslationKey>(filterSortTabEntries.map((e) => [e.value, e.label]))
 
 /** フィルタ・ソートタブの表示順 */
 export const FilterSortTabOrder: readonly FilterSortTab[] = filterSortTabEntries.map((e) => e.value)

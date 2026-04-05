@@ -2,7 +2,7 @@
  * アプリケーション全体で使う列挙型（enum 相当の定数オブジェクト）をまとめたファイル。
  *
  * TypeScript の `as const` パターンで定義し、値の型と同名の型エイリアスを
- * 同時にエクスポートしている。カード情報・スコア計算・UI フィルターなど
+ * 同時にエクスポートしている。サポート情報・スコア計算・UI フィルターなど
  * あらゆる場面で参照される基盤型定義。
  */
 
@@ -37,7 +37,7 @@ export const RarityTierType = {
 export type RarityTierType = (typeof RarityTierType)[keyof typeof RarityTierType]
 
 /**
- * カードタイプ定数。
+ * サポートタイプ定数。
  * サポートカードが得意とするパラメータの種類（Vo / Da / Vi / アシスト）。
  * フィルターやバッジの色分けに使う。
  */
@@ -56,7 +56,7 @@ export type CardType = (typeof CardType)[keyof typeof CardType]
 /**
  * パラメータタイプ定数。
  * プロデュースで育てる 3 つの能力値（ボーカル / ダンス / ビジュアル）。
- * カードタイプの Assist を含まない純粋な能力パラメータ。
+ * サポートタイプの Assist を含まない純粋な能力パラメータ。
  */
 export const ParameterType = {
   /** ボーカル */
@@ -87,7 +87,7 @@ export type PlanType = (typeof PlanType)[keyof typeof PlanType]
 
 /**
  * 入手方法の固定値定数。
- * カードをどこで手に入れられるかを示す。ガチャ・限定・フェスなど。
+ * サポートをどこで手に入れられるかを示す。ガチャ・限定・フェスなど。
  * イベント配布やショップ購入はカテゴリID（"event" / "shop" / "pack"）で表現する。
  */
 export const SourceType = {
@@ -324,7 +324,7 @@ export type EventEffectType = (typeof EventEffectType)[keyof typeof EventEffectT
 
 /**
  * イベント種別フィルター値定数。
- * ユーザーがカード一覧画面でイベント効果で絞り込むためのフィルター値。
+ * ユーザーがサポート一覧画面でイベント効果で絞り込むためのフィルター値。
  * 6 種類のボタンに 1 つずつ対応する。
  */
 export const EventFilterType = {
@@ -456,7 +456,7 @@ export type SkillCardViewModeType = (typeof SkillCardViewModeType)[keyof typeof 
 
 /**
  * ソートモード定数。
- * カード一覧の並び替え方法。Rarity = レアリティ順、Date = 登場日順、
+ * サポート一覧の並び替え方法。Rarity = レアリティ順、Date = 登場日順、
  * Score = 点数順、Uncap = 凸数順。
  */
 export const SortModeType = {
@@ -521,6 +521,22 @@ export const UncapType = {
   Four: 4,
 } as const
 export type UncapType = (typeof UncapType)[keyof typeof UncapType]
+
+/**
+ * SP分類結果。
+ * サポートのSPレッスン種別を判定した結果を表す。
+ */
+export const SpCategoryType = {
+  /** ボーカルSP */
+  Vocal: 'vocal',
+  /** ダンスSP */
+  Dance: 'dance',
+  /** ビジュアルSP */
+  Visual: 'visual',
+  /** SP以外 */
+  None: 'none',
+} as const
+export type SpCategoryType = (typeof SpCategoryType)[keyof typeof SpCategoryType]
 
 /**
  * アクショングループ定数。
@@ -955,9 +971,9 @@ export type ModalAlignType = (typeof ModalAlignType)[keyof typeof ModalAlignType
  * UncapSelector コンポーネントの表示バリアント。
  */
 export const UncapSelectorVariantType = {
-  /** カード一覧用（コンパクト） */
+  /** サポート一覧用（コンパクト） */
   Compact: 'compact',
-  /** カード詳細用 */
+  /** サポート詳細用 */
   Detail: 'detail',
 } as const
 export type UncapSelectorVariantType = (typeof UncapSelectorVariantType)[keyof typeof UncapSelectorVariantType]
@@ -987,7 +1003,7 @@ export type FilterButtonCategory = (typeof FilterButtonCategory)[keyof typeof Fi
  * サポートイベントの解放タイミング。初期 / レベル20 / レベル40 の 3 段階。
  */
 export const ReleaseConditionType = {
-  /** 初期（カード入手時に解放） */
+  /** 初期（サポート入手時に解放） */
   Initial: 'initial',
   /** レベル20到達で解放 */
   Lv20: 'lv20',
@@ -1389,7 +1405,7 @@ export type EffectTemplateKeyType = (typeof EffectTemplateKeyType)[keyof typeof 
 export const HelpSectionKey = {
   /** フィルター */
   Filter: 'filter',
-  /** カード一覧 */
+  /** サポート一覧 */
   CardList: 'cardList',
   /** スコア */
   Score: 'score',
@@ -1399,6 +1415,8 @@ export const HelpSectionKey = {
   Uncap: 'uncap',
   /** データ */
   Data: 'data',
+  /** 最適編成 */
+  UnitSimulator: 'unitSimulator',
 } as const
 export type HelpSectionKey = (typeof HelpSectionKey)[keyof typeof HelpSectionKey]
 
@@ -1427,9 +1445,22 @@ export type ScoreSettingsSectionKey = (typeof ScoreSettingsSectionKey)[keyof typ
  */
 export const ScoreDetailSectionKey = {
   /** カウント調整 */
-  CountOverride: 'countOverride',
+  CountCustom: 'countCustom',
 } as const
 export type ScoreDetailSectionKey = (typeof ScoreDetailSectionKey)[keyof typeof ScoreDetailSectionKey]
+
+/**
+ * 最適編成パネルのセクションキー。
+ */
+export const SimulatorSectionKey = {
+  /** 編成設定 */
+  Settings: 'settings',
+  /** スロット編集 */
+  Slots: 'slots',
+  /** 結果 */
+  Result: 'result',
+} as const
+export type SimulatorSectionKey = (typeof SimulatorSectionKey)[keyof typeof SimulatorSectionKey]
 
 /**
  * フィルタ・ソートモーダルのタブ種別。

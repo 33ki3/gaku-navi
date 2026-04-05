@@ -1,3 +1,11 @@
+/**
+ * パラメータボーナス計算テスト
+ *
+ * スケジュール画面でユーザーが選択したレッスン活動（Vo/Da/Vi レッスン・休憩等）に基づいて
+ * パラメータ上昇値を算出する処理を検証する。パラメータボーナスはサポートカードの
+ * 「パラメータボーナス%」アビリティによる追加点数の基礎値となるため、
+ * 正確な算出が不可欠。
+ */
 import { describe, expect, it } from 'vitest'
 import {
   calculateParameterBonusFromSchedule,
@@ -75,11 +83,7 @@ describe('calculateParameterBonusFromSchedule', () => {
 
   it('データが無いシナリオは全 0', () => {
     const selections = { 4: enums.ActivityIdType.VoLesson }
-    const result = calculateParameterBonusFromSchedule(
-      selections,
-      enums.ScenarioType.Nia,
-      enums.DifficultyType.Pro,
-    )
+    const result = calculateParameterBonusFromSchedule(selections, enums.ScenarioType.Nia, enums.DifficultyType.Pro)
     expect(result.vocal).toBe(0)
     expect(result.dance).toBe(0)
     expect(result.visual).toBe(0)

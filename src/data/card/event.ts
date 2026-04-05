@@ -2,8 +2,8 @@
  * イベントマスタ。
  *
  * サポートイベントのフィルター定義とサマリ表示ラベルを管理する。
- * フィルター: カード一覧のフィルターエリアで、イベント種類で絞り込むボタンの一覧。
- * サマリ: イベント効果タイプからカード一覧に表示するラベルを取得する。
+ * フィルター: サポート一覧のフィルターエリアで、イベント種類で絞り込むボタンの一覧。
+ * サマリ: イベント効果タイプからサポート一覧に表示するラベルを取得する。
  */
 
 import { EventFilterType, EventFilterCategoryType, EventEffectType } from '../../types/enums'
@@ -16,12 +16,48 @@ const filterEntries: {
   effects: EventEffectType[]
   category: EventFilterCategoryType
 }[] = [
-  { value: EventFilterType.SkillCard, label: 'card.event_filter.skill_card', order: 1, effects: [EventEffectType.SkillCard], category: EventFilterCategoryType.Acquire },
-  { value: EventFilterType.PItem, label: 'card.event_filter.p_item', order: 2, effects: [EventEffectType.PItem], category: EventFilterCategoryType.Acquire },
-  { value: EventFilterType.Enhance, label: 'card.event_filter.enhance', order: 3, effects: [EventEffectType.CardEnhance, EventEffectType.SelectEnhance], category: EventFilterCategoryType.Modify },
-  { value: EventFilterType.Delete, label: 'card.event_filter.delete', order: 4, effects: [EventEffectType.CardDelete, EventEffectType.SelectDelete], category: EventFilterCategoryType.Modify },
-  { value: EventFilterType.Change, label: 'card.event_filter.change', order: 5, effects: [EventEffectType.CardChange], category: EventFilterCategoryType.Modify },
-  { value: EventFilterType.TroubleDelete, label: 'card.event_filter.trouble_delete', order: 6, effects: [EventEffectType.TroubleDelete], category: EventFilterCategoryType.Modify },
+  {
+    value: EventFilterType.SkillCard,
+    label: 'card.event_filter.skill_card',
+    order: 1,
+    effects: [EventEffectType.SkillCard],
+    category: EventFilterCategoryType.Acquire,
+  },
+  {
+    value: EventFilterType.PItem,
+    label: 'card.event_filter.p_item',
+    order: 2,
+    effects: [EventEffectType.PItem],
+    category: EventFilterCategoryType.Acquire,
+  },
+  {
+    value: EventFilterType.Enhance,
+    label: 'card.event_filter.enhance',
+    order: 3,
+    effects: [EventEffectType.CardEnhance, EventEffectType.SelectEnhance],
+    category: EventFilterCategoryType.Modify,
+  },
+  {
+    value: EventFilterType.Delete,
+    label: 'card.event_filter.delete',
+    order: 4,
+    effects: [EventEffectType.CardDelete, EventEffectType.SelectDelete],
+    category: EventFilterCategoryType.Modify,
+  },
+  {
+    value: EventFilterType.Change,
+    label: 'card.event_filter.change',
+    order: 5,
+    effects: [EventEffectType.CardChange],
+    category: EventFilterCategoryType.Modify,
+  },
+  {
+    value: EventFilterType.TroubleDelete,
+    label: 'card.event_filter.trouble_delete',
+    order: 6,
+    effects: [EventEffectType.TroubleDelete],
+    category: EventFilterCategoryType.Modify,
+  },
 ]
 
 /** イベントフィルター → 効果タイプのルックアップマップ */

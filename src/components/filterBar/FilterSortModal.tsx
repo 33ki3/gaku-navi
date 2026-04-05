@@ -20,8 +20,8 @@ interface FilterSortModalProps {
   onClose: () => void
   /** フィルターの状態と操作関数群 */
   filters: CardFiltersReturn
-  /** 点数設定パネルがピン留めされているか */
-  settingsPinned: boolean
+  /** パネルの幅分だけ右を空けるためのCSSクラス */
+  panelRightOffset: string
   /** 現在のタブ */
   activeTab: FilterSortTab
   /** タブを切り替える関数 */
@@ -29,11 +29,17 @@ interface FilterSortModalProps {
 }
 
 /** フィルタ・ソートモーダル */
-export default memo(function FilterSortModal({ onClose, filters, settingsPinned, activeTab, onTabChange }: FilterSortModalProps) {
+export default memo(function FilterSortModal({
+  onClose,
+  filters,
+  panelRightOffset,
+  activeTab,
+  onTabChange,
+}: FilterSortModalProps) {
   const { t } = useTranslation()
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_FILTER} className={settingsPinned ? 'md:right-96' : ''}>
+    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_FILTER} className={panelRightOffset}>
       {/* ヘッダー：タブ + 閉じるボタン */}
       <div className="sticky top-0 bg-white z-10 border-b border-slate-200 px-5 pt-3">
         <div className="flex items-center justify-between">
@@ -50,11 +56,7 @@ export default memo(function FilterSortModal({ onClose, filters, settingsPinned,
 
       {/* コンテンツ（パネルが固定高さなので flex-1 で残りを埋める） */}
       <div className="px-5 py-4 overflow-y-auto flex-1">
-        {activeTab === FilterSortTab.Sort ? (
-          <SortContent filters={filters} />
-        ) : (
-          <FilterBar filters={filters} />
-        )}
+        {activeTab === FilterSortTab.Sort ? <SortContent filters={filters} /> : <FilterBar filters={filters} />}
       </div>
     </ModalOverlay>
   )
@@ -71,9 +73,7 @@ function SortContent({ filters }: { filters: CardFiltersReturn }) {
           key={mode}
           onClick={() => filters.setSortMode(mode)}
           className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-            filters.sortMode === mode
-              ? 'bg-slate-800 text-white'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            filters.sortMode === mode ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
           {t(getSortModeLabel(mode))}

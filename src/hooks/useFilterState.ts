@@ -1,7 +1,7 @@
 /**
  * フィルター状態管理フック
  *
- * カード一覧の絞り込み・並び替え条件を管理する。
+ * サポート一覧の絞り込み・並び替え条件を管理する。
  * レアリティ、タイプ、プランなどのフィルター状態を保持し、
  * 変更があると 300ms 後に localStorage へ自動保存する。
  */
@@ -171,8 +171,14 @@ export function useFilterState(): FilterState {
   }, [state])
 
   const setSearchTerm = useCallback((term: string) => dispatch({ type: enums.FilterActionType.SetSearch, term }), [])
-  const toggleRarity = useCallback((rarity: RarityType) => dispatch({ type: enums.FilterActionType.ToggleRarity, rarity }), [])
-  const toggleType = useCallback((type: CardType) => dispatch({ type: enums.FilterActionType.ToggleType, cardType: type }), [])
+  const toggleRarity = useCallback(
+    (rarity: RarityType) => dispatch({ type: enums.FilterActionType.ToggleRarity, rarity }),
+    [],
+  )
+  const toggleType = useCallback(
+    (type: CardType) => dispatch({ type: enums.FilterActionType.ToggleType, cardType: type }),
+    [],
+  )
   const toggleSP = useCallback(() => dispatch({ type: enums.FilterActionType.ToggleSP }), [])
   const toggleAbilityKeyword = useCallback(
     (keyword: AbilityKeywordType) => dispatch({ type: enums.FilterActionType.ToggleAbilityKeyword, keyword }),
@@ -183,8 +189,14 @@ export function useFilterState(): FilterState {
     (filter: enums.EventFilterType) => dispatch({ type: enums.FilterActionType.ToggleEventFilter, filter }),
     [],
   )
-  const toggleUncap = useCallback((uncap: UncapType) => dispatch({ type: enums.FilterActionType.ToggleUncap, uncap }), [])
-  const setSortMode = useCallback((mode: enums.SortModeType) => dispatch({ type: enums.FilterActionType.SetSortMode, mode }), [])
+  const toggleUncap = useCallback(
+    (uncap: UncapType) => dispatch({ type: enums.FilterActionType.ToggleUncap, uncap }),
+    [],
+  )
+  const setSortMode = useCallback(
+    (mode: enums.SortModeType) => dispatch({ type: enums.FilterActionType.SetSortMode, mode }),
+    [],
+  )
   const toggleSortReverse = useCallback(() => dispatch({ type: enums.FilterActionType.ToggleSortReverse }), [])
   const clearFilters = useCallback(() => dispatch({ type: enums.FilterActionType.ClearFilters }), [])
 

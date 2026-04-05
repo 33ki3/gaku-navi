@@ -1,8 +1,8 @@
 /**
- * カードリストの個別カードコンポーネント
+ * サポートリストの個別サポートコンポーネント
  *
  * 1枚のサポートカードを表示する。
- * カード名・レアリティ・タイプ・プラン・イベント概要・スコアなどを
+ * サポート名・レアリティ・タイプ・プラン・イベント概要・スコアなどを
  * まとめて表示し、クリックで詳細モーダルを開く。
  * memoでラップして、不要な再描画を防ぐ。
  */
@@ -29,22 +29,26 @@ interface CardListItemProps {
   score: number
   /** アビリティバッジの翻訳キー一覧 */
   abilityBadges: TranslationKey[]
-  /** カウントオーバーライドが設定されているか */
-  hasCountOverride: boolean
+  /** カウント調整が設定されているか */
+  hasCountCustom: boolean
 }
 
-/** カードグリッドの1枚分のカード */
+/** サポートグリッドの1枚分のサポート */
 export const CardListItem = memo(function CardListItem({
   card,
   uncap,
   score,
   abilityBadges,
-  hasCountOverride,
+  hasCountCustom,
 }: CardListItemProps) {
   const { t } = useTranslation()
-  const { uncapEditMode, onCardClick, onScoreClick, onUncapChange } = useCardContext()
+  const { uncapEditMode, onCardClick, onScoreClick, onUncapChange, unitCardSelectMode, isCardEligible } =
+    useCardContext()
 
-  // カードの見た目に必要な色やラベルを準備する
+  // サポート選択モード中の選択可否判定
+  const eligible = !unitCardSelectMode || (isCardEligible ? isCardEligible(card) : true)
+
+  // サポートの見た目に必要な色やラベルを準備する
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
   const planEntry = data.getPlanBadge(card.plan)
@@ -54,22 +58,20 @@ export const CardListItem = memo(function CardListItem({
   const typeLabel = t(typeEntry.label)
 
   // クリックハンドラをメモ化して再描画を減らす
-  const handleClick = useCallback(() => onCardClick(card), [onCardClick, card])
-  const handleScoreClick = useCallback(
-    (e: React.MouseEvent) => onScoreClick(card, e),
-    [onScoreClick, card],
-  )
-  const handleUncapChange = useCallback(
-    (u: UncapType) => onUncapChange(card.name, u),
-    [onUncapChange, card.name],
-  )
+  const handleClick = useCallback(() => {
+    // サポート選択モード中で対象外のサポートはクリック不可
+    if (unitCardSelectMode && !eligible) return
+    onCardClick(card)
+  }, [onCardClick, card, unitCardSelectMode, eligible])
+  const handleScoreClick = useCallback((e: React.MouseEvent) => onScoreClick(card, e), [onScoreClick, card])
+  const handleUncapChange = useCallback((u: UncapType) => onUncapChange(card.name, u), [onUncapChange, card.name])
 
   return (
     <div
       onClick={handleClick}
-      className={`${constant.CARD_ITEM_CONTAINER} ${typeEntry.stripe}`}
+      className={`${constant.CARD_ITEM_CONTAINER} ${typeEntry.stripe} ${unitCardSelectMode ? (eligible ? 'ring-2 ring-blue-300 cursor-copy' : 'opacity-40 grayscale cursor-not-allowed') : ''}`}
     >
-      {/* SPアビリティがあるカードは右上にSPバッジを表示 */}
+      {/* SPアビリティがあるサポートは右上にSPバッジを表示 */}
       {hasSP && (
         <Badge
           size={BadgeSizeType.Sm}
@@ -80,21 +82,23 @@ export const CardListItem = memo(function CardListItem({
           {t('card.sp_badge')}
         </Badge>
       )}
-      <div className="p-2 flex-1 flex flex-col gap-1">
+      <div className="p-2 flex-1 flex flex-col gap-1 min-w-0">
         <div className={hasSP ? 'pr-8' : ''}>
-          {/* カード名 */}
-          <div className="flex items-start gap-1.5 mb-1.5">
-            <h2 className="text-[13px] font-black text-slate-800 leading-tight flex-1 min-w-0 group-hover:text-slate-900">
+          {/* サポート名 */}
+          <div className="mb-1.5 overflow-x-auto scrollbar-none">
+            <h2 className="text-[13px] font-black text-slate-800 leading-tight whitespace-nowrap group-hover:text-slate-900">
               {card.name}
             </h2>
           </div>
-          <div className="flex flex-nowrap gap-1 overflow-hidden">
+          <div className="flex gap-1 overflow-x-auto scrollbar-none">
             {/* レアリティバッジ（SSR / SR / R） */}
             <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color={rarityEntry.color}>
               {t(rarityEntry.label)}
             </Badge>
             {/* タイプバッジ（Vo / Da / Vi） */}
-            <Badge size={BadgeSizeType.Sm} color={typeEntry.badge}>{typeLabel}</Badge>
+            <Badge size={BadgeSizeType.Sm} color={typeEntry.badge}>
+              {typeLabel}
+            </Badge>
             {/* プランバッジ（センス / ロジック 等） */}
             <Badge size={BadgeSizeType.Sm} color={planEntry.badge}>
               {t(planEntry.label)}
@@ -106,32 +110,44 @@ export const CardListItem = memo(function CardListItem({
           </div>
         </div>
         {/* イベント概要（「スキルカード / カード強化」 等） */}
-        <div className={`text-[10px] font-medium ${typeEntry.text} ${typeEntry.bg} rounded px-2 py-1`}>
+        <div
+          className={`text-[10px] font-medium ${typeEntry.text} ${typeEntry.bg} rounded px-2 py-1 overflow-x-auto scrollbar-none whitespace-nowrap`}
+        >
           {eventParts.map((key) => t(key)).join(t('ui.format.event_separator'))}
         </div>
         {/* スコア行 */}
-        <div
-          onClick={handleScoreClick}
-          className={constant.CARD_SCORE_ROW}
-          title={t('card.click_breakdown')}
-        >
+        <div onClick={handleScoreClick} className={constant.CARD_SCORE_ROW} title={t('card.click_breakdown')}>
           {/* スコア値 */}
           <span className={`text-xs font-black ${typeEntry.text} shrink-0`}>
             {score}
             {t('ui.unit.score')}
           </span>
           {/* カウント調整済みアイコン */}
-          {hasCountOverride && (
-            <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <title>{t('card.count_adjusted')}</title>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
-            </svg>
+          {hasCountCustom && (
+            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-violet-100 shrink-0">
+              <svg
+                className="w-3 h-3 text-violet-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <title>{t('card.count_adjusted')}</title>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
+                />
+              </svg>
+            </span>
           )}
           {/* アビリティバッジ */}
           {abilityBadges.length > 0 && (
-            <div className="flex-1 flex flex-nowrap gap-0.5 overflow-x-auto scrollbar-none min-w-0" style={{ direction: 'rtl' }}>
+            <div className="flex gap-0.5 ml-auto shrink-0">
               {abilityBadges.map((badge, i) => (
-                <span key={i} className={constant.BADGE_ABILITY_GRID} style={{ direction: 'ltr' }}>{t(badge)}</span>
+                <span key={i} className={constant.BADGE_ABILITY_GRID}>
+                  {t(badge)}
+                </span>
               ))}
             </div>
           )}

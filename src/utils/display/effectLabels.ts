@@ -13,7 +13,14 @@ import type {
   CustomSlotEffectStructured,
   CustomSlotNameStructured,
 } from '../../types/card'
-import type { UncapType, EffectKeywordType, ParameterType, EffectTemplateKeyType, AbilityNameKeyType, TriggerKeyType } from '../../types/enums'
+import type {
+  UncapType,
+  EffectKeywordType,
+  ParameterType,
+  EffectTemplateKeyType,
+  AbilityNameKeyType,
+  TriggerKeyType,
+} from '../../types/enums'
 import { EventEffectType, EffectSectionType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 import type { TFunction } from 'i18next'
@@ -28,7 +35,10 @@ import * as data from '../../data'
  * @param key - テンプレートキー
  * @returns i18n キー（例: "card.pitem_body.param_boost"）
  */
-export function getEffectLabelKey(section: EffectSectionType, key: EffectTemplateKeyType | AbilityNameKeyType | TriggerKeyType): TranslationKey {
+export function getEffectLabelKey(
+  section: EffectSectionType,
+  key: EffectTemplateKeyType | AbilityNameKeyType | TriggerKeyType,
+): TranslationKey {
   return `${data.getEffectSectionPrefix(section)}.${key}` as TranslationKey
 }
 
@@ -110,10 +120,7 @@ function resolveParam(param: ParameterType | undefined, t: TFunction): string {
  * @param t - i18n の翻訳関数
  * @returns テンプレート補間用のパラメータオブジェクト
  */
-function buildPItemInterpolation(
-  part: PItemEffectPart,
-  t: TFunction,
-): Record<string, string | number> {
+function buildPItemInterpolation(part: PItemEffectPart, t: TFunction): Record<string, string | number> {
   const result: Record<string, string | number> = {}
   // 効果キーワード（好印象、やる気 等）を翻訳して補間パラメータに設定
   if (part.keyword) result.keyword = resolveKeyword(part.keyword, t)
@@ -190,10 +197,7 @@ export function getPItemEffectLabel(effect: PItemEffect, t: TFunction): string {
  * @param t - i18n の翻訳関数
  * @returns テンプレート補間用のパラメータオブジェクト
  */
-function buildSkillInterpolation(
-  action: SkillCardEffectAction,
-  t: TFunction,
-): Record<string, string | number> {
+function buildSkillInterpolation(action: SkillCardEffectAction, t: TFunction): Record<string, string | number> {
   const result: Record<string, string | number> = {}
   // 効果値（「+{value}」「{value}%」等の数値パラメータ）
   if (action.value !== undefined) result.value = action.value
@@ -232,10 +236,7 @@ function buildSkillInterpolation(
  * @param t - i18n の翻訳関数
  * @returns 完成した表示テキスト
  */
-export function getSkillCardEffectLabel(
-  effect: SkillCardEffectStructured,
-  t: TFunction,
-): string {
+export function getSkillCardEffectLabel(effect: SkillCardEffectStructured, t: TFunction): string {
   const parts: string[] = []
 
   // 使用条件（例: "レッスン中1回"）
@@ -303,10 +304,7 @@ export function getSkillCardEffectLabel(
  * @param t - i18n の翻訳関数
  * @returns 翻訳済みの表示テキスト
  */
-export function getCustomSlotNameLabel(
-  name: CustomSlotNameStructured,
-  t: TFunction,
-): string {
+export function getCustomSlotNameLabel(name: CustomSlotNameStructured, t: TFunction): string {
   const key = getEffectLabelKey(EffectSectionType.CustomSlotName, name.key)
   if (!name.keyword) return t(key)
   return t(key, { keyword: resolveKeyword(name.keyword, t) })
@@ -320,10 +318,7 @@ export function getCustomSlotNameLabel(
  * @param t - i18n の翻訳関数
  * @returns 翻訳済みの表示テキスト（nullなら空文字列）
  */
-export function getCustomSlotEffectLabel(
-  effect: CustomSlotEffectStructured | undefined,
-  t: TFunction,
-): string {
+export function getCustomSlotEffectLabel(effect: CustomSlotEffectStructured | undefined, t: TFunction): string {
   if (!effect) return ''
   const { template, params } = effect
   const key = getEffectLabelKey(EffectSectionType.CustomSlotEffect, template)
@@ -355,10 +350,7 @@ export function getCustomSlotEffectLabel(
  * @param t - i18n の翻訳関数
  * @returns 翻訳済みのテキスト（例: "段階1"）
  */
-export function getCustomSlotStageLabel(
-  stage: number,
-  t: TFunction,
-): string {
+export function getCustomSlotStageLabel(stage: number, t: TFunction): string {
   return t('card.custom_slot_stage' as TranslationKey, { n: stage })
 }
 

@@ -1,12 +1,24 @@
+/**
+ * サポートフィルタリング・ソートのテスト
+ *
+ * サポート一覧画面のフィルターバーで選択された条件（レアリティ・タイプ・プラン・
+ * テキスト検索・SP有無・イベント種別・アビリティキーワード・凸数）に基づいて
+ * サポートを絞り込み、ソート順（レアリティ・日付・スコア・凸数）を適用する
+ * filterAndSortCards 関数の動作を検証する。
+ *
+ * フィルターのカテゴリ内は OR、カテゴリ間は AND で結合される。
+ * イベントフィルターは「獲得系」と「操作系」の2カテゴリに分かれ、
+ * 同カテゴリ内は OR、カテゴリ間は AND で結合される。
+ */
 import { describe, expect, it } from 'vitest'
 import { filterAndSortCards } from '../../utils/filterCards'
 import type { SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 
-/** 最小限のカードファクトリ */
+/** 最小限のサポートファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {
   return {
-    name: 'テストカード',
+    name: 'テストサポート',
     rarity: enums.RarityType.SR,
     plan: enums.PlanType.Free,
     type: enums.CardType.Vocal,
@@ -41,17 +53,41 @@ function defaultParams() {
 }
 
 const cards: SupportCard[] = [
-  makeCard({ name: 'Aカード', rarity: enums.RarityType.SSR, type: enums.CardType.Vocal, plan: enums.PlanType.Sense, release_date: '2024/06/01' }),
-  makeCard({ name: 'Bカード', rarity: enums.RarityType.SR, type: enums.CardType.Dance, plan: enums.PlanType.Logic, release_date: '2024/07/01' }),
-  makeCard({ name: 'Cカード', rarity: enums.RarityType.R, type: enums.CardType.Visual, plan: enums.PlanType.Free, release_date: '2024/05/01' }),
-  makeCard({ name: 'Dカード', rarity: enums.RarityType.SSR, type: enums.CardType.Assist, plan: enums.PlanType.Anomaly, release_date: '2024/08/01' }),
+  makeCard({
+    name: 'Aサポート',
+    rarity: enums.RarityType.SSR,
+    type: enums.CardType.Vocal,
+    plan: enums.PlanType.Sense,
+    release_date: '2024/06/01',
+  }),
+  makeCard({
+    name: 'Bサポート',
+    rarity: enums.RarityType.SR,
+    type: enums.CardType.Dance,
+    plan: enums.PlanType.Logic,
+    release_date: '2024/07/01',
+  }),
+  makeCard({
+    name: 'Cサポート',
+    rarity: enums.RarityType.R,
+    type: enums.CardType.Visual,
+    plan: enums.PlanType.Free,
+    release_date: '2024/05/01',
+  }),
+  makeCard({
+    name: 'Dサポート',
+    rarity: enums.RarityType.SSR,
+    type: enums.CardType.Assist,
+    plan: enums.PlanType.Anomaly,
+    release_date: '2024/08/01',
+  }),
 ]
 
 // --- フィルタリング ---
 
-/** カード一覧のフィルタリング機能テスト */
+/** サポート一覧のフィルタリング機能テスト */
 describe('filterAndSortCards - フィルタリング', () => {
-  it('フィルターなしで全カード返る', () => {
+  it('フィルターなしで全サポート返る', () => {
     const result = filterAndSortCards(cards, defaultParams())
     expect(result).toHaveLength(4)
   })
@@ -60,14 +96,14 @@ describe('filterAndSortCards - フィルタリング', () => {
     const params = { ...defaultParams(), selectedRarities: new Set([enums.RarityType.SSR]) }
     const result = filterAndSortCards(cards, params)
     expect(result).toHaveLength(2)
-    expect(result.every(c => c.rarity === enums.RarityType.SSR)).toBe(true)
+    expect(result.every((c) => c.rarity === enums.RarityType.SSR)).toBe(true)
   })
 
   it('タイプフィルター: vocal のみ', () => {
     const params = { ...defaultParams(), selectedTypes: new Set([enums.CardType.Vocal]) }
     const result = filterAndSortCards(cards, params)
     expect(result).toHaveLength(1)
-    expect(result[0].name).toBe('Aカード')
+    expect(result[0].name).toBe('Aサポート')
   })
 
   it('プランフィルター: sense + logic', () => {
@@ -76,15 +112,15 @@ describe('filterAndSortCards - フィルタリング', () => {
     expect(result).toHaveLength(2)
   })
 
-  it('テキスト検索: カード名に部分一致', () => {
-    const params = { ...defaultParams(), searchTerm: 'Aカ' }
+  it('テキスト検索: サポート名に部分一致', () => {
+    const params = { ...defaultParams(), searchTerm: 'Aサ' }
     const result = filterAndSortCards(cards, params)
     expect(result).toHaveLength(1)
-    expect(result[0].name).toBe('Aカード')
+    expect(result[0].name).toBe('Aサポート')
   })
 
   it('テキスト検索: 大文字小文字を区別しない', () => {
-    const params = { ...defaultParams(), searchTerm: 'aカ' }
+    const params = { ...defaultParams(), searchTerm: 'aサ' }
     const result = filterAndSortCards(cards, params)
     expect(result).toHaveLength(1)
   })
@@ -105,7 +141,14 @@ describe('filterAndSortCards - フィルタリング', () => {
     const cardsWithEvent = [
       makeCard({
         name: 'テスト',
-        events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, title: 'きらめきの瞬間', param_value: 10 }],
+        events: [
+          {
+            release: enums.ReleaseConditionType.Initial,
+            effect_type: enums.EventEffectType.ParamBoost,
+            title: 'きらめきの瞬間',
+            param_value: 10,
+          },
+        ],
       }),
     ]
     const params = { ...defaultParams(), searchTerm: 'きらめき' }
@@ -117,7 +160,16 @@ describe('filterAndSortCards - フィルタリング', () => {
     const cardsWithSkill = [
       makeCard({
         name: 'テスト',
-        skill_card: { name: 'アドレナリン全開', rarity: enums.RarityType.SSR, type: enums.SkillCardType.Active, effects: [], lesson_limit: 0, no_duplicate: false, custom_cap: 0, custom_slot: [] },
+        skill_card: {
+          name: 'アドレナリン全開',
+          rarity: enums.RarityType.SSR,
+          type: enums.SkillCardType.Active,
+          effects: [],
+          lesson_limit: 0,
+          no_duplicate: false,
+          custom_cap: 0,
+          custom_slot: [],
+        },
       }),
     ]
     const params = { ...defaultParams(), searchTerm: 'アドレナリン' }
@@ -126,7 +178,7 @@ describe('filterAndSortCards - フィルタリング', () => {
   })
 
   it('テキスト検索: 一致なしで空の結果', () => {
-    const params = { ...defaultParams(), searchTerm: '存在しないカード名' }
+    const params = { ...defaultParams(), searchTerm: '存在しないサポート名' }
     const result = filterAndSortCards(cards, params)
     expect(result).toHaveLength(0)
   })
@@ -135,7 +187,15 @@ describe('filterAndSortCards - フィルタリング', () => {
     const cardsWithSP = [
       makeCard({
         name: 'SPあり',
-        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.SpLessonRate, values: { '0': '14%' }, is_percentage: true, skip_calculation: true }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.SpLessonRate,
+            trigger_key: enums.TriggerKeyType.SpLessonRate,
+            values: { '0': '14%' },
+            is_percentage: true,
+            skip_calculation: true,
+          },
+        ],
       }),
       makeCard({ name: 'SPなし' }),
     ]
@@ -149,19 +209,51 @@ describe('filterAndSortCards - フィルタリング', () => {
     const cardsWithSP = [
       makeCard({
         name: 'Vo SP',
-        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.VoSpLessonRate, values: { '0': '21%' }, is_percentage: true, skip_calculation: true }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.SpLessonRate,
+            trigger_key: enums.TriggerKeyType.VoSpLessonRate,
+            values: { '0': '21%' },
+            is_percentage: true,
+            skip_calculation: true,
+          },
+        ],
       }),
       makeCard({
         name: 'Da SP',
-        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.DaSpLessonRate, values: { '0': '21%' }, is_percentage: true, skip_calculation: true }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.SpLessonRate,
+            trigger_key: enums.TriggerKeyType.DaSpLessonRate,
+            values: { '0': '21%' },
+            is_percentage: true,
+            skip_calculation: true,
+          },
+        ],
       }),
       makeCard({
         name: 'Vi SP',
-        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.ViSpLessonRate, values: { '0': '21%' }, is_percentage: true, skip_calculation: true }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.SpLessonRate,
+            trigger_key: enums.TriggerKeyType.ViSpLessonRate,
+            values: { '0': '21%' },
+            is_percentage: true,
+            skip_calculation: true,
+          },
+        ],
       }),
       makeCard({
         name: 'SP全体',
-        abilities: [{ name_key: enums.AbilityNameKeyType.SpLessonRateAll, trigger_key: enums.TriggerKeyType.SpLessonRateAll, values: { '0': '10.5%' }, is_percentage: true, skip_calculation: true }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.SpLessonRateAll,
+            trigger_key: enums.TriggerKeyType.SpLessonRateAll,
+            values: { '0': '10.5%' },
+            is_percentage: true,
+            skip_calculation: true,
+          },
+        ],
       }),
       makeCard({ name: 'SPなし' }),
     ]
@@ -171,18 +263,18 @@ describe('filterAndSortCards - フィルタリング', () => {
     expect(result.map((c) => c.name)).toEqual(['Vo SP', 'Da SP', 'Vi SP', 'SP全体'])
   })
 
-  it('凸数フィルター: 凸0のカードのみ', () => {
+  it('凸数フィルター: 凸0のサポートのみ', () => {
     const uncaps: Record<string, enums.UncapType> = {
-      'Aカード': enums.UncapType.Four,
-      'Bカード': enums.UncapType.Zero,
+      Aサポート: enums.UncapType.Four,
+      Bサポート: enums.UncapType.Zero,
     }
     const params = { ...defaultParams(), selectedUncaps: new Set([enums.UncapType.Zero]), cardUncaps: uncaps }
     const result = filterAndSortCards(cards, params)
-    // Bカード = 凸0 のみ通る。Cカード & Dカード はデフォルト凸(=4)
-    expect(result.map(c => c.name)).toContain('Bカード')
-    expect(result.map(c => c.name)).not.toContain('Aカード')
-    expect(result.map(c => c.name)).not.toContain('Cカード')
-    expect(result.map(c => c.name)).not.toContain('Dカード')
+    // Bサポート = 凸0 のみ通る。Cサポート & Dサポート はデフォルト凸(=4)
+    expect(result.map((c) => c.name)).toContain('Bサポート')
+    expect(result.map((c) => c.name)).not.toContain('Aサポート')
+    expect(result.map((c) => c.name)).not.toContain('Cサポート')
+    expect(result.map((c) => c.name)).not.toContain('Dサポート')
     expect(result).toHaveLength(1)
   })
 
@@ -194,7 +286,7 @@ describe('filterAndSortCards - フィルタリング', () => {
     }
     const result = filterAndSortCards(cards, params)
     expect(result).toHaveLength(1)
-    expect(result[0].name).toBe('Aカード')
+    expect(result[0].name).toBe('Aサポート')
   })
 
   it('空の結果: 存在しない条件の組み合わせ', () => {
@@ -210,7 +302,7 @@ describe('filterAndSortCards - フィルタリング', () => {
 
 // --- ソート ---
 
-/** カード一覧のソート機能テスト */
+/** サポート一覧のソート機能テスト */
 describe('filterAndSortCards - ソート', () => {
   it('レアリティ順: SSR → SR → R', () => {
     const params = { ...defaultParams(), sortMode: enums.SortModeType.Rarity }
@@ -222,39 +314,49 @@ describe('filterAndSortCards - ソート', () => {
   it('レアリティ順: 同レアリティは日付降順', () => {
     const params = { ...defaultParams(), sortMode: enums.SortModeType.Rarity }
     const result = filterAndSortCards(cards, params)
-    const ssrCards = result.filter(c => c.rarity === enums.RarityType.SSR)
+    const ssrCards = result.filter((c) => c.rarity === enums.RarityType.SSR)
     expect(ssrCards[0].release_date >= ssrCards[1].release_date).toBe(true)
   })
 
   it('日付順: 新しい順', () => {
     const params = { ...defaultParams(), sortMode: enums.SortModeType.Date }
     const result = filterAndSortCards(cards, params)
-    expect(result[0].name).toBe('Dカード') // 2024/08/01
-    expect(result[result.length - 1].name).toBe('Cカード') // 2024/05/01
+    expect(result[0].name).toBe('Dサポート') // 2024/08/01
+    expect(result[result.length - 1].name).toBe('Cサポート') // 2024/05/01
   })
 
   it('スコア順: 高い順', () => {
-    const scores = new Map([['Aカード', 100], ['Bカード', 300], ['Cカード', 50], ['Dカード', 200]])
+    const scores = new Map([
+      ['Aサポート', 100],
+      ['Bサポート', 300],
+      ['Cサポート', 50],
+      ['Dサポート', 200],
+    ])
     const params = { ...defaultParams(), sortMode: enums.SortModeType.Score, cardScores: scores }
     const result = filterAndSortCards(cards, params)
-    expect(result[0].name).toBe('Bカード') // 300
-    expect(result[1].name).toBe('Dカード') // 200
+    expect(result[0].name).toBe('Bサポート') // 300
+    expect(result[1].name).toBe('Dサポート') // 200
   })
 
   it('凸数順: 凸数降順 → レアリティ降順', () => {
     const uncaps: Record<string, enums.UncapType> = {
-      'Aカード': enums.UncapType.Four,
-      'Bカード': enums.UncapType.Zero,
-      'Cカード': enums.UncapType.Zero,
-      'Dカード': enums.UncapType.Two,
+      Aサポート: enums.UncapType.Four,
+      Bサポート: enums.UncapType.Zero,
+      Cサポート: enums.UncapType.Zero,
+      Dサポート: enums.UncapType.Two,
     }
-    const params = { ...defaultParams(), sortMode: enums.SortModeType.Uncap, cardUncaps: uncaps, sortCardUncaps: uncaps }
+    const params = {
+      ...defaultParams(),
+      sortMode: enums.SortModeType.Uncap,
+      cardUncaps: uncaps,
+      sortCardUncaps: uncaps,
+    }
     const result = filterAndSortCards(cards, params)
-    // 凸4: Aカード
-    // 凸2: Dカード
-    // 凸0: Bカード(SR), Cカード(R) → レアリティ降順
-    expect(result[0].name).toBe('Aカード') // 凸4
-    expect(result[result.length - 1].name).toBe('Cカード') // 凸0, R
+    // 凸4: Aサポート
+    // 凸2: Dサポート
+    // 凸0: Bサポート(SR), Cサポート(R) → レアリティ降順
+    expect(result[0].name).toBe('Aサポート') // 凸4
+    expect(result[result.length - 1].name).toBe('Cサポート') // 凸0, R
   })
 
   it('逆順フラグ', () => {
@@ -273,39 +375,70 @@ describe('filterAndSortCards - イベントフィルター', () => {
   const eventCards = [
     makeCard({
       name: 'スキルカードあり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' }],
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
+      ],
     }),
     makeCard({
       name: '強化あり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardEnhance, title: 'テスト' }],
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.CardEnhance,
+          title: 'テスト',
+        },
+      ],
     }),
     makeCard({
       name: '選択強化あり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SelectEnhance, title: 'テスト' }],
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.SelectEnhance,
+          title: 'テスト',
+        },
+      ],
     }),
     makeCard({
       name: 'Pアイテムあり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.PItem, title: 'テスト' }],
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.PItem, title: 'テスト' },
+      ],
     }),
     makeCard({
       name: 'チェンジあり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardChange, title: 'テスト' }],
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardChange, title: 'テスト' },
+      ],
     }),
     makeCard({
       name: '削除あり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardDelete, title: 'テスト' }],
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardDelete, title: 'テスト' },
+      ],
     }),
     makeCard({
       name: '選択削除あり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SelectDelete, title: 'テスト' }],
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.SelectDelete,
+          title: 'テスト',
+        },
+      ],
     }),
     makeCard({
       name: 'トラブル削除あり',
-      events: [{ release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.TroubleDelete, title: 'テスト' }],
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.TroubleDelete,
+          title: 'テスト',
+        },
+      ],
     }),
     makeCard({ name: 'イベントなし' }),
   ]
-
 
   it('スキルカードイベントフィルター', () => {
     const params = { ...defaultParams(), selectedEventFilters: new Set([enums.EventFilterType.SkillCard]) }
@@ -325,7 +458,7 @@ describe('filterAndSortCards - イベントフィルター', () => {
     const params = { ...defaultParams(), selectedEventFilters: new Set([enums.EventFilterType.Enhance]) }
     const result = filterAndSortCards(eventCards, params)
     expect(result).toHaveLength(2)
-    expect(result.map(c => c.name).sort()).toEqual(['強化あり', '選択強化あり'].sort())
+    expect(result.map((c) => c.name).sort()).toEqual(['強化あり', '選択強化あり'].sort())
   })
 
   it('チェンジフィルター', () => {
@@ -339,7 +472,7 @@ describe('filterAndSortCards - イベントフィルター', () => {
     const params = { ...defaultParams(), selectedEventFilters: new Set([enums.EventFilterType.Delete]) }
     const result = filterAndSortCards(eventCards, params)
     expect(result).toHaveLength(2)
-    expect(result.map(c => c.name).sort()).toEqual(['削除あり', '選択削除あり'].sort())
+    expect(result.map((c) => c.name).sort()).toEqual(['削除あり', '選択削除あり'].sort())
   })
 
   it('トラブル削除フィルター', () => {
@@ -350,29 +483,42 @@ describe('filterAndSortCards - イベントフィルター', () => {
   })
 
   it('獲得系カテゴリ内OR: SkillCard + PItem で両方通る', () => {
-    const params = { ...defaultParams(), selectedEventFilters: new Set([enums.EventFilterType.SkillCard, enums.EventFilterType.PItem]) }
+    const params = {
+      ...defaultParams(),
+      selectedEventFilters: new Set([enums.EventFilterType.SkillCard, enums.EventFilterType.PItem]),
+    }
     const result = filterAndSortCards(eventCards, params)
     expect(result).toHaveLength(2)
-    expect(result.map(c => c.name).sort()).toEqual(['Pアイテムあり', 'スキルカードあり'].sort())
+    expect(result.map((c) => c.name).sort()).toEqual(['Pアイテムあり', 'スキルカードあり'].sort())
   })
 
-  it('操作系カテゴリ内OR: Enhance + Delete で該当カードが通る', () => {
-    const params = { ...defaultParams(), selectedEventFilters: new Set([enums.EventFilterType.Enhance, enums.EventFilterType.Delete]) }
+  it('操作系カテゴリ内OR: Enhance + Delete で該当サポートが通る', () => {
+    const params = {
+      ...defaultParams(),
+      selectedEventFilters: new Set([enums.EventFilterType.Enhance, enums.EventFilterType.Delete]),
+    }
     const result = filterAndSortCards(eventCards, params)
     expect(result).toHaveLength(4)
-    expect(result.map(c => c.name).sort()).toEqual(['強化あり', '削除あり', '選択削除あり', '選択強化あり'].sort())
+    expect(result.map((c) => c.name).sort()).toEqual(['強化あり', '削除あり', '選択削除あり', '選択強化あり'].sort())
   })
 
-  it('カテゴリ間AND: 獲得系SkillCard + 操作系Enhance → 両方持つカードのみ', () => {
+  it('カテゴリ間AND: 獲得系SkillCard + 操作系Enhance → 両方持つサポートのみ', () => {
     const cardWithBoth = makeCard({
       name: '両方あり',
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardEnhance, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.CardEnhance,
+          title: 'テスト',
+        },
       ],
     })
     const testCards = [...eventCards, cardWithBoth]
-    const params = { ...defaultParams(), selectedEventFilters: new Set([enums.EventFilterType.SkillCard, enums.EventFilterType.Enhance]) }
+    const params = {
+      ...defaultParams(),
+      selectedEventFilters: new Set([enums.EventFilterType.SkillCard, enums.EventFilterType.Enhance]),
+    }
     const result = filterAndSortCards(testCards, params)
     expect(result).toHaveLength(1)
     expect(result[0].name).toBe('両方あり')
@@ -399,7 +545,15 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'マッチ',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: triggerKey, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: triggerKey,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -413,11 +567,27 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'ExamEnd',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.ExamEnd, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.ExamEnd,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'ExamHp',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.ExamHp, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.ExamHp,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -430,11 +600,27 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'SpLesson20',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.SpLesson20, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.SpLesson20,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'SpLessonEnd',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.SpLessonEnd, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.SpLessonEnd,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -447,15 +633,39 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'SkillAcquire',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.SkillAcquire, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.SkillAcquire,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'MSkillAcquire',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.MSkillAcquire, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.MSkillAcquire,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'AggressiveCardAcquire',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.AggressiveCardAcquire, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.AggressiveCardAcquire,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -468,15 +678,39 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'SkillEnhance',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.SkillEnhance, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.SkillEnhance,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'ASkillEnhance',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.ASkillEnhance, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.ASkillEnhance,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'MSkillEnhance',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.MSkillEnhance, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.MSkillEnhance,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -489,11 +723,27 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'Delete',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.Delete, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.Delete,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'ASkillDelete',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.ASkillDelete, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.ASkillDelete,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -506,7 +756,15 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'Change',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.Change, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.Change,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -520,11 +778,27 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'PDrinkAcquire',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.PDrinkAcquire, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.PDrinkAcquire,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'PDrinkExchange',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.PDrinkExchange, values: { '0': '5' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.PDrinkExchange,
+            values: { '0': '5' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -537,11 +811,27 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'レッスン終了',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.LessonEnd, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.LessonEnd,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: '授業終了',
-        abilities: [{ name_key: enums.AbilityNameKeyType.ClassWorkEnd, trigger_key: enums.TriggerKeyType.ClassWorkEnd, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.ClassWorkEnd,
+            trigger_key: enums.TriggerKeyType.ClassWorkEnd,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -555,11 +845,27 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: '授業終了',
-        abilities: [{ name_key: enums.AbilityNameKeyType.ClassWorkEnd, trigger_key: enums.TriggerKeyType.ClassWorkEnd, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.ClassWorkEnd,
+            trigger_key: enums.TriggerKeyType.ClassWorkEnd,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'レッスン終了',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.LessonEnd, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.LessonEnd,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
@@ -573,15 +879,34 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
     const testCards = [
       makeCard({
         name: 'お出かけ',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.Outing, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.Outing,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: '休む',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.Rest, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.Rest,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({ name: '非マッチ' }),
     ]
-    const params = { ...defaultParams(), selectedAbilityKeywords: new Set([enums.AbilityKeywordType.Outing, enums.AbilityKeywordType.Rest]) }
+    const params = {
+      ...defaultParams(),
+      selectedAbilityKeywords: new Set([enums.AbilityKeywordType.Outing, enums.AbilityKeywordType.Rest]),
+    }
     const result = filterAndSortCards(testCards, params)
     expect(result).toHaveLength(2)
   })
@@ -591,39 +916,74 @@ describe('filterAndSortCards - アビリティキーワードフィルター', (
       makeCard({
         name: '両方あり',
         abilities: [
-          { name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.InitialStat, values: { '0': '50' }, is_percentage: false, skip_calculation: false },
-          { name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.Outing, values: { '0': '10' }, is_percentage: false, skip_calculation: false },
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.InitialStat,
+            values: { '0': '50' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.Outing,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
         ],
       }),
       makeCard({
         name: '初期パラのみ',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.InitialStat, values: { '0': '50' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.InitialStat,
+            values: { '0': '50' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
       makeCard({
         name: 'お出かけのみ',
-        abilities: [{ name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.Outing, values: { '0': '10' }, is_percentage: false, skip_calculation: false }],
+        abilities: [
+          {
+            name_key: enums.AbilityNameKeyType.LessonEnd,
+            trigger_key: enums.TriggerKeyType.Outing,
+            values: { '0': '10' },
+            is_percentage: false,
+            skip_calculation: false,
+          },
+        ],
       }),
     ]
-    const params = { ...defaultParams(), selectedAbilityKeywords: new Set([enums.AbilityKeywordType.InitialParameter, enums.AbilityKeywordType.Outing]) }
+    const params = {
+      ...defaultParams(),
+      selectedAbilityKeywords: new Set([enums.AbilityKeywordType.InitialParameter, enums.AbilityKeywordType.Outing]),
+    }
     const result = filterAndSortCards(testCards, params)
     expect(result).toHaveLength(1)
     expect(result[0].name).toBe('両方あり')
   })
 
-  it('凸数フィルター: 複数凸数選択で該当カードが通る', () => {
+  it('凸数フィルター: 複数凸数選択で該当サポートが通る', () => {
     const uncaps: Record<string, enums.UncapType> = {
-      'Aカード': enums.UncapType.Four,
-      'Bカード': enums.UncapType.Zero,
-      'Cカード': enums.UncapType.Two,
+      Aサポート: enums.UncapType.Four,
+      Bサポート: enums.UncapType.Zero,
+      Cサポート: enums.UncapType.Two,
     }
     const testCards = [
-      makeCard({ name: 'Aカード' }),
-      makeCard({ name: 'Bカード' }),
-      makeCard({ name: 'Cカード' }),
+      makeCard({ name: 'Aサポート' }),
+      makeCard({ name: 'Bサポート' }),
+      makeCard({ name: 'Cサポート' }),
     ]
-    const params = { ...defaultParams(), selectedUncaps: new Set([enums.UncapType.Zero, enums.UncapType.Two]), cardUncaps: uncaps }
+    const params = {
+      ...defaultParams(),
+      selectedUncaps: new Set([enums.UncapType.Zero, enums.UncapType.Two]),
+      cardUncaps: uncaps,
+    }
     const result = filterAndSortCards(testCards, params)
     expect(result).toHaveLength(2)
-    expect(result.map(c => c.name).sort()).toEqual(['Bカード', 'Cカード'].sort())
+    expect(result.map((c) => c.name).sort()).toEqual(['Bサポート', 'Cサポート'].sort())
   })
 })

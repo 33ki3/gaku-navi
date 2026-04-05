@@ -12,7 +12,12 @@ import * as data from '../../data'
 import * as enums from '../../types/enums'
 import { Badge } from '../ui/Badge'
 import { ToggleButton } from '../ui/ToggleButton'
-import { getSkillCardEffectLabel, getCustomSlotNameLabel, getCustomSlotEffectLabel, getCustomSlotStageLabel } from '../../utils/display/effectLabels'
+import {
+  getSkillCardEffectLabel,
+  getCustomSlotNameLabel,
+  getCustomSlotEffectLabel,
+  getCustomSlotStageLabel,
+} from '../../utils/display/effectLabels'
 import { parseSkillCardNotes } from '../../utils/cardQuery'
 
 /** SkillCardDetail コンポーネントに渡すプロパティ */
@@ -31,9 +36,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
 
   // 未強化ならベースレベル、強化ならプラスレベルの効果を取り出す
   const targetLevel =
-    viewMode === enums.SkillCardViewModeType.Unenhanced
-      ? enums.SkillCardLevelType.Base
-      : enums.SkillCardLevelType.Plus
+    viewMode === enums.SkillCardViewModeType.Unenhanced ? enums.SkillCardLevelType.Base : enums.SkillCardLevelType.Plus
   // 通常モード（未強化/強化）では対象レベルの効果を取得、カスタムモードでは null
   const activeEffect =
     viewMode !== enums.SkillCardViewModeType.Custom
@@ -50,13 +53,9 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
         {/* スキルカード名 */}
         <p className="text-sm font-black text-slate-800">{skillCard.name}</p>
         {/* レアリティバッジ（R / SR / SSR） */}
-        <Badge color={skillRarityEntry.color}>
-          {t(skillRarityEntry.label)}
-        </Badge>
+        <Badge color={skillRarityEntry.color}>{t(skillRarityEntry.label)}</Badge>
         {/* 種別バッジ（アクティブ / メンタル） */}
-        <Badge color={skillTypeEntry.badge}>
-          {t(skillTypeEntry.label)}
-        </Badge>
+        <Badge color={skillTypeEntry.badge}>{t(skillTypeEntry.label)}</Badge>
         {/* ノートバッジ（「レッスン中」「1回」などの付加情報） */}
         {parseSkillCardNotes(skillCard, t).map((note) => (
           <Badge key={note} color="bg-slate-200 text-slate-600">
@@ -67,14 +66,11 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
 
       {/* 未強化/強化/カスタム のモード切替えボタン */}
       <div className="flex gap-1 mt-3">
-        {([
-            enums.SkillCardViewModeType.Unenhanced,
-            enums.SkillCardViewModeType.Enhanced,
-            ...(skillCard.custom_slot && skillCard.custom_slot.length > 0
-              ? [enums.SkillCardViewModeType.Custom]
-              : []),
-            ]
-        ).map((mode) => (
+        {[
+          enums.SkillCardViewModeType.Unenhanced,
+          enums.SkillCardViewModeType.Enhanced,
+          ...(skillCard.custom_slot && skillCard.custom_slot.length > 0 ? [enums.SkillCardViewModeType.Custom] : []),
+        ].map((mode) => (
           <ToggleButton
             key={mode}
             isActive={viewMode === mode}
@@ -106,34 +102,32 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
       )}
 
       {/* カスタムモード選択時: カスタムスロット一覧を表示（スロットが存在する場合のみ） */}
-      {viewMode === enums.SkillCardViewModeType.Custom &&
-        skillCard.custom_slot &&
-        skillCard.custom_slot.length > 0 && (
-          <div className="mt-2 space-y-2">
-            {/* カスタム枠上限の表示（0 より大きい場合のみ） */}
-            {skillCard.custom_cap > 0 && (
-              <p className="text-[10px] text-slate-500 font-bold">
-                {t('card.custom_cap')} {skillCard.custom_cap}
-              </p>
-            )}
-            {/* 各カスタムスロット: スロット名と段階別の効果（コスト・ポイント・効果テキスト）を表示 */}
-            {skillCard.custom_slot.map((slot, i) => (
-              <div key={i} className="bg-white/40 rounded-lg p-2">
-                <p className="text-[11px] font-bold text-slate-700 mb-1">{getCustomSlotNameLabel(slot.name, t)}</p>
-                {slot.stages.map((st, j) => (
-                  <div key={j} className="flex items-center gap-2 text-[10px] text-slate-600 ml-2">
-                    <span className="shrink-0 w-10 font-bold">{getCustomSlotStageLabel(st.stage, t)}</span>
-                    <span className="shrink-0 w-10 text-slate-400">
-                      {st.cost === 0 ? t('card.custom_slot_cost_none') : st.cost}
-                      {t('ui.unit.p')}
-                    </span>
-                    <span className="flex-1">{getCustomSlotEffectLabel(st.effect, t)}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
+      {viewMode === enums.SkillCardViewModeType.Custom && skillCard.custom_slot && skillCard.custom_slot.length > 0 && (
+        <div className="mt-2 space-y-2">
+          {/* カスタム枠上限の表示（0 より大きい場合のみ） */}
+          {skillCard.custom_cap > 0 && (
+            <p className="text-[10px] text-slate-500 font-bold">
+              {t('card.custom_cap')} {skillCard.custom_cap}
+            </p>
+          )}
+          {/* 各カスタムスロット: スロット名と段階別の効果（コスト・ポイント・効果テキスト）を表示 */}
+          {skillCard.custom_slot.map((slot, i) => (
+            <div key={i} className="bg-white/40 rounded-lg p-2">
+              <p className="text-[11px] font-bold text-slate-700 mb-1">{getCustomSlotNameLabel(slot.name, t)}</p>
+              {slot.stages.map((st, j) => (
+                <div key={j} className="flex items-center gap-2 text-[10px] text-slate-600 ml-2">
+                  <span className="shrink-0 w-10 font-bold">{getCustomSlotStageLabel(st.stage, t)}</span>
+                  <span className="shrink-0 w-10 text-slate-400">
+                    {st.cost === 0 ? t('card.custom_slot_cost_none') : st.cost}
+                    {t('ui.unit.p')}
+                  </span>
+                  <span className="flex-1">{getCustomSlotEffectLabel(st.effect, t)}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

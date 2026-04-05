@@ -532,7 +532,7 @@
       "scenario_difficulty": "シナリオ・難易度",
       "schedule": "スケジュール",
       "action_counts": "アクション回数",
-      "count_override": "カウント設定",
+      "count_custom": "カウント設定",
       "self_trigger_count": "自動カウント",
       "p_item_count": "Pアイテム",
       "options": "オプション",
@@ -610,6 +610,7 @@
       "score_settings": "点数設定",
       "uncap_settings": "凸数設定",
       "uncap_settings_active": "凸数設定中",
+      "unit_simulator": "最適編成",
       "scenario": "シナリオ",
       "difficulty": "難易度",
       "auto": "自動",
@@ -639,7 +640,7 @@
       "p_item": "Pアイテムの効果を点数計算に含める",
       "p_item_desc": "Pアイテムのパラメータ上昇効果を計算に含めるかどうかを切り替え",
       "fixed_uncap": "4凸固定で点数を表示",
-      "fixed_uncap_desc": "凸数設定を無視し、全カードを4凸として点数を計算"
+      "fixed_uncap_desc": "凸数設定を無視し、全サポートを4凸として点数を計算"
     },
     "help": {
       "title": "使い方ガイド",
@@ -685,7 +686,9 @@
       "tooltip_actions": "スケジュール設定時は自動入力。\n未設定分は手動で入力できます",
       "tooltip_options": "点数計算に含める要素を選択します",
       "tooltip_score_detail": "点数設定のアクション回数×アビリティ効果量で算出。\nイベントブースト・パラメータボーナスも反映されます",
-      "tooltip_count_override": "自動カウント（サポートイベントとPアイテムの効果）とPアイテムの発動回数をカード別に調整できます"
+      "tooltip_count_custom": "自動カウント（サポートイベントとPアイテムの効果）とPアイテムの発動回数をサポート別に調整できます",
+      "unit_simulator_title": "最適編成",
+      "unit_simulator_desc": "「最適編成」ではサポート6枚（自分5枚＋レンタル1枚）の最適な組み合わせを自動計算します。\n\n【使い方】\n1. 育成プラン・タイプ・SP枚数・初期パラ・パラボを設定する\n2.「＋」ボタンまたは「一覧から選択」でサポートを追加する\n3.「最適化」で残りの空き枠を自動で最適なサポートに入れ替える\n4. サポートを追加・削除すると自動でスコアが再計算される\n5. サポート展開で詳細やアビリティ発動回数の調整ができる\n\n【設定項目】\n・育成プラン: センス / ロジック / アノマリー から選択\n・タイプ: ボーカル / ダンス / ビジュアル から対象を選択\n・SP発生率枚数: 各タイプのSP枠数を指定（合計6以下）\n・初期パラメータ: プロデュース開始画面の値をそのまま入力\n・パラメータボーナス: プロデュース開始画面の値をそのまま入力\n\n【計算について】\n点数設定（シナリオ・難易度・スケジュール等）はサポート一覧と共有します。\n凸数も共有され、未所持サポートは候補から除外されます（4凸固定モード時を除く）。\nサポート間の相互作用（他サポートのイベントによるアビリティ発動回数の増加）も考慮されます。\nレンタル枠はバッジで区別され、常に4凸として扱われます。\n\n【スコア内訳について】\n合計スコアをタップすると、パラメータ上昇量の内訳が表示されます。\n・初期パラ・パラボはプロデュース開始画面の合算値を入力してください（サポートの分は計算時に自動で差し引かれます）\n・正確に入力しないと最適編成の結果が異なる可能性があります。未入力（すべて0）か正しい値を入力してください"
     },
     "about": {
       "title": "このサイトについて",
@@ -699,6 +702,59 @@
       "feedback_desc": "ご意見・ご要望はマシュマロ（匿名）で受け付けています。\n不具合報告や機能要望はGitHubのPR・Issueでも受け付けています。",
       "link_marshmallow": "マシュマロ（匿名）",
       "link_github": "GitHub"
+    }
+  },
+  "unit": {
+    "calculate": "最適編成を計算",
+    "calculating": "計算中…",
+    "no_result": "条件に合うサポートが不足しています",
+    "mode_auto": "自動編成",
+    "mode_manual": "手動編成",
+    "manual_add_placeholder": "サポート名を入力して追加",
+    "manual_select_from_list": "一覧から選択",
+    "manual_select_bar": "サポートをタップして追加",
+    "manual_select_done": "完了",
+    "slot_empty": "空き枠",
+    "manual_slots": "{{count}}/6枚",
+    "locked_slots": "固定サポート ({{count}}/6)",
+    "rental_slot_empty": "レンタル枠",
+    "manual_optimize": "残り枠を自動最適化",
+    "auto_optimize": "最適化",
+    "auto_optimize_tip": "固定サポート以外を自動で最適な組み合わせに入れ替えます",
+    "no_candidates": "条件に合うサポートが見つかりませんでした。所持サポートや編成条件を確認してください。",
+    "settings": {
+      "plan": "編成条件",
+      "plan_tip": "最適化対象の育成プランを選択します",
+      "type_filter": "サポートタイプ",
+      "type_filter_tip": "編成に含めるサポートタイプを制限します",
+      "sp_count": "SP発生率 枚数",
+      "sp_count_tip": "SP発生率の高いサポートの枚数配分を指定します",
+      "sp_over_limit": "合計が6枚を超えています",
+      "param_bonus": "パラメータボーナス",
+      "param_bonus_tip": "プロデュース開始画面の数値を入力してください",
+      "initial_params": "初期パラメータ",
+      "initial_params_tip": "プロデュース開始時のパラメータを入力してください",
+      "rental": "レンタル枠",
+      "rental_auto": "自動選出",
+      "rental_manual": "手動指定",
+      "rental_placeholder": "サポート名を入力"
+    },
+    "result": {
+      "title": "最適編成",
+      "total_score": "合計パラメータ上昇量",
+      "rental_label": "レンタル",
+      "locked_label": "固定",
+      "override_badge": "回数変更",
+      "uncap_label": "{{value}}凸",
+      "score_detail_tooltip": "点数詳細を表示",
+      "breakdown_class": "授業",
+      "breakdown_initial_params": "初期パラ",
+      "breakdown_param_bonus": "パラボ",
+      "breakdown_sp_lesson": "SPレッスン",
+      "breakdown_mid_exam": "中間試験",
+      "breakdown_final_exam": "最終試験",
+      "breakdown_support": "サポート",
+      "breakdown_total": "合計"
     }
   }
 }

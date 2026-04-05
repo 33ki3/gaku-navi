@@ -7,8 +7,16 @@ import { useTranslation } from 'react-i18next'
 import type { ScoreSettings } from '../../types/card'
 import { CheckboxField } from '../ui/CheckboxField'
 
+/** SettingsOptionToggles に渡すプロパティ */
+interface SettingsOptionTogglesProps {
+  /** 現在の点数設定 */
+  settings: ScoreSettings
+  /** 設定変更コールバック */
+  onSettingsChange: (s: ScoreSettings) => void
+}
+
 /** 設定オプションのトグル一覧 */
-export function SettingsOptionToggles({ settings, onSettingsChange }: { settings: ScoreSettings; onSettingsChange: (s: ScoreSettings) => void }) {
+export function SettingsOptionToggles({ settings, onSettingsChange }: SettingsOptionTogglesProps) {
   const { t } = useTranslation()
 
   // 点数計算に影響するオプション（自己トリガー含むか、Pアイテム含むか、4凸固定か）のチェックボックス

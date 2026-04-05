@@ -21,9 +21,7 @@ const entries: RarityEntry[] = [
   { rarity: RarityType.R, order: 1, label: 'common.rarity.r', color: RARITY_COLOR_R },
 ]
 
-const map = new Map<string, RarityEntry>(
-  entries.map((e) => [e.rarity, e]),
-)
+const map = new Map<string, RarityEntry>(entries.map((e) => [e.rarity, e]))
 
 /**
  * レアリティの表示エントリを丸ごと返す。

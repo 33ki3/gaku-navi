@@ -1,7 +1,7 @@
 /**
  * サポートアビリティ一覧コンポーネント
  *
- * カード詳細モーダル内でサポートアビリティを番号付きで一覧表示する。
+ * サポート詳細モーダル内でサポートアビリティを番号付きで一覧表示する。
  * アビリティ名に {v} がある場合、凸数に対応する値を埋め込む。
  */
 import { useTranslation } from 'react-i18next'
@@ -30,9 +30,7 @@ export function SupportAbilityList({ card, colors, uncap }: SupportAbilityListPr
       {card.abilities.map((ability, i) => {
         // パラメータ名を翻訳してからテンプレートに埋め込む
         // 例: parameter_type="vocal" → param="ボーカル"、name_key="vitality" → "元気{v}ボーカル"
-        const param = ability.parameter_type
-          ? t(data.getParamLabel(ability.parameter_type))
-          : ''
+        const param = ability.parameter_type ? t(data.getParamLabel(ability.parameter_type)) : ''
         const template = t(getAbilityNameLabelKey(ability.name_key), {
           param,
           count: ability.max_count ?? 0,

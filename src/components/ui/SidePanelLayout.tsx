@@ -1,5 +1,5 @@
 /**
- * 点数設定パネルのレイアウトコンポーネント
+ * サイドパネルのレイアウトコンポーネント
  *
  * ピン留め時はサイドパネルとして固定表示、
  * そうでないときはオーバーレイ（右からスライドイン）として表示する。
@@ -8,25 +8,22 @@
 import { useEffect, useRef, useCallback } from 'react'
 import * as constant from '../../constant'
 
-/** ScoreSettingsPanelLayout コンポーネントに渡すプロパティ */
-interface ScoreSettingsPanelLayoutProps {
+/** SidePanelLayout コンポーネントに渡すプロパティ */
+interface SidePanelLayoutProps {
   /** パネルが開いているか */
   isOpen: boolean
   /** パネルを閉じる関数 */
   onClose: () => void
   /** ピン留めかどうか */
   pinned: boolean
+  /** 2枚目パネル（左側に配置）かどうか */
+  secondPanel?: boolean
   /** パネルの中身 */
   children: React.ReactNode
 }
 
 /** パネルのレイアウト（ピン留め or オーバーレイ） */
-export function ScoreSettingsPanelLayout({
-  isOpen,
-  onClose,
-  pinned,
-  children,
-}: ScoreSettingsPanelLayoutProps) {
+export function SidePanelLayout({ isOpen, onClose, pinned, secondPanel, children }: SidePanelLayoutProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   // Escapeキーが押されたらパネルを閉じる
@@ -50,18 +47,14 @@ export function ScoreSettingsPanelLayout({
 
   // ピン留め: サイドパネルとして固定表示
   if (pinned) {
-    return <div className={constant.PANEL_PINNED}>{children}</div>
+    return <div className={secondPanel ? constant.PANEL_PINNED_SECOND : constant.PANEL_PINNED}>{children}</div>
   }
 
   // オーバーレイ: 背景クリックでも閉じる
   return (
     <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
       <div className={constant.MODAL_BACKDROP} />
-      <div
-        ref={panelRef}
-        onClick={(e) => e.stopPropagation()}
-        className={constant.PANEL_OVERLAY}
-      >
+      <div ref={panelRef} onClick={(e) => e.stopPropagation()} className={constant.PANEL_OVERLAY}>
         {children}
       </div>
     </div>

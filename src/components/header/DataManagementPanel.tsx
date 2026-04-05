@@ -114,10 +114,7 @@ export default function DataManagementPanel({ onImportComplete }: DataManagement
 
           <div className="flex gap-2">
             {/* インポート */}
-            <button
-              onClick={handleImportClick}
-              className={constant.BTN_ACTION_DARK}
-            >
+            <button onClick={handleImportClick} className={constant.BTN_ACTION_DARK}>
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -130,10 +127,7 @@ export default function DataManagementPanel({ onImportComplete }: DataManagement
             </button>
 
             {/* エクスポート */}
-            <button
-              onClick={handleExport}
-              className={constant.BTN_ACTION_PRIMARY}
-            >
+            <button onClick={handleExport} className={constant.BTN_ACTION_PRIMARY}>
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"

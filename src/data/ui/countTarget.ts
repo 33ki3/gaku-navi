@@ -19,6 +19,9 @@ export const CountTargetRows: CountTargetRow[] = [
   { effect: 'ui.help.count_target_table.random_enhance', trigger: 'ui.help.count_target_table.random_enhance_trigger' },
   { effect: 'ui.help.count_target_table.select_delete', trigger: 'ui.help.count_target_table.select_delete_trigger' },
   { effect: 'ui.help.count_target_table.card_change', trigger: 'ui.help.count_target_table.card_change_trigger' },
-  { effect: 'ui.help.count_target_table.p_drink_acquire', trigger: 'ui.help.count_target_table.p_drink_acquire_trigger' },
+  {
+    effect: 'ui.help.count_target_table.p_drink_acquire',
+    trigger: 'ui.help.count_target_table.p_drink_acquire_trigger',
+  },
   { effect: 'ui.help.count_target_table.trouble_delete', trigger: 'ui.help.count_target_table.trouble_delete_trigger' },
 ]

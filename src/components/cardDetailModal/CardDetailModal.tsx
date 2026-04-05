@@ -1,8 +1,8 @@
 /**
- * カード詳細モーダルコンポーネント
+ * サポート詳細モーダルコンポーネント
  *
- * カードをクリックしたときに開くモーダル。
- * ヘッダーにカード名・レアリティ・タイプ・プラン・入手先を、
+ * サポートをクリックしたときに開くモーダル。
+ * ヘッダーにサポート名・レアリティ・タイプ・プラン・入手先を、
  * ボディにイベント・アビリティ・Pアイテム・スキルカードを表示する。
  */
 import { useState, useMemo } from 'react'
@@ -24,13 +24,13 @@ interface CardDetailModalProps {
   uncap?: UncapType
   /** スコア計算結果（初期凸数での計算済み） */
   scoreResult: CardCalculationResult
-  /** 任意のカード・凸数でスコアを個別計算する関数 */
+  /** 任意のサポート・凸数でスコアを個別計算する関数 */
   calculateForCard: (card: SupportCard, uncap: UncapType) => CardCalculationResult | undefined
   /** モーダルを閉じる関数 */
   onClose: () => void
 }
 
-/** カード詳細モーダル */
+/** サポート詳細モーダル */
 export default function CardDetailModal({
   card,
   uncap: initialUncap = constant.DEFAULT_UNCAP,
@@ -39,7 +39,7 @@ export default function CardDetailModal({
   onClose,
 }: CardDetailModalProps) {
   const { t } = useTranslation()
-  // 未所持カードは4凸で表示する（モーダル内で凸数を切り替え可能、永続保存はしない）
+  // 未所持サポートは4凸で表示する（モーダル内で凸数を切り替え可能、永続保存はしない）
   const [uncap, setUncap] = useState<UncapType>(
     initialUncap === UncapType.NotOwned ? constant.DEFAULT_UNCAP : initialUncap,
   )
@@ -56,7 +56,7 @@ export default function CardDetailModal({
 
   return (
     <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL}>
-      {/* ヘッダー: カード名とバッジ類 */}
+      {/* ヘッダー: サポート名とバッジ類 */}
       <div className={`sticky top-0 z-10 ${typeEntry.bg} border-b ${typeEntry.border} rounded-t-2xl px-6 py-4`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -66,7 +66,7 @@ export default function CardDetailModal({
               <Badge size={BadgeSizeType.MdRounded} weight={BadgeWeightType.Black} color={rarityEntry.color}>
                 {t(rarityEntry.label)}
               </Badge>
-              {/* カードタイプを示すバッジ */}
+              {/* サポートタイプを示すバッジ */}
               <Badge size={BadgeSizeType.MdRounded} color={typeEntry.badge}>
                 {t(typeEntry.label)}
               </Badge>
@@ -92,7 +92,13 @@ export default function CardDetailModal({
       </div>
 
       {/* ボディ: 各セクション（イベント・アビリティ・Pアイテム・スキルカード・点数内訳） */}
-      <CardDetailSections card={card} colors={typeEntry} uncap={uncap} onUncapChange={setUncap} scoreResult={scoreResult} />
+      <CardDetailSections
+        card={card}
+        colors={typeEntry}
+        uncap={uncap}
+        onUncapChange={setUncap}
+        scoreResult={scoreResult}
+      />
     </ModalOverlay>
   )
 }

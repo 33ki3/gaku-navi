@@ -9,10 +9,38 @@ import { RarityTierType, AbilityNameKeyType } from '../../types/enums'
 
 // スケジュールデータ（凸数→段階番号マッピング）
 const scheduleData = {
-  [RarityTierType.SSR]: [[1, 2, 3, 4, 5], [1, 1, 2, 2, 2], [1, 2, 3, 4, 5], [1, 1, 1, 2, 2], [1, 1, 1, 1, 2], [1, 2, 2, 2, 3]],
-  [RarityTierType.EventSSR]: [[1, 2, 3, 4, 5], [1, 1, 2, 2, 2], [1, 2, 3, 4, 5], [1, 1, 1, 1, 2], [1, 1, 1, 2, 2], [1, 2, 2, 2, 3]],
-  [RarityTierType.SR]: [[1, 2, 3, 4, 5], [1, 2, 2, 2, 2], [1, 2, 3, 4, 5], [1, 1, 1, 1, 2], [1, 1, 1, 2, 2], [1, 1, 2, 2, 3]],
-  [RarityTierType.R]: [[1, 2, 3, 4, 5], [1, 1, 1, 1, 1], [1, 2, 3, 4, 5], [1, 1, 1, 1, 2], [1, 1, 2, 2, 2], [0, 1, 1, 2, 3]],
+  [RarityTierType.SSR]: [
+    [1, 2, 3, 4, 5],
+    [1, 1, 2, 2, 2],
+    [1, 2, 3, 4, 5],
+    [1, 1, 1, 2, 2],
+    [1, 1, 1, 1, 2],
+    [1, 2, 2, 2, 3],
+  ],
+  [RarityTierType.EventSSR]: [
+    [1, 2, 3, 4, 5],
+    [1, 1, 2, 2, 2],
+    [1, 2, 3, 4, 5],
+    [1, 1, 1, 1, 2],
+    [1, 1, 1, 2, 2],
+    [1, 2, 2, 2, 3],
+  ],
+  [RarityTierType.SR]: [
+    [1, 2, 3, 4, 5],
+    [1, 2, 2, 2, 2],
+    [1, 2, 3, 4, 5],
+    [1, 1, 1, 1, 2],
+    [1, 1, 1, 2, 2],
+    [1, 1, 2, 2, 3],
+  ],
+  [RarityTierType.R]: [
+    [1, 2, 3, 4, 5],
+    [1, 1, 1, 1, 1],
+    [1, 2, 3, 4, 5],
+    [1, 1, 1, 1, 2],
+    [1, 1, 2, 2, 2],
+    [0, 1, 1, 2, 3],
+  ],
 }
 
 // 効果段階データ（段階番号→効果値マッピング）
@@ -158,10 +186,7 @@ const stages: Record<RarityTierType, Partial<Record<AbilityNameKeyType, string[]
  * @param slot - スロット番号（1-based）
  * @returns 凸数→段階番号の配列
  */
-export function getSchedule(
-  rarityTier: RarityTierType,
-  slot: number,
-): readonly number[] {
+export function getSchedule(rarityTier: RarityTierType, slot: number): readonly number[] {
   return schedules[rarityTier][slot - 1]
 }
 
@@ -172,9 +197,6 @@ export function getSchedule(
  * @param nameKey - アビリティ名キー
  * @returns 段階別効果値配列
  */
-export function getStages(
-  rarityTier: RarityTierType,
-  nameKey: AbilityNameKeyType,
-): readonly string[] {
+export function getStages(rarityTier: RarityTierType, nameKey: AbilityNameKeyType): readonly string[] {
   return stages[rarityTier][nameKey]!
 }

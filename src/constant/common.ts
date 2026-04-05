@@ -7,10 +7,10 @@
 
 import { UncapType, ScenarioType, DifficultyType } from '../types/enums'
 
-/** デフォルト凸数（4凸）。新しいカードを表示するときの初期凸数。 */
+/** デフォルト凸数（4凸）。新しいサポートを表示するときの初期凸数。 */
 export const DEFAULT_UNCAP = UncapType.Four
 
-/** カード個別凸数の保存キー。カード名→凸数の Map を JSON で保存する。 */
+/** サポート個別凸数の保存キー。サポート名→凸数の Map を JSON で保存する。 */
 export const UNCAP_STORAGE_KEY = 'gaku-navi-card-uncaps'
 /** 点数設定の常時表示フラグの保存キー。サイドパネルをピン留めするかどうか。 */
 export const SETTINGS_PINNED_KEY = 'gaku-navi-settings-pinned'
@@ -20,10 +20,14 @@ export const FILTER_STORAGE_KEY = 'gaku-navi-filter-state'
 export const SCORE_SETTINGS_STORAGE_KEY = 'gaku-navi-score-settings'
 /** 点数設定プリセットの保存キー。ScorePreset[] を JSON で保存する。 */
 export const SCORE_PRESETS_STORAGE_KEY = 'gaku-navi-score-presets'
-/** カード別カウント設定の保存キー。カード名→アクションID→回数の Map を JSON で保存する。 */
-export const CARD_COUNT_OVERRIDES_KEY = 'gaku-navi-card-count-overrides'
+/** サポート別カウント設定の保存キー。サポート名→アクションID→回数の Map を JSON で保存する。 */
+export const CARD_COUNT_CUSTOM_KEY = 'gaku-navi-card-count-custom'
 /** フィルタ・ソートモーダルのタブ選択状態の保存キー */
 export const FILTER_SORT_TAB_KEY = 'gaku-navi-filter-sort-tab'
+/** 最適編成設定の保存キー。UnitSimulatorSettings を JSON で保存する。 */
+export const UNIT_SIMULATOR_STORAGE_KEY = 'gaku-navi-unit-builder'
+/** 最適編成計算結果の保存キー。UnitResult を JSON で保存する。 */
+export const UNIT_RESULT_STORAGE_KEY = 'gaku-navi-unit-result'
 /** フィルター保存のデバウンス待機時間（ms）。連続でフィルターが変更されたときに保存回数を減らす。 */
 export const FILTER_SAVE_DEBOUNCE_MS = 300
 
@@ -57,3 +61,10 @@ export const GITHUB_URL = import.meta.env.VITE_GITHUB_URL
 
 /** パーセント→倍率変換の除数。100% → 1.0 に変換するときに使う。 */
 export const PERCENT_DIVISOR = 100
+
+/** 最適編成の編成枚数 */
+export const UNIT_SIZE = 6
+/** SP制約の上限（UNIT_SIZEと同値だが意味が異なる） */
+export const SP_TOTAL_MAX = 6
+/** 局所探索の最大イテレーション回数 */
+export const MAX_SWAP_ITERATIONS = 10

@@ -1,9 +1,9 @@
 /**
- * カード検索・判定ユーティリティ
+ * サポート検索・判定ユーティリティ
  *
- * カードがSPレッスン率アビリティを持つか、
+ * サポートがSPレッスン率アビリティを持つか、
  * 特定のキーワードに対応するアビリティを持つか、
- * イベントサマリのラベルを取得するなど、カードデータの問い合わせ関数。
+ * イベントサマリのラベルを取得するなど、サポートデータの問い合わせ関数。
  */
 import type { SupportCard, SkillCardInfo } from '../types/card'
 import type { TranslationKey } from '../i18n'
@@ -12,7 +12,7 @@ import * as enums from '../types/enums'
 import * as data from '../data'
 
 /**
- * カードのイベント一覧から、コンパクト表示用のラベル（i18nキー）を配列で返す
+ * サポートのイベント一覧から、コンパクト表示用のラベル（i18nキー）を配列で返す
  *
  * @param card - 対象のサポートカード
  * @returns イベント種別ごとの表示ラベルの配列
@@ -28,9 +28,9 @@ export function getEventSummaryParts(card: SupportCard): TranslationKey[] {
 }
 
 /**
- * カードが SP レッスン発生率を上げるアビリティを持っているか判定する
+ * サポートが SP レッスン発生率を上げるアビリティを持っているか判定する
  *
- * @param card - チェックするカード
+ * @param card - チェックするサポート
  * @returns SP レッスン発生率アビリティがあれば true
  */
 export function hasSPAbility(card: SupportCard): boolean {
@@ -38,23 +38,26 @@ export function hasSPAbility(card: SupportCard): boolean {
 }
 
 /**
- * カードが特定のアビリティキーワードに対応するアビリティを持っているか判定する
+ * サポートが特定のアビリティキーワードに対応するアビリティを持っているか判定する
  *
  * trigger_key ベースの判定を行う。scoreRelevantOnly が true の場合、
- * skip_calculation や is_percentage のアビリティ（体力回復・SP率など）は
- * 点数に影響しないため除外する。
+ * skip_calculation のアビリティ（SP率・体力回復など点数に影響しないもの）は除外する。
  *
- * @param card - チェックするカード
+ * @param card - チェックするサポート
  * @param keyword - アビリティキーワード名
  * @param scoreRelevantOnly - true なら点数に寄与するアビリティのみ対象
  * @returns キーワードに対応するアビリティがあれば true
  */
-export function hasAbilityKeyword(card: SupportCard, keyword: enums.AbilityKeywordType, scoreRelevantOnly = false): boolean {
+export function hasAbilityKeyword(
+  card: SupportCard,
+  keyword: enums.AbilityKeywordType,
+  scoreRelevantOnly = false,
+): boolean {
   const triggers = data.AbilityKeywordMap.get(keyword)?.triggers ?? []
   const triggerSet = new Set(triggers)
   return card.abilities.some((a) => {
     if (!triggerSet.has(a.trigger_key)) return false
-    if (scoreRelevantOnly && (a.skip_calculation || a.is_percentage)) return false
+    if (scoreRelevantOnly && a.skip_calculation) return false
     return true
   })
 }

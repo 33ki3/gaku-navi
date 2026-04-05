@@ -60,10 +60,7 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
       />
 
       {/* 凸数フィルター */}
-      <UncapFilter
-        selectedUncaps={filters.selectedUncaps}
-        toggleUncap={filters.toggleUncap}
-      />
+      <UncapFilter selectedUncaps={filters.selectedUncaps} toggleUncap={filters.toggleUncap} />
 
       {/* イベント種別フィルター */}
       <EventTypeFilter

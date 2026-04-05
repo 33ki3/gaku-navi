@@ -31,9 +31,7 @@ export function AbilitySection({ result, abilities, hasParamBonus }: AbilitySect
       <div className="space-y-0.5">
         {/* パラメータボーナス行（ある場合のみ） */}
         {hasParamBonus && (
-          <div
-            className={`flex items-end text-xs px-2 py-1 rounded ${paramBonusStyles.rowBackground}`}
-          >
+          <div className={`flex items-end text-xs px-2 py-1 rounded ${paramBonusStyles.rowBackground}`}>
             {/* パラメータボーナス名（「パラボ +基礎値」） */}
             <span className={`flex-1 mr-2 leading-snug break-words ${paramBonusStyles.textColor}`}>
               {t('ui.settings.param_bonus_label')}
@@ -48,9 +46,7 @@ export function AbilitySection({ result, abilities, hasParamBonus }: AbilitySect
               {t('ui.symbol.percent')}
             </span>
             {/* 最終スコア */}
-            <span
-              className={`shrink-0 text-right min-w-[3rem] pb-0.5 ${paramBonusStyles.scoreColor}`}
-            >
+            <span className={`shrink-0 text-right min-w-[3rem] pb-0.5 ${paramBonusStyles.scoreColor}`}>
               {`${t('ui.symbol.plus')}${result.parameterBonus}`}
             </span>
           </div>

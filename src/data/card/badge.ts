@@ -4,12 +4,7 @@
  * コンテスト・スキルカード種別・入手方法・プランの4カテゴリの
  * バッジ色・ラベルを統合的に定義する。
  */
-import {
-  PItemMemoryType,
-  SkillCardType,
-  SourceType,
-  PlanType,
-} from '../../types/enums'
+import { PItemMemoryType, SkillCardType, SourceType, PlanType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
 /** メモリ化バッジエントリの型 */
@@ -65,10 +60,30 @@ const sourceBadgeEntries: SourceBadgeEntry[] = [
 ]
 
 const planBadgeEntries: PlanBadgeEntry[] = [
-  { id: PlanType.Free, label: 'common.plan.free', badge: 'bg-slate-100 text-slate-600', activeColor: 'bg-slate-100 text-slate-600' },
-  { id: PlanType.Sense, label: 'common.plan.sense', badge: 'bg-yellow-100 text-yellow-800', activeColor: 'bg-yellow-100 text-yellow-800' },
-  { id: PlanType.Logic, label: 'common.plan.logic', badge: 'bg-pink-100 text-pink-800', activeColor: 'bg-pink-100 text-pink-800' },
-  { id: PlanType.Anomaly, label: 'common.plan.anomaly', badge: 'bg-indigo-100 text-indigo-800', activeColor: 'bg-indigo-100 text-indigo-800' },
+  {
+    id: PlanType.Free,
+    label: 'common.plan.free',
+    badge: 'bg-slate-100 text-slate-600',
+    activeColor: 'bg-slate-100 text-slate-600',
+  },
+  {
+    id: PlanType.Sense,
+    label: 'common.plan.sense',
+    badge: 'bg-yellow-100 text-yellow-800',
+    activeColor: 'bg-yellow-100 text-yellow-800',
+  },
+  {
+    id: PlanType.Logic,
+    label: 'common.plan.logic',
+    badge: 'bg-pink-100 text-pink-800',
+    activeColor: 'bg-pink-100 text-pink-800',
+  },
+  {
+    id: PlanType.Anomaly,
+    label: 'common.plan.anomaly',
+    badge: 'bg-indigo-100 text-indigo-800',
+    activeColor: 'bg-indigo-100 text-indigo-800',
+  },
 ]
 
 const memoryBadgeMap = new Map(memoryBadgeEntries.map((e) => [e.id, e]))
@@ -115,3 +130,6 @@ export function getSourceBadge(source: SourceType): SourceBadgeEntry {
 export function getPlanBadge(plan: PlanType): PlanBadgeEntry {
   return planBadgeMap.get(plan)!
 }
+
+/** 最適編成で選択可能なプラン一覧（Free を除外） */
+export const SelectablePlanEntries = planBadgeEntries.filter((e) => e.id !== PlanType.Free)

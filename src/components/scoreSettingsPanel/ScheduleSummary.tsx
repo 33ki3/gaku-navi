@@ -53,10 +53,7 @@ export function ScheduleSummary({ scheduleCounts, settings, paramBonusBreakdown 
             </span>
           </div>
           {/* 週毎のボーナス内訳テーブル */}
-          <ParamBonusBreakdown
-            breakdown={paramBonusBreakdown}
-            bonusBase={settings.parameterBonusBase}
-          />
+          <ParamBonusBreakdown breakdown={paramBonusBreakdown} bonusBase={settings.parameterBonusBase} />
         </div>
       )}
     </div>

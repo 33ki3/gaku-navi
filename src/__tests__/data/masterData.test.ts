@@ -73,7 +73,7 @@ describe('pItemRarityDisplay', () => {
   })
 })
 
-/** 全カードタイプに対応する表示エントリ（ラベル・背景色）が存在すること */
+/** 全サポートタイプに対応する表示エントリ（ラベル・背景色）が存在すること */
 describe('typeDisplay', () => {
   const types = Object.values(enums.CardType)
 
@@ -216,13 +216,13 @@ describe('lesson', () => {
   })
 })
 
-/** アビリティ例外マップのエントリが正しい形式（カード名→スロット→値）であること */
+/** アビリティ例外マップのエントリが正しい形式（サポート名→スロット→値）であること */
 describe('abilityException', () => {
   it('AbilityExceptionMap が 1 件以上のエントリを含む', () => {
     expect(AbilityExceptionMap.size).toBeGreaterThan(0)
   })
 
-  it('各エントリのカード名が文字列で、スロットMap が空でない', () => {
+  it('各エントリのサポート名が文字列で、スロットMap が空でない', () => {
     for (const [cardName, slotMap] of AbilityExceptionMap) {
       expect(typeof cardName).toBe('string')
       expect(cardName.length).toBeGreaterThan(0)

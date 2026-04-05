@@ -1,5 +1,21 @@
+/**
+ * イベント・Pアイテム解析と自己発火判定テスト
+ *
+ * サポートイベントからパラメータ上昇値を取得する parseEventParameterBoost、
+ * Pアイテムの効果情報を取得する parsePItemParameterBoost、
+ * サポート自身のイベント/Pアイテム提供によりトリガー回数が+1される
+ * 自己発火（selfTrigger）を判定する getSelfAcquisitionBonus を検証する。
+ *
+ * 自己発火はスコア計算の精度に直結する重要なロジック。
+ * 例: スキルカード提供イベントを持つサポートが skill_acquire トリガーの
+ * アビリティも持つ場合、自分のイベントで提供した分の+1回が自動加算される。
+ */
 import { describe, expect, it } from 'vitest'
-import { parseEventParameterBoost, parsePItemParameterBoost, getSelfAcquisitionBonus } from '../../../utils/calculator/events'
+import {
+  parseEventParameterBoost,
+  parsePItemParameterBoost,
+  getSelfAcquisitionBonus,
+} from '../../../utils/calculator/events'
 import type { SupportCard } from '../../../types/card'
 import * as enums from '../../../types/enums'
 import { AllCards } from '../../../data'
@@ -7,10 +23,10 @@ import { getActionCategory } from '../../../data/score'
 
 // --- テスト用ヘルパー ---
 
-/** 最小限のカードを作るファクトリ */
+/** 最小限のサポートを作るファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {
   return {
-    name: 'テストカード',
+    name: 'テストサポート',
     rarity: enums.RarityType.SR,
     plan: enums.PlanType.Free,
     type: enums.CardType.Vocal,
@@ -32,7 +48,13 @@ describe('parseEventParameterBoost', () => {
   it('param_boost イベントのパラメータ上昇値を返す', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_type: enums.ParameterType.Vocal, param_value: 20, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Lv20,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_type: enums.ParameterType.Vocal,
+          param_value: 20,
+          title: 'テスト',
+        },
       ],
     })
     expect(parseEventParameterBoost(card)).toBe(20)
@@ -54,8 +76,18 @@ describe('parseEventParameterBoost', () => {
   it('最初に見つかった param_boost の值を返す', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, param_value: 15, title: '1st' },
-        { release: enums.ReleaseConditionType.Lv20, effect_type: enums.EventEffectType.ParamBoost, param_value: 25, title: '2nd' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 15,
+          title: '1st',
+        },
+        {
+          release: enums.ReleaseConditionType.Lv20,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 25,
+          title: '2nd',
+        },
       ],
     })
     expect(parseEventParameterBoost(card)).toBe(15)
@@ -163,7 +195,16 @@ describe('getSelfAcquisitionBonus', () => {
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
-      skill_card: { name: 'テスト', rarity: enums.RarityType.SR, type: enums.SkillCardType.Mental, lesson_limit: 0, no_duplicate: false, effects: [], custom_cap: 0, custom_slot: [] },
+      skill_card: {
+        name: 'テスト',
+        rarity: enums.RarityType.SR,
+        type: enums.SkillCardType.Mental,
+        lesson_limit: 0,
+        no_duplicate: false,
+        effects: [],
+        custom_cap: 0,
+        custom_slot: [],
+      },
       abilities: [
         {
           name_key: enums.AbilityNameKeyType.MSkillAcquire,
@@ -211,10 +252,14 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.PItemAcquire]).toBe(1)
   })
 
-  it('カード強化イベント + skill_enhance トリガー → SkillEnhance +1', () => {
+  it('サポート強化イベント + skill_enhance トリガー → SkillEnhance +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardEnhance, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.CardEnhance,
+          title: 'テスト',
+        },
       ],
       abilities: [
         {
@@ -228,7 +273,7 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.SkillEnhance]).toBe(1)
   })
 
-  it('カード削除イベント + delete トリガー → Delete +1', () => {
+  it('サポート削除イベント + delete トリガー → Delete +1', () => {
     const card = makeCard({
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardDelete, title: 'テスト' },
@@ -287,7 +332,11 @@ describe('getSelfAcquisitionBonus', () => {
   it('イベント強化 + Pアイテム強化で SkillEnhance +2', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardEnhance, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.CardEnhance,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -310,7 +359,12 @@ describe('getSelfAcquisitionBonus', () => {
   it('Pドリンク獲得アクション + p_drink_acquire トリガー → PDrinkAcquire +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, param_value: 10, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -335,7 +389,16 @@ describe('getSelfAcquisitionBonus', () => {
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
-      skill_card: { name: 'テスト', rarity: enums.RarityType.SR, type: enums.SkillCardType.Active, lesson_limit: 0, no_duplicate: false, effects: [], custom_cap: 0, custom_slot: [] },
+      skill_card: {
+        name: 'テスト',
+        rarity: enums.RarityType.SR,
+        type: enums.SkillCardType.Active,
+        lesson_limit: 0,
+        no_duplicate: false,
+        effects: [],
+        custom_cap: 0,
+        custom_slot: [],
+      },
       abilities: [
         {
           name_key: enums.AbilityNameKeyType.ASkillAcquire,
@@ -351,7 +414,11 @@ describe('getSelfAcquisitionBonus', () => {
   it('SelectEnhance イベント + skill_enhance トリガー → SkillEnhance +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SelectEnhance, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.SelectEnhance,
+          title: 'テスト',
+        },
       ],
       abilities: [
         {
@@ -368,7 +435,11 @@ describe('getSelfAcquisitionBonus', () => {
   it('SelectDelete イベント + delete トリガー → Delete +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SelectDelete, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.SelectDelete,
+          title: 'テスト',
+        },
       ],
       abilities: [
         {
@@ -385,7 +456,11 @@ describe('getSelfAcquisitionBonus', () => {
   it('TroubleDelete イベント + trouble_delete トリガー → TroubleDelete +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.TroubleDelete, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.TroubleDelete,
+          title: 'テスト',
+        },
       ],
       abilities: [
         {
@@ -419,7 +494,12 @@ describe('getSelfAcquisitionBonus', () => {
   it('Pアイテム強化アクションのみ（イベント強化なし）→ SkillEnhance +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, param_value: 10, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -442,7 +522,12 @@ describe('getSelfAcquisitionBonus', () => {
   it('Pアイテム削除アクション + delete トリガー → Delete +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, param_value: 10, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -465,7 +550,12 @@ describe('getSelfAcquisitionBonus', () => {
   it('Pアイテムチェンジアクション + change トリガー → Change +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, param_value: 10, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -488,7 +578,12 @@ describe('getSelfAcquisitionBonus', () => {
   it('PアイテムTroubleDeleteアクション + trouble_delete トリガー → TroubleDelete +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.ParamBoost, param_value: 10, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -508,13 +603,22 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.TroubleDelete]).toBe(1)
   })
 
-  it('SSRカード + アクティブスキル: SkillAcquire + ASkillAcquire + SsrCardAcquire の複合', () => {
+  it('SSRサポート + アクティブスキル: SkillAcquire + ASkillAcquire + SsrCardAcquire の複合', () => {
     const card = makeCard({
       rarity: enums.RarityType.SSR,
       events: [
         { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.SkillCard, title: 'テスト' },
       ],
-      skill_card: { name: 'テスト', rarity: enums.RarityType.SSR, type: enums.SkillCardType.Active, lesson_limit: 0, no_duplicate: false, effects: [], custom_cap: 0, custom_slot: [] },
+      skill_card: {
+        name: 'テスト',
+        rarity: enums.RarityType.SSR,
+        type: enums.SkillCardType.Active,
+        lesson_limit: 0,
+        no_duplicate: false,
+        effects: [],
+        custom_cap: 0,
+        custom_slot: [],
+      },
       abilities: [
         {
           name_key: enums.AbilityNameKeyType.SkillAcquire,
@@ -542,7 +646,11 @@ describe('getSelfAcquisitionBonus', () => {
   it('イベント強化 + Pアイテムチェンジの複合 → SkillEnhance +1, Change +1', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardEnhance, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.CardEnhance,
+          title: 'テスト',
+        },
       ],
       p_item: {
         name: 'テスト',
@@ -568,7 +676,7 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.Change]).toBe(1)
   })
 
-  it('全カードの自動カウントactionIdがActionCategoryに存在する', () => {
+  it('全サポートの自動カウントactionIdがActionCategoryに存在する', () => {
     const missingLabels: string[] = []
     for (const card of AllCards) {
       const bonus = getSelfAcquisitionBonus(card)

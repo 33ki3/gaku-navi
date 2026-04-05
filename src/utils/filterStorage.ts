@@ -1,7 +1,7 @@
 /**
  * フィルター状態の永続化ユーティリティ
  *
- * カード一覧のフィルター・ソート条件を localStorage に保存し、
+ * サポート一覧のフィルター・ソート条件を localStorage に保存し、
  * 次回アクセス時に同じ条件で表示できるようにする。
  */
 import * as constant from '../constant'
@@ -64,7 +64,9 @@ export function loadFilterState(): PersistedFilterState | null {
       types: Array.isArray(parsed.types) ? filterValid(parsed.types, VALID_TYPES) : [],
       plans: Array.isArray(parsed.plans) ? filterValid(parsed.plans, VALID_PLANS) : [],
       spOnly: typeof parsed.spOnly === 'boolean' ? parsed.spOnly : false,
-      abilityKeywords: Array.isArray(parsed.abilityKeywords) ? filterValid(parsed.abilityKeywords, VALID_ABILITY_KEYWORDS) : [],
+      abilityKeywords: Array.isArray(parsed.abilityKeywords)
+        ? filterValid(parsed.abilityKeywords, VALID_ABILITY_KEYWORDS)
+        : [],
       eventFilters: Array.isArray(parsed.eventFilters) ? filterValid(parsed.eventFilters, VALID_EVENT_FILTERS) : [],
       uncaps: Array.isArray(parsed.uncaps) ? filterValid(parsed.uncaps, VALID_UNCAPS) : [],
       sortMode: VALID_SORT_MODES.has(parsed.sortMode as enums.SortModeType)

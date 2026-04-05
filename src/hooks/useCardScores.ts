@@ -2,8 +2,8 @@
  * スコア計算カスタムフック
  *
  * ユーザーが設定した点数設定（シナリオ・難易度・アクション回数など）を使って、
- * 全カードの「パラメータ上昇量」を計算する。
- * 計算結果はカード一覧の並び替えや、スコア内訳モーダルの表示に使われる。
+ * 全サポートの「パラメータ上昇量」を計算する。
+ * 計算結果はサポート一覧の並び替えや、スコア内訳モーダルの表示に使われる。
  */
 import { useMemo, useCallback } from 'react'
 import type { SupportCard, ScoreSettings, CardCalculationResult } from '../types/card'
@@ -14,36 +14,36 @@ import { getPerLessonParameterValues } from '../utils/calculator/parameterBonus'
 import * as data from '../data'
 import * as constant from '../constant'
 import * as enums from '../types/enums'
-import type { CardCountOverrides, CardOverrideData } from './useCardCountOverrides'
+import type { CardCountCustom, CardCustomData } from './useCardCountCustom'
 
 // AllCards は不変なので、モジュールスコープで1回だけ Map 化する
 const cardByName = new Map(data.AllCards.map((c) => [c.name, c]))
 
 /** useCardScores の戻り値 */
 interface ScoreCalculationResult {
-  /** カード名 → 計算の内訳（アビリティごとのスコア等） */
+  /** サポート名 → 計算の内訳（アビリティごとのスコア等） */
   cardResults: Map<string, CardCalculationResult>
-  /** カード名 → 合計スコア（表示用の数値のみ） */
+  /** サポート名 → 合計スコア（表示用の数値のみ） */
   cardScores: Map<string, number>
-  /** 任意のカード・凸数でスコアを個別計算する関数 */
-  calculateForCard: (card: SupportCard, uncap: UncapType, overrides?: CardOverrideData) => CardCalculationResult | undefined
+  /** 任意のサポート・凸数でスコアを個別計算する関数 */
+  calculateForCard: (card: SupportCard, uncap: UncapType, custom?: CardCustomData) => CardCalculationResult | undefined
 }
 
 /**
- * 全カードのスコアを計算するフック
+ * 全サポートのスコアを計算するフック
  *
  * 点数設定や凸数が変わるたびに再計算する。
  * ただし、アクション回数もパラメータボーナスもゼロなら計算をスキップする。
  *
  * @param scoreSettings - ユーザーの点数設定（シナリオ・難易度・アクション回数など）
- * @param cardUncaps - カード名 → 凸数のマップ
- * @param cardCountOverrides - カード名 → アクション回数オーバーライドのマップ
- * @returns 全カードの計算結果と合計スコア
+ * @param cardUncaps - サポート名 → 凸数のマップ
+ * @param cardCountCustom - サポート名 → アクション回数カウント調整のマップ
+ * @returns 全サポートの計算結果と合計スコア
  */
 export function useCardScores(
   scoreSettings: ScoreSettings,
   cardUncaps: Record<string, UncapType>,
-  cardCountOverrides: CardCountOverrides = {},
+  cardCountCustom: CardCountCustom = {},
 ): ScoreCalculationResult {
   // スコア設定から共有の計算入力を導出する（scoreSettings のみに依存）
   const calcContext = useMemo(() => {
@@ -53,7 +53,8 @@ export function useCardScores(
     // 試験後Pアイテム獲得の回数を通常のPアイテム獲得に合算する
     const examPItemCount = effectiveCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
     if (examPItemCount > 0) {
-      effectiveCounts[enums.ActionIdType.PItemAcquire] = (effectiveCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount
+      effectiveCounts[enums.ActionIdType.PItemAcquire] =
+        (effectiveCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount
     }
 
     const hasAnyAction = Object.values(effectiveCounts).some((v) => v > 0)
@@ -69,7 +70,7 @@ export function useCardScores(
     return { effectiveCounts, hasAnyAction, hasAnyBonus, perLessonValues }
   }, [scoreSettings])
 
-  // ベース計算: 全カードをデフォルト凸（4凸）で計算する。
+  // ベース計算: 全サポートをデフォルト凸（4凸）で計算する。
   // scoreSettings が変わったときだけ再計算し、凸数変更では再計算しない。
   const baseResults = useMemo(() => {
     if (!calcContext.hasAnyAction && !calcContext.hasAnyBonus) {
@@ -95,28 +96,29 @@ export function useCardScores(
     return results
   }, [calcContext, scoreSettings])
 
-  // 凸数・カウントオーバーレイ: デフォルト凸以外のカードやカウントオーバーライドがあるカードだけ再計算して上書きする。
+  // 凸数・カウント調整: デフォルト凸以外のサポートやカウント調整があるサポートだけ再計算して上書きする。
   const cardResults = useMemo(() => {
     if (baseResults.size === 0) return baseResults
 
-    // 4凸固定モードでもカウントオーバーライドは適用する
-    const hasCountOverrides = Object.keys(cardCountOverrides).length > 0
+    // 4凸固定モードでもカウント調整は適用する
+    const hasCountCustom = Object.keys(cardCountCustom).length > 0
 
     // デフォルト凸以外のエントリを抽出する（未所持は計算をスキップ）
-    const uncapOverrides = scoreSettings.useFixedUncap
+    const fixedUncapEntries = scoreSettings.useFixedUncap
       ? []
       : Object.entries(cardUncaps).filter(
           ([, uncap]) => uncap !== constant.DEFAULT_UNCAP && uncap !== enums.UncapType.NotOwned,
         )
 
-    // 全カードがデフォルト凸でカウントオーバーライドもなければベース結果をそのまま返す
-    const hasNotOwned = !scoreSettings.useFixedUncap && Object.values(cardUncaps).some((u) => u === enums.UncapType.NotOwned)
-    if (uncapOverrides.length === 0 && !hasNotOwned && !hasCountOverrides) return baseResults
+    // 全サポートがデフォルト凸でカウント調整もなければベース結果をそのまま返す
+    const hasNotOwned =
+      !scoreSettings.useFixedUncap && Object.values(cardUncaps).some((u) => u === enums.UncapType.NotOwned)
+    if (fixedUncapEntries.length === 0 && !hasNotOwned && !hasCountCustom) return baseResults
 
-    // ベースをコピーして、変更カードだけ再計算で差し替える
+    // ベースをコピーして、変更サポートだけ再計算で差し替える
     const results = new Map(baseResults)
 
-    // 未所持カードの結果を削除する
+    // 未所持サポートの結果を削除する
     if (!scoreSettings.useFixedUncap) {
       for (const [cardName, uncap] of Object.entries(cardUncaps)) {
         if (uncap === enums.UncapType.NotOwned) {
@@ -125,11 +127,11 @@ export function useCardScores(
       }
     }
 
-    // 凸数変更カードを再計算する（カウントオーバーライドも適用）
-    for (const [cardName, uncap] of uncapOverrides) {
+    // 凸数変更サポートを再計算する（カウント調整も適用）
+    for (const [cardName, uncap] of fixedUncapEntries) {
       const card = cardByName.get(cardName)
       if (card) {
-        const ovr = cardCountOverrides[cardName]
+        const ovr = cardCountCustom[cardName]
         results.set(
           cardName,
           calculateCardParameter(
@@ -148,15 +150,15 @@ export function useCardScores(
       }
     }
 
-    // カウントオーバーライドのみのカード（凸数はデフォルト）を再計算する
-    const alreadyRecalculated = new Set(uncapOverrides.map(([name]) => name))
-    for (const cardName of Object.keys(cardCountOverrides)) {
+    // カウント調整のみのサポート（凸数はデフォルト）を再計算する
+    const alreadyRecalculated = new Set(fixedUncapEntries.map(([name]) => name))
+    for (const cardName of Object.keys(cardCountCustom)) {
       if (alreadyRecalculated.has(cardName)) continue
       const card = cardByName.get(cardName)
       if (!card) continue
-      // 未所持カードはスキップ
+      // 未所持サポートはスキップ
       if (!scoreSettings.useFixedUncap && cardUncaps[cardName] === enums.UncapType.NotOwned) continue
-      const ovr = cardCountOverrides[cardName]
+      const ovr = cardCountCustom[cardName]
       results.set(
         cardName,
         calculateCardParameter(
@@ -175,10 +177,10 @@ export function useCardScores(
     }
 
     return results
-  }, [baseResults, cardUncaps, cardCountOverrides, calcContext, scoreSettings])
+  }, [baseResults, cardUncaps, cardCountCustom, calcContext, scoreSettings])
 
   // cardResults から合計スコアだけ取り出した簡易マップ（表示・ソート用）
-  // 未所持カードは 0 点として扱う
+  // 未所持サポートは 0 点として扱う
   const cardScores = useMemo(() => {
     const scores = new Map<string, number>()
     for (const card of data.AllCards) {
@@ -189,13 +191,13 @@ export function useCardScores(
   }, [cardResults])
 
   /**
-   * 任意のカード・凸数でスコアを個別計算する
+   * 任意のサポート・凸数でスコアを個別計算する
    *
-   * カード詳細モーダルで凸数を切り替えたときの再計算に使う。
+   * サポート詳細モーダルで凸数を切り替えたときの再計算に使う。
    * 計算入力（アクション回数等）が無い場合は undefined を返す。
    */
   const calculateForCard = useCallback(
-    (card: SupportCard, uncap: UncapType, overrides?: CardOverrideData): CardCalculationResult | undefined => {
+    (card: SupportCard, uncap: UncapType, custom?: CardCustomData): CardCalculationResult | undefined => {
       if (!calcContext.hasAnyAction && !calcContext.hasAnyBonus) return undefined
       return calculateCardParameter(
         card,
@@ -206,8 +208,8 @@ export function useCardScores(
         scoreSettings.includeSelfTrigger,
         scoreSettings.includePItem,
         calcContext.perLessonValues,
-        overrides?.selfTrigger,
-        overrides?.pItemCount,
+        custom?.selfTrigger,
+        custom?.pItemCount,
       )
     },
     [calcContext, scoreSettings],

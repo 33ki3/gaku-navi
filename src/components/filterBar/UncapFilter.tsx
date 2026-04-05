@@ -2,7 +2,7 @@
  * 凸数フィルターコンポーネント
  *
  * 0凸〜4凸のトグルボタンを並べたフィルター行。
- * 特定の凸数のカードだけ表示したい時に使う。
+ * 特定の凸数のサポートだけ表示したい時に使う。
  */
 import { useTranslation } from 'react-i18next'
 import type { CardFiltersReturn } from '../../hooks'
@@ -32,13 +32,13 @@ export function UncapFilter({ selectedUncaps, toggleUncap }: UncapFilterProps) {
             key={uncap}
             isActive={selectedUncaps.has(uncap)}
             onClick={() => toggleUncap(uncap)}
-            activeClass={uncap === enums.UncapType.NotOwned
-              ? 'bg-slate-500 text-white shadow border border-transparent'
-              : 'bg-amber-400 text-amber-900 shadow border border-transparent'}
+            activeClass={
+              uncap === enums.UncapType.NotOwned
+                ? 'bg-slate-500 text-white shadow border border-transparent'
+                : 'bg-amber-400 text-amber-900 shadow border border-transparent'
+            }
           >
-            {uncap === enums.UncapType.NotOwned
-              ? t('ui.uncap.not_owned')
-              : `${uncap}${t('ui.unit.uncap')}`}
+            {uncap === enums.UncapType.NotOwned ? t('ui.uncap.not_owned') : `${uncap}${t('ui.unit.uncap')}`}
           </ToggleButton>
         ))}
       </div>

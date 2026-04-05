@@ -20,9 +20,7 @@ const entries: PItemRarityEntry[] = [
   { rarity: PItemRarityType.SR, label: 'common.p_item_rarity.sr', color: RARITY_COLOR_SR },
 ]
 
-const map = new Map<string, PItemRarityEntry>(
-  entries.map((e) => [e.rarity, e]),
-)
+const map = new Map<string, PItemRarityEntry>(entries.map((e) => [e.rarity, e]))
 
 /**
  * Pアイテムレアリティの表示エントリを返す。

@@ -2,8 +2,8 @@
  * 凸数セレクター共通コンポーネント
  *
  * 0凸〜4凸までの5つのボタンを横に並べて、
- * カードの凸数（限界突破回数）を選べるUI。
- * カード一覧・カード詳細モーダルの両方で使われる。
+ * サポートの凸数（限界突破回数）を選べるUI。
+ * サポート一覧・サポート詳細モーダルの両方で使われる。
  */
 import { useTranslation } from 'react-i18next'
 import type { UncapSelectorVariantType, UncapType } from '../../types/enums'
@@ -50,7 +50,7 @@ export function UncapSelector({
         <button
           key={u}
           onClick={() => onChange(u)}
-          className={`${style.button} transition-all ${value === u ? (u === enums.UncapType.NotOwned ? 'bg-slate-500 text-white' : activeClass) : inactiveClass}`}
+          className={`${style.button} transition-colors ${value === u ? (u === enums.UncapType.NotOwned ? 'bg-slate-500 text-white' : activeClass) : inactiveClass}`}
         >
           {u === enums.UncapType.NotOwned ? t('ui.uncap.not_owned') : `${u}${t('ui.unit.uncap')}`}
         </button>

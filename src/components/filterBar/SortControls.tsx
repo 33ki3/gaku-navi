@@ -1,5 +1,5 @@
 /**
- * カード一覧上部のコントロールバー
+ * サポート一覧上部のコントロールバー
  *
  * 左に表示件数、右にソートモード表示ボタン・昇降順トグル・フィルタボタンを配置。
  */
@@ -86,7 +86,12 @@ export default function SortControls({
             className={`${constant.BTN_HEADER_ACTION} ${activeFilterCount > 0 ? activeStyle : inactiveStyle}`}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+              />
             </svg>
             {t(getSortModeLabel(filters.sortMode))}
             {activeFilterCount > 0 && (
@@ -107,7 +112,12 @@ export default function SortControls({
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+              />
             </svg>
           </button>
         </div>

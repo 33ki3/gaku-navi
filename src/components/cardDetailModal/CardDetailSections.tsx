@@ -1,5 +1,5 @@
 /**
- * カード詳細モーダルのボディ部分
+ * サポート詳細モーダルのボディ部分
  *
  * 凸数セレクター、サポートイベント、サポートアビリティ、
  * Pアイテム、スキルカードのセクションを縦に並べる。
@@ -35,7 +35,7 @@ interface CardDetailSectionsProps {
   scoreResult: CardCalculationResult
 }
 
-/** カード詳細のボディセクション */
+/** サポート詳細のボディセクション */
 export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreResult }: CardDetailSectionsProps) {
   const { t } = useTranslation()
   // 各セクションの開閉状態
@@ -84,7 +84,7 @@ export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreRe
         <SupportAbilityList card={card} colors={colors} uncap={uncap} />
       </CollapsibleSection>
 
-      {/* Pアイテム（あるカードだけ） */}
+      {/* Pアイテム（あるサポートだけ） */}
       {card.p_item && (
         <CollapsibleSection
           title={t('ui.header.produce_item')}
@@ -95,7 +95,7 @@ export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreRe
         </CollapsibleSection>
       )}
 
-      {/* スキルカード（名前があるカードだけ） */}
+      {/* スキルカード（名前があるサポートだけ） */}
       {card.skill_card && card.skill_card.name && (
         <CollapsibleSection
           title={t('ui.header.skill_card')}
@@ -108,11 +108,11 @@ export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreRe
 
       {/* 点数内訳 */}
       <CollapsibleSection
-          title={`${t('ui.header.score_breakdown')}${t('ui.format.summary_separator')}${scoreResult.totalIncrease}${t('ui.unit.score')}`}
-          isOpen={scoreOpen}
-          onToggle={() => setScoreOpen(!scoreOpen)}
-        >
-          <AbilityBreakdownList result={scoreResult} />
+        title={`${t('ui.header.score_breakdown')}${t('ui.format.summary_separator')}${scoreResult.totalIncrease}${t('ui.unit.score')}`}
+        isOpen={scoreOpen}
+        onToggle={() => setScoreOpen(!scoreOpen)}
+      >
+        <AbilityBreakdownList result={scoreResult} />
       </CollapsibleSection>
     </div>
   )

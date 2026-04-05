@@ -2,7 +2,7 @@
  * イベント解析ユーティリティ
  *
  * サポートカードのイベント・Pアイテムから「パラメータ上昇量」や
- * 「自己保有ボーナス」（カード自身が提供するスキルカード/Pアイテム等による追加回数）
+ * 「自己保有ボーナス」（サポート自身が提供するスキルカード/Pアイテム等による追加回数）
  * を読み取る。
  */
 import type { SupportCard, SupportEvent, PItemEffect } from '../../types/card'
@@ -10,7 +10,7 @@ import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
 
 /**
- * カードのイベントからパラメータ上昇量を読み取る
+ * サポートのイベントからパラメータ上昇量を読み取る
  *
  * イベントの中に effect_type が「param_boost」のものがあれば、
  * その param_value を返す。なければ 0。
@@ -74,15 +74,15 @@ export function parsePItemParameterBoost(card: SupportCard): PItemBoostEffect[] 
 }
 
 /**
- * カード自身がイベントで提供するアイテムに基づく追加獲得回数を返す
+ * サポート自身がイベントで提供するアイテムに基づく追加獲得回数を返す
  *
- * 例: カードのイベントがスキルカードを提供する場合、
- * そのカードの「スキルカード獲得時」トリガーのアビリティに +1 される。
+ * 例: サポートのイベントがスキルカードを提供する場合、
+ * そのサポートの「スキルカード獲得時」トリガーのアビリティに +1 される。
  * これにより「自分のイベントで手に入るスキルカードも回数に含む」計算ができる。
  *
  * 判定の仕組み:
- * 1. カードのイベント・Pアイテムが何を提供/操作するかフラグを立てる
- * 2. カードのアビリティが持つトリガーキーを確認する
+ * 1. サポートのイベント・Pアイテムが何を提供/操作するかフラグを立てる
+ * 2. サポートのアビリティが持つトリガーキーを確認する
  * 3. 提供フラグとトリガーキーが一致する場合、追加回数 +1 する
  *
  * @param card - 対象のサポートカード
@@ -101,9 +101,8 @@ export function getSelfAcquisitionBonus(card: SupportCard): Partial<Record<Actio
   // Pアイテムの効果回数（limit.count がある場合はその回数分、なければ1回）
   const pItemLimitCount = card.p_item?.effect?.limit?.count ?? 1
   // Pドリンク獲得個数（body内のrandom_pdrink_countのcountフィールド、なければ1）
-  const pDrinkBodyCount = card.p_item?.effect?.body?.find(
-    (b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount
-  )?.count ?? 1
+  const pDrinkBodyCount =
+    card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount)?.count ?? 1
   // Pドリンク獲得の総カウント = 発動回数 × 1回あたりの獲得個数
   const pDrinkTotalCount = pItemLimitCount * pDrinkBodyCount
   // Pアイテムの1回あたり操作枚数（body内の最初のエントリのcount、なければ1）
@@ -116,11 +115,31 @@ export function getSelfAcquisitionBonus(card: SupportCard): Partial<Record<Actio
   const bonusRules: [boolean, enums.TriggerKeyType, enums.ActionIdType, number][] = [
     // スキルカード獲得系
     [givesSkillCard, enums.TriggerKeyType.SkillAcquire, enums.ActionIdType.SkillAcquire, 1],
-    [givesSkillCard && card.skill_card?.type === enums.SkillCardType.Mental, enums.TriggerKeyType.MSkillAcquire, enums.ActionIdType.MSkillAcquire, 1],
-    [givesSkillCard && card.skill_card?.type === enums.SkillCardType.Active, enums.TriggerKeyType.ASkillAcquire, enums.ActionIdType.ASkillAcquire, 1],
-    [givesSkillCard && card.rarity === enums.RarityType.SSR, enums.TriggerKeyType.SsrCardAcquire, enums.ActionIdType.SsrCardAcquire, 1],
+    [
+      givesSkillCard && card.skill_card?.type === enums.SkillCardType.Mental,
+      enums.TriggerKeyType.MSkillAcquire,
+      enums.ActionIdType.MSkillAcquire,
+      1,
+    ],
+    [
+      givesSkillCard && card.skill_card?.type === enums.SkillCardType.Active,
+      enums.TriggerKeyType.ASkillAcquire,
+      enums.ActionIdType.ASkillAcquire,
+      1,
+    ],
+    [
+      givesSkillCard && card.rarity === enums.RarityType.SSR,
+      enums.TriggerKeyType.SsrCardAcquire,
+      enums.ActionIdType.SsrCardAcquire,
+      1,
+    ],
     [givesPItem, enums.TriggerKeyType.PItemAcquire, enums.ActionIdType.PItemAcquire, 1],
-    [pActions.includes(enums.PItemActionType.PDrinkAcquire), enums.TriggerKeyType.PDrinkAcquire, enums.ActionIdType.PDrinkAcquire, pDrinkTotalCount],
+    [
+      pActions.includes(enums.PItemActionType.PDrinkAcquire),
+      enums.TriggerKeyType.PDrinkAcquire,
+      enums.ActionIdType.PDrinkAcquire,
+      pDrinkTotalCount,
+    ],
   ]
 
   // イベント・Pアイテム両方がソースになりうるルール
@@ -138,8 +157,18 @@ export function getSelfAcquisitionBonus(card: SupportCard): Partial<Record<Actio
     [deleteEvent, deletePItem, enums.TriggerKeyType.Delete, enums.ActionIdType.Delete],
     [deleteEvent, deletePItem, enums.TriggerKeyType.MSkillDelete, enums.ActionIdType.MSkillDelete],
     [deleteEvent, deletePItem, enums.TriggerKeyType.ASkillDelete, enums.ActionIdType.ASkillDelete],
-    [hasEventEffectType(enums.EventEffectType.TroubleDelete), pActions.includes(enums.PItemActionType.TroubleDelete), enums.TriggerKeyType.TroubleDelete, enums.ActionIdType.TroubleDelete],
-    [hasEventEffectType(enums.EventEffectType.CardChange), pActions.includes(enums.PItemActionType.Change), enums.TriggerKeyType.Change, enums.ActionIdType.Change],
+    [
+      hasEventEffectType(enums.EventEffectType.TroubleDelete),
+      pActions.includes(enums.PItemActionType.TroubleDelete),
+      enums.TriggerKeyType.TroubleDelete,
+      enums.ActionIdType.TroubleDelete,
+    ],
+    [
+      hasEventEffectType(enums.EventEffectType.CardChange),
+      pActions.includes(enums.PItemActionType.Change),
+      enums.TriggerKeyType.Change,
+      enums.ActionIdType.Change,
+    ],
   ]
 
   for (const ability of card.abilities) {

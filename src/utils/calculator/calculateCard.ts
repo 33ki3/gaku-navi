@@ -1,5 +1,5 @@
 /**
- * メインのカード計算ロジック
+ * メインのサポート計算ロジック
  *
  * サポートカード1枚の「パラメータ上昇の合計値」を計算する。
  * アビリティ・イベント・Pアイテム・パラメータボーナスの各要素を
@@ -14,10 +14,10 @@ import { parseAbility } from './helpers'
 import { parseEventParameterBoost, parsePItemParameterBoost, getSelfAcquisitionBonus } from './events'
 
 /**
- * 未所持カード用の空の計算結果を生成する
+ * 未所持サポート用の空の計算結果を生成する
  *
  * すべての値が 0 の CardCalculationResult を返す。
- * カード詳細やスコア内訳モーダルを 0 点として表示するために使う。
+ * サポート詳細やスコア内訳モーダルを 0 点として表示するために使う。
  */
 export function createEmptyResult(card: SupportCard): CardCalculationResult {
   return {
@@ -32,7 +32,7 @@ export function createEmptyResult(card: SupportCard): CardCalculationResult {
     eventBoostBase: 0,
     eventBoostPercent: 0,
     totalIncrease: 0,
-    autoActionCounts: {},
+    autoCounts: {},
   }
 }
 
@@ -50,7 +50,7 @@ function resolveActionId(triggerKey: TriggerKeyType): ActionIdType {
  * サポートカードの総パラメータ上昇量を計算する
  *
  * 計算の流れ:
- * 1. カードのイベントによるパラメータ上昇を読み取る
+ * 1. サポートのイベントによるパラメータ上昇を読み取る
  * 2. イベントブースト倍率（「イベント効果+50%」等）を適用する
  * 3. 各アビリティの上昇量を「トリガー回数 × 1回あたりの値」で計算する
  * 4. Pアイテムの効果による上昇量を計算する
@@ -60,13 +60,13 @@ function resolveActionId(triggerKey: TriggerKeyType): ActionIdType {
  * @param card - 計算対象のサポートカード
  * @param uncap - 凸数（0〜4、凸数でアビリティの値が変わる）
  * @param actionCounts - 各アクションの実行回数（スケジュール or 手動入力）
- * @param extraEventCounts - 他カードのイベントによる追加回数（スキルカード獲得等）
+ * @param extraEventCounts - 他サポートのイベントによる追加回数（スキルカード獲得等）
  * @param parameterBonusBase - パラメータボーナスの対象値（数値 or Vo/Da/Vi別）
- * @param includeSelfTrigger - 自カードのイベントによる自己発火を含めるか
+ * @param includeSelfTrigger - 自サポートのイベントによる自己発火を含めるか
  * @param includePItem - Pアイテムの効果を含めるか
  * @param parameterBonusPerLesson - レッスンごとの Vo/Da/Vi 上昇量（指定時はレッスンごとに切り捨て計算する）
- * @param selfBonusOverrides - 自動カウント（selfBonus）のオーバーライド（自身イベント効果の加算値を置換する）
- * @param pItemCountOverrides - Pアイテム発動回数のオーバーライド（Pアイテムのトリガー回数を置換する）
+ * @param selfBonusCustom - 自動カウント（selfBonus）のカウント調整（自身イベント効果の加算値を置換する）
+ * @param pItemCountCustom - Pアイテム発動回数のカウント調整（Pアイテムのトリガー回数を置換する）
  * @returns 各アビリティの寄与度を含む計算結果
  */
 export function calculateCardParameter(
@@ -78,17 +78,17 @@ export function calculateCardParameter(
   includeSelfTrigger = true,
   includePItem = true,
   parameterBonusPerLesson?: PerLessonParameterValues,
-  selfBonusOverrides?: Partial<Record<ActionIdType, number>>,
-  pItemCountOverrides?: Partial<Record<ActionIdType, number>>,
+  selfBonusCustom?: Partial<Record<ActionIdType, number>>,
+  pItemCountCustom?: Partial<Record<ActionIdType, number>>,
 ): CardCalculationResult {
-  // カードのタイプからパラメータ属性（Vo/Da/Vi）を特定する
+  // サポートのタイプからパラメータ属性（Vo/Da/Vi）を特定する
   const paramType = card.parameter_type
 
   // パラメータボーナスの対象値を取得する
-  // Vo/Da/Vi別の場合はカードのタイプに応じた値を選ぶ
+  // Vo/Da/Vi別の場合はサポートのタイプに応じた値を選ぶ
   const bonusBase = typeof parameterBonusBase === 'number' ? parameterBonusBase : parameterBonusBase[paramType]
 
-  // カードがイベントでスキルカードやPアイテムを提供する場合、
+  // サポートがイベントでスキルカードやPアイテムを提供する場合、
   // 対応する獲得系トリガーに +1 される（自分自身のイベントも発動回数に含む）
   const selfBonus = includeSelfTrigger ? getSelfAcquisitionBonus(card) : {}
 
@@ -103,13 +103,13 @@ export function calculateCardParameter(
   const paramBonusAbility = parsedAbilities.find((a) => a.isParameterBonus)
   const paramBonusPercent = paramBonusAbility ? paramBonusAbility.numericValue : 0
 
-  // カードのイベントから直接のパラメータ上昇値を読み取り、ブースト倍率をかける
+  // サポートのイベントから直接のパラメータ上昇値を読み取り、ブースト倍率をかける
   const eventParamBase = parseEventParameterBoost(card)
   const eventBoost = Math.floor(eventParamBase * eventBoostMultiplier)
 
   const abilityBoosts: CardCalculationResult['abilityBoosts'] = []
   const allAbilityDetails: CardCalculationResult['allAbilityDetails'] = []
-  const autoActionCounts: Partial<Record<ActionIdType, number>> = {}
+  const autoCounts: Partial<Record<ActionIdType, number>> = {}
 
   for (const parsed of parsedAbilities) {
     // イベント倍率・パラメータボーナス%・スキップ対象はここでは計算しない
@@ -133,6 +133,7 @@ export function calculateCardParameter(
         nameKey: parsed.nameKey,
         parameterType: parsed.parameterType ?? undefined,
         maxCount: parsed.maxCount ?? undefined,
+        trigger: parsed.triggerKey,
         count: 1,
         valuePerTrigger: value,
         total: Math.floor(value),
@@ -140,20 +141,19 @@ export function calculateCardParameter(
       continue
     }
 
-    // ベース回数 + 他カード由来の追加回数 + 自己保有ボーナス
-    // 自動カウント（selfBonus）のオーバーライドがあれば自動計算値を置換する
+    // ベース回数 + 他サポート由来の追加回数 + 自己保有ボーナス
+    // 自動カウント（selfBonus）のカウント調整があれば自動計算値を置換する
     const actionId = resolveActionId(parsed.triggerKey)
     const baseCount = actionCounts[actionId] ?? 0
     const extraCount = extraEventCounts[actionId] ?? 0
     const baseSelfBonus = selfBonus[actionId] ?? 0
-    const effectiveSelfBonus = selfBonusOverrides && actionId in selfBonusOverrides
-      ? selfBonusOverrides[actionId]!
-      : baseSelfBonus
+    const effectiveSelfBonus =
+      selfBonusCustom && actionId in selfBonusCustom ? selfBonusCustom[actionId]! : baseSelfBonus
     let totalCount = baseCount + extraCount + effectiveSelfBonus
 
-    // 自動計算回数を記録する（オーバーライドなしの値）
-    if (!(actionId in autoActionCounts)) {
-      autoActionCounts[actionId] = baseCount + extraCount + baseSelfBonus
+    // 自動カウント回数を記録する（カウント調整なしの値）
+    if (!(actionId in autoCounts)) {
+      autoCounts[actionId] = baseCount + extraCount + baseSelfBonus
     }
 
     // 「プロデュース中N回」の上限があれば、回数を制限する
@@ -171,6 +171,7 @@ export function calculateCardParameter(
         nameKey: parsed.nameKey,
         parameterType: parsed.parameterType ?? undefined,
         maxCount: parsed.maxCount ?? undefined,
+        trigger: parsed.triggerKey,
         count: totalCount,
         valuePerTrigger: parsed.numericValue,
         total,
@@ -194,21 +195,21 @@ export function calculateCardParameter(
   // Pアイテムによるパラメータ上昇を処理する
   const pItemBoosts = includePItem ? parsePItemParameterBoost(card) : []
   for (const boost of pItemBoosts) {
-    // Pアイテム発動回数のオーバーライドがあれば回数を置換する
+    // Pアイテム発動回数のカウント調整があれば回数を置換する
     const boostActionId = resolveActionId(boost.triggerKey)
     const baseCount = actionCounts[boostActionId] ?? 0
     const extraCount = extraEventCounts[boostActionId] ?? 0
     const selfBonusCount = selfBonus[boostActionId] ?? 0
     const rawCount = baseCount + extraCount + selfBonusCount
 
-    // 自動計算回数を記録する（オーバーライドなしの値）
-    if (!(boostActionId in autoActionCounts)) {
-      autoActionCounts[boostActionId] = rawCount
+    // 自動カウント回数を記録する（カウント調整なしの値）
+    if (!(boostActionId in autoCounts)) {
+      autoCounts[boostActionId] = rawCount
     }
 
     let totalCount: number
-    if (pItemCountOverrides && boostActionId in pItemCountOverrides) {
-      totalCount = pItemCountOverrides[boostActionId]!
+    if (pItemCountCustom && boostActionId in pItemCountCustom) {
+      totalCount = pItemCountCustom[boostActionId]!
     } else {
       totalCount = rawCount
     }
@@ -222,7 +223,7 @@ export function calculateCardParameter(
     const total = totalCount > 0 ? Math.floor(boost.value * totalCount) : 0
     allAbilityDetails.push({
       displayName: boost.description,
-      triggerKey: boost.triggerKey,
+      trigger: boost.triggerKey,
       effectData: boost.effectData ?? undefined,
       parameterType: boost.parameterType,
       maxCount: boost.maxCount ?? undefined,
@@ -269,6 +270,6 @@ export function calculateCardParameter(
     eventBoostBase: eventParamBase,
     eventBoostPercent,
     totalIncrease,
-    autoActionCounts,
+    autoCounts,
   }
 }

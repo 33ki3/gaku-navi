@@ -1,5 +1,5 @@
 /**
- * カードリストコンポーネント（仮想スクロール対応）
+ * サポートリストコンポーネント（仮想スクロール対応）
  *
  * @tanstack/react-virtual を使って、画面に見えている行だけを描画する。
  * ResizeObserver でグリッドの幅を監視し、1〜4列を自動で切り替える。
@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState, memo } from 'react'
 import type { SupportCard } from '../../types/card'
 import type { TranslationKey } from '../../i18n'
-import type { CardCountOverrides } from '../../hooks/useCardCountOverrides'
+import type { CardCountCustom } from '../../hooks/useCardCountCustom'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useCardContext } from '../../contexts/CardContext'
 import * as constant from '../../constant'
@@ -16,27 +16,30 @@ import { CardListItem } from './CardListItem'
 
 /** CardList コンポーネントに渡すプロパティ */
 interface CardListProps {
-  /** フィルター済みのカード一覧 */
+  /** フィルター済みのサポート一覧 */
   filteredCards: readonly SupportCard[]
-  /** カード名 → スコアのマップ */
+  /** サポート名 → スコアのマップ */
   cardScores: ReadonlyMap<string, number>
-  /** カード名 → アビリティバッジ一覧のマップ */
+  /** サポート名 → アビリティバッジ一覧のマップ */
   abilityBadgeMap: ReadonlyMap<string, TranslationKey[]>
-  /** カード別カウントオーバーライド */
-  cardCountOverrides: CardCountOverrides
+  /** サポート別カウント調整 */
+  cardCountCustom: CardCountCustom
   /** 設定パネルがピン留めされているか */
   settingsPinned: boolean
+  /** 両パネルがピン留めされているか */
+  bothPanelsPinned: boolean
 }
 
-/** 仮想スクロール付きカードリスト */
+/** 仮想スクロール付きサポートリスト */
 export default memo(function CardList({
   filteredCards,
   cardScores,
   abilityBadgeMap,
-  cardCountOverrides,
+  cardCountCustom,
   settingsPinned,
+  bothPanelsPinned,
 }: CardListProps) {
-  // カードの凸数取得用コンテキスト
+  // サポートの凸数取得用コンテキスト
   const { getCardUncap } = useCardContext()
   const gridRef = useRef<HTMLDivElement>(null)
   const [columns, setColumns] = useState(1)
@@ -47,19 +50,26 @@ export default memo(function CardList({
     if (!el) return
     // ピン留め時は4列・3列の閾値を変更する（サイドパネル分狭くなるから）
     const bp4 = settingsPinned ? constant.BREAKPOINT_4COL_PINNED : constant.BREAKPOINT_4COL
-    const bp3 = settingsPinned ? constant.BREAKPOINT_3COL_PINNED : constant.BREAKPOINT_3COL
+    const bp3 = bothPanelsPinned
+      ? constant.BREAKPOINT_3COL_BOTH
+      : settingsPinned
+        ? constant.BREAKPOINT_3COL_PINNED
+        : constant.BREAKPOINT_3COL
+    const bp2 = bothPanelsPinned ? constant.BREAKPOINT_2COL_BOTH : constant.BREAKPOINT_2COL
+    // 両パネルピン時の最大列数
+    const maxCols = bothPanelsPinned ? 3 : 4
     const observer = new ResizeObserver((entries) => {
       const width = entries[0].contentRect.width
-      if (width >= bp4) setColumns(4)
+      if (maxCols >= 4 && width >= bp4) setColumns(4)
       else if (width >= bp3) setColumns(3)
-      else if (width >= constant.BREAKPOINT_2COL) setColumns(2)
+      else if (width >= bp2) setColumns(2)
       else setColumns(1)
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [settingsPinned])
+  }, [settingsPinned, bothPanelsPinned])
 
-  // 行数 = カード総数 ÷ 列数（切り上げ）
+  // 行数 = サポート総数 ÷ 列数（切り上げ）
   const rowCount = Math.ceil(filteredCards.length / columns)
 
   // 仮想スクローラーの初期化（行高さから表示範囲を計算する）
@@ -80,7 +90,7 @@ export default memo(function CardList({
       >
         {/* 画面に見えている行だけ描画する */}
         {virtualizer.getVirtualItems().map((virtualRow) => {
-          // この行に表示するカードを切り出す
+          // この行に表示するサポートを切り出す
           const startIndex = virtualRow.index * columns
           const rowCards = filteredCards.slice(startIndex, startIndex + columns)
 
@@ -101,7 +111,7 @@ export default memo(function CardList({
                 paddingBottom: `${constant.GRID_GAP}px`,
               }}
             >
-              {/* 行内の各カードをレンダリング */}
+              {/* 行内の各サポートをレンダリング */}
               {rowCards.map((card) => {
                 const score = cardScores.get(card.name)!
                 const uncap = getCardUncap(card.name)
@@ -113,7 +123,7 @@ export default memo(function CardList({
                     uncap={uncap}
                     score={score}
                     abilityBadges={abilityBadges}
-                    hasCountOverride={card.name in cardCountOverrides}
+                    hasCountCustom={card.name in cardCountCustom}
                   />
                 )
               })}

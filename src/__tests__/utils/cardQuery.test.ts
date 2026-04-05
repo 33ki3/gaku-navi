@@ -1,12 +1,20 @@
+/**
+ * サポートクエリユーティリティのテスト
+ *
+ * フィルターバーで使用するサポート属性判定関数を検証する。
+ * イベントサマリーの取得（サポート一覧のイベントアイコン表示）、
+ * SPレッスン率アビリティの有無判定（SPフィルター）、
+ * アビリティキーワードマッチ（キーワードフィルター）の正確な動作を確認する。
+ */
 import { describe, expect, it } from 'vitest'
 import { getEventSummaryParts, hasSPAbility, hasAbilityKeyword } from '../../utils/cardQuery'
 import type { SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 
-/** 最小限のカードファクトリ */
+/** 最小限のサポートファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {
   return {
-    name: 'テストカード',
+    name: 'テストサポート',
     rarity: enums.RarityType.SR,
     plan: enums.PlanType.Free,
     type: enums.CardType.Vocal,
@@ -45,7 +53,11 @@ describe('getEventSummaryParts', () => {
   it('未マッピングのイベントタイプはスキップ', () => {
     const card = makeCard({
       events: [
-        { release: enums.ReleaseConditionType.Initial, effect_type: 'unknown_type' as enums.EventEffectType, title: 'テスト' },
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: 'unknown_type' as enums.EventEffectType,
+          title: 'テスト',
+        },
       ],
     })
     const parts = getEventSummaryParts(card)
@@ -61,7 +73,13 @@ describe('hasSPAbility', () => {
   it('sp_lesson_rate トリガーがあれば true', () => {
     const card = makeCard({
       abilities: [
-        { name_key: enums.AbilityNameKeyType.SpLessonRate, trigger_key: enums.TriggerKeyType.SpLessonRate, values: { '0': '14%' }, is_percentage: true, skip_calculation: true },
+        {
+          name_key: enums.AbilityNameKeyType.SpLessonRate,
+          trigger_key: enums.TriggerKeyType.SpLessonRate,
+          values: { '0': '14%' },
+          is_percentage: true,
+          skip_calculation: true,
+        },
       ],
     })
     expect(hasSPAbility(card)).toBe(true)
@@ -70,7 +88,11 @@ describe('hasSPAbility', () => {
   it('sp_lesson_rate トリガーがなければ false', () => {
     const card = makeCard({
       abilities: [
-        { name_key: enums.AbilityNameKeyType.LessonEnd, trigger_key: enums.TriggerKeyType.LessonEnd, values: { '0': '5' } },
+        {
+          name_key: enums.AbilityNameKeyType.LessonEnd,
+          trigger_key: enums.TriggerKeyType.LessonEnd,
+          values: { '0': '5' },
+        },
       ],
     })
     expect(hasSPAbility(card)).toBe(false)

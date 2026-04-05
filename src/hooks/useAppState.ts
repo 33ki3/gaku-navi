@@ -2,7 +2,7 @@
  * アプリケーション状態管理フック
  *
  * アプリ全体の状態を1つにまとめる「司令塔」のようなフック。
- * UI状態、カード凸数、スコア計算、フィルターなど
+ * UI状態、サポート凸数、スコア計算、フィルターなど
  * 他のフックを組み合わせて、App.tsx に返す。
  */
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -12,7 +12,7 @@ import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
 import { createEmptyResult } from '../utils/calculator/calculateCard'
 import { useUIState } from './useUIState'
 import { useCardUncaps } from './useCardUncaps'
-import { useCardCountOverrides } from './useCardCountOverrides'
+import { useCardCountCustom } from './useCardCountCustom'
 import { useFilteredCards } from './useFilteredCards'
 import { useCardScores } from './useCardScores'
 import * as data from '../data'
@@ -22,8 +22,8 @@ import * as data from '../data'
  *
  * 内部で以下のフックを呼び出して統合している:
  * - useUIState() → モーダルやパネルの開閉
- * - useCardUncaps() → カードの凸数
- * - useCardScores() → 全カードのスコア計算
+ * - useCardUncaps() → サポートの凸数
+ * - useCardScores() → 全サポートのスコア計算
  * - useFilteredCards() → フィルター・並び替え
  *
  * @returns アプリ全体の状態とイベントハンドラ
@@ -33,7 +33,7 @@ export function useAppState() {
   const ui = useUIState()
   const { setSelectedCard, setScoreBreakdown, setUncapEditMode } = ui
   const uncaps = useCardUncaps()
-  const countOverrides = useCardCountOverrides()
+  const countCustom = useCardCountCustom()
   const { setCardUncap } = uncaps
 
   // スコア設定（変更時に localStorage にも保存する）
@@ -44,7 +44,11 @@ export function useAppState() {
   }, [])
 
   // スコア計算とフィルタリングを実行する
-  const { cardResults, cardScores, calculateForCard } = useCardScores(scoreSettings, uncaps.cardUncaps, countOverrides.cardCountOverrides)
+  const { cardResults, cardScores, calculateForCard } = useCardScores(
+    scoreSettings,
+    uncaps.cardUncaps,
+    countCustom.cardCountCustom,
+  )
   const filters = useFilteredCards(data.AllCards, cardScores, uncaps.cardUncaps, scoreSettings)
 
   // cardResults を ref で保持し、useCallback の依存配列から除外する
@@ -55,12 +59,15 @@ export function useAppState() {
 
   // --- イベントハンドラ ---
 
-  /** カードをクリックしたとき → 詳細モーダルを開く */
-  const handleCardClick = useCallback((card: SupportCard) => {
-    setSelectedCard(card)
-  }, [setSelectedCard])
+  /** サポートをクリックしたとき → 詳細モーダルを開く */
+  const handleCardClick = useCallback(
+    (card: SupportCard) => {
+      setSelectedCard(card)
+    },
+    [setSelectedCard],
+  )
 
-  /** スコアをクリックしたとき → スコア内訳モーダルを開く（未所持カードも0点で表示） */
+  /** スコアをクリックしたとき → スコア内訳モーダルを開く（未所持サポートも0点で表示） */
   const handleScoreClick = useCallback(
     (card: SupportCard, e: React.MouseEvent) => {
       e.stopPropagation()
@@ -100,7 +107,7 @@ export function useAppState() {
       cardResults,
       cardScores,
       calculateForCard,
-      countOverrides,
+      countCustom,
     },
     // フィルター・並び替え
     filters,

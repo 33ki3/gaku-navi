@@ -23,11 +23,7 @@ interface ScheduleWeekSelectorProps {
 }
 
 /** スケジュール週毎選択 UI */
-export function ScheduleWeekSelector({
-  scheduleData,
-  scheduleSelections,
-  onSelect,
-}: ScheduleWeekSelectorProps) {
+export function ScheduleWeekSelector({ scheduleData, scheduleSelections, onSelect }: ScheduleWeekSelectorProps) {
   const { t } = useTranslation()
 
   // 各週のアクティビティ選択ボタンリストを描画する（固定週は自動選択、それ以外はユーザーが選ぶ）
@@ -40,9 +36,7 @@ export function ScheduleWeekSelector({
         // お休みできる週は「お休み」ボタンを追加
         const allOptions = [
           ...week.activities,
-          ...(week.canRest
-            ? [{ id: enums.ActionIdType.Rest, label: 'score.activity.rest' as TranslationKey }]
-            : []),
+          ...(week.canRest ? [{ id: enums.ActionIdType.Rest, label: 'score.activity.rest' as TranslationKey }] : []),
         ]
 
         const isMidExam = week.activities.some((a) => a.id === enums.ActivityIdType.MidExam)
@@ -63,9 +57,7 @@ export function ScheduleWeekSelector({
             </span>
             {/* 固定週はテキスト表示、その他はアクティビティトグルボタン */}
             {isFixed ? (
-              <span className="text-[11px] text-slate-400 font-medium pt-0.5">
-                {t(week.activities[0].label)}
-              </span>
+              <span className="text-[11px] text-slate-400 font-medium pt-0.5">{t(week.activities[0].label)}</span>
             ) : (
               // アクティビティ選択ボタン群（お休み含む）
               <div className="flex flex-wrap gap-1">

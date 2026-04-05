@@ -1,3 +1,12 @@
+/**
+ * 点数設定ユーティリティのテスト
+ *
+ * 点数設定パネルのスケジュール選択判定・アクション回数集計・
+ * 手動入力とスケジュール算出のマージ・localStorage への保存/読み込みを検証する。
+ * スケジュールモード（useScheduleLimits=true）ではユーザーが各週の活動を選択し、
+ * そこからアクション回数が自動算出される。スケジュール制御外のアクション
+ * （スキル獲得等）は手動入力値がそのまま使われる。
+ */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import {
   hasAllScheduleSelections,
@@ -75,7 +84,12 @@ describe('calculateCountsFromSchedule', () => {
     const extendedSchedule: ScheduleWeekData[] = [
       ...schedule,
       { week: 4, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.Class, label: '' as never }] },
-      { week: 5, fixed: false, canRest: false, activities: [{ id: enums.ActivityIdType.SpecialTraining, label: '' as never }] },
+      {
+        week: 5,
+        fixed: false,
+        canRest: false,
+        activities: [{ id: enums.ActivityIdType.SpecialTraining, label: '' as never }],
+      },
     ]
     const selections = {
       4: enums.ActivityIdType.Class,
@@ -177,9 +191,15 @@ describe('loadScoreSettings / saveScoreSettings', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', {
       getItem: vi.fn((key: string) => mockStorage[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { mockStorage[key] = value }),
-      removeItem: vi.fn((key: string) => { delete mockStorage[key] }),
-      clear: vi.fn(() => { for (const k in mockStorage) delete mockStorage[k] }),
+      setItem: vi.fn((key: string, value: string) => {
+        mockStorage[key] = value
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete mockStorage[key]
+      }),
+      clear: vi.fn(() => {
+        for (const k in mockStorage) delete mockStorage[k]
+      }),
       length: 0,
       key: vi.fn(),
     })

@@ -1,7 +1,7 @@
 /**
- * カード凸数管理フック
+ * サポート凸数管理フック
  *
- * 各カードの「凸数（上限解放レベル）」を管理する。
+ * 各サポートの「凸数（上限解放レベル）」を管理する。
  * 0凸〜4凸まであり、凸数に応じてアビリティの効果量が変わる。
  * 変更は localStorage に自動保存される。
  */
@@ -12,16 +12,16 @@ import * as constant from '../constant'
 
 /** useCardUncaps の返却型 */
 interface CardUncapsState {
-  /** カード名→凸数のマッピング（例: { "カード名": 4 }） */
+  /** サポート名→凸数のマッピング（例: { "サポート名": 4 }） */
   cardUncaps: Record<string, UncapType>
-  /** カードの凸数を取得する。未設定なら4凸を返す */
+  /** サポートの凸数を取得する。未設定なら4凸を返す */
   getCardUncap: (cardName: string) => UncapType
-  /** 特定のカードの凸数を変更する */
+  /** 特定のサポートの凸数を変更する */
   setCardUncap: (cardName: string, uncap: UncapType) => void
 }
 
 /**
- * カードの凸数を管理するフック
+ * サポートの凸数を管理するフック
  *
  * ページを読み込んだとき localStorage から復元し、
  * 変更があるたびに自動で保存する。
@@ -41,8 +41,8 @@ export function useCardUncaps(): CardUncapsState {
   }, [cardUncaps])
 
   /**
-   * 特定カードの凸数を更新する
-   * @param cardName - カードの名前
+   * 特定サポートの凸数を更新する
+   * @param cardName - サポートの名前
    * @param uncap - 新しい凸数（0〜4）
    */
   const setCardUncap = useCallback((cardName: string, uncap: UncapType) => {
@@ -50,8 +50,8 @@ export function useCardUncaps(): CardUncapsState {
   }, [])
 
   /**
-   * カードの凸数を取得する。設定されていなければデフォルト（4凸）を返す
-   * @param cardName - カードの名前
+   * サポートの凸数を取得する。設定されていなければデフォルト（4凸）を返す
+   * @param cardName - サポートの名前
    * @returns 現在の凸数
    */
   const getCardUncap = useCallback(

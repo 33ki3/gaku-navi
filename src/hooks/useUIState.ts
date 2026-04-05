@@ -11,7 +11,7 @@ import * as constant from '../constant'
 
 /** useUIState の返却型 */
 interface UIState {
-  /** 詳細モーダルで表示中のカード（nullなら閉じている） */
+  /** 詳細モーダルで表示中のサポート（nullなら閉じている） */
   selectedCard: SupportCard | null
   setSelectedCard: (card: SupportCard | null) => void
   /** 点数設定パネルの開閉 */
@@ -20,6 +20,16 @@ interface UIState {
   /** 点数設定パネルのピン固定（trueなら常に表示） */
   settingsPinned: boolean
   setSettingsPinned: (pinned: boolean) => void
+  /** 最適編成パネルの開閉 */
+  simulatorOpen: boolean
+  setSimulatorOpen: (open: boolean) => void
+  /** 最適編成パネルのピン固定 */
+  simulatorPinned: boolean
+  setSimulatorPinned: (pinned: boolean) => void
+  /** いずれかのパネルがピン留めされているか */
+  anyPanelPinned: boolean
+  /** 両方のパネルがピン留めされているか */
+  bothPanelsPinned: boolean
   /** フィルタ・ソートモーダルが開いているか */
   filterSortOpen: boolean
   setFilterSortOpen: (open: boolean) => void
@@ -32,6 +42,9 @@ interface UIState {
   /** スコア内訳モーダルに渡すデータ（nullなら閉じている） */
   scoreBreakdown: { card: SupportCard; result: CardCalculationResult } | null
   setScoreBreakdown: (data: { card: SupportCard; result: CardCalculationResult } | null) => void
+  /** 手動編成のサポート一覧選択モード */
+  unitCardSelectMode: boolean
+  setUnitCardSelectMode: (mode: boolean) => void
 }
 
 /**
@@ -43,7 +56,9 @@ export function useUIState(): UIState {
   // --- 各 UI 状態を useState で管理 ---
   const [selectedCard, setSelectedCard] = useState<SupportCard | null>(null)
   const [scoreSettingsOpen, setScoreSettingsOpen] = useState(false)
-  const [settingsPinned, setSettingsPinned] = useState(false)
+  const [settingsPinnedRaw, setSettingsPinnedRaw] = useState(false)
+  const [simulatorOpen, setSimulatorOpen] = useState(false)
+  const [simulatorPinnedRaw, setSimulatorPinnedRaw] = useState(false)
   const [filterSortOpen, setFilterSortOpen] = useState(false)
   const [filterSortTab, setFilterSortTabRaw] = useState<FilterSortTab>(() => {
     // localStorage から前回のタブ選択を復元する
@@ -56,6 +71,7 @@ export function useUIState(): UIState {
     card: SupportCard
     result: CardCalculationResult
   } | null>(null)
+  const [unitCardSelectMode, setUnitCardSelectMode] = useState(false)
 
   /** タブ変更時に localStorage にも保存する */
   const setFilterSortTab = useCallback((tab: FilterSortTab) => {
@@ -63,17 +79,32 @@ export function useUIState(): UIState {
     localStorage.setItem(constant.FILTER_SORT_TAB_KEY, tab)
   }, [])
 
+  // ピン留め: 両方同時にピン可能（PCのみ）
+  const setSettingsPinned = useCallback((pinned: boolean) => {
+    setSettingsPinnedRaw(pinned)
+  }, [])
+
+  const setSimulatorPinned = useCallback((pinned: boolean) => {
+    setSimulatorPinnedRaw(pinned)
+  }, [])
+
+  const settingsPinned = settingsPinnedRaw
+  const simulatorPinned = simulatorPinnedRaw
+  const anyPanelPinned = settingsPinned || simulatorPinned
+  const bothPanelsPinned = settingsPinned && simulatorPinned
+
   // モバイル幅（md未満）になったらピン留めを自動解除する
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 768px)')
     const handler = (e: MediaQueryListEvent) => {
-      if (!e.matches && settingsPinned) {
-        setSettingsPinned(false)
+      if (!e.matches) {
+        if (settingsPinned) setSettingsPinnedRaw(false)
+        if (simulatorPinned) setSimulatorPinnedRaw(false)
       }
     }
     mql.addEventListener('change', handler)
     return () => mql.removeEventListener('change', handler)
-  }, [settingsPinned])
+  }, [settingsPinned, simulatorPinned])
 
   return {
     selectedCard,
@@ -82,6 +113,12 @@ export function useUIState(): UIState {
     setScoreSettingsOpen,
     settingsPinned,
     setSettingsPinned,
+    simulatorOpen,
+    setSimulatorOpen,
+    simulatorPinned,
+    setSimulatorPinned,
+    anyPanelPinned,
+    bothPanelsPinned,
     filterSortOpen,
     setFilterSortOpen,
     filterSortTab,
@@ -90,5 +127,7 @@ export function useUIState(): UIState {
     setUncapEditMode,
     scoreBreakdown,
     setScoreBreakdown,
+    unitCardSelectMode,
+    setUnitCardSelectMode,
   }
 }

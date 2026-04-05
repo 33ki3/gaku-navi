@@ -6,6 +6,7 @@
  * フィルターバーや設定パネルの横に配置して、機能のヒントを提供する。
  */
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 /** HelpTooltip コンポーネントに渡すプロパティ */
@@ -76,17 +77,21 @@ export function HelpTooltip({ text, className = '' }: HelpTooltipProps) {
         className="relative w-4 h-4 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 transition-colors cursor-help select-none"
         aria-label={t('ui.accessibility.help')}
       >
-        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black font-sans leading-none tracking-normal">{t('ui.symbol.help')}</span>
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black font-sans leading-none tracking-normal">
+          {t('ui.symbol.help')}
+        </span>
       </button>
-      {/* ツールチップ本体（fixed で画面内にクランプ） */}
-      {open && (
-        <div
-          ref={tooltipRef}
-          className="fixed px-2.5 py-1.5 bg-slate-800 text-white text-[11px] leading-relaxed rounded-lg shadow-lg whitespace-pre-line max-w-[220px] w-max z-50 pointer-events-none"
-        >
-          {text}
-        </div>
-      )}
+      {/* ツールチップ本体（portal で body 直下にレンダリングし、パネルのスタッキングコンテキストの影響を受けないようにする） */}
+      {open &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className="fixed px-2.5 py-1.5 bg-slate-800 text-white text-[11px] leading-relaxed rounded-lg shadow-lg whitespace-pre-line max-w-[220px] w-max z-[9999] pointer-events-none"
+          >
+            {text}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

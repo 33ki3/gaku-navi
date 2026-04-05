@@ -25,12 +25,7 @@ interface AbilityFilterProps {
 }
 
 /** アビリティフィルター行 */
-export function AbilityFilter({
-  spOnly,
-  toggleSP,
-  selectedAbilityKeywords,
-  toggleAbilityKeyword,
-}: AbilityFilterProps) {
+export function AbilityFilter({ spOnly, toggleSP, selectedAbilityKeywords, toggleAbilityKeyword }: AbilityFilterProps) {
   const { t } = useTranslation()
 
   return (

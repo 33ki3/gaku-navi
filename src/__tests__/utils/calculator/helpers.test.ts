@@ -1,3 +1,11 @@
+/**
+ * parseAbility のユニットテスト
+ *
+ * アビリティの値文字列（例: "2.8%", "+8.5%", "100"）を凸数に応じてパースし、
+ * 数値・フラグ・制限値を正規化する処理を検証する。
+ * この関数はスコア計算の入口で、パース結果が間違うと全スコアに影響するため
+ * 各パターン（凸数フォールバック・%除去・+記号・フラグ系）を網羅する。
+ */
 import { describe, expect, it } from 'vitest'
 import { parseAbility } from '../../../utils/calculator/helpers'
 import type { Ability } from '../../../types/card'

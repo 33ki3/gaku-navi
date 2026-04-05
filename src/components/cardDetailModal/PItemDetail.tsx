@@ -1,7 +1,7 @@
 /**
  * Pアイテム詳細コンポーネント
  *
- * カード詳細モーダル内でPアイテムの名前・レアリティ・
+ * サポート詳細モーダル内でPアイテムの名前・レアリティ・
  * コンテスト情報・効果を表示する。
  */
 import { useTranslation } from 'react-i18next'
@@ -31,15 +31,9 @@ export function PItemDetail({ pItem, colors }: PItemDetailProps) {
         {/* Pアイテム名 */}
         <p className="text-sm text-slate-800">{pItem.name}</p>
         {/* レアリティバッジ（「SSR」など） */}
-        <Badge color={rarityEntry.color}>
-          {t(rarityEntry.label)}
-        </Badge>
+        <Badge color={rarityEntry.color}>{t(rarityEntry.label)}</Badge>
         {/* メモリ化可否バッジ（「メモリ化可」など） */}
-        {memoryEntry && (
-          <Badge color={memoryEntry.badge}>
-            {t(memoryEntry.label)}
-          </Badge>
-        )}
+        {memoryEntry && <Badge color={memoryEntry.badge}>{t(memoryEntry.label)}</Badge>}
       </div>
       {/* 効果テキスト */}
       {pItem.effect && (

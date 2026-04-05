@@ -10,10 +10,9 @@ import { useCallback, useMemo, useState } from 'react'
 import * as constant from '../../constant'
 import UnitCardItem from './UnitCardItem'
 import BreakdownRow from './BreakdownRow'
-import { AbilityNameKeyType } from '../../types/enums'
 import type { ActionIdType, ScenarioType, DifficultyType, ActivityIdType } from '../../types/enums'
 import { SelectableTypeEntries } from '../../data/card'
-import { getClassTotal, getExamData, getSpLessonTotal } from '../../data/score'
+import { getClassTotal, getExamData, getParamCap, getSpLessonTotal } from '../../data/score'
 import type { CardCountCustom } from '../../hooks/useCardCountCustom'
 import type { UnitResult as UnitResultType, ParameterValues } from '../../types/unit'
 
@@ -139,32 +138,6 @@ export default function UnitResult({
     return sum
   }, [result.members])
 
-  // サポートカードの初期値上昇合計（VoDaVi別）
-  const supportInitialStat = useMemo(() => {
-    const sum = { vocal: 0, dance: 0, visual: 0 }
-    for (const m of result.members) {
-      for (const ab of m.result.abilityBoosts) {
-        if (ab.nameKey === AbilityNameKeyType.InitialStat && ab.parameterType) {
-          const key = ab.parameterType as keyof typeof sum
-          if (key in sum) {
-            sum[key] += ab.total
-          }
-        }
-      }
-    }
-    return sum
-  }, [result.members])
-
-  // サポート外初期パラメータ（ユーザー入力値からサポート初期値上昇分を差し引く）
-  const outsideInitialParams = useMemo(
-    () => ({
-      vocal: Math.max(0, initialParams.vocal - supportInitialStat.vocal),
-      dance: Math.max(0, initialParams.dance - supportInitialStat.dance),
-      visual: Math.max(0, initialParams.visual - supportInitialStat.visual),
-    }),
-    [initialParams, supportInitialStat],
-  )
-
   // SPレッスン上昇量（VoDaVi別）
   const spLesson = useMemo(
     () => getSpLessonTotal(scenario, difficulty, scheduleSelections),
@@ -193,19 +166,23 @@ export default function UnitResult({
 
   // VoDaVi 合計（初期パラメータ + SPレッスン + 試験 + サポート + パラボ）
   const breakdownTotal = useMemo(() => {
-    const breakdownTotal = pvSum(
-      outsideInitialParams,
-      spLesson,
-      examData.mid,
-      examData.final,
-      supportScore,
-      outsideParamBonus,
-    )
+    const breakdownTotal = pvSum(initialParams, spLesson, examData.mid, examData.final, supportScore, outsideParamBonus)
     return breakdownTotal
-  }, [outsideInitialParams, spLesson, examData, supportScore, outsideParamBonus])
+  }, [initialParams, spLesson, examData, supportScore, outsideParamBonus])
+
+  // シナリオ×難易度に応じたパラメータ上限キャップ
+  const paramCap = useMemo(() => getParamCap(scenario, difficulty), [scenario, difficulty])
+  const cappedTotal = useMemo(() => {
+    if (paramCap === null) return breakdownTotal
+    return {
+      vocal: Math.min(breakdownTotal.vocal, paramCap),
+      dance: Math.min(breakdownTotal.dance, paramCap),
+      visual: Math.min(breakdownTotal.visual, paramCap),
+    }
+  }, [paramCap, breakdownTotal])
 
   // 全合計（VoDaVi合計 + 授業）
-  const grandTotal = breakdownTotal.vocal + breakdownTotal.dance + breakdownTotal.visual + classTotal
+  const grandTotal = cappedTotal.vocal + cappedTotal.dance + cappedTotal.visual + classTotal
 
   return (
     <div className="space-y-3">
@@ -237,7 +214,7 @@ export default function UnitResult({
               ))}
             </div>
             {/* 初期パラ */}
-            <BreakdownRow label={t('unit.result.breakdown_initial_params')} values={outsideInitialParams} />
+            <BreakdownRow label={t('unit.result.breakdown_initial_params')} values={initialParams} />
             {/* サポート外パラボ */}
             <BreakdownRow label={t('unit.result.breakdown_param_bonus')} values={outsideParamBonus} />
             {/* SPレッスン */}
@@ -251,11 +228,17 @@ export default function UnitResult({
             {/* 合計行 */}
             <div className="grid grid-cols-4 gap-1 border-t border-slate-200 pt-1 mt-1">
               <span className="text-[10px] font-bold text-slate-600 shrink-0">{t('unit.result.breakdown_total')}</span>
-              {SelectableTypeEntries.map((entry) => (
-                <span key={entry.parameterType} className="text-[10px] font-black text-slate-800 text-center">
-                  {breakdownTotal[entry.parameterType].toLocaleString()}
-                </span>
-              ))}
+              {SelectableTypeEntries.map((entry) => {
+                const raw = breakdownTotal[entry.parameterType]
+                const capped = cappedTotal[entry.parameterType]
+                const overflow = raw - capped
+                return (
+                  <span key={entry.parameterType} className="text-[10px] font-black text-slate-800 text-center">
+                    {capped.toLocaleString()}
+                    {overflow > 0 && <span className="text-red-500 text-[9px]">（-{overflow.toLocaleString()}）</span>}
+                  </span>
+                )
+              })}
             </div>
           </div>
         )}

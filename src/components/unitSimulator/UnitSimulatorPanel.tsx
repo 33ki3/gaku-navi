@@ -140,6 +140,13 @@ export default function UnitSimulatorPanel({
     recalculateScores(countCustom.cardCountCustom)
   }, [countCustom.cardCountCustom]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 点数設定（シナリオ・難易度・スケジュール等）の変更時にスコアを自動再計算する
+  useEffect(() => {
+    if (isFirstRender.current) return
+    if (!result) return
+    recalculateScores(countCustom.cardCountCustom)
+  }, [scoreSettings]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // 変更時に手持ちサポートでスコアを再評価する（最適化ではなく現在のサポートリストで計算）
   const prevManualCardsRef = useRef(settings.manualCards)
   useEffect(() => {

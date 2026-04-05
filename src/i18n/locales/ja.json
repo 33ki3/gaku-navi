@@ -241,7 +241,9 @@
       "turn_start_after": "ターン開始後、",
       "active_card_use": "アクティブスキルカード使用時、",
       "card_use": "スキルカード使用時、",
-      "motivation_increase_after": "直接効果でやる気が増加後、"
+      "motivation_increase_after": "直接効果でやる気が増加後、",
+      "card_use_count_in_turn": "ターン内にスキルカードを{{count}}回使用時、",
+      "card_cost_hp_decrease": "スキルカードコストで体力減少時、"
     },
     "pitem_condition": {
       "param_gte": "{{param}}が{{threshold}}以上の場合、",
@@ -252,7 +254,8 @@
       "hp_lte_pct": "体力が{{threshold}}％以下の場合、",
       "keyword_count_gte": "{{keyword}}になった回数が{{threshold}}回以上の場合、",
       "policy_change_gte": "指針を変更した回数が{{threshold}}回以上の場合、",
-      "prev_active_card": "直前にアクティブスキルカードを使用した状態の場合、"
+      "prev_active_card": "直前にアクティブスキルカードを使用した状態の場合、",
+      "excluded_cards_gte": "除外にあるスキルカードが{{threshold}}枚以上の場合、"
     },
     "pitem_body": {
       "param_up": "{{param}}上昇+{{value}}",
@@ -308,7 +311,10 @@
       "pp_hp_recovery": "Pポイント+{{value}}体力回復{{count}}",
       "random_enhance_pp": "ランダムなスキルカードを強化Pポイント+{{value}}",
       "random_enhance_hp": "ランダムなスキルカードを強化体力回復{{value}}",
-      "acquire_item_pp": "{{item_name}}を獲得Pポイント+{{value}}"
+      "acquire_item_pp": "{{item_name}}を獲得Pポイント+{{value}}",
+      "keyword_enhance_pct": "{{keyword}}強化+{{value}}％",
+      "hp_cost_reduce_turns": "消費体力減少{{turns}}ターン",
+      "keyword_turns": "{{keyword}}{{turns}}ターン"
     },
     "pitem_limit": {
       "per_produce": "（プロデュース中{{count}}回）",

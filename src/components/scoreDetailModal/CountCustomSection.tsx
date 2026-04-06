@@ -105,7 +105,7 @@ export function CountCustomSection({
       {/* イベント・Pアイテム提供回数セクション */}
       {providedEntries.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             {t('ui.header.self_trigger_count')}
           </div>
           {providedEntries.map(({ actionId, autoCount }) => {
@@ -152,7 +152,7 @@ export function CountCustomSection({
       {/* Pアイテム発動回数セクション */}
       {pItemEntry && (
         <div className="space-y-1.5">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             {t('ui.header.p_item_count')}
           </div>
           <div className="flex items-center justify-between gap-2">

@@ -24,7 +24,7 @@ export function EventBoostSection({ result }: { result: CardCalculationResult })
             {result.eventBoostBase}
           </span>
           {/* イベントボーナス率 */}
-          <span className="text-[10px] shrink-0 text-right mr-2 text-slate-400 min-w-[3.5rem]">
+          <span className="text-[10px] shrink-0 text-right mr-2 text-slate-500 min-w-[3.5rem]">
             {t('ui.symbol.plus')}
             {result.eventBoostPercent}
             {t('ui.symbol.percent')}

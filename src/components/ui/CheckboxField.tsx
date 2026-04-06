@@ -31,7 +31,7 @@ export function CheckboxField({ label, checked, onChange, description }: Checkbo
         />
         <span className="text-[11px] font-bold text-slate-600 leading-tight">{label}</span>
       </label>
-      {description && <p className="text-[9px] text-slate-400 mt-1 ml-5">{description}</p>}
+      {description && <p className="text-[9px] text-slate-500 mt-1 ml-5">{description}</p>}
     </div>
   )
 }

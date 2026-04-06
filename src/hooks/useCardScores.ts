@@ -16,8 +16,7 @@ import * as constant from '../constant'
 import * as enums from '../types/enums'
 import type { CardCountCustom, CardCustomData } from './useCardCountCustom'
 
-// AllCards は不変なので、モジュールスコープで1回だけ Map 化する
-const cardByName = new Map(data.AllCards.map((c) => [c.name, c]))
+
 
 /** useCardScores の戻り値 */
 interface ScoreCalculationResult {
@@ -129,7 +128,7 @@ export function useCardScores(
 
     // 凸数変更サポートを再計算する（カウント調整も適用）
     for (const [cardName, uncap] of fixedUncapEntries) {
-      const card = cardByName.get(cardName)
+      const card = data.CardByName.get(cardName)
       if (card) {
         const ovr = cardCountCustom[cardName]
         results.set(
@@ -154,7 +153,7 @@ export function useCardScores(
     const alreadyRecalculated = new Set(fixedUncapEntries.map(([name]) => name))
     for (const cardName of Object.keys(cardCountCustom)) {
       if (alreadyRecalculated.has(cardName)) continue
-      const card = cardByName.get(cardName)
+      const card = data.CardByName.get(cardName)
       if (!card) continue
       // 未所持サポートはスキップ
       if (!scoreSettings.useFixedUncap && cardUncaps[cardName] === enums.UncapType.NotOwned) continue

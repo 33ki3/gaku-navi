@@ -2,13 +2,13 @@
  * サポート画面用マスタデータのバレルエクスポート。
  */
 export {
-  AbilityKeywordList,
   AbilityParamKeywords,
   AbilityEffectKeywords,
   AbilityCategoryParam,
   AbilityKeywordMap,
 } from './abilityKeyword'
-export { AllCards } from './cards'
+export { AllCards, CardByName } from './cards'
+export { AbilityBadgeMap } from './abilityBadge'
 export { getMemoryBadge, getSkillTypeBadge, getSourceBadge, getPlanBadge, SelectablePlanEntries } from './badge'
 export {
   EventFilterAcquireList,

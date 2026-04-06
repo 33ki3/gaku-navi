@@ -30,7 +30,7 @@ export function ScenarioDifficultySection({ settings, onSettingsChange }: Scenar
         <label className={constant.FORM_SECTION_LABEL}>
           {t('ui.settings.scenario')}
           {data.ScenarioOptionList.some((o) => !o.enabled) && (
-            <span className="text-[9px] font-normal text-slate-300">{t('ui.settings.partially_unsupported')}</span>
+            <span className="text-[9px] font-normal text-slate-400">{t('ui.settings.partially_unsupported')}</span>
           )}
         </label>
         <div className="flex gap-1.5">
@@ -55,7 +55,7 @@ export function ScenarioDifficultySection({ settings, onSettingsChange }: Scenar
         <label className={constant.FORM_SECTION_LABEL}>
           {t('ui.settings.difficulty')}
           {data.DifficultyOptionList.some((o) => !o.enabled) && (
-            <span className="text-[9px] font-normal text-slate-300">{t('ui.settings.partially_unsupported')}</span>
+            <span className="text-[9px] font-normal text-slate-400">{t('ui.settings.partially_unsupported')}</span>
           )}
         </label>
         <div className="flex gap-1.5 flex-wrap">

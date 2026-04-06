@@ -137,7 +137,7 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
         <h3 className={constant.SECTION_HEADING_SM_PX}>
           {t('unit.settings.sp_count')}
           <HelpTooltip text={t('unit.settings.sp_count_tip')} />
-          <span className="ml-2 text-slate-300">
+          <span className="ml-2 text-slate-400">
             ({spTotal}/{constant.SP_TOTAL_MAX})
           </span>
         </h3>

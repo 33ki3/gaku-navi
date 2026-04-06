@@ -662,7 +662,7 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
   // サポート名からサポートを検索して計算する
   const candidates: CandidateCard[] = []
   for (const cardName of cardNames) {
-    const card = data.AllCards.find((c) => c.name === cardName)
+    const card = data.CardByName.get(cardName)
     if (!card) continue
 
     // 凸数: 4凸固定モード or レンタル枠なら4凸、それ以外は設定された凸数

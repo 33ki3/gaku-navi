@@ -10,7 +10,7 @@ import type { SupportCard } from '../../types/card'
 import type { TranslationKey } from '../../i18n'
 import type { CardCountCustom } from '../../hooks/useCardCountCustom'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
-import { useCardContext } from '../../contexts/CardContext'
+import { useCardDataContext } from '../../contexts/CardContext'
 import * as constant from '../../constant'
 import { CardListItem } from './CardListItem'
 
@@ -40,7 +40,7 @@ export default memo(function CardList({
   bothPanelsPinned,
 }: CardListProps) {
   // サポートの凸数取得用コンテキスト
-  const { getCardUncap } = useCardContext()
+  const { getCardUncap } = useCardDataContext()
   const gridRef = useRef<HTMLDivElement>(null)
   const [columns, setColumns] = useState(1)
 

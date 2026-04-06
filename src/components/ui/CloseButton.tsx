@@ -7,6 +7,7 @@
 import type { ButtonSizeType } from '../../types/enums'
 import { ButtonSizeType as ButtonSizeEnum } from '../../types/enums'
 import { getCloseButtonSizeStyle } from '../../data/ui'
+import { CloseIcon } from './icons'
 
 /** CloseButton コンポーネントに渡すプロパティ */
 interface CloseButtonProps {
@@ -23,10 +24,7 @@ export default function CloseButton({ onClick, size = ButtonSizeEnum.Md, classNa
   const style = getCloseButtonSizeStyle(size)
   return (
     <button onClick={onClick} className={`${style.button} ${className}`}>
-      {/* ×アイコン */}
-      <svg className={style.icon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      </svg>
+      <CloseIcon className={style.icon} />
     </button>
   )
 }

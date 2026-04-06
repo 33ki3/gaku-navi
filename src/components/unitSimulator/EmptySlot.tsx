@@ -6,6 +6,8 @@
 import { useTranslation } from 'react-i18next'
 import { memo } from 'react'
 
+import { PlusIcon } from '../ui/icons'
+
 /** EmptySlot に渡すプロパティ */
 interface EmptySlotProps {
   /** 追加ボタン押下時のコールバック */
@@ -38,9 +40,7 @@ export const EmptySlot = memo(function EmptySlot({ onAdd, selectMode, isRental =
             : 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100'
       }`}
     >
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-      </svg>
+      <PlusIcon className="w-4 h-4" />
       <span className="text-xs font-bold">
         {isRental ? t('unit.rental_slot_empty') : selectMode ? t('unit.manual_select_bar') : t('unit.slot_empty')}
       </span>

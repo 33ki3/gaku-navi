@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useCallback, useMemo, useState } from 'react'
 
 import * as constant from '../../constant'
+import { PlusIcon } from '../ui/icons'
 import UnitCardItem from './UnitCardItem'
 import BreakdownRow from './BreakdownRow'
 import type { ActionIdType, ScenarioType, DifficultyType, ActivityIdType } from '../../types/enums'
@@ -83,16 +84,16 @@ export default function UnitResult({
   selectMode,
 }: UnitResultProps) {
   const { t } = useTranslation()
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
   /** サポート展開のトグル */
   const handleToggleExpand = useCallback((name: string) => {
     setExpandedCards((prev) => {
-      const next = new Set(prev)
-      if (next.has(name)) {
-        next.delete(name)
+      const next = { ...prev }
+      if (next[name]) {
+        delete next[name]
       } else {
-        next.add(name)
+        next[name] = true
       }
       return next
     })
@@ -189,10 +190,10 @@ export default function UnitResult({
       {/* 合計スコア */}
       <div className="bg-slate-50 rounded-lg px-4 py-2.5 cursor-pointer" onClick={handleToggleBreakdown}>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-400">
+          <span className="text-xs font-bold text-slate-500">
             {t('unit.result.total_score')}
             {classTotal > 0 && (
-              <span className="text-[10px] font-bold text-slate-400 ml-0.5">
+              <span className="text-[10px] font-bold text-slate-500 ml-0.5">
                 （{t('unit.result.breakdown_class')}
                 {t('ui.symbol.plus')}
                 {classTotal.toLocaleString()}）
@@ -255,14 +256,14 @@ export default function UnitResult({
               hasCustom={customizedCardNames.has(member.card.name)}
               onToggleLock={onToggleLock}
               onRemove={onRemove}
-              expanded={expandedCards.has(member.card.name)}
-              onToggleExpand={() => handleToggleExpand(member.card.name)}
+              expanded={!!expandedCards[member.card.name]}
+              onToggleExpand={handleToggleExpand}
               cardCustom={cardCountCustom[member.card.name] ?? {}}
-              onSelfTriggerChange={(actionId, count) => onSelfTriggerChange(member.card.name, actionId, count)}
-              onRemoveSelfTrigger={(actionId) => onRemoveSelfTrigger(member.card.name, actionId)}
-              onPItemCountChange={(actionId, count) => onPItemCountChange(member.card.name, actionId, count)}
-              onRemovePItemCount={(actionId) => onRemovePItemCount(member.card.name, actionId)}
-              onClearCustom={() => onClearCardCustom(member.card.name)}
+              onSelfTriggerChange={onSelfTriggerChange}
+              onRemoveSelfTrigger={onRemoveSelfTrigger}
+              onPItemCountChange={onPItemCountChange}
+              onRemovePItemCount={onRemovePItemCount}
+              onClearCustom={onClearCardCustom}
             />
           ) : (
             <button
@@ -274,9 +275,7 @@ export default function UnitResult({
                   : 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
+              <PlusIcon className="w-4 h-4" />
               <span className="text-xs font-bold">{t('unit.slot_empty')}</span>
             </button>
           ),

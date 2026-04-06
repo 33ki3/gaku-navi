@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { exportUserData, importUserData } from '../../utils/exportImport'
 import * as constant from '../../constant'
 import { getFilterButtonStyle } from '../../data/ui'
+import { DownloadIcon, UploadIcon } from '../ui/icons'
 import { FilterButtonCategory } from '../../types/enums'
 
 /** DataManagementPanel コンポーネントに渡すプロパティ */
@@ -94,48 +95,27 @@ export default function DataManagementPanel({ onImportComplete }: DataManagement
           setMessage(null)
         }}
         title={t('ui.data_management.title_full')}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${getFilterButtonStyle(FilterButtonCategory.Inactive)}`}
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${getFilterButtonStyle(FilterButtonCategory.Inactive)}`}
       >
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-          />
-        </svg>
+        <UploadIcon className="w-3.5 h-3.5" />
         {t('ui.data_management.title')}
       </button>
 
       {/* トグルボタンクリックで isOpen が true になったとき表示されるドロップダウン */}
       {isOpen && (
         <div className={constant.DROPDOWN_PANEL}>
-          <p className="text-[10px] text-slate-400 mb-2">{t('ui.data_management.description')}</p>
+          <p className="text-[10px] text-slate-500 mb-2">{t('ui.data_management.description')}</p>
 
           <div className="flex gap-2">
             {/* インポート */}
             <button onClick={handleImportClick} className={constant.BTN_ACTION_DARK}>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                />
-              </svg>
+              <UploadIcon className="w-3.5 h-3.5 shrink-0" />
               {t('ui.data_management.import')}
             </button>
 
             {/* エクスポート */}
             <button onClick={handleExport} className={constant.BTN_ACTION_PRIMARY}>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+              <DownloadIcon className="w-3.5 h-3.5 shrink-0" />
               {t('ui.data_management.export')}
             </button>
           </div>

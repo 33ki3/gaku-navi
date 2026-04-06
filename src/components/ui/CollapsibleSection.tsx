@@ -9,6 +9,7 @@ import type { ReactNode } from 'react'
 import type { CollapsibleVariantType } from '../../types/enums'
 import { CollapsibleVariantType as CollapsibleVariantEnum } from '../../types/enums'
 import { getCollapsibleVariantClass } from '../../data/ui'
+import { ChevronRightIcon } from './icons'
 
 /** CollapsibleSection コンポーネントに渡すプロパティ */
 interface CollapsibleSectionProps {
@@ -46,14 +47,7 @@ export default function CollapsibleSection({
         }}
         className={getCollapsibleVariantClass(variant)}
       >
-        <svg
-          className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRightIcon className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
         {title}
       </div>
       {isOpen && children}

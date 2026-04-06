@@ -14,7 +14,7 @@ import { optimizeUnit, evaluateManualUnit } from '../utils/unitSimulator'
 import { loadScoreSettings } from '../utils/scoreSettings'
 import { loadCardCountCustom } from './useCardCountCustom'
 import type { CardCountCustom } from './useCardCountCustom'
-import { AllCards } from '../data/card/cards'
+import { CardByName } from '../data/card/cards'
 import * as constant from '../constant'
 
 /** デフォルト設定 */
@@ -51,9 +51,6 @@ function loadUncaps(): Record<string, UncapType> {
     return {}
   }
 }
-
-/** サポート名からサポートオブジェクトを引くマップ */
-const cardByName = new Map(AllCards.map((c) => [c.name, c]))
 
 /** 計算結果を localStorage に保存する（サポート名のみ保存） */
 function saveResult(result: UnitResult): void {
@@ -98,7 +95,7 @@ function loadResult(): { result: UnitResult; hasCalculated: boolean } {
         synergyProviders?: unknown[]
         paramBonusPercent?: { vocal: number; dance: number; visual: number }
       }) => {
-        const card = cardByName.get(m.cardName)
+        const card = CardByName.get(m.cardName)
         if (!card) return null
         return {
           card,

@@ -265,7 +265,7 @@ export default function UnitSimulatorPanel({
                   }}
                   disabled={isCalculating}
                   title={t('unit.auto_optimize_tip')}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${
                     isCalculating
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
@@ -320,7 +320,7 @@ export default function UnitSimulatorPanel({
               {/* 計算結果なし */}
               {result === null && hasCalculated && !isCalculating && (
                 <div className="text-center py-4">
-                  <p className="text-xs text-slate-400">{t('unit.no_result')}</p>
+                  <p className="text-xs text-slate-500">{t('unit.no_result')}</p>
                 </div>
               )}
             </div>

@@ -3,6 +3,7 @@
  *
  * アビリティ名・発動回数・スコアを横に並べる。
  * スコアが0の場合はグレーアウト表示する。
+ * extraCount を指定するとサポート間連携の追加回数を緑色で表示する。
  */
 import { useTranslation } from 'react-i18next'
 import type { CardCalculationResult } from '../../types/card'
@@ -13,15 +14,20 @@ import { getAbilityDisplayName, getEffectDescription } from '../../utils/display
 interface AbilityRowProps {
   /** アビリティ詳細データ */
   ab: CardCalculationResult['allAbilityDetails'][number]
+  /** サポート間連携による追加回数（0 の場合は表示しない） */
+  extraCount?: number
 }
 
 /** アビリティ/Pアイテムの内訳行 */
-export function AbilityRow({ ab }: AbilityRowProps) {
+export function AbilityRow({ ab, extraCount = 0 }: AbilityRowProps) {
   const { t } = useTranslation()
 
   const displayName = getAbilityDisplayName(ab, t)
   const effectDescription = getEffectDescription(ab, t)
-  const styles = getScoreStyles(ab.total)
+
+  // サポート間連携がある場合は合算スコアを使う
+  const displayTotal = extraCount > 0 ? ab.total + Math.floor(ab.valuePerTrigger * extraCount) : ab.total
+  const styles = getScoreStyles(displayTotal)
 
   // 行のレイアウト: [名前] [×回数] [スコア]
   return (
@@ -37,14 +43,21 @@ export function AbilityRow({ ab }: AbilityRowProps) {
           </>
         )}
       </span>
-      {/* 発動回数（×N） */}
+      {/* 発動回数（×N [+M]） */}
       <span className={`text-[10px] shrink-0 text-right mr-2 min-w-[3.5rem] pb-0.5 ${styles.subTextColor}`}>
         {t('ui.symbol.multiply')}
         {ab.count}
+        {extraCount > 0 && (
+          <span className="text-emerald-600">
+            {t('ui.symbol.plus')}
+            {extraCount}
+          </span>
+        )}
       </span>
       {/* スコア（+N） */}
       <span className={`shrink-0 text-right min-w-[3rem] pb-0.5 ${styles.scoreColor}`}>
-        {`${t('ui.symbol.plus')}${ab.total}`}
+        {t('ui.symbol.plus')}
+        {displayTotal.toLocaleString()}
       </span>
     </div>
   )

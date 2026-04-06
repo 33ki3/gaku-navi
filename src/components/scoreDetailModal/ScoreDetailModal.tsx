@@ -156,11 +156,11 @@ export default function ScoreDetailModal({
           className={`flex flex-row sm:flex-col items-center justify-center px-4 py-2 sm:py-0 border-t sm:border-t-0 sm:border-l ${typeEntry.border} ${typeEntry.bg}`}
         >
           {/* 「合計」ラベル */}
-          <span className="text-[10px] font-bold text-slate-400 sm:mb-1 mr-2 sm:mr-0">{t('ui.settings.total')}</span>
+          <span className="text-[10px] font-bold text-slate-500 sm:mb-1 mr-2 sm:mr-0">{t('ui.settings.total')}</span>
           {/* 合計スコア値 */}
           <span className={`text-2xl font-black ${typeEntry.text} mr-2 sm:mr-0`}>{result.totalIncrease}</span>
           {/* 「点」単位 */}
-          <span className="text-[10px] font-bold text-slate-400">{t('ui.unit.score')}</span>
+          <span className="text-[10px] font-bold text-slate-500">{t('ui.unit.score')}</span>
         </div>
       </div>
     </ModalOverlay>

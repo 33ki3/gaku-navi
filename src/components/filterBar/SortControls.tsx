@@ -8,6 +8,7 @@ import type { CardFiltersReturn } from '../../hooks'
 import { getFilterButtonStyle, getSortModeLabel } from '../../data/ui'
 import { FilterButtonCategory } from '../../types/enums'
 import * as constant from '../../constant'
+import { SortDirectionIcon, SortIcon } from '../ui/icons'
 
 /** SortControls コンポーネントに渡すプロパティ */
 interface SortControlsProps {
@@ -66,7 +67,7 @@ export default function SortControls({
       )}
       <div className="flex items-center justify-between">
         {/* 左: 表示件数 */}
-        <p className="text-xs font-medium text-slate-400">
+        <p className="text-xs font-medium text-slate-500">
           {count} {t('ui.unit.cards')}
         </p>
         {/* PC: ヒントを中央に表示 */}
@@ -85,14 +86,7 @@ export default function SortControls({
             onClick={onOpenFilterSort}
             className={`${constant.BTN_HEADER_ACTION} ${activeFilterCount > 0 ? activeStyle : inactiveStyle}`}
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-              />
-            </svg>
+            <SortIcon className="w-3.5 h-3.5" />
             {t(getSortModeLabel(filters.sortMode))}
             {activeFilterCount > 0 && (
               <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-slate-700 text-[9px] font-black">
@@ -106,19 +100,9 @@ export default function SortControls({
             className={`${constant.BTN_HEADER_ACTION} ${filters.sortReverse ? activeStyle : inactiveStyle}`}
             title={t('ui.sort.reverse')}
           >
-            <svg
+            <SortDirectionIcon
               className={`w-3.5 h-3.5 transition-transform ${filters.sortReverse ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-              />
-            </svg>
+            />
           </button>
         </div>
       </div>

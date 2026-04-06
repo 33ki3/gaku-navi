@@ -1,18 +1,20 @@
 # gaku-navi Copilot Instructions
 
 ## プロジェクト概要
-学園アイドルマスター（学マス）のサポートカード情報を閲覧・検索するためのフロントエンド（React + Vite）です。
+
+学園アイドルマスター（学マス）のサポートカード情報を閲覧・検索するためのフロントエンド（React + Vite + TypeScript + Tailwind CSS）です。
 
 ## Skills
 
-| スキル | 場所 | 概要 |
-|--------|------|------|
-| data-architecture | `.github/skills/data-architecture/` | データ層アーキテクチャ（types + config 2層・i18n・ディレクトリ構造） |
-| coding-conventions | `.github/skills/coding-conventions/` | コーディング規約（import・コメント・ファイル分割・ベストプラクティス） |
-| ui-components | `.github/skills/ui-components/` | UIコンポーネント構築ガイドライン（スタイル・パターン流用・メンテナンス） |
-| git-workflow | `.github/skills/git-workflow/` | Gitブランチ・PR作成・マージ・テンプレート運用 |
+| スキル             | 場所                                 | 概要                                                                     |
+| ------------------ | ------------------------------------ | ------------------------------------------------------------------------ |
+| data-architecture  | `.github/skills/data-architecture/`  | データ層アーキテクチャ（types + config 2層・i18n・ディレクトリ構造）     |
+| coding-conventions | `.github/skills/coding-conventions/` | コーディング規約（import・コメント・ファイル分割・ベストプラクティス）   |
+| ui-components      | `.github/skills/ui-components/`      | UIコンポーネント構築ガイドライン（スタイル・パターン流用・メンテナンス） |
+| git-workflow       | `.github/skills/git-workflow/`       | Gitブランチ・PR作成・マージ・テンプレート運用                            |
 
 ## 詳細仕様
+
 - UI/UXおよびコンポーネント仕様は **ui-components** スキルを参照。
 
 ## PR・Issueテンプレート・コミット規約

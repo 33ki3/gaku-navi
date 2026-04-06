@@ -5,7 +5,6 @@
  * トグルボタンで選ぶ。固定週（試験など）はテキストのみ表示。
  */
 import { useTranslation } from 'react-i18next'
-import type { TranslationKey } from '../../i18n'
 import type { ScheduleWeekData } from '../../data'
 import { ToggleButton } from '../ui/ToggleButton'
 import * as enums from '../../types/enums'
@@ -34,10 +33,7 @@ export function ScheduleWeekSelector({ scheduleData, scheduleSelections, onSelec
         // 固定週（試験など）は選択できない
         const isFixed = week.fixed && !week.canRest
         // お休みできる週は「お休み」ボタンを追加
-        const allOptions = [
-          ...week.activities,
-          ...(week.canRest ? [{ id: enums.ActionIdType.Rest, label: 'score.activity.rest' as TranslationKey }] : []),
-        ]
+        const allOptions = [...week.activities, ...(week.canRest ? [data.RestOption] : [])]
 
         const isMidExam = week.activities.some((a) => a.id === enums.ActivityIdType.MidExam)
         const isExam = isMidExam || week.activities.some((a) => a.id === enums.ActivityIdType.FinalExam)
@@ -50,14 +46,14 @@ export function ScheduleWeekSelector({ scheduleData, scheduleSelections, onSelec
           >
             {/* 週番号ラベル */}
             <span
-              className={`w-7 text-right text-[10px] font-black shrink-0 pt-0.5 ${isFixed ? 'text-slate-400' : 'text-slate-600'}`}
+              className={`w-7 text-right text-[10px] font-black shrink-0 pt-0.5 ${isFixed ? 'text-slate-500' : 'text-slate-600'}`}
             >
               {week.week}
               {t('ui.unit.week')}
             </span>
             {/* 固定週はテキスト表示、その他はアクティビティトグルボタン */}
             {isFixed ? (
-              <span className="text-[11px] text-slate-400 font-medium pt-0.5">{t(week.activities[0].label)}</span>
+              <span className="text-[11px] text-slate-500 font-medium pt-0.5">{t(week.activities[0].label)}</span>
             ) : (
               // アクティビティ選択ボタン群（お休み含む）
               <div className="flex flex-wrap gap-1">

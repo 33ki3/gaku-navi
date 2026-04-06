@@ -117,7 +117,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
               {slot.stages.map((st, j) => (
                 <div key={j} className="flex items-center gap-2 text-[10px] text-slate-600 ml-2">
                   <span className="shrink-0 w-10 font-bold">{getCustomSlotStageLabel(st.stage, t)}</span>
-                  <span className="shrink-0 w-10 text-slate-400">
+                  <span className="shrink-0 w-10 text-slate-500">
                     {st.cost === 0 ? t('card.custom_slot_cost_none') : st.cost}
                     {t('ui.unit.p')}
                   </span>

@@ -7,12 +7,13 @@
  */
 import { useTranslation } from 'react-i18next'
 import { useState, lazy, Suspense } from 'react'
-import { useCardContext } from '../../contexts/CardContext'
+import { useCardUIContext } from '../../contexts/CardContext'
 import * as constant from '../../constant'
 import { getFilterButtonStyle } from '../../data/ui'
 import { FilterButtonCategory } from '../../types/enums'
 import DataManagementPanel from './DataManagementPanel'
 import { MobileMenu } from './MobileMenu'
+import { InfoIcon } from '../ui/icons'
 
 const HelpModal = lazy(() => import('../helpModal/HelpModal'))
 const AboutModal = lazy(() => import('../aboutModal/AboutModal'))
@@ -49,7 +50,7 @@ export default function AppHeader({
   panelRightOffset,
 }: AppHeaderProps) {
   const { t } = useTranslation()
-  const { uncapEditMode, onToggleUncapEdit } = useCardContext()
+  const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
 
@@ -98,7 +99,7 @@ export default function AppHeader({
             {/* ヘルプボタン */}
             <button
               onClick={() => setHelpOpen(true)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${inactiveStyle}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${inactiveStyle}`}
               aria-label={t('ui.help.title')}
             >
               ?
@@ -106,17 +107,10 @@ export default function AppHeader({
             {/* Aboutボタン */}
             <button
               onClick={() => setAboutOpen(true)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${inactiveStyle}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${inactiveStyle}`}
               aria-label={t('ui.about.title')}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <InfoIcon className="w-4 h-4" />
             </button>
           </div>
           {/* モバイル用ハンバーガーメニュー（sm未満で表示、両パネルピン時はPC幅でも表示） */}

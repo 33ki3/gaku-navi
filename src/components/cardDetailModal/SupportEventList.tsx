@@ -29,7 +29,7 @@ export function SupportEventList({ card, colors }: SupportEventListProps) {
       {card.events.map((evt, i) => (
         <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${colors.bg} border ${colors.border}`}>
           {/* 解放条件ラベル（「初期」「Lv20」「Lv40」等） */}
-          <span className="shrink-0 text-[10px] font-bold text-slate-400 mt-0.5 w-10">
+          <span className="shrink-0 text-[10px] font-bold text-slate-500 mt-0.5 w-10">
             {t(data.getEventReleaseLabelKey(evt.release))}
           </span>
           <div className="flex-1 min-w-0">

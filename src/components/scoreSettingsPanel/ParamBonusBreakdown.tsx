@@ -30,7 +30,7 @@ export function ParamBonusBreakdown({ breakdown, bonusBase }: ParamBonusBreakdow
       {/* 週毎内訳テーブル */}
       <table className="w-full text-[10px]">
         <thead>
-          <tr className="text-slate-400 border-b border-slate-100">
+          <tr className="text-slate-500 border-b border-slate-100">
             <th className="text-left py-0.5 font-bold">{t('ui.settings.th_week')}</th>
             <th className="text-left py-0.5 font-bold">{t('ui.settings.th_select')}</th>
             <th className={`text-right py-0.5 font-bold ${voColor}`}>{t('ui.settings.attr_vo')}</th>
@@ -54,19 +54,19 @@ export function ParamBonusBreakdown({ breakdown, bonusBase }: ParamBonusBreakdow
               </td>
               {/* Vo/Da/Vi の値。対象属性のみ太字+カラー、その他は薄色 */}
               <td
-                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Vocal ? `font-bold ${voColor}` : 'text-slate-400'}`}
+                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Vocal ? `font-bold ${voColor}` : 'text-slate-500'}`}
               >
                 {t('ui.symbol.plus')}
                 {row.vocal}
               </td>
               <td
-                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Dance ? `font-bold ${daColor}` : 'text-slate-400'}`}
+                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Dance ? `font-bold ${daColor}` : 'text-slate-500'}`}
               >
                 {t('ui.symbol.plus')}
                 {row.dance}
               </td>
               <td
-                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Visual ? `font-bold ${viColor}` : 'text-slate-400'}`}
+                className={`text-right py-0.5 ${row.attribute === enums.ParameterType.Visual ? `font-bold ${viColor}` : 'text-slate-500'}`}
               >
                 {t('ui.symbol.plus')}
                 {row.visual}
@@ -87,7 +87,7 @@ export function ParamBonusBreakdown({ breakdown, bonusBase }: ParamBonusBreakdow
         </tfoot>
       </table>
       {/* 全週がレッスン以外（お出かけ/休む等）のとき内訳が空になる */}
-      {breakdown.length === 0 && <p className="text-slate-400 text-center py-2">{t('ui.message.no_lessons')}</p>}
+      {breakdown.length === 0 && <p className="text-slate-500 text-center py-2">{t('ui.message.no_lessons')}</p>}
     </div>
   )
 }

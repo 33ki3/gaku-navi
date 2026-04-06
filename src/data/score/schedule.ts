@@ -9,9 +9,15 @@ import type { TranslationKey } from '../../i18n'
 import { getActivityLabel } from './activity'
 
 /** スケジュール内の活動選択肢 */
-interface ScheduleActivityOption {
+export interface ScheduleActivityOption {
   id: ActivityIdType
   label: TranslationKey
+}
+
+/** お休みアクティビティの選択肢（canRest週に追加される） */
+export const RestOption: ScheduleActivityOption = {
+  id: ActivityIdType.Rest,
+  label: getActivityLabel(ActivityIdType.Rest),
 }
 
 /** スケジュールの1週分のデータ */

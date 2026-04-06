@@ -72,7 +72,7 @@ function SortContent({ filters }: { filters: CardFiltersReturn }) {
         <button
           key={mode}
           onClick={() => filters.setSortMode(mode)}
-          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
             filters.sortMode === mode ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >

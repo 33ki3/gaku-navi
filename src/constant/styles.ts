@@ -7,17 +7,17 @@
  */
 
 /** フィルターセクションラベル（10px） */
-export const FILTER_SECTION_LABEL = 'text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5'
+export const FILTER_SECTION_LABEL = 'text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5'
 
 /** セクション見出し（小・パディング付き） */
-export const SECTION_HEADING_SM_PX = 'text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 px-1'
+export const SECTION_HEADING_SM_PX = 'text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 px-1'
 
 /** テキスト入力（小、角丸XL） */
 export const INPUT_TEXT_XS =
-  'block w-full pl-7 pr-2 py-1.5 border border-slate-200 rounded-xl bg-white shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-xs'
+  'block w-full pl-7 pr-2 py-1.5 border border-slate-200 rounded-xl bg-white shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-[border-color,box-shadow] text-xs'
 
 /** アクションボタン（白背景、小テキスト） */
-export const BTN_HEADER_ACTION = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all'
+export const BTN_HEADER_ACTION = 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors'
 
 /** アクションボタン（青塗り、小テキスト） */
 export const BTN_ACTION_PRIMARY =
@@ -29,7 +29,7 @@ export const BTN_ACTION_DARK =
 
 /** サポートアイテム外枠（stripe色は動的付与） */
 export const CARD_ITEM_CONTAINER =
-  'relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 border-l-4 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer group'
+  'relative flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 border-l-4 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-150 cursor-pointer group'
 
 /** サポート スコア行 */
 export const CARD_SCORE_ROW =

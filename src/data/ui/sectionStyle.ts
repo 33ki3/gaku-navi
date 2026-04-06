@@ -20,7 +20,7 @@ interface TabStyle {
 
 const collapsibleStyle: Record<CollapsibleVariantType, string> = {
   [CollapsibleVariantType.Modal]:
-    'flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors',
+    'flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-500 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors',
   [CollapsibleVariantType.Panel]:
     'flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-500 uppercase tracking-widest py-1 hover:text-slate-700 transition-colors',
 }
@@ -40,7 +40,7 @@ const uncapSelectorStyle: Record<UncapSelectorVariantType, UncapSelectorStyle> =
 const tabStyle: TabStyle = {
   active: 'text-sm font-black pb-2 border-b-2 transition-colors text-slate-800 border-slate-800',
   inactive:
-    'text-sm font-black pb-2 border-b-2 transition-colors text-slate-400 border-transparent hover:text-slate-500',
+    'text-sm font-black pb-2 border-b-2 transition-colors text-slate-500 border-transparent hover:text-slate-600',
 }
 
 /**

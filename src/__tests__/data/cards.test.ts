@@ -87,4 +87,18 @@ describe('AllCards', () => {
       }
     }
   })
+
+  it('全アビリティが最大凸で値を持つ（欠落防止）', () => {
+    // summaryテーブル fallback 不備によるアビリティ値欠落バグの再発防止
+    // 最大凸（4凸）で全アビリティに値が存在することを検証する
+    for (const card of AllCards) {
+      for (const ability of card.abilities) {
+        const maxUncapValue = ability.values['4']
+        expect(
+          maxUncapValue !== undefined && maxUncapValue !== '',
+          `${card.name} の ${ability.name_key} が4凸で値を持たない（アビリティ欠落の疑い）`,
+        ).toBe(true)
+      }
+    }
+  })
 })

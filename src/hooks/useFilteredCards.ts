@@ -10,8 +10,7 @@ import type { SupportCard, ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
 import type { TranslationKey } from '../i18n'
 import * as data from '../data'
-import { hasAbilityKeyword } from '../utils/cardQuery'
-import { filterAndSortCards } from '../utils/filterCards'
+import { sortCards, filterSortedCards } from '../utils/filterCards'
 import { useFilterState } from './useFilterState'
 import type { FilterState } from './useFilterState'
 
@@ -70,9 +69,26 @@ export function useFilteredCards(
   }
 
   // フィルター条件が変わったときだけサポート一覧を再計算する
+  // ソートとフィルタリングを分離して、ソート結果をキャッシュする。
+  // フィルター条件のみの変更ではソートを再実行しない（O(n) のフィルタリングだけで済む）。
+
+  // ソート: ソート条件（モード・方向・スコア設定）が変わったときだけ再計算する
+  const sortedCards = useMemo(
+    () =>
+      sortCards(cards, {
+        sortMode: state.sortMode,
+        sortReverse: state.sortReverse,
+        sortCardUncaps: sortUncapsRef.current,
+        cardScores: sortScoresRef.current,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sortScoresRef / sortUncapsRef は scoreSettings 変更時のみ更新するため ref で管理
+    [cards, state.sortMode, state.sortReverse, scoreSettings],
+  )
+
+  // フィルター: フィルター条件またはソート結果が変わったときだけ再計算する
   const filteredCards = useMemo(
     () =>
-      filterAndSortCards(cards, {
+      filterSortedCards(sortedCards, {
         searchTerm: deferredSearchTerm,
         selectedRarities: state.selectedRarities,
         selectedTypes: state.selectedTypes,
@@ -82,44 +98,20 @@ export function useFilteredCards(
         selectedEventFilters: state.selectedEventFilters,
         selectedUncaps: state.selectedUncaps,
         cardUncaps,
-        sortCardUncaps: sortUncapsRef.current,
-        sortMode: state.sortMode,
-        sortReverse: state.sortReverse,
-        cardScores: sortScoresRef.current,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sortScoresRef は scoreSettings 変更時のみ更新するため ref で管理
     [
+      sortedCards,
       deferredSearchTerm,
       state.selectedRarities,
       state.selectedTypes,
       state.selectedPlans,
-      state.selectedEventFilters,
-      state.selectedUncaps,
       state.spOnly,
       state.selectedAbilityKeywords,
-      state.sortMode,
-      state.sortReverse,
-      scoreSettings,
+      state.selectedEventFilters,
+      state.selectedUncaps,
       cardUncaps,
-      cards,
     ],
   )
 
-  // 各サポートのアビリティバッジを計算する（点数に寄与するアビリティのみ対象）
-  const abilityBadgeMap = useMemo(() => {
-    const map = new Map<string, TranslationKey[]>()
-    for (const card of cards) {
-      // サポートごとに、マスターのキーワード一覧と照合してバッジを集める
-      const badges: TranslationKey[] = []
-      for (const kw of data.AbilityKeywordList) {
-        if (hasAbilityKeyword(card, kw, true)) {
-          badges.push(data.AbilityKeywordMap.get(kw)!.badge)
-        }
-      }
-      if (badges.length > 0) map.set(card.name, badges)
-    }
-    return map
-  }, [cards])
-
-  return { ...state, filteredCards, abilityBadgeMap }
+  return { ...state, filteredCards, abilityBadgeMap: data.AbilityBadgeMap }
 }

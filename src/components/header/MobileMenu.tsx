@@ -7,8 +7,9 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useCardContext } from '../../contexts/CardContext'
+import { useCardUIContext } from '../../contexts/CardContext'
 import DataManagementPanel from './DataManagementPanel'
+import { CalculatorIcon, InfoIcon, MenuIcon, QuestionIcon, ScoreSettingsIcon, StarIcon } from '../ui/icons'
 
 /** MobileMenu コンポーネントに渡すプロパティ */
 interface MobileMenuProps {
@@ -39,7 +40,7 @@ export function MobileMenu({
   onOpenAbout,
 }: MobileMenuProps) {
   const { t } = useTranslation()
-  const { uncapEditMode, onToggleUncapEdit } = useCardContext()
+  const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -50,13 +51,7 @@ export function MobileMenu({
         className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
         aria-label={t('ui.accessibility.menu')}
       >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          {menuOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
+        <MenuIcon className="w-5 h-5" isOpen={menuOpen} />
       </button>
       {/* menuOpen が true のときドロップダウンを表示 */}
       {menuOpen && (
@@ -74,14 +69,7 @@ export function MobileMenu({
                 uncapEditMode ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                />
-              </svg>
+              <StarIcon className="w-4 h-4" />
               {uncapEditMode ? t('ui.settings.uncap_settings_active') : t('ui.settings.uncap_settings')}
             </button>
             {/* スコア設定ボタン: モバイルはモーダル、両パネルピン時はピン切替 */}
@@ -94,14 +82,7 @@ export function MobileMenu({
                 bothPanelsPinned && settingsPinned ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                />
-              </svg>
+              <ScoreSettingsIcon className="w-4 h-4" />
               {t('ui.settings.score_settings')}
             </button>
             {/* 最適編成ボタン: モバイルはモーダル、両パネルピン時はピン切替 */}
@@ -114,14 +95,7 @@ export function MobileMenu({
                 bothPanelsPinned && simulatorPinned ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                />
-              </svg>
+              <CalculatorIcon className="w-4 h-4" />
               {t('ui.settings.unit_simulator')}
             </button>
             {/* 区切り線 */}
@@ -140,14 +114,7 @@ export function MobileMenu({
               }}
               className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"
-                />
-              </svg>
+              <QuestionIcon className="w-4 h-4" />
               {t('ui.help.title')}
             </button>
             {/* Aboutボタン */}
@@ -158,14 +125,7 @@ export function MobileMenu({
               }}
               className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <InfoIcon className="w-4 h-4" />
               {t('ui.about.title')}
             </button>
           </div>

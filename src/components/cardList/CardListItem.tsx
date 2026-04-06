@@ -12,12 +12,13 @@ import type { SupportCard } from '../../types/card'
 import type { UncapType } from '../../types/enums'
 import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
-import { useCardContext } from '../../contexts/CardContext'
+import { useCardDataContext, useCardUIContext } from '../../contexts/CardContext'
 import * as data from '../../data'
 import * as constant from '../../constant'
 import { getEventSummaryParts, hasSPAbility } from '../../utils/cardQuery'
 import { Badge } from '../ui/Badge'
 import { UncapSelector } from '../ui/UncapSelector'
+import { AdjustedIcon } from '../ui/icons'
 
 /** CardListItem コンポーネントに渡すプロパティ */
 interface CardListItemProps {
@@ -42,8 +43,8 @@ export const CardListItem = memo(function CardListItem({
   hasCountCustom,
 }: CardListItemProps) {
   const { t } = useTranslation()
-  const { uncapEditMode, onCardClick, onScoreClick, onUncapChange, unitCardSelectMode, isCardEligible } =
-    useCardContext()
+  const { onCardClick, onScoreClick, onUncapChange } = useCardDataContext()
+  const { uncapEditMode, unitCardSelectMode, isCardEligible } = useCardUIContext()
 
   // サポート選択モード中の選択可否判定
   const eligible = !unitCardSelectMode || (isCardEligible ? isCardEligible(card) : true)
@@ -125,20 +126,7 @@ export const CardListItem = memo(function CardListItem({
           {/* カウント調整済みアイコン */}
           {hasCountCustom && (
             <span className="w-5 h-5 flex items-center justify-center rounded-full bg-violet-100 shrink-0">
-              <svg
-                className="w-3 h-3 text-violet-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <title>{t('card.count_adjusted')}</title>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
-                />
-              </svg>
+              <AdjustedIcon className="w-3 h-3 text-violet-500" title={t('card.count_adjusted')} />
             </span>
           )}
           {/* アビリティバッジ */}

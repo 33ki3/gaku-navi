@@ -30,3 +30,6 @@ function inflateCards(cards: SupportCard[]): SupportCard[] {
  * アプリ起動時に 1 回だけ生成され、以降は全コンポーネントから参照する。
  */
 export const AllCards: SupportCard[] = inflateCards(rawCards as unknown as SupportCard[])
+
+/** サポート名 → サポートオブジェクトの逆引きマップ（O(1)ルックアップ用） */
+export const CardByName = new Map(AllCards.map((c) => [c.name, c]))

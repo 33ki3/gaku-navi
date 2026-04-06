@@ -33,10 +33,7 @@ export function ScheduleWeekSelector({ scheduleData, scheduleSelections, onSelec
         // 固定週（試験など）は選択できない
         const isFixed = week.fixed && !week.canRest
         // お休みできる週は「お休み」ボタンを追加
-        const allOptions = [
-          ...week.activities,
-          ...(week.canRest ? [data.RestOption] : []),
-        ]
+        const allOptions = [...week.activities, ...(week.canRest ? [data.RestOption] : [])]
 
         const isMidExam = week.activities.some((a) => a.id === enums.ActivityIdType.MidExam)
         const isExam = isMidExam || week.activities.some((a) => a.id === enums.ActivityIdType.FinalExam)

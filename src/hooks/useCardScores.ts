@@ -16,8 +16,6 @@ import * as constant from '../constant'
 import * as enums from '../types/enums'
 import type { CardCountCustom, CardCustomData } from './useCardCountCustom'
 
-
-
 /** useCardScores の戻り値 */
 interface ScoreCalculationResult {
   /** サポート名 → 計算の内訳（アビリティごとのスコア等） */

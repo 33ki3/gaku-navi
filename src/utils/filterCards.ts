@@ -55,6 +55,49 @@ interface FilterSortParams {
 }
 
 /**
+ * ソートのみに必要なパラメータ
+ *
+ * useFilteredCards でソート結果をキャッシュするために
+ * フィルター条件と分離して定義している。
+ */
+interface SortParams {
+  /** 現在のソートモード（レアリティ順、スコア順、日付順、凸数順） */
+  sortMode: SortModeType
+  /** ソートを逆順にするかどうか */
+  sortReverse: boolean
+  /** サポート名 → ソート用凸数のマッピング（ソート条件変更時のみ更新） */
+  sortCardUncaps: Record<string, UncapType>
+  /** サポート名 → 計算スコアのマッピング（スコアソート用） */
+  cardScores: Map<string, number>
+}
+
+/**
+ * フィルタリングのみに必要なパラメータ
+ *
+ * ソート済みサポートに対してフィルター条件だけを適用する際に使う。
+ */
+interface FilterOnlyParams {
+  /** ユーザーが入力したテキスト検索語（サポート名等で部分一致検索） */
+  searchTerm: string
+  /** 選択されているレアリティ（SSR、SR、R）のセット */
+  selectedRarities: Set<RarityType>
+  /** 選択されているタイプ（ボーカル、ダンス、ビジュアル、アシスト）のセット */
+  selectedTypes: Set<CardType>
+  /** 選択されているプラン（センス、ロジック）のセット */
+  selectedPlans: Set<PlanType>
+  /** SPアビリティ持ちのみ表示するフラグ */
+  spOnly: boolean
+  /** 選択されているアビリティキーワードのセット */
+  selectedAbilityKeywords: Set<AbilityKeywordType>
+  /** 選択されているイベント種別フィルターのセット */
+  selectedEventFilters: Set<EventFilterType>
+  /** 選択されている凸数のセット */
+  selectedUncaps: Set<UncapType>
+  /** サポート名 → 現在の凸数のマッピング（フィルタリング用） */
+  cardUncaps: Record<string, UncapType>
+}
+
+/**
  * サポートが指定されたイベント種別フィルターに一致するか判定する
  *
  * サポートが持つイベントのうち、1つでも指定された効果タイプに一致すればtrue。
@@ -132,18 +175,81 @@ function matchesEventTypeFilter(card: SupportCard, filters: Set<EventFilterType>
 }
 
 /**
- * サポート一覧に対してフィルタリングとソートを行う
+ * 全サポートをソート条件に従って並び替える
  *
- * 処理の流れ:
- * 1. すべてのフィルター条件を順番にチェックして、条件に合わないサポートを除外する
- * 2. 選択されたソートモードに従って並び替える
- * 3. 逆順フラグが立っていれば最後にひっくり返す
+ * フィルタリングは行わない。ソート条件が変わらない間は
+ * useMemo でキャッシュして再利用できる。
  *
- * @param cards - フィルター前の全サポート一覧
- * @param params - フィルター＆ソートの条件パラメータ
- * @returns フィルター＆ソート後のサポート配列
+ * @param cards - 全サポートの配列（マスターデータ）
+ * @param params - ソート条件パラメータ
+ * @returns ソート済みのサポート配列
  */
-export function filterAndSortCards(cards: SupportCard[], params: FilterSortParams): SupportCard[] {
+export function sortCards(cards: readonly SupportCard[], params: SortParams): SupportCard[] {
+  const { sortMode, sortReverse, sortCardUncaps, cardScores } = params
+
+  const sorted = [...cards]
+
+  if (sortMode === enums.SortModeType.Uncap) {
+    // 凸数順: 凸数 降順 → レアリティ 降順 → リリース日 降順
+    sorted.sort((a, b) => {
+      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
+      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
+      if (uncapA !== uncapB) return uncapB - uncapA
+      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
+      if (rarityCompare !== 0) return rarityCompare
+      return b.release_date.localeCompare(a.release_date)
+    })
+  } else if (sortMode === enums.SortModeType.Score && cardScores.size > 0) {
+    // スコア順: スコア 降順 → レアリティ 降順 → 凸数 降順 → リリース日 降順
+    sorted.sort((a, b) => {
+      const scoreCompare = cardScores.get(b.name)! - cardScores.get(a.name)!
+      if (scoreCompare !== 0) return scoreCompare
+      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
+      if (rarityCompare !== 0) return rarityCompare
+      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
+      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
+      if (uncapA !== uncapB) return uncapB - uncapA
+      return b.release_date.localeCompare(a.release_date)
+    })
+  } else if (sortMode === enums.SortModeType.Date) {
+    // 日付順: 実装日 降順 → レアリティ 降順 → 凸数 降順
+    sorted.sort((a, b) => {
+      const dateCompare = b.release_date.localeCompare(a.release_date)
+      if (dateCompare !== 0) return dateCompare
+      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
+      if (rarityCompare !== 0) return rarityCompare
+      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
+      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
+      return uncapB - uncapA
+    })
+  } else {
+    // デフォルト（レアリティ順）: レアリティ 降順 → 凸数 降順 → リリース日 降順
+    sorted.sort((a, b) => {
+      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
+      if (rarityCompare !== 0) return rarityCompare
+      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
+      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
+      if (uncapA !== uncapB) return uncapB - uncapA
+      return b.release_date.localeCompare(a.release_date)
+    })
+  }
+
+  if (sortReverse) sorted.reverse()
+  return sorted
+}
+
+/**
+ * ソート済みサポートをフィルター条件で絞り込む
+ *
+ * 入力のソート順がそのまま維持される。
+ * ソート結果がキャッシュされている場合、フィルター条件だけ変わったときに
+ * ソートを再実行せず O(n) のフィルタリングだけで済む。
+ *
+ * @param sortedCards - ソート済みの全サポート配列
+ * @param params - フィルター条件パラメータ
+ * @returns フィルター適用後のサポート配列（ソート順維持）
+ */
+export function filterSortedCards(sortedCards: readonly SupportCard[], params: FilterOnlyParams): SupportCard[] {
   const {
     searchTerm,
     selectedRarities,
@@ -154,14 +260,9 @@ export function filterAndSortCards(cards: SupportCard[], params: FilterSortParam
     selectedEventFilters,
     selectedUncaps,
     cardUncaps,
-    sortCardUncaps,
-    sortMode,
-    sortReverse,
-    cardScores,
   } = params
 
-  // ---- ステップ1: フィルタリング ----
-  let result = cards.filter((card) => {
+  return sortedCards.filter((card) => {
     // テキスト検索: サポート名・Pアイテム名・スキルカード名・イベント名のどれかに部分一致
     const term = searchTerm.toLowerCase()
     if (
@@ -187,54 +288,20 @@ export function filterAndSortCards(cards: SupportCard[], params: FilterSortParam
     if (selectedUncaps.size > 0 && !selectedUncaps.has(cardUncap)) return false
     return true
   })
+}
 
-  // ---- ステップ2: ソート ----
-  if (sortMode === enums.SortModeType.Uncap) {
-    // 凸数順: 凸数 降順 → レアリティ 降順 → リリース日 降順
-    result = [...result].sort((a, b) => {
-      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
-      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
-      if (uncapA !== uncapB) return uncapB - uncapA
-      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
-      if (rarityCompare !== 0) return rarityCompare
-      return b.release_date.localeCompare(a.release_date)
-    })
-  } else if (sortMode === enums.SortModeType.Score && cardScores.size > 0) {
-    // スコア順: スコア 降順 → レアリティ 降順 → 凸数 降順 → リリース日 降順
-    result = [...result].sort((a, b) => {
-      const scoreCompare = cardScores.get(b.name)! - cardScores.get(a.name)!
-      if (scoreCompare !== 0) return scoreCompare
-      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
-      if (rarityCompare !== 0) return rarityCompare
-      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
-      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
-      if (uncapA !== uncapB) return uncapB - uncapA
-      return b.release_date.localeCompare(a.release_date)
-    })
-  } else if (sortMode === enums.SortModeType.Date) {
-    // 日付順: 実装日 降順 → レアリティ 降順 → 凸数 降順
-    result = [...result].sort((a, b) => {
-      const dateCompare = b.release_date.localeCompare(a.release_date)
-      if (dateCompare !== 0) return dateCompare
-      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
-      if (rarityCompare !== 0) return rarityCompare
-      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
-      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
-      return uncapB - uncapA
-    })
-  } else {
-    // デフォルト（レアリティ順）: レアリティ 降順 → 凸数 降順 → リリース日 降順
-    result = [...result].sort((a, b) => {
-      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
-      if (rarityCompare !== 0) return rarityCompare
-      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
-      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
-      if (uncapA !== uncapB) return uncapB - uncapA
-      return b.release_date.localeCompare(a.release_date)
-    })
-  }
-
-  // ---- ステップ3: 逆順フラグがONなら順序を反転 ----
-  if (sortReverse) result.reverse()
-  return result
+/**
+ * サポート一覧に対してフィルタリングとソートを行う
+ *
+ * sortCards でソート → filterSortedCards でフィルタリングの順に処理する。
+ * useFilteredCards では sortCards と filterSortedCards を個別に useMemo で
+ * キャッシュするが、テスト等では一度に呼び出せるこの関数を使う。
+ *
+ * @param cards - フィルター前の全サポート一覧
+ * @param params - フィルター＆ソートの条件パラメータ
+ * @returns フィルター＆ソート後のサポート配列
+ */
+export function filterAndSortCards(cards: SupportCard[], params: FilterSortParams): SupportCard[] {
+  const sorted = sortCards(cards, params)
+  return filterSortedCards(sorted, params)
 }

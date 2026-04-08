@@ -191,9 +191,12 @@ export function useUnitSimulator() {
     const cardCountCustom = loadCardCountCustom()
 
     // 明示的にロックされたサポートのみ固定する（ロックボタンで固定したサポートのみ最適化から除外）
+    // 最適化時はレンタル枠を自動選出するため manualRental を無効化する
     const merged: UnitSimulatorSettings = {
       ...settings,
       manualCards: settings.manualCards.filter((n): n is string => n !== null),
+      manualRental: false,
+      rentalCardName: null,
     }
     const input = { settings: merged, scoreSettings, cardUncaps, cardCountCustom }
 
@@ -216,6 +219,7 @@ export function useUnitSimulator() {
         const synced: UnitSimulatorSettings = {
           ...latest,
           manualCards: ordered,
+          manualRental: rentalName !== null,
           rentalCardName: rentalName,
         }
         setSettings(synced)
@@ -235,8 +239,7 @@ export function useUnitSimulator() {
       const recalcSettings: UnitSimulatorSettings = {
         ...settings,
         manualCards: memberNames,
-        manualRental: result.members.some((m) => m.isRental),
-        rentalCardName: result.members.find((m) => m.isRental)?.card.name ?? null,
+        // レンタルは末尾スロットから位置ベースで導出されるため rentalCardName の上書きは不要
       }
       const input = { settings: recalcSettings, scoreSettings, cardUncaps, cardCountCustom }
       const updated = evaluateManualUnit(input)

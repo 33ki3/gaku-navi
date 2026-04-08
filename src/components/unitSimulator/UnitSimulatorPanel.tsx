@@ -209,6 +209,7 @@ export default function UnitSimulatorPanel({
     (name: string) => {
       const nextCards = settings.manualCards.map((n) => (n === name ? null : n))
       const nextLocked = settings.lockedCards.filter((n) => n !== name)
+      // レンタルは末尾スロット（6枠目）で位置ベースに決まるため rentalCardName のクリアは不要
       setSettings({ ...settings, manualCards: nextCards, lockedCards: nextLocked })
     },
     [settings, setSettings],

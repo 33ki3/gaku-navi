@@ -4,15 +4,15 @@
  * 貪欲法（Greedy）+ 局所探索（Swap Optimization）で
  * 最もスコアの高い6枚編成を近似的に求める。
  */
-import type { SupportCard, ScoreSettings, CardCalculationResult, ParameterValues } from '../types/card'
-import type { UncapType, ActionIdType } from '../types/enums'
+import type { SupportCard, ScoreSettings, CardCalculationResult, ParameterValues, PerLessonParameterValues } from '../types/card'
+import type { UncapType } from '../types/enums'
 import * as enums from '../types/enums'
 import type { UnitSimulatorSettings, UnitMember, UnitResult, SpRateConstraint } from '../types/unit'
 import type { CardCountCustom } from '../hooks/useCardCountCustom'
 import { calculateCardParameter } from './calculator/calculateCard'
 import { mergeScheduleCounts } from './scoreSettings'
 import { getPerLessonParameterValues } from './calculator/parameterBonus'
-import { getProvidedActions, computeUnitSupportSynergy } from './supportSynergy'
+import { computeUnitSupportSynergy } from './supportSynergy'
 import { parseAbility } from './calculator/helpers'
 import * as data from '../data'
 import * as constant from '../constant'
@@ -64,7 +64,6 @@ interface CandidateCard {
   baseResult: CardCalculationResult
   spCategory: enums.SpCategoryType
   paramBonusPercent: ParameterValues
-  providedActions: Partial<Record<ActionIdType, number>>
 }
 
 /** 最適化の入力パラメータ */
@@ -75,6 +74,12 @@ interface OptimizeInput {
   cardCountCustom?: CardCountCustom
 }
 
+/** resolveSchedule の戻り値型 */
+interface ResolvedSchedule {
+  effectiveCounts: Partial<Record<enums.ActionIdType, number>>
+  perLessonValues: PerLessonParameterValues | undefined
+}
+
 /**
  * スケジュールからアクション回数とレッスン別パラメータを導出する
  *
@@ -82,9 +87,9 @@ interface OptimizeInput {
  * 試験中Pアイテム取得回数をPアイテム取得回数に合算する処理も含む。
  *
  * @param scoreSettings - 点数設定
- * @returns effectiveCounts（アクション回数マップ）と perLessonValues（レッスン別パラメータ）
+ * @returns スケジュール解析結果（アクション別発動回数マップ + レッスン別パラメータ値）
  */
-function resolveSchedule(scoreSettings: ScoreSettings) {
+function resolveSchedule(scoreSettings: ScoreSettings): ResolvedSchedule {
   // シナリオ・難易度からスケジュールデータを取得する
   const schedule = data.getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
   // スケジュールからアクション別の発動回数マップを構築する
@@ -106,13 +111,13 @@ function resolveSchedule(scoreSettings: ScoreSettings) {
  * 候補サポートをフィルタリング・事前計算する
  *
  * @param input - 最適化入力
+ * @param schedule - スケジュール解析結果（resolveSchedule の戻り値）
  * @returns 候補サポート配列
  */
-function prepareCandidates(input: OptimizeInput): CandidateCard[] {
+function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedule): CandidateCard[] {
   const { settings, scoreSettings, cardUncaps, cardCountCustom } = input
 
-  // スケジュールからアクション回数を導出する
-  const { effectiveCounts, perLessonValues } = resolveSchedule(scoreSettings)
+  const { effectiveCounts, perLessonValues } = schedule
 
   const candidates: CandidateCard[] = []
 
@@ -131,9 +136,13 @@ function prepareCandidates(input: OptimizeInput): CandidateCard[] {
     if (!effectiveLocked && settings.allowedTypes.length > 0 && !settings.allowedTypes.includes(card.type)) continue
 
     // 凸数（4凸固定モードでは全カード4凸、通常は実際の凸数を使用）
-    const uncap = scoreSettings.useFixedUncap ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
+    // 固定サポートが未所持の場合はレンタル枠として4凸で扱う
+    let uncap = scoreSettings.useFixedUncap ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
+    if (effectiveLocked && uncap === enums.UncapType.NotOwned) {
+      uncap = enums.UncapType.Four
+    }
 
-    // 未所持サポートはスキップする（4凸固定モードでは全カードが候補）
+    // 未所持サポートはスキップする（4凸固定モード・固定サポートは除く）
     if (!scoreSettings.useFixedUncap && uncap === enums.UncapType.NotOwned) continue
 
     // ベーススコアを計算する
@@ -158,10 +167,6 @@ function prepareCandidates(input: OptimizeInput): CandidateCard[] {
       baseResult,
       spCategory: getSpCategory(card),
       paramBonusPercent: getParamBonusPercent(card, uncap),
-      providedActions: getProvidedActions(card, {
-        includeSelfTrigger: scoreSettings.includeSelfTrigger,
-        includePItem: scoreSettings.includePItem,
-      }),
     })
   }
 
@@ -195,13 +200,19 @@ function meetsSpConstraint(members: CandidateCard[], constraint: SpRateConstrain
  *
  * @param members - ユニットメンバー
  * @param input - 最適化入力
+ * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
  * @returns 合計スコア
  */
-function evaluateUnit(members: CandidateCard[], input: OptimizeInput): number {
+function evaluateUnit(
+  members: CandidateCard[],
+  input: OptimizeInput,
+  effectiveCounts: Partial<Record<enums.ActionIdType, number>>,
+): number {
   const cards = members.map((m) => m.card)
   const { bonusMap: synergyMap } = computeUnitSupportSynergy(cards, input.cardCountCustom, {
     includeSelfTrigger: input.scoreSettings.includeSelfTrigger,
     includePItem: input.scoreSettings.includePItem,
+    actionCounts: effectiveCounts,
   })
 
   // ベーススコア合算 + サポート間連携による追加スコア概算
@@ -339,6 +350,7 @@ function greedyInitial(
  * @param candidates - 候補サポート
  * @param input - 最適化入力
  * @param lockedNames - 固定サポート名のセット
+ * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
  * @returns 改善後のユニット
  */
 function localSearch(
@@ -346,9 +358,10 @@ function localSearch(
   candidates: CandidateCard[],
   input: OptimizeInput,
   lockedNames: Set<string>,
+  effectiveCounts: Partial<Record<enums.ActionIdType, number>>,
 ): CandidateCard[] {
   let current = [...unit]
-  let currentScore = evaluateUnit(current, input)
+  let currentScore = evaluateUnit(current, input, effectiveCounts)
 
   for (let iter = 0; iter < constant.MAX_SWAP_ITERATIONS; iter++) {
     let improved = false
@@ -369,7 +382,7 @@ function localSearch(
         // SP制約チェック
         if (!meetsSpConstraint(trial, input.settings.spConstraint)) continue
 
-        const trialScore = evaluateUnit(trial, input)
+        const trialScore = evaluateUnit(trial, input, effectiveCounts)
         if (trialScore > currentScore) {
           current = trial
           currentScore = trialScore
@@ -394,22 +407,24 @@ function localSearch(
  *
  * @param members - 最適化されたサポート配列
  * @param input - 最適化入力
+ * @param schedule - スケジュール解析結果（resolveSchedule の戻り値）
  * @param unownedAt4 - 未所持サポートの4凸候補（レンタル枠検討用）
  * @returns レンタル指定済みサポート配列とレンタルサポート名
  */
 function autoDesignateRental(
   members: CandidateCard[],
   input: OptimizeInput,
+  schedule: ResolvedSchedule,
   unownedAt4: CandidateCard[] = [],
 ): { members: CandidateCard[]; rentalName: string | null } {
   if (members.length === 0) return { members, rentalName: null }
 
   // 現在のユニットスコア（シナジー込み）をベースラインとする
-  const currentScore = evaluateUnit(members, input)
+  const currentScore = evaluateUnit(members, input, schedule.effectiveCounts)
 
   // 4凸でないサポートを仮に4凸で再計算し、最もスコア向上が大きいサポートをレンタルに指定
   const { scoreSettings } = input
-  const { effectiveCounts, perLessonValues } = resolveSchedule(scoreSettings)
+  const { effectiveCounts, perLessonValues } = schedule
 
   // 4凸でないサポートの中から最も恩恵の大きいサポートを選ぶ（シナジー込みで評価）
   let bestUpgradeScore = -Infinity
@@ -441,7 +456,7 @@ function autoDesignateRental(
       baseResult: result4,
       paramBonusPercent: getParamBonusPercent(m.card, enums.UncapType.Four),
     }
-    const trialScore = evaluateUnit(trial, input)
+    const trialScore = evaluateUnit(trial, input, effectiveCounts)
     if (trialScore > bestUpgradeScore) {
       bestUpgradeScore = trialScore
       bestUpgradeIdx = i
@@ -463,7 +478,7 @@ function autoDesignateRental(
       const trial = [...members]
       trial[i] = unowned
       if (!meetsSpConstraint(trial, input.settings.spConstraint)) continue
-      const trialScore = evaluateUnit(trial, input)
+      const trialScore = evaluateUnit(trial, input, effectiveCounts)
       if (trialScore > bestSwapScore) {
         bestSwapScore = trialScore
         bestSwapMemberIdx = i
@@ -519,8 +534,11 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
   const spTotal = settings.spConstraint.vocal + settings.spConstraint.dance + settings.spConstraint.visual
   if (spTotal > constant.SP_TOTAL_MAX) return null
 
+  // スケジュール解析（1回だけ実行してキャッシュする）
+  const schedule = resolveSchedule(scoreSettings)
+
   // 候補サポートの準備
-  const candidates = prepareCandidates(input)
+  const candidates = prepareCandidates(input, schedule)
   if (candidates.length === 0) return null
 
   // レンタル枠のサポート（manualRental は現在常に false だが、将来のUI追加に備えて残す）
@@ -529,16 +547,15 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     const found = candidates.find((c) => c.card.name === settings.rentalCardName)
     if (found) {
       // レンタル枠は4凸で再計算する
-      const { effectiveCounts, perLessonValues } = resolveSchedule(scoreSettings)
       const result = calculateCardParameter(
         found.card,
         enums.UncapType.Four,
-        effectiveCounts,
+        schedule.effectiveCounts,
         {},
         scoreSettings.parameterBonusBase,
         scoreSettings.includeSelfTrigger,
         scoreSettings.includePItem,
-        perLessonValues,
+        schedule.perLessonValues,
       )
       rentalCandidate = {
         ...found,
@@ -558,14 +575,15 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
 
   // Phase 2: 局所探索（6枚揃っている場合のみ実行）
   const optimized =
-    initial.length === constant.UNIT_SIZE ? localSearch(initial, candidates, input, lockedNames) : initial
+    initial.length === constant.UNIT_SIZE
+      ? localSearch(initial, candidates, input, lockedNames, schedule.effectiveCounts)
+      : initial
 
   // Phase 3: レンタル枠の自動選出（手動指定でない場合）
   if (!settings.manualRental) {
     // 未所持サポートの4凸候補を準備する（レンタル枠検討用）
     const unownedAt4: CandidateCard[] = []
     if (!scoreSettings.useFixedUncap) {
-      const { effectiveCounts: uc, perLessonValues: upv } = resolveSchedule(scoreSettings)
       const candidateNames = new Set(candidates.map((c) => c.card.name))
       for (const card of data.AllCards) {
         if (card.plan !== settings.plan && card.plan !== enums.PlanType.Free) continue
@@ -577,12 +595,12 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
         const baseResult = calculateCardParameter(
           card,
           enums.UncapType.Four,
-          uc,
+          schedule.effectiveCounts,
           {},
           scoreSettings.parameterBonusBase,
           scoreSettings.includeSelfTrigger,
           scoreSettings.includePItem,
-          upv,
+          schedule.perLessonValues,
           customData?.selfTrigger,
           customData?.pItemCount,
         )
@@ -593,19 +611,37 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
           baseResult,
           spCategory: getSpCategory(card),
           paramBonusPercent: getParamBonusPercent(card, enums.UncapType.Four),
-          providedActions: getProvidedActions(card, {
-            includeSelfTrigger: scoreSettings.includeSelfTrigger,
-            includePItem: scoreSettings.includePItem,
-          }),
         })
       }
+      // ベーススコア上位のみをレンタル候補として残す
+      unownedAt4.sort((a, b) => b.baseScore - a.baseScore)
+      unownedAt4.length = Math.min(unownedAt4.length, constant.UNIT_SIZE * 2)
     }
-    const { members: rentalMembers, rentalName } = autoDesignateRental(optimized, input, unownedAt4)
-    return buildResult(rentalMembers, input, rentalName ?? undefined)
+    const { members: rentalMembers, rentalName } = autoDesignateRental(optimized, input, schedule, unownedAt4)
+
+    // Phase 4: レンタルスワップ後の局所探索
+    // autoDesignateRental が未所持サポートをスワップインした場合、ユニット構成が変わるため
+    // 再度局所探索を実行してシナジー最適化の機会を拾う
+    // レンタル枠は固定して探索空間を削減する
+    const rentalChanged = rentalMembers.some(
+      (m, i) => m.card.name !== optimized[i]?.card.name,
+    )
+    let postRental = rentalMembers
+    if (rentalChanged && rentalMembers.length === constant.UNIT_SIZE) {
+      const phase4Locked = rentalName ? new Set([...lockedNames, rentalName]) : lockedNames
+      postRental = localSearch(rentalMembers, candidates, input, phase4Locked, schedule.effectiveCounts)
+    }
+
+    // レンタルスワップ後の局所探索でレンタル対象が入れ替わった場合はレンタル名を維持する
+    const finalRentalName = postRental.some((m) => m.card.name === rentalName)
+      ? rentalName
+      : null
+
+    return buildResult(postRental, input, schedule.effectiveCounts, finalRentalName ?? undefined)
   }
 
   // 結果をまとめる
-  return buildResult(optimized, input)
+  return buildResult(optimized, input, schedule.effectiveCounts)
 }
 
 /**
@@ -613,10 +649,16 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
  *
  * @param members - 最適化されたサポート配列
  * @param input - 最適化入力
+ * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
  * @param autoRentalName - 自動選出されたレンタルサポート名
  * @returns UnitResult
  */
-function buildResult(members: CandidateCard[], input: OptimizeInput, autoRentalName?: string): UnitResult {
+function buildResult(
+  members: CandidateCard[],
+  input: OptimizeInput,
+  effectiveCounts: Partial<Record<enums.ActionIdType, number>>,
+  autoRentalName?: string,
+): UnitResult {
   const { settings, scoreSettings } = input
   const cards = members.map((m) => m.card)
   const { bonusMap: synergyMap, providerMap: synergyProviderMap } = computeUnitSupportSynergy(
@@ -625,6 +667,7 @@ function buildResult(members: CandidateCard[], input: OptimizeInput, autoRentalN
     {
       includeSelfTrigger: scoreSettings.includeSelfTrigger,
       includePItem: scoreSettings.includePItem,
+      actionCounts: effectiveCounts,
     },
   )
 
@@ -746,8 +789,20 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
   const cardNames = settings.manualCards.filter((n): n is string => n !== null)
   if (cardNames.length === 0) return null
 
+  // レンタル枠は末尾スロット（6枠目）のカードから導出する
+  const padded = [...settings.manualCards]
+  while (padded.length < constant.UNIT_SIZE) padded.push(null)
+  const derivedRentalName = settings.manualRental ? padded[constant.UNIT_SIZE - 1] : null
+
   // スケジュールからアクション回数を導出する
-  const { effectiveCounts, perLessonValues } = resolveSchedule(scoreSettings)
+  const schedule = resolveSchedule(scoreSettings)
+  const { effectiveCounts, perLessonValues } = schedule
+
+  // レンタル名を導出値で上書きした入力を作成する
+  const evalInput: OptimizeInput = {
+    ...input,
+    settings: { ...settings, rentalCardName: derivedRentalName },
+  }
 
   // サポート名からサポートを検索して計算する
   const candidates: CandidateCard[] = []
@@ -756,7 +811,7 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
     if (!card) continue
 
     // 凸数: 4凸固定モード or レンタル枠なら4凸、それ以外は設定された凸数
-    const isRental = settings.manualRental && settings.rentalCardName === cardName
+    const isRental = settings.manualRental && derivedRentalName === cardName
     const uncap =
       scoreSettings.useFixedUncap || isRental ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
     const customData = input.cardCountCustom?.[card.name]
@@ -780,20 +835,10 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
       baseResult,
       spCategory: getSpCategory(card),
       paramBonusPercent: getParamBonusPercent(card, uncap),
-      providedActions: getProvidedActions(card, {
-        includeSelfTrigger: scoreSettings.includeSelfTrigger,
-        includePItem: scoreSettings.includePItem,
-      }),
     })
   }
 
   if (candidates.length === 0) return null
 
-  // レンタル枠の自動選出（手動指定でない場合）
-  if (!settings.manualRental) {
-    const { members: rentalMembers, rentalName } = autoDesignateRental(candidates, input)
-    return buildResult(rentalMembers, input, rentalName ?? undefined)
-  }
-
-  return buildResult(candidates, input)
+  return buildResult(candidates, evalInput, effectiveCounts)
 }

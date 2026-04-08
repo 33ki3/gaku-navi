@@ -463,7 +463,7 @@ function autoDesignateRental(
 
   // 4凸でないサポートがあれば4凸昇格と未所持スワップのうちゲインが大きい方を選ぶ
   if (bestUpgradeIdx >= 0 && bestUpgradeResult) {
-    if (bestSwapGain > bestUpgradeGain && bestSwapCandidate && bestSwapMemberIdx >= 0) {
+    if (bestSwapGain > 0 && bestSwapGain > bestUpgradeGain && bestSwapCandidate && bestSwapMemberIdx >= 0) {
       // 未所持サポートのスワップの方がゲインが大きい
       const updated = [...members]
       updated[bestSwapMemberIdx] = bestSwapCandidate

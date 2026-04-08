@@ -5,12 +5,12 @@
  * +1 する効果を計算する。既存の getSelfAcquisitionBonus と同じルールを
  * 「他サポート → 自サポート」に拡張したもの。
  */
-import type { SupportCard, SupportEvent } from '../types/card'
+import type { SupportCard, SupportEvent, PItemEffect } from '../types/card'
 import type { ActionIdType } from '../types/enums'
 import type { SynergyProviderDetail } from '../types/unit'
 import type { CardCountCustom } from '../hooks/useCardCountCustom'
 import * as enums from '../types/enums'
-import { TriggerActionMap, LinkedActionGroups } from '../data/score'
+import { TriggerActionMap, LinkedActionGroups, PItemTriggerActionMap } from '../data/score'
 
 /** getProvidedActions のオプション */
 interface ProvidedActionsOptions {
@@ -18,6 +18,20 @@ interface ProvidedActionsOptions {
   includeSelfTrigger?: boolean
   /** P-itemによるアクション提供を含めるか（デフォルト: true） */
   includePItem?: boolean
+  /** スケジュールのアクション回数（Pアイテムの発動回数をスケジュールから算出する用） */
+  actionCounts?: Partial<Record<ActionIdType, number>>
+}
+
+/**
+ * Pアイテムのトリガーからスケジュール上のアクションIDを解決する
+ *
+ * @param effect - Pアイテムの効果データ
+ * @returns 対応するアクションID（不明なトリガーの場合は null）
+ */
+function resolvePItemTriggerActionId(effect: PItemEffect): ActionIdType | null {
+  const paramMap = PItemTriggerActionMap[effect.trigger.key]
+  if (!paramMap || !effect.trigger.param) return null
+  return paramMap[effect.trigger.param] ?? null
 }
 
 /**
@@ -34,7 +48,7 @@ export function getProvidedActions(
   card: SupportCard,
   options?: ProvidedActionsOptions,
 ): Partial<Record<ActionIdType, number>> {
-  const { includeSelfTrigger = true, includePItem = true } = options ?? {}
+  const { includeSelfTrigger = true, includePItem = true, actionCounts } = options ?? {}
   const provided: Partial<Record<ActionIdType, number>> = {}
 
   // イベントのフラグを判定する
@@ -46,13 +60,27 @@ export function getProvidedActions(
     includeSelfTrigger && card.events.some((e: SupportEvent) => types.includes(e.effect_type))
 
   const pActions = includePItem ? (card.p_item?.actions ?? []) : []
-  // フォールバック0: 実データでは全サポートに定義済みだが、未定義時は回数0として扱う
-  const pItemLimitCount = includePItem ? (card.p_item?.effect?.limit?.count ?? 0) : 0
+  // Pアイテムの発動回数を算出する
+  // - limit.count がある場合: その回数（per_produce 上限）
+  // - limit がない場合: スケジュールからトリガー回数を取得、なければ1回
+  let pItemFireCount: number
+  if (!includePItem) {
+    pItemFireCount = 0
+  } else if (card.p_item?.effect?.limit?.count !== undefined) {
+    pItemFireCount = card.p_item.effect.limit.count
+  } else if (actionCounts && card.p_item?.effect) {
+    const triggerActionId = resolvePItemTriggerActionId(card.p_item.effect)
+    pItemFireCount = triggerActionId ? (actionCounts[triggerActionId] ?? 1) : 1
+  } else {
+    pItemFireCount = 1
+  }
+  // Pドリンク獲得個数（body内のrandom_pdrink_countのcountフィールド、なければ1）
   const pDrinkBodyCount =
-    card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount)?.count ?? 0
-  const pDrinkTotalCount = pItemLimitCount * pDrinkBodyCount
-  const pItemBodyCount = card.p_item?.effect?.body?.[0]?.count ?? 0
-  const pItemTotalCount = pItemLimitCount * pItemBodyCount
+    card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount)?.count ?? 1
+  const pDrinkTotalCount = pItemFireCount * pDrinkBodyCount
+  // Pアイテムの1回あたり操作枚数（body内の最初のエントリのcount、なければ1）
+  const pItemBodyCount = card.p_item?.effect?.body?.[0]?.count ?? 1
+  const pItemTotalCount = pItemFireCount * pItemBodyCount
 
   // タイプ別サブアクション: 対象がアクティブかメンタルかはランダム/選択のため
   // デフォルト 0 でエントリだけ追加し、ユーザーが手動で調整できるようにする

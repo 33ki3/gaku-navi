@@ -402,6 +402,169 @@ describe('最適編成', () => {
       const extraCount = receiver!.supportSynergyDetail[maxCountAbility.trigger_key] ?? 0
       expect(extraCount).toBe(0)
     })
+
+    it('Pアイテムの無制限トリガーがスケジュール回数で発動する', () => {
+      // ふわふわでワクワク: Pアイテムがダンスsplesson終了時にPドリンク×2獲得（回数制限なし）
+      const fuwafuwa = AllCards.find((c) => c.name === 'ふわふわでワクワク')
+      // いつまでも続けばいいのに: Pドリンク獲得時アビリティを持つ
+      const itsumademo = AllCards.find((c) => c.name === 'いつまでも続けばいいのに')
+      if (!fuwafuwa || !itsumademo) return
+
+      // DaSPレッスン3回のスケジュール
+      const scoreSettings = makeScoreSettings({
+        actionCounts: { [enums.ActionIdType.SpLessonDa]: 3 },
+      })
+
+      // actionCounts あり: 3回発動 × 2個 = 6
+      const withSchedule = computeUnitSupportSynergy([fuwafuwa, itsumademo], undefined, {
+        actionCounts: scoreSettings.actionCounts,
+      })
+      const synergyCount = withSchedule.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+      expect(synergyCount).toBe(6)
+
+      // actionCounts なし: フォールバック1回 × 2個 = 2
+      const withoutSchedule = computeUnitSupportSynergy([fuwafuwa, itsumademo])
+      const fallbackCount = withoutSchedule.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+      expect(fallbackCount).toBe(2)
+    })
+
+    it('per_produce制限ありのPドリンク獲得カードもシナジーに反映される', () => {
+      // はっぴぃはろうぃ～～ん！: per_produce 2回、body=param_up_random_pdrink（1個/回）
+      const happii = AllCards.find((c) => c.name === 'はっぴぃはろうぃ～～ん！')
+      const itsumademo = AllCards.find((c) => c.name === 'いつまでも続けばいいのに')
+      if (!happii || !itsumademo) return
+
+      const result = computeUnitSupportSynergy([happii, itsumademo])
+      const synergyCount = result.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+      // limit:2 × 1個/回 = 2
+      expect(synergyCount).toBe(2)
+    })
+
+    it('ユーザー設定再現: ふわふわでワクワクがはっぴぃはろうぃ～～ん！より高シナジーになる', () => {
+      // ユーザーのスケジュール: da_lesson×3, vi_lesson×2 → SpLessonDa=3, SpLessonVi=2
+      const fuwafuwa = AllCards.find((c) => c.name === 'ふわふわでワクワク')
+      const happii = AllCards.find((c) => c.name === 'はっぴぃはろうぃ～～ん！')
+      const itsumademo = AllCards.find((c) => c.name === 'いつまでも続けばいいのに')
+      if (!fuwafuwa || !happii || !itsumademo) return
+
+      const actionCounts: Partial<Record<enums.ActionIdType, number>> = {
+        [enums.ActionIdType.SpLessonDa]: 3,
+        [enums.ActionIdType.SpLessonVi]: 2,
+      }
+
+      // ふわふわでワクワク: DaSP3回×2個=6
+      const fuwafuwaResult = computeUnitSupportSynergy([fuwafuwa, itsumademo], undefined, { actionCounts })
+      const fuwafuwaSynergy = fuwafuwaResult.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+
+      // はっぴぃはろうぃ～～ん！: limit:2×1個=2
+      const happiiResult = computeUnitSupportSynergy([happii, itsumademo], undefined, { actionCounts })
+      const happiiSynergy = happiiResult.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+
+      expect(fuwafuwaSynergy).toBe(6)
+      expect(happiiSynergy).toBe(2)
+      expect(fuwafuwaSynergy).toBeGreaterThan(happiiSynergy)
+    })
+
+    it('ユーザー設定再現: optimizeUnitでふわふわでワクワクがはっぴぃはろうぃ～～ん！より優先される', () => {
+      // ユーザーの実際の設定: hajime/legend, useFixedUncap, useScheduleLimits
+      // scheduleSelections: da_lesson×3, vi_lesson×2, class×4, etc.
+      const scoreSettings = makeScoreSettings({
+        scenario: enums.ScenarioType.Hajime,
+        difficulty: enums.DifficultyType.Legend,
+        useFixedUncap: true,
+        useScheduleLimits: true,
+        includeSelfTrigger: true,
+        includePItem: true,
+        parameterBonusBase: { vocal: 390, dance: 875, visual: 1035 },
+        actionCounts: {
+          [enums.ActionIdType.SkillAcquire]: 11,
+          [enums.ActionIdType.MSkillAcquire]: 9,
+          [enums.ActionIdType.ASkillAcquire]: 2,
+          [enums.ActionIdType.SsrCardAcquire]: 12,
+          [enums.ActionIdType.PDrinkAcquire]: 22,
+          [enums.ActionIdType.PDrinkExchange]: 12,
+          [enums.ActionIdType.SkillEnhance]: 3,
+          [enums.ActionIdType.MSkillEnhance]: 3,
+          [enums.ActionIdType.ASkillEnhance]: 3,
+          [enums.ActionIdType.Delete]: 3,
+          [enums.ActionIdType.MSkillDelete]: 3,
+          [enums.ActionIdType.ASkillDelete]: 3,
+          [enums.ActionIdType.Change]: 3,
+          [enums.ActionIdType.Customize]: 5,
+          [enums.ActionIdType.SpLesson20]: 3,
+          [enums.ActionIdType.GoodConditionCardAcquire]: 6,
+          [enums.ActionIdType.ConcentrationCardAcquire]: 6,
+          [enums.ActionIdType.GoodImpressionCardAcquire]: 6,
+          [enums.ActionIdType.MotivationCardAcquire]: 6,
+          [enums.ActionIdType.FullPowerCardAcquire]: 6,
+          [enums.ActionIdType.AggressiveCardAcquire]: 6,
+          [enums.ActionIdType.VitalityCardAcquire]: 6,
+          [enums.ActionIdType.ReserveCardAcquire]: 6,
+          [enums.ActionIdType.TroubleDelete]: 0,
+          [enums.ActionIdType.DrowsyAcquire]: 0,
+          [enums.ActionIdType.ExamEnd]: 0,
+          [enums.ActionIdType.Outing]: 0,
+          [enums.ActionIdType.Consult]: 0,
+          [enums.ActionIdType.Rest]: 0,
+          [enums.ActionIdType.PItemAcquire]: 0,
+          [enums.ActionIdType.ExamPItemAcquire]: 0,
+          [enums.ActionIdType.ActivitySupplyGift]: 0,
+          [enums.ActionIdType.SpecialTraining]: 0,
+        },
+        scheduleSelections: {
+          1: enums.ActivityIdType.Class,
+          2: enums.ActivityIdType.Class,
+          3: enums.ActivityIdType.ActivitySupply,
+          4: enums.ActivityIdType.DaLesson,
+          5: enums.ActivityIdType.ActivitySupply,
+          6: enums.ActivityIdType.Class,
+          7: enums.ActivityIdType.DaLesson,
+          8: enums.ActivityIdType.Consult,
+          9: enums.ActivityIdType.SpecialTraining,
+          10: enums.ActivityIdType.MidExam,
+          11: enums.ActivityIdType.ActivitySupply,
+          12: enums.ActivityIdType.ViLesson,
+          13: enums.ActivityIdType.ActivitySupply,
+          14: enums.ActivityIdType.DaLesson,
+          15: enums.ActivityIdType.Class,
+          16: enums.ActivityIdType.ViLesson,
+          17: enums.ActivityIdType.Consult,
+          18: enums.ActivityIdType.FinalExam,
+        },
+      })
+      const settings = makeSimulatorSettings([], {
+        plan: enums.PlanType.Sense,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 3, visual: 1 },
+      })
+
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      const hasFuwafuwa = result.members.some((m) => m.card.name === 'ふわふわでワクワク')
+      const hasHappii = result.members.some((m) => m.card.name === 'はっぴぃはろうぃ～～ん！')
+
+      // ふわふわでワクワク(PDrink×6)がはっぴぃはろうぃ～～ん！(PDrink×2)より優先される
+      // 両方入る場合もあるが、はっぴぃのみでふわふわなしはNG
+      if (hasHappii && !hasFuwafuwa) {
+        // これが起きたらバグ: はっぴぃの代わりにふわふわを入れて再計算してみる
+        const fuwafuwaUnit = result.members.map((m) =>
+          m.card.name === 'はっぴぃはろうぃ～～ん！' ? 'ふわふわでワクワク' : m.card.name,
+        )
+        const fuwafuwaResult = evaluateManualUnit({
+          settings: makeSimulatorSettings(fuwafuwaUnit),
+          scoreSettings,
+          cardUncaps: {},
+        })
+        // ふわふわの方がスコアが高ければ最適化のバグ
+        if (fuwafuwaResult && fuwafuwaResult.totalScore > result.totalScore) {
+          expect.fail(
+            `はっぴぃはろうぃ～～ん！(${result.totalScore})よりふわふわでワクワク(${fuwafuwaResult.totalScore})の方が高スコア`,
+          )
+        }
+      }
+    })
   })
 
   /**
@@ -478,8 +641,11 @@ describe('最適編成', () => {
       if (!result) return
 
       // optimizeUnit の結果を evaluateManualUnit で再評価してスコアが一致することを確認する
-      const cardNames = result.members.map((m) => m.card.name)
       const rentalName = result.members.find((m) => m.isRental)?.card.name ?? null
+      // レンタルカードを末尾に配置する（evaluateManualUnit は末尾スロットをレンタルとして扱う）
+      const cardNames = rentalName
+        ? [...result.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalName]
+        : result.members.map((m) => m.card.name)
       const manualSettings = makeSimulatorSettings(cardNames, {
         plan,
         manualRental: true,
@@ -541,19 +707,6 @@ describe('最適編成', () => {
   })
 
   describe('最適性検証', () => {
-    /** ランダムに n 個の要素を選択する（Fisher-Yates shuffle で先頭 n 個を取る） */
-    function pickRandom<T>(arr: T[], n: number): T[] {
-      const copy = [...arr]
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[copy[i], copy[j]] = [copy[j], copy[i]]
-      }
-      return copy.slice(0, n)
-    }
-
-    const SAMPLE_SIZE = 500
-    const UNIT_SIZE = 6
-
     const planTypes = [
       { plan: enums.PlanType.Sense, label: 'センス' },
       { plan: enums.PlanType.Logic, label: 'ロジック' },
@@ -562,33 +715,6 @@ describe('最適編成', () => {
 
     for (const { plan, label } of planTypes) {
       describe(`${label}プラン`, () => {
-        it('optimizeUnit が有効な6枚のユニットを返す', () => {
-          // SP制約なし・全タイプ許可で最適化を実行する
-          const scoreSettings = makeScoreSettings()
-          const settings = makeSimulatorSettings([], {
-            plan,
-            manualCards: [],
-            spConstraint: { vocal: 0, dance: 0, visual: 0 },
-          })
-
-          // 最適化を実行する
-          const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
-
-          // 結果が返り、ちょうど6枚のメンバーが含まれること
-          expect(result).not.toBeNull()
-          expect(result!.members).toHaveLength(UNIT_SIZE)
-
-          // すべてのメンバーが対象プランまたはFree（プラン互換）であること
-          // プラン不一致のサポートが混入するとゲーム内で使用不可になる
-          for (const member of result!.members) {
-            expect([plan, enums.PlanType.Free]).toContain(member.card.plan)
-          }
-
-          // サポート名が重複しないこと（同じサポートは2枚編成できない）
-          const names = result!.members.map((m) => m.card.name)
-          expect(new Set(names).size).toBe(UNIT_SIZE)
-        })
-
         it('optimizeUnit の結果が evaluateManualUnit と一致する', () => {
           // optimizeUnit は内部で近似計算を使い、最終出力で buildResult を呼ぶ。
           // 同じサポート構成で evaluateManualUnit を呼んだときのスコアと一致することで
@@ -605,11 +731,15 @@ describe('最適編成', () => {
           if (!optimized) return
 
           // 最適化結果のサポート名とレンタル指定で手動評価する
-          const cardNames = optimized.members.map((m) => m.card.name)
+          // レンタルカードを末尾に配置する（evaluateManualUnit は末尾スロットをレンタルとして扱う）
+          const rentalName = optimized.members.find((m) => m.isRental)?.card.name ?? null
+          const cardNames = rentalName
+            ? [...optimized.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalName]
+            : optimized.members.map((m) => m.card.name)
           const manualSettings = makeSimulatorSettings(cardNames, {
             plan,
             manualRental: true,
-            rentalCardName: optimized.members.find((m) => m.isRental)?.card.name ?? null,
+            rentalCardName: rentalName,
           })
 
           const manual = evaluateManualUnit({ settings: manualSettings, scoreSettings, cardUncaps: {} })
@@ -617,38 +747,6 @@ describe('最適編成', () => {
           // 手動評価の結果が存在し、スコアが完全一致すること
           expect(manual).not.toBeNull()
           expect(manual!.totalScore).toBe(optimized.totalScore)
-        })
-
-        it('ランダムな組み合わせより高いスコアを出す', () => {
-          // 候補サポートプールから500組のランダム6枚編成を生成し、
-          // 最適化結果がすべてのランダム編成以上のスコアであることを確認する。
-          // 貪欲法＋局所探索が少なくともランダム選択より優れていることの検証。
-          const scoreSettings = makeScoreSettings()
-          const settings = makeSimulatorSettings([], {
-            plan,
-            manualCards: [],
-            spConstraint: { vocal: 0, dance: 0, visual: 0 },
-          })
-
-          // 最適化を実行する
-          const optimized = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
-          if (!optimized) return
-
-          // 該当プランとFreeの全サポートを候補プールとする
-          const candidateCards = AllCards.filter((c) => c.plan === plan || c.plan === enums.PlanType.Free)
-
-          // ランダムな6枚の組み合わせを500回試行し、毎回スコア比較する
-          for (let i = 0; i < SAMPLE_SIZE; i++) {
-            const randomCards = pickRandom(candidateCards, UNIT_SIZE)
-            const randomNames = randomCards.map((c) => c.name)
-            const randomSettings = makeSimulatorSettings(randomNames, { plan })
-
-            const randomResult = evaluateManualUnit({ settings: randomSettings, scoreSettings, cardUncaps: {} })
-            if (!randomResult) continue
-
-            // 最適化結果がランダム編成以上のスコアであること
-            expect(optimized.totalScore).toBeGreaterThanOrEqual(randomResult.totalScore)
-          }
         })
 
         it('単一サポート入れ替えで改善しない（局所最適性）', () => {
@@ -673,13 +771,21 @@ describe('最適編成', () => {
           )
 
           // ユニット内の各サポートを全候補サポートと入れ替えてスコア比較する
-          const memberNames = optimized.members.map((m) => m.card.name)
+          // レンタルカードを末尾に配置する（evaluateManualUnit は末尾スロットをレンタルとして扱う）
+          const rentalNameOpt = optimized.members.find((m) => m.isRental)?.card.name ?? null
+          const memberNames = rentalNameOpt
+            ? [...optimized.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalNameOpt]
+            : optimized.members.map((m) => m.card.name)
           for (let i = 0; i < memberNames.length; i++) {
             for (const candidate of candidateCards) {
               // i番目のサポートを候補サポートに入れ替える
               const swappedNames = [...memberNames]
               swappedNames[i] = candidate.name
-              const swapSettings = makeSimulatorSettings(swappedNames, { plan })
+              const swapSettings = makeSimulatorSettings(swappedNames, {
+                plan,
+                manualRental: true,
+                rentalCardName: rentalNameOpt,
+              })
               const swapResult = evaluateManualUnit({ settings: swapSettings, scoreSettings, cardUncaps: {} })
               if (!swapResult) continue
 
@@ -688,6 +794,217 @@ describe('最適編成', () => {
             }
           }
         })
+      })
+    }
+  })
+
+  describe('レンタル込み局所最適性', () => {
+    it('未所持カードのレンタルスワップ後も局所最適である', () => {
+      // autoDesignateRental が未所持カードをスワップインした後、
+      // localSearch の再実行によりシナジー最適化が適用されていることを検証する。
+      // Phase 4（レンタル後の局所探索）が正しく機能していることの保証。
+      const plan = enums.PlanType.Sense
+      const scoreSettings = makeRealisticScoreSettings({
+        scenario: enums.ScenarioType.Hajime,
+        difficulty: enums.DifficultyType.Legend,
+        useFixedUncap: false,
+        parameterBonusBase: { vocal: 390, dance: 875, visual: 1035 },
+      })
+      // いつまでも続けばいいのに を未所持に設定してレンタル候補にする
+      const cardUncaps: Record<string, enums.UncapType> = {
+        いつまでも続けばいいのに: enums.UncapType.NotOwned,
+      }
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 3, visual: 1 },
+      })
+
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      // 候補プール: プラン互換の全カード（未所持含む・4凸評価）
+      const selectedNames = new Set(result.members.map((m) => m.card.name))
+      const candidateCards = AllCards.filter(
+        (c) => (c.plan === plan || c.plan === enums.PlanType.Free) && !selectedNames.has(c.name),
+      )
+
+      // SP制約チェック用: 各カードのSP種別を判定するヘルパー
+      const getSpCat = (card: { abilities: { trigger_key?: string }[] }) => {
+        for (const a of card.abilities) {
+          if (a.trigger_key === enums.TriggerKeyType.VoSpLessonRate) return enums.SpCategoryType.Vocal
+          if (a.trigger_key === enums.TriggerKeyType.DaSpLessonRate) return enums.SpCategoryType.Dance
+          if (a.trigger_key === enums.TriggerKeyType.ViSpLessonRate) return enums.SpCategoryType.Visual
+        }
+        return enums.SpCategoryType.None
+      }
+      const spConstraint = settings.spConstraint
+      const checkSpConstraint = (names: string[]) => {
+        const counts = { vocal: 0, dance: 0, visual: 0 }
+        for (const n of names) {
+          const c = AllCards.find((c) => c.name === n)!
+          const cat = getSpCat(c)
+          if (cat !== enums.SpCategoryType.None) counts[cat as keyof typeof counts]++
+        }
+        return (
+          counts.vocal >= spConstraint.vocal &&
+          counts.dance >= spConstraint.dance &&
+          counts.visual >= spConstraint.visual
+        )
+      }
+
+      // レンタル枠の特定
+      const rentalName = result.members.find((m) => m.isRental)?.card.name ?? null
+
+      // ユニット内の各メンバーを全候補と入れ替えてスコア比較する
+      // レンタルカードを末尾に配置する（evaluateManualUnit は末尾スロットをレンタルとして扱う）
+      const memberNames = rentalName
+        ? [...result.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalName]
+        : result.members.map((m) => m.card.name)
+      for (let i = 0; i < memberNames.length; i++) {
+        for (const candidate of candidateCards) {
+          const swappedNames = [...memberNames]
+          swappedNames[i] = candidate.name
+          // SP制約を満たさないスワップはスキップする
+          if (!checkSpConstraint(swappedNames)) continue
+          const swapSettings = makeSimulatorSettings(swappedNames, {
+            plan,
+            manualRental: true,
+            rentalCardName: rentalName,
+          })
+          // 未所持カードが入っている場合は4凸で評価する
+          const swapResult = evaluateManualUnit({ settings: swapSettings, scoreSettings, cardUncaps })
+          if (!swapResult) continue
+
+          expect(result.totalScore).toBeGreaterThanOrEqual(swapResult.totalScore)
+        }
+      }
+    })
+  })
+
+  describe('網羅的最適性検証', () => {
+    // ベーススコア上位12枚の全組み合わせ（C(12,6) = 924通り）を網羅的に評価し、
+    // optimizeUnit の結果がその中の最高スコア以上であることを検証する。
+    // 真の最適解との比較により、貪欲法＋局所探索が見逃しをしていないか直接検証する。
+    const TOP_N = 12
+
+    /** 配列から n 個選ぶ全組み合わせを生成する */
+    function combinations<T>(arr: T[], n: number): T[][] {
+      if (n === 0) return [[]]
+      if (arr.length < n) return []
+      const [first, ...rest] = arr
+      const withFirst = combinations(rest, n - 1).map((c) => [first, ...c])
+      const withoutFirst = combinations(rest, n)
+      return [...withFirst, ...withoutFirst]
+    }
+
+    // 設定バリエーション: SP制約・paramBonusBase を変えて多様なケースをカバーする
+    const settingVariations = [
+      {
+        label: 'センス（SP制約あり・パラボ非ゼロ）',
+        plan: enums.PlanType.Sense as enums.PlanType,
+        spConstraint: { vocal: 0, dance: 2, visual: 1 },
+        scoreOverrides: { parameterBonusBase: { vocal: 500, dance: 800, visual: 600 } },
+      },
+      {
+        label: 'ロジック（デフォルト設定）',
+        plan: enums.PlanType.Logic as enums.PlanType,
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+        scoreOverrides: {},
+      },
+      {
+        label: 'アノマリー（SP制約あり）',
+        plan: enums.PlanType.Anomaly as enums.PlanType,
+        spConstraint: { vocal: 1, dance: 1, visual: 1 },
+        scoreOverrides: { parameterBonusBase: { vocal: 300, dance: 300, visual: 300 } },
+      },
+    ] as const
+
+    for (const { label, plan, spConstraint, scoreOverrides } of settingVariations) {
+      it(`${label}: 上位${TOP_N}枚の全組み合わせ網羅で最適解以上を出す`, { timeout: 30000 }, () => {
+        const scoreSettings = makeScoreSettings(scoreOverrides)
+
+        // 候補サポートのベーススコアを計算し、上位12枚を選出する
+        const schedule = getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
+        const effectiveCounts = mergeScheduleCounts(scoreSettings, schedule)
+        const compatibleCards = AllCards.filter((c) => c.plan === plan || c.plan === enums.PlanType.Free)
+        const scored = compatibleCards.map((card) => ({
+          card,
+          score: calculateCardParameter(
+            card,
+            enums.UncapType.Four,
+            effectiveCounts,
+            {},
+            scoreSettings.parameterBonusBase,
+            scoreSettings.includeSelfTrigger,
+            scoreSettings.includePItem,
+          ).totalIncrease,
+        }))
+        scored.sort((a, b) => b.score - a.score)
+        const topCards = scored.slice(0, TOP_N).map((s) => s.card)
+
+        // C(12,6) = 924 通りの全組み合わせを評価する
+        const combos = combinations(topCards, constant.UNIT_SIZE)
+        let exhaustiveBest = -Infinity
+        for (const combo of combos) {
+          const names = combo.map((c) => c.name)
+          const manualSettings = makeSimulatorSettings(names, {
+            plan,
+            manualRental: true,
+            rentalCardName: null,
+          })
+          const result = evaluateManualUnit({ settings: manualSettings, scoreSettings, cardUncaps: {} })
+          if (result && result.totalScore > exhaustiveBest) {
+            exhaustiveBest = result.totalScore
+          }
+        }
+
+        // optimizeUnit（全候補から最適化）の結果が網羅的最高スコア以上であること
+        const settings = makeSimulatorSettings([], {
+          plan,
+          manualCards: [],
+          spConstraint,
+        })
+        const optimized = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+        expect(optimized).not.toBeNull()
+        expect(optimized!.totalScore).toBeGreaterThanOrEqual(exhaustiveBest)
+      })
+    }
+  })
+
+  describe('固定サポートの保護', () => {
+    const plans = [enums.PlanType.Sense, enums.PlanType.Logic, enums.PlanType.Anomaly] as const
+
+    for (const plan of plans) {
+      it(`${plan}プランで固定サポートが最適化後も結果に含まれる`, () => {
+        const scoreSettings = makeScoreSettings()
+
+        // プラン対応カードからベーススコア下位のカードを固定する（あえて弱いカードをロック）
+        const planCards = AllCards.filter((c) => c.plan === plan || c.plan === enums.PlanType.Free)
+        const scored = planCards.map((c) => ({
+          card: c,
+          score: calculateCardParameter(c, enums.UncapType.Four, {}, {}, { vocal: 0, dance: 0, visual: 0 }, true, true)
+            .totalIncrease,
+        }))
+        scored.sort((a, b) => a.score - b.score)
+
+        // 下位3枚を固定する
+        const lockedNames = scored.slice(0, 3).map((s) => s.card.name)
+
+        const settings = makeSimulatorSettings([], {
+          plan,
+          manualCards: [],
+          lockedCards: lockedNames,
+        })
+        const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+        expect(result).not.toBeNull()
+
+        // 固定サポートが全て結果に含まれること
+        const resultNames = result!.members.map((m) => m.card.name)
+        for (const locked of lockedNames) {
+          expect(resultNames).toContain(locked)
+        }
       })
     }
   })

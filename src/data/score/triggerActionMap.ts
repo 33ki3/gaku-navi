@@ -4,7 +4,7 @@
  * アビリティの trigger_key（例: 'lesson_end'）を
  * スケジュール上のアクション回数キー（例: 'lesson'）に変換するためのデータ。
  */
-import { TriggerKeyType, ActionIdType } from '../../types/enums'
+import { TriggerKeyType, ActionIdType, EffectTemplateKeyType, ParameterType } from '../../types/enums'
 
 /** trigger_key → アクション回数キーのマッピング */
 export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
@@ -85,4 +85,25 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.EventBoost]: ActionIdType.Nothing,
   [TriggerKeyType.SupportRate]: ActionIdType.Nothing,
   [TriggerKeyType.Nothing]: ActionIdType.Nothing,
+}
+
+/**
+ * Pアイテムの effect.trigger → スケジュール上のアクションIDへのマッピング
+ *
+ * Pアイテムのトリガーキー × パラメータ種別 から、
+ * スケジュール上の対応するアクションIDを逆引きするためのテーブル。
+ */
+export const PItemTriggerActionMap: Partial<
+  Record<EffectTemplateKeyType, Partial<Record<ParameterType, ActionIdType>>>
+> = {
+  [EffectTemplateKeyType.ParamSpLessonEnd]: {
+    [ParameterType.Vocal]: ActionIdType.SpLessonVo,
+    [ParameterType.Dance]: ActionIdType.SpLessonDa,
+    [ParameterType.Visual]: ActionIdType.SpLessonVi,
+  },
+  [EffectTemplateKeyType.ParamLessonEnd]: {
+    [ParameterType.Vocal]: ActionIdType.LessonVo,
+    [ParameterType.Dance]: ActionIdType.LessonDa,
+    [ParameterType.Visual]: ActionIdType.LessonVi,
+  },
 }

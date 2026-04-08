@@ -389,6 +389,80 @@ describe('最適編成', () => {
    *
    * SP制約は0（制約なし）で純粋なスコア最大化を検証する。
    */
+  describe('未所持サポートのレンタル枠考慮', () => {
+    it('未所持サポートがレンタル枠として選出される', () => {
+      // 4凸固定モードで最適編成を取得し、その中の1枚を未所持にして再実行する
+      const plan = enums.PlanType.Anomaly
+      const scoreSettings = makeScoreSettings({ useFixedUncap: true })
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+      })
+
+      // 4凸固定モードで最適化を実行してベースラインを取得する
+      const baseline = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      expect(baseline).not.toBeNull()
+      if (!baseline) return
+
+      // ベースラインの1番目のメンバーを未所持にする
+      const targetCard = baseline.members[0].card.name
+
+      // useFixedUncap を false にして、対象サポートを未所持に設定する
+      const uncapSettings = makeScoreSettings({ useFixedUncap: false })
+      const cardUncaps: Record<string, enums.UncapType> = {
+        [targetCard]: enums.UncapType.NotOwned,
+      }
+
+      const result = optimizeUnit({ settings, scoreSettings: uncapSettings, cardUncaps })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      // 未所持サポートがレンタル枠として選出されていること
+      const rentalMember = result.members.find((m) => m.isRental)
+      expect(rentalMember).toBeDefined()
+      expect(rentalMember!.card.name).toBe(targetCard)
+      expect(rentalMember!.uncap).toBe(enums.UncapType.Four)
+    })
+
+    it('未所持サポートのレンタル結果が evaluateManualUnit と一致する', () => {
+      const plan = enums.PlanType.Anomaly
+      const scoreSettings = makeScoreSettings({ useFixedUncap: true })
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+      })
+
+      // 4凸固定モードで最適化を実行する
+      const baseline = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      if (!baseline) return
+
+      // ベースラインの1番目のメンバーを未所持にする
+      const targetCard = baseline.members[0].card.name
+      const uncapSettings = makeScoreSettings({ useFixedUncap: false })
+      const cardUncaps: Record<string, enums.UncapType> = {
+        [targetCard]: enums.UncapType.NotOwned,
+      }
+
+      const result = optimizeUnit({ settings, scoreSettings: uncapSettings, cardUncaps })
+      if (!result) return
+
+      // optimizeUnit の結果を evaluateManualUnit で再評価してスコアが一致することを確認する
+      const cardNames = result.members.map((m) => m.card.name)
+      const rentalName = result.members.find((m) => m.isRental)?.card.name ?? null
+      const manualSettings = makeSimulatorSettings(cardNames, {
+        plan,
+        manualRental: true,
+        rentalCardName: rentalName,
+      })
+
+      const manual = evaluateManualUnit({ settings: manualSettings, scoreSettings: uncapSettings, cardUncaps })
+      expect(manual).not.toBeNull()
+      expect(manual!.totalScore).toBe(result.totalScore)
+    })
+  })
+
   describe('最適性検証', () => {
     /** ランダムに n 個の要素を選択する（Fisher-Yates shuffle で先頭 n 個を取る） */
     function pickRandom<T>(arr: T[], n: number): T[] {

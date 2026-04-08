@@ -8,11 +8,12 @@ import { evaluateManualUnit, optimizeUnit } from '../../utils/unitSimulator'
 import { calculateCardParameter } from '../../utils/calculator/calculateCard'
 import { computeUnitSupportSynergy, getProvidedActions } from '../../utils/supportSynergy'
 import { getSelfAcquisitionBonus } from '../../utils/calculator/events'
-import { AllCards, getScheduleData, TriggerActionMap } from '../../data'
+import { ActionCategoryList, AllCards, getScheduleData, TriggerActionMap } from '../../data'
 import { mergeScheduleCounts } from '../../utils/scoreSettings'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
+import * as constant from '../../constant'
 
 /** デフォルトのスコア設定を作る */
 function makeScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSettings {
@@ -27,6 +28,34 @@ function makeScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSetting
     includePItem: true,
     parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
     actionCounts: {},
+    ...overrides,
+  }
+}
+
+/** スケジュール込みのスコア設定を作る（実際のアプリと同じデフォルト） */
+function makeRealisticScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSettings {
+  const actionCounts: Partial<Record<enums.ActionIdType, number>> = {}
+  for (const cat of ActionCategoryList) {
+    actionCounts[cat.id] = 0
+  }
+  const scheduleData = getScheduleData(constant.DEFAULT_SCENARIO, constant.DEFAULT_DIFFICULTY)
+  const scheduleSelections: Record<number, enums.ActivityIdType> = {}
+  for (const week of scheduleData) {
+    if (week.fixed && !week.canRest && week.activities.length > 0) {
+      scheduleSelections[week.week] = week.activities[0].id
+    }
+  }
+  return {
+    name: 'realistic',
+    scenario: constant.DEFAULT_SCENARIO,
+    difficulty: constant.DEFAULT_DIFFICULTY,
+    parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
+    actionCounts,
+    scheduleSelections,
+    useScheduleLimits: true,
+    includeSelfTrigger: true,
+    includePItem: true,
+    useFixedUncap: false,
     ...overrides,
   }
 }
@@ -460,6 +489,54 @@ describe('最適編成', () => {
       const manual = evaluateManualUnit({ settings: manualSettings, scoreSettings: uncapSettings, cardUncaps })
       expect(manual).not.toBeNull()
       expect(manual!.totalScore).toBe(result.totalScore)
+    })
+
+    it('低凸メンバーが多い場合も0凸で入るカードがNotOwnedでレンタルとして入る', () => {
+      // 低凸メンバーが多い環境で、0凸で選出されるカードは NotOwned でもレンタルとして選出される
+      // スケジュール込みのリアルな設定を使うことでサポート間連携の影響を再現する
+      const plan = enums.PlanType.Anomaly
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+      })
+
+      // リアルなスコア設定でベースラインを取得し、全メンバーを2凸に設定する
+      const baseline = optimizeUnit({
+        settings,
+        scoreSettings: makeRealisticScoreSettings({ useFixedUncap: true }),
+        cardUncaps: {},
+      })
+      if (!baseline) return
+
+      const cardUncaps: Record<string, enums.UncapType> = {}
+      for (const m of baseline.members) {
+        cardUncaps[m.card.name] = enums.UncapType.Two
+      }
+
+      const scoreSettings = makeRealisticScoreSettings()
+
+      // 各ベースラインメンバーについて「0凸で入る → NotOwnedでもレンタルとして入る」を検証する
+      for (const member of baseline.members) {
+        const target = member.card.name
+
+        // 0凸で最適化し、ターゲットが選出されるか確認する
+        const uncapsZero = { ...cardUncaps, [target]: enums.UncapType.Zero }
+        const resultZero = optimizeUnit({ settings, scoreSettings, cardUncaps: uncapsZero })
+        if (!resultZero) continue
+        const inZero = resultZero.members.some((m) => m.card.name === target)
+        if (!inZero) continue // 0凸で入らない場合はスキップ
+
+        // NotOwnedで最適化する
+        const uncapsNotOwned = { ...cardUncaps, [target]: enums.UncapType.NotOwned }
+        const resultNotOwned = optimizeUnit({ settings, scoreSettings, cardUncaps: uncapsNotOwned })
+        expect(resultNotOwned).not.toBeNull()
+        if (!resultNotOwned) continue
+
+        // 0凸で選出されるカードは NotOwned でもレンタルとして選出されるべき
+        const inNotOwned = resultNotOwned.members.some((m) => m.card.name === target)
+        expect(inNotOwned, `${target}: 0凸で選出されるが NotOwned で選出されない`).toBe(true)
+      }
     })
   })
 

@@ -62,13 +62,14 @@ export function CountCustomSection({
   }, [card.abilities])
 
   // サポートが提供するアクション回数を取得する（イベント・Pアイテム由来）
+  // autoCounts にスケジュール由来のアクション回数が含まれるため、actionCounts として渡す
   const providedEntries = useMemo(() => {
-    const provided = getProvidedActions(card)
+    const provided = getProvidedActions(card, { actionCounts: autoCounts })
     return Object.entries(provided).map(([actionId, autoCount]) => ({
       actionId: actionId as ActionIdType,
       autoCount: autoCount ?? 0,
     }))
-  }, [card])
+  }, [card, autoCounts])
 
   // 汎用アクションの提供回数を、特化アクションの上限として引き継ぐ
   // 例: skill_enhance が提供されている場合、m_skill_enhance / a_skill_enhance の上限は skill_enhance の提供回数になる

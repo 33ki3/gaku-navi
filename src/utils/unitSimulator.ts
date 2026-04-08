@@ -404,13 +404,16 @@ function autoDesignateRental(
 ): { members: CandidateCard[]; rentalName: string | null } {
   if (members.length === 0) return { members, rentalName: null }
 
+  // 現在のユニットスコア（シナジー込み）をベースラインとする
+  const currentScore = evaluateUnit(members, input)
+
   // 4凸でないサポートを仮に4凸で再計算し、最もスコア向上が大きいサポートをレンタルに指定
   const { scoreSettings } = input
   const { effectiveCounts, perLessonValues } = resolveSchedule(scoreSettings)
 
-  // 4凸でないサポートの中から最も恩恵の大きいサポートを選ぶ
+  // 4凸でないサポートの中から最も恩恵の大きいサポートを選ぶ（シナジー込みで評価）
+  let bestUpgradeScore = -Infinity
   let bestUpgradeIdx = -1
-  let bestUpgradeGain = -Infinity
   let bestUpgradeResult: CardCalculationResult | null = null
 
   for (let i = 0; i < members.length; i++) {
@@ -429,18 +432,27 @@ function autoDesignateRental(
       customData?.selfTrigger,
       customData?.pItemCount,
     )
-    const gain = result4.totalIncrease - m.baseScore
-    if (gain > bestUpgradeGain) {
-      bestUpgradeGain = gain
+    // シナジーを含むユニット全体スコアで評価する
+    const trial = [...members]
+    trial[i] = {
+      ...m,
+      uncap: enums.UncapType.Four,
+      baseScore: result4.totalIncrease,
+      baseResult: result4,
+      paramBonusPercent: getParamBonusPercent(m.card, enums.UncapType.Four),
+    }
+    const trialScore = evaluateUnit(trial, input)
+    if (trialScore > bestUpgradeScore) {
+      bestUpgradeScore = trialScore
       bestUpgradeIdx = i
       bestUpgradeResult = result4
     }
   }
 
-  // 未所持サポートの4凸スワップを検討する
+  // 未所持サポートの4凸スワップを検討する（シナジー込みで評価）
   const lockedNames = new Set(input.settings.lockedCards)
   const memberNames = new Set(members.map((m) => m.card.name))
-  let bestSwapGain = -Infinity
+  let bestSwapScore = -Infinity
   let bestSwapMemberIdx = -1
   let bestSwapCandidate: CandidateCard | null = null
 
@@ -448,23 +460,22 @@ function autoDesignateRental(
     if (memberNames.has(unowned.card.name)) continue
     for (let i = 0; i < members.length; i++) {
       if (lockedNames.has(members[i].card.name)) continue
-      const swapGain = unowned.baseScore - members[i].baseScore
-      if (swapGain > bestSwapGain) {
-        const trial = [...members]
-        trial[i] = unowned
-        if (meetsSpConstraint(trial, input.settings.spConstraint)) {
-          bestSwapGain = swapGain
-          bestSwapMemberIdx = i
-          bestSwapCandidate = unowned
-        }
+      const trial = [...members]
+      trial[i] = unowned
+      if (!meetsSpConstraint(trial, input.settings.spConstraint)) continue
+      const trialScore = evaluateUnit(trial, input)
+      if (trialScore > bestSwapScore) {
+        bestSwapScore = trialScore
+        bestSwapMemberIdx = i
+        bestSwapCandidate = unowned
       }
     }
   }
 
-  // 4凸でないサポートがあれば4凸昇格と未所持スワップのうちゲインが大きい方を選ぶ
+  // 4凸でないサポートがあれば4凸昇格と未所持スワップのうちスコアが高い方を選ぶ
   if (bestUpgradeIdx >= 0 && bestUpgradeResult) {
-    if (bestSwapGain > 0 && bestSwapGain > bestUpgradeGain && bestSwapCandidate && bestSwapMemberIdx >= 0) {
-      // 未所持サポートのスワップの方がゲインが大きい
+    if (bestSwapScore > bestUpgradeScore && bestSwapCandidate && bestSwapMemberIdx >= 0) {
+      // 未所持サポートのスワップの方がユニットスコアが高い
       const updated = [...members]
       updated[bestSwapMemberIdx] = bestSwapCandidate
       return { members: updated, rentalName: bestSwapCandidate.card.name }
@@ -482,7 +493,7 @@ function autoDesignateRental(
   }
 
   // 全員4凸の場合: 未所持スワップを検討する
-  if (bestSwapGain > 0 && bestSwapCandidate && bestSwapMemberIdx >= 0) {
+  if (bestSwapScore > currentScore && bestSwapCandidate && bestSwapMemberIdx >= 0) {
     const updated = [...members]
     updated[bestSwapMemberIdx] = bestSwapCandidate
     return { members: updated, rentalName: bestSwapCandidate.card.name }

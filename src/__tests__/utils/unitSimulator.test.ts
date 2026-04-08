@@ -454,13 +454,11 @@ describe('最適編成', () => {
 
       // ふわふわでワクワク: DaSP3回×2個=6
       const fuwafuwaResult = computeUnitSupportSynergy([fuwafuwa, itsumademo], undefined, { actionCounts })
-      const fuwafuwaSynergy =
-        fuwafuwaResult.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+      const fuwafuwaSynergy = fuwafuwaResult.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
 
       // はっぴぃはろうぃ～～ん！: limit:2×1個=2
       const happiiResult = computeUnitSupportSynergy([happii, itsumademo], undefined, { actionCounts })
-      const happiiSynergy =
-        happiiResult.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
+      const happiiSynergy = happiiResult.bonusMap.get(itsumademo.name)?.[enums.ActionIdType.PDrinkAcquire] ?? 0
 
       expect(fuwafuwaSynergy).toBe(6)
       expect(happiiSynergy).toBe(2)
@@ -567,7 +565,6 @@ describe('最適編成', () => {
         }
       }
     })
-
   })
 
   /**
@@ -815,7 +812,7 @@ describe('最適編成', () => {
       })
       // いつまでも続けばいいのに を未所持に設定してレンタル候補にする
       const cardUncaps: Record<string, enums.UncapType> = {
-        'いつまでも続けばいいのに': enums.UncapType.NotOwned,
+        いつまでも続けばいいのに: enums.UncapType.NotOwned,
       }
       const settings = makeSimulatorSettings([], {
         plan,
@@ -850,7 +847,11 @@ describe('最適編成', () => {
           const cat = getSpCat(c)
           if (cat !== enums.SpCategoryType.None) counts[cat as keyof typeof counts]++
         }
-        return counts.vocal >= spConstraint.vocal && counts.dance >= spConstraint.dance && counts.visual >= spConstraint.visual
+        return (
+          counts.vocal >= spConstraint.vocal &&
+          counts.dance >= spConstraint.dance &&
+          counts.visual >= spConstraint.visual
+        )
       }
 
       // レンタル枠の特定
@@ -983,15 +984,8 @@ describe('最適編成', () => {
         const planCards = AllCards.filter((c) => c.plan === plan || c.plan === enums.PlanType.Free)
         const scored = planCards.map((c) => ({
           card: c,
-          score: calculateCardParameter(
-            c,
-            enums.UncapType.Four,
-            {},
-            {},
-            { vocal: 0, dance: 0, visual: 0 },
-            true,
-            true,
-          ).totalIncrease,
+          score: calculateCardParameter(c, enums.UncapType.Four, {}, {}, { vocal: 0, dance: 0, visual: 0 }, true, true)
+            .totalIncrease,
         }))
         scored.sort((a, b) => a.score - b.score)
 

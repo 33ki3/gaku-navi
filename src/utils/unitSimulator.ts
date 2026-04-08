@@ -4,7 +4,13 @@
  * 貪欲法（Greedy）+ 局所探索（Swap Optimization）で
  * 最もスコアの高い6枚編成を近似的に求める。
  */
-import type { SupportCard, ScoreSettings, CardCalculationResult, ParameterValues, PerLessonParameterValues } from '../types/card'
+import type {
+  SupportCard,
+  ScoreSettings,
+  CardCalculationResult,
+  ParameterValues,
+  PerLessonParameterValues,
+} from '../types/card'
 import type { UncapType } from '../types/enums'
 import * as enums from '../types/enums'
 import type { UnitSimulatorSettings, UnitMember, UnitResult, SpRateConstraint } from '../types/unit'
@@ -623,9 +629,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     // autoDesignateRental が未所持サポートをスワップインした場合、ユニット構成が変わるため
     // 再度局所探索を実行してシナジー最適化の機会を拾う
     // レンタル枠は固定して探索空間を削減する
-    const rentalChanged = rentalMembers.some(
-      (m, i) => m.card.name !== optimized[i]?.card.name,
-    )
+    const rentalChanged = rentalMembers.some((m, i) => m.card.name !== optimized[i]?.card.name)
     let postRental = rentalMembers
     if (rentalChanged && rentalMembers.length === constant.UNIT_SIZE) {
       const phase4Locked = rentalName ? new Set([...lockedNames, rentalName]) : lockedNames
@@ -633,9 +637,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     }
 
     // レンタルスワップ後の局所探索でレンタル対象が入れ替わった場合はレンタル名を維持する
-    const finalRentalName = postRental.some((m) => m.card.name === rentalName)
-      ? rentalName
-      : null
+    const finalRentalName = postRental.some((m) => m.card.name === rentalName) ? rentalName : null
 
     return buildResult(postRental, input, schedule.effectiveCounts, finalRentalName ?? undefined)
   }

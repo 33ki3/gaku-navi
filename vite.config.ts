@@ -36,6 +36,11 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         manifest: false,
         scope: basePath,
+        registerType: 'autoUpdate',
+        workbox: {
+          skipWaiting: true,
+          clientsClaim: true,
+        },
       }),
     ],
     build: {

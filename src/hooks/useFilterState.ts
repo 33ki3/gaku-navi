@@ -6,7 +6,15 @@
  * 変更があると 300ms 後に localStorage へ自動保存する。
  */
 import { useReducer, useCallback, useEffect } from 'react'
-import type { AbilityKeywordType, CardType, CountCustomFilter, PlanType, RarityType, SourceType, UncapType } from '../types/enums'
+import type {
+  AbilityKeywordType,
+  CardType,
+  CountCustomFilter,
+  PlanType,
+  RarityType,
+  SourceType,
+  UncapType,
+} from '../types/enums'
 import * as constant from '../constant'
 import * as enums from '../types/enums'
 import { loadFilterState, saveFilterState } from '../utils/filterStorage'

@@ -9,7 +9,15 @@
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
-import { BadgeSizeType, ButtonSizeType, RarityType, CardType, PlanType, SourceType, HelpSectionKey } from '../../types/enums'
+import {
+  BadgeSizeType,
+  ButtonSizeType,
+  RarityType,
+  CardType,
+  PlanType,
+  SourceType,
+  HelpSectionKey,
+} from '../../types/enums'
 import ModalOverlay from '../ui/ModalOverlay'
 import CloseButton from '../ui/CloseButton'
 import { Badge } from '../ui/Badge'

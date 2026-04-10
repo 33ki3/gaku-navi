@@ -75,10 +75,7 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
       />
 
       {/* 入手種別フィルター */}
-      <SourceFilter
-        selectedSources={filters.selectedSources}
-        toggleSource={filters.toggleSource}
-      />
+      <SourceFilter selectedSources={filters.selectedSources} toggleSource={filters.toggleSource} />
 
       {/* 回数調整フィルター */}
       <div>

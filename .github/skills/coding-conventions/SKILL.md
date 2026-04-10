@@ -119,7 +119,24 @@ export const FOO = 42
 
 ---
 
-## 4. ベストプラクティス
+## 4. フォーマット（Prettier）
+
+- **コミット前に必ず `npx prettier --write` を実行する。** フォーマット漏れは CI で検出されるが、事前に防ぐ。
+- ファイル編集後は `npx prettier --check "src/**/*.{ts,tsx}"` で差分がないことを確認する。
+- **対象**: CI と同じ `src/**/*.{ts,tsx}`（TypeScript ファイルのみ）。JSON・CSS 等は対象外。
+- Prettier の設定はプロジェクトルートの設定ファイルに従う（デフォルト設定）。
+
+```bash
+# 変更ファイルのフォーマット
+npx prettier --write <ファイルパス>
+
+# 全体チェック（CIと同じパターン）
+npx prettier --check "src/**/*.{ts,tsx}"
+```
+
+---
+
+## 5. ベストプラクティス
 
 ### フォールバック・デフォルト値ポリシー
 
@@ -134,10 +151,11 @@ export const FOO = 42
 - **`as` キャスト制限**: `as SomeType` は **データ層**（`src/data/` 内の TS ラッパー）のみ許可。コンポーネントや utils では原則禁止。
 - **i18n キー構築**: テンプレートリテラルによる動的 i18n キー構築は禁止。マスタデータまたは `effectLabelResolver.ts` 経由で返す。
 
-### デッドコード検知
+### デッドコード検知・フォーマット
 
 | ツール | 用途 | コマンド |
 |--------|------|---------|
+| Prettier | フォーマット確認 | `npx prettier --check "src/**/*.{ts,tsx}"` |
 | TypeScript | 未使用ローカル・パラメータ | `npx tsc --noEmit` |
 | ESLint | `no-unused-vars` | `npx eslint src/` |
 | knip | 未使用 export・ファイル・依存 | `npx knip` |

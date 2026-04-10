@@ -5,7 +5,15 @@
  * 次回アクセス時に同じ条件で表示できるようにする。
  */
 import * as constant from '../constant'
-import type { AbilityKeywordType, CardType, CountCustomFilter, PlanType, RarityType, SourceType, UncapType } from '../types/enums'
+import type {
+  AbilityKeywordType,
+  CardType,
+  CountCustomFilter,
+  PlanType,
+  RarityType,
+  SourceType,
+  UncapType,
+} from '../types/enums'
 import * as enums from '../types/enums'
 
 /** localStorage に保存するフィルター設定の形 */

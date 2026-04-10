@@ -127,9 +127,7 @@ export const CardListItem = memo(function CardListItem({
           <span
             className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${hasCountCustom ? 'bg-violet-100' : ''}`}
           >
-            {hasCountCustom && (
-              <AdjustedIcon className="w-3 h-3 text-violet-500" title={t('card.count_adjusted')} />
-            )}
+            {hasCountCustom && <AdjustedIcon className="w-3 h-3 text-violet-500" title={t('card.count_adjusted')} />}
           </span>
           {/* アビリティバッジ */}
           {abilityBadges.length > 0 && (

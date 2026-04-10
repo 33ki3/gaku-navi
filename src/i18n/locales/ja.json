@@ -143,7 +143,6 @@
       "sp_lesson_20": "SPレッスン終了時、所持スキルカードが20枚以上の場合、{{param}}上昇+{v}（プロデュース中{{count}}回）",
       "discount": "相談のPドリンクを{v}割引",
       "special_training": "特別指導開始時、{{param}}上昇+{v}（プロデュース中{{count}}回）",
-      "lesson_bonus": "{{param}}レッスンボーナス+{v}",
       "sp_lesson_pp": "{{param}}SPレッスン終了時、Pポイント獲得量増加+{v}",
       "event_boost": "このサポートカードのイベントによるパラメータ上昇を{v}増加",
       "event_pp_boost": "このサポートカードのイベントによる獲得Pポイント{v}を増加",
@@ -243,7 +242,8 @@
       "card_use": "スキルカード使用時、",
       "motivation_increase_after": "直接効果でやる気が増加後、",
       "card_use_count_in_turn": "ターン内にスキルカードを{{count}}回使用時、",
-      "card_cost_hp_decrease": "スキルカードコストで体力減少時、"
+      "card_cost_hp_decrease": "スキルカードコストで体力減少時、",
+      "direct_keyword_gain": "直接効果で{{keyword}}になった時、"
     },
     "pitem_condition": {
       "param_gte": "{{param}}が{{threshold}}以上の場合、",
@@ -255,7 +255,8 @@
       "keyword_count_gte": "{{keyword}}になった回数が{{threshold}}回以上の場合、",
       "policy_change_gte": "指針を変更した回数が{{threshold}}回以上の場合、",
       "prev_active_card": "直前にアクティブスキルカードを使用した状態の場合、",
-      "excluded_cards_gte": "除外にあるスキルカードが{{threshold}}枚以上の場合、"
+      "excluded_cards_gte": "除外にあるスキルカードが{{threshold}}枚以上の場合、",
+      "keyword_eq": "{{keyword}}が{{threshold}}の場合、"
     },
     "pitem_body": {
       "param_up": "{{param}}上昇+{{value}}",
@@ -299,6 +300,7 @@
       "param_up_random_pdrink_sr": "{{param}}上昇+{{value}}ランダムなPドリンク（SR以上）を獲得",
       "param_up_select_copy": "{{param}}上昇+{{value}}スキルカードを選択してコピー",
       "param_up_select_change": "{{param}}上昇+{{value}}スキルカードを選択して異なるスキルカードにチェンジ",
+      "select_change": "スキルカードを選択して異なるスキルカードにチェンジ",
       "generate_card": "{{card_name}}を手札に生成",
       "extra_card_use": "スキルカード使用数追加+{{value}}",
       "cost_reduce": "手札のコスト値減少-{{value}}",

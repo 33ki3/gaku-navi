@@ -257,8 +257,6 @@ export const AbilityNameKeyType = {
   Discount: 'discount',
   /** 特別指導 */
   SpecialTraining: 'special_training',
-  /** レッスンボーナス */
-  LessonBonus: 'lesson_bonus',
   /** SPレッスンPポイント */
   SpLessonPp: 'sp_lesson_pp',
   /** イベントブースト */

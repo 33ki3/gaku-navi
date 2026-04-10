@@ -128,8 +128,8 @@ function buildPItemInterpolation(part: PItemEffectPart, t: TFunction): Record<st
   if (part.keyword3) result.keyword3 = resolveKeyword(part.keyword3, t)
   // パラメータ属性（Vo/Da/Vi）を翻訳して設定
   if (part.param) result.param = resolveParam(part.param, t)
-  // 閾値（「体力が{threshold}%以上の時」等）
-  if (part.threshold !== undefined && part.threshold !== 0) result.threshold = part.threshold
+  // 閾値（「体力が{threshold}%以上の時」「元気が0の場合」等）
+  if (part.threshold != null) result.threshold = part.threshold
   // 回数（「{count}回」等）
   if (part.count !== undefined && part.count !== 0) result.count = part.count
   // 効果値（「+{value}」等）
@@ -336,7 +336,7 @@ export function getCustomSlotEffectLabel(effect: CustomSlotEffectStructured | un
   if (params.turns) interpolation.turns = params.turns
   if (params.pct) interpolation.pct = params.pct
   if (params.count) interpolation.count = params.count
-  if (params.threshold) interpolation.threshold = params.threshold
+  if (params.threshold != null) interpolation.threshold = params.threshold
   if (params.note) interpolation.note = params.note
   if (params.stage) interpolation.stage = params.stage
 

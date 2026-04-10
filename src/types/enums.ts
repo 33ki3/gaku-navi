@@ -470,6 +470,19 @@ export const SortModeType = {
 export type SortModeType = (typeof SortModeType)[keyof typeof SortModeType]
 
 /**
+ * 回数調整フィルター種別。
+ *
+ * 「未調整」「調整済」の2状態でサポートを絞り込む。
+ */
+export const CountCustomFilter = {
+  /** 未調整（デフォルトのカウント） */
+  Unadjusted: 'unadjusted',
+  /** 調整済（カウントが変更されている） */
+  Adjusted: 'adjusted',
+} as const
+export type CountCustomFilter = (typeof CountCustomFilter)[keyof typeof CountCustomFilter]
+
+/**
  * フィルターアクション種別定数。
  * useFilterState の useReducer で使用するアクション種別。
  */
@@ -488,8 +501,12 @@ export const FilterActionType = {
   TogglePlan: 'TOGGLE_PLAN',
   /** イベントフィルター切替 */
   ToggleEventFilter: 'TOGGLE_EVENT_FILTER',
+  /** 入手種別切替 */
+  ToggleSource: 'TOGGLE_SOURCE',
   /** 凸数切替 */
   ToggleUncap: 'TOGGLE_UNCAP',
+  /** 回数調整フィルター切替 */
+  ToggleCountCustom: 'TOGGLE_COUNT_CUSTOM',
   /** 並び替えモード設定 */
   SetSortMode: 'SET_SORT_MODE',
   /** 並び替え逆順切替 */
@@ -993,6 +1010,8 @@ export const FilterButtonCategory = {
   EventAcquire: 'event_acquire',
   /** イベント（操作系）活性色 */
   EventModify: 'event_modify',
+  /** 入手種別活性色 */
+  Source: 'source',
 } as const
 export type FilterButtonCategory = (typeof FilterButtonCategory)[keyof typeof FilterButtonCategory]
 
@@ -1442,7 +1461,7 @@ export type ScoreSettingsSectionKey = (typeof ScoreSettingsSectionKey)[keyof typ
  * スコア詳細モーダルのセクションキー。
  */
 export const ScoreDetailSectionKey = {
-  /** カウント調整 */
+  /** 回数調整 */
   CountCustom: 'countCustom',
 } as const
 export type ScoreDetailSectionKey = (typeof ScoreDetailSectionKey)[keyof typeof ScoreDetailSectionKey]

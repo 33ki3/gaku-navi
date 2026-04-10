@@ -5,7 +5,7 @@
  * 次回アクセス時に同じ条件で表示できるようにする。
  */
 import * as constant from '../constant'
-import type { AbilityKeywordType, CardType, PlanType, RarityType, UncapType } from '../types/enums'
+import type { AbilityKeywordType, CardType, CountCustomFilter, PlanType, RarityType, SourceType, UncapType } from '../types/enums'
 import * as enums from '../types/enums'
 
 /** localStorage に保存するフィルター設定の形 */
@@ -24,8 +24,12 @@ export interface PersistedFilterState {
   abilityKeywords: AbilityKeywordType[]
   /** 選択中のイベントフィルター */
   eventFilters: enums.EventFilterType[]
+  /** 選択中の入手種別フィルター */
+  sources: SourceType[]
   /** 選択中の凸数 */
   uncaps: UncapType[]
+  /** 選択中の回数調整フィルター */
+  countCustom: CountCustomFilter[]
   /** 現在のソートモード */
   sortMode: enums.SortModeType
   /** 逆順で表示するかどうか */
@@ -43,7 +47,9 @@ const VALID_TYPES = new Set(Object.values(enums.CardType))
 const VALID_PLANS = new Set(Object.values(enums.PlanType))
 const VALID_ABILITY_KEYWORDS = new Set(Object.values(enums.AbilityKeywordType))
 const VALID_EVENT_FILTERS = new Set(Object.values(enums.EventFilterType))
+const VALID_SOURCES = new Set(Object.values(enums.SourceType))
 const VALID_UNCAPS = new Set(Object.values(enums.UncapType))
+const VALID_COUNT_CUSTOM = new Set(Object.values(enums.CountCustomFilter))
 const VALID_SORT_MODES = new Set(Object.values(enums.SortModeType))
 
 /**
@@ -68,7 +74,9 @@ export function loadFilterState(): PersistedFilterState | null {
         ? filterValid(parsed.abilityKeywords, VALID_ABILITY_KEYWORDS)
         : [],
       eventFilters: Array.isArray(parsed.eventFilters) ? filterValid(parsed.eventFilters, VALID_EVENT_FILTERS) : [],
+      sources: Array.isArray(parsed.sources) ? filterValid(parsed.sources, VALID_SOURCES) : [],
       uncaps: Array.isArray(parsed.uncaps) ? filterValid(parsed.uncaps, VALID_UNCAPS) : [],
+      countCustom: Array.isArray(parsed.countCustom) ? filterValid(parsed.countCustom, VALID_COUNT_CUSTOM) : [],
       sortMode: VALID_SORT_MODES.has(parsed.sortMode as enums.SortModeType)
         ? (parsed.sortMode as enums.SortModeType)
         : enums.SortModeType.Rarity,

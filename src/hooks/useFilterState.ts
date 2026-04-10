@@ -6,7 +6,7 @@
  * 変更があると 300ms 後に localStorage へ自動保存する。
  */
 import { useReducer, useCallback, useEffect } from 'react'
-import type { AbilityKeywordType, CardType, PlanType, RarityType, UncapType } from '../types/enums'
+import type { AbilityKeywordType, CardType, CountCustomFilter, PlanType, RarityType, SourceType, UncapType } from '../types/enums'
 import * as constant from '../constant'
 import * as enums from '../types/enums'
 import { loadFilterState, saveFilterState } from '../utils/filterStorage'
@@ -32,7 +32,9 @@ interface FilterData {
   selectedAbilityKeywords: Set<AbilityKeywordType>
   selectedPlans: Set<PlanType>
   selectedEventFilters: Set<enums.EventFilterType>
+  selectedSources: Set<SourceType>
   selectedUncaps: Set<UncapType>
+  selectedCountCustom: Set<CountCustomFilter>
   sortMode: enums.SortModeType
   sortReverse: boolean
 }
@@ -45,7 +47,9 @@ type FilterAction =
   | { type: typeof enums.FilterActionType.ToggleAbilityKeyword; keyword: AbilityKeywordType }
   | { type: typeof enums.FilterActionType.TogglePlan; plan: PlanType }
   | { type: typeof enums.FilterActionType.ToggleEventFilter; filter: enums.EventFilterType }
+  | { type: typeof enums.FilterActionType.ToggleSource; source: SourceType }
   | { type: typeof enums.FilterActionType.ToggleUncap; uncap: UncapType }
+  | { type: typeof enums.FilterActionType.ToggleCountCustom; filter: CountCustomFilter }
   | { type: typeof enums.FilterActionType.SetSortMode; mode: enums.SortModeType }
   | { type: typeof enums.FilterActionType.ToggleSortReverse }
   | { type: typeof enums.FilterActionType.ClearFilters }
@@ -66,8 +70,12 @@ function filterReducer(state: FilterData, action: FilterAction): FilterData {
       return { ...state, selectedPlans: toggleInSet(state.selectedPlans, action.plan) }
     case enums.FilterActionType.ToggleEventFilter:
       return { ...state, selectedEventFilters: toggleInSet(state.selectedEventFilters, action.filter) }
+    case enums.FilterActionType.ToggleSource:
+      return { ...state, selectedSources: toggleInSet(state.selectedSources, action.source) }
     case enums.FilterActionType.ToggleUncap:
       return { ...state, selectedUncaps: toggleInSet(state.selectedUncaps, action.uncap) }
+    case enums.FilterActionType.ToggleCountCustom:
+      return { ...state, selectedCountCustom: toggleInSet(state.selectedCountCustom, action.filter) }
     case enums.FilterActionType.SetSortMode:
       return { ...state, sortMode: action.mode }
     case enums.FilterActionType.ToggleSortReverse:
@@ -82,7 +90,9 @@ function filterReducer(state: FilterData, action: FilterAction): FilterData {
         selectedAbilityKeywords: new Set(),
         selectedPlans: new Set(),
         selectedEventFilters: new Set(),
+        selectedSources: new Set(),
         selectedUncaps: new Set(),
+        selectedCountCustom: new Set(),
       }
   }
 }
@@ -105,8 +115,13 @@ export interface FilterState {
   selectedPlans: Set<PlanType>
   /** 選択中のイベントフィルター */
   selectedEventFilters: Set<enums.EventFilterType>
+  /** 選択中の入手種別フィルター */
+  selectedSources: Set<SourceType>
   /** 選択中の凸数フィルター */
   selectedUncaps: Set<UncapType>
+  /** 選択中の回数調整フィルター */
+  selectedCountCustom: Set<CountCustomFilter>
+  toggleCountCustom: (filter: CountCustomFilter) => void
   /** 現在の並び替えモード */
   sortMode: enums.SortModeType
   setSortMode: (mode: enums.SortModeType) => void
@@ -118,6 +133,7 @@ export interface FilterState {
   toggleAbilityKeyword: (keyword: AbilityKeywordType) => void
   togglePlan: (plan: PlanType) => void
   toggleEventFilter: (filter: enums.EventFilterType) => void
+  toggleSource: (source: SourceType) => void
   toggleUncap: (uncap: UncapType) => void
   /** すべてのフィルターをリセットする */
   clearFilters: () => void
@@ -133,7 +149,9 @@ function initFilterData(): FilterData {
     selectedAbilityKeywords: new Set(saved?.abilityKeywords),
     selectedPlans: new Set(saved?.plans),
     selectedEventFilters: new Set(saved?.eventFilters),
+    selectedSources: new Set(saved?.sources),
     selectedUncaps: new Set(saved?.uncaps),
+    selectedCountCustom: new Set(saved?.countCustom),
     sortMode: saved?.sortMode ?? enums.SortModeType.Rarity,
     sortReverse: saved?.sortReverse ?? false,
   }
@@ -161,7 +179,9 @@ export function useFilterState(): FilterState {
         spOnly: state.spOnly,
         abilityKeywords: [...state.selectedAbilityKeywords],
         eventFilters: [...state.selectedEventFilters],
+        sources: [...state.selectedSources],
         uncaps: [...state.selectedUncaps],
+        countCustom: [...state.selectedCountCustom],
         sortMode: state.sortMode,
         sortReverse: state.sortReverse,
       }
@@ -189,8 +209,16 @@ export function useFilterState(): FilterState {
     (filter: enums.EventFilterType) => dispatch({ type: enums.FilterActionType.ToggleEventFilter, filter }),
     [],
   )
+  const toggleSource = useCallback(
+    (source: SourceType) => dispatch({ type: enums.FilterActionType.ToggleSource, source }),
+    [],
+  )
   const toggleUncap = useCallback(
     (uncap: UncapType) => dispatch({ type: enums.FilterActionType.ToggleUncap, uncap }),
+    [],
+  )
+  const toggleCountCustom = useCallback(
+    (filter: CountCustomFilter) => dispatch({ type: enums.FilterActionType.ToggleCountCustom, filter }),
     [],
   )
   const setSortMode = useCallback(
@@ -210,7 +238,10 @@ export function useFilterState(): FilterState {
     selectedAbilityKeywords: state.selectedAbilityKeywords,
     selectedPlans: state.selectedPlans,
     selectedEventFilters: state.selectedEventFilters,
+    selectedSources: state.selectedSources,
     selectedUncaps: state.selectedUncaps,
+    selectedCountCustom: state.selectedCountCustom,
+    toggleCountCustom,
     sortMode: state.sortMode,
     setSortMode,
     sortReverse: state.sortReverse,
@@ -220,6 +251,7 @@ export function useFilterState(): FilterState {
     toggleAbilityKeyword,
     togglePlan,
     toggleEventFilter,
+    toggleSource,
     toggleUncap,
     clearFilters,
   }

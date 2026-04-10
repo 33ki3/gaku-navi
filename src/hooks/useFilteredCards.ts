@@ -34,6 +34,7 @@ export interface CardFiltersReturn extends FilterState {
  * @param cardScores - サポート名 → スコアのマップ（点数順ソートに使う）
  * @param cardUncaps - サポート名 → 凸数のマップ
  * @param scoreSettings - スコア設定（ソート再計算のトリガー判定に使う）
+ * @param countCustomCardNames - 回数調整済みサポート名のセット
  * @returns フィルター状態 + 絞り込み結果 + アビリティバッジ
  */
 export function useFilteredCards(
@@ -41,6 +42,7 @@ export function useFilteredCards(
   cardScores: Map<string, number>,
   cardUncaps: Record<string, UncapType>,
   scoreSettings: ScoreSettings,
+  countCustomCardNames: Set<string>,
 ): CardFiltersReturn {
   // フィルター条件の状態を取得する
   const state = useFilterState()
@@ -96,7 +98,10 @@ export function useFilteredCards(
         spOnly: state.spOnly,
         selectedAbilityKeywords: state.selectedAbilityKeywords,
         selectedEventFilters: state.selectedEventFilters,
+        selectedSources: state.selectedSources,
         selectedUncaps: state.selectedUncaps,
+        selectedCountCustom: state.selectedCountCustom,
+        countCustomCardNames,
         cardUncaps,
       }),
     [
@@ -108,7 +113,10 @@ export function useFilteredCards(
       state.spOnly,
       state.selectedAbilityKeywords,
       state.selectedEventFilters,
+      state.selectedSources,
       state.selectedUncaps,
+      state.selectedCountCustom,
+      countCustomCardNames,
       cardUncaps,
     ],
   )

@@ -9,9 +9,11 @@ import type { SupportCard } from '../types/card'
 import type {
   AbilityKeywordType,
   CardType,
+  CountCustomFilter,
   EventFilterType,
   PlanType,
   RarityType,
+  SourceType,
   SortModeType,
   UncapType,
 } from '../types/enums'
@@ -40,8 +42,14 @@ interface FilterSortParams {
   selectedAbilityKeywords: Set<AbilityKeywordType>
   /** 選択されているイベント種別フィルターのセット */
   selectedEventFilters: Set<EventFilterType>
+  /** 選択されている入手種別フィルターのセット */
+  selectedSources: Set<SourceType>
   /** 選択されている凸数のセット */
   selectedUncaps: Set<UncapType>
+  /** 選択されている回数調整フィルターのセット */
+  selectedCountCustom: Set<CountCustomFilter>
+  /** 回数調整済みサポート名のセット */
+  countCustomCardNames: Set<string>
   /** サポート名 → 現在の凸数のマッピング（フィルタリング用） */
   cardUncaps: Record<string, UncapType>
   /** サポート名 → ソート用凸数のマッピング（ソート条件変更時のみ更新） */
@@ -91,8 +99,14 @@ interface FilterOnlyParams {
   selectedAbilityKeywords: Set<AbilityKeywordType>
   /** 選択されているイベント種別フィルターのセット */
   selectedEventFilters: Set<EventFilterType>
+  /** 選択されている入手種別フィルターのセット */
+  selectedSources: Set<SourceType>
   /** 選択されている凸数のセット */
   selectedUncaps: Set<UncapType>
+  /** 選択されている回数調整フィルターのセット */
+  selectedCountCustom: Set<CountCustomFilter>
+  /** 回数調整済みサポート名のセット */
+  countCustomCardNames: Set<string>
   /** サポート名 → 現在の凸数のマッピング（フィルタリング用） */
   cardUncaps: Record<string, UncapType>
 }
@@ -172,6 +186,19 @@ function matchesEventTypeFilter(card: SupportCard, filters: Set<EventFilterType>
   // 操作系: 同様にOR判定
   if (modifySelected.length > 0 && !modifySelected.some((ef) => matchesEventFilter(card, ef))) return false
   return true
+}
+
+/**
+ * サポートの入手種別が選択フィルターに一致するか判定する。
+ * 選択された入手種別のどれか1つでも一致すれば表示する（OR条件）。
+ *
+ * @param card - 判定対象のサポート
+ * @param sources - 選択された入手種別のセット
+ * @returns フィルター条件を満たしたらtrue
+ */
+function matchesSourceFilter(card: SupportCard, sources: Set<SourceType>): boolean {
+  if (sources.size === 0) return true
+  return sources.has(card.source)
 }
 
 /**
@@ -258,7 +285,10 @@ export function filterSortedCards(sortedCards: readonly SupportCard[], params: F
     spOnly,
     selectedAbilityKeywords,
     selectedEventFilters,
+    selectedSources,
     selectedUncaps,
+    selectedCountCustom,
+    countCustomCardNames,
     cardUncaps,
   } = params
 
@@ -282,6 +312,16 @@ export function filterSortedCards(sortedCards: readonly SupportCard[], params: F
     if (spOnly && !hasSPAbility(card)) return false
     if (!matchesAbilityFilter(card, selectedAbilityKeywords)) return false
     if (!matchesEventTypeFilter(card, selectedEventFilters)) return false
+
+    // 入手種別フィルター: サポートの入手方法が選択に含まれているか
+    if (selectedSources.size > 0 && !matchesSourceFilter(card, selectedSources)) return false
+
+    // 回数調整フィルター: 片方のみ選択時に絞り込む（両方 or 未選択は全件表示）
+    if (selectedCountCustom.size === 1) {
+      const isCustom = countCustomCardNames.has(card.name)
+      if (selectedCountCustom.has(enums.CountCustomFilter.Adjusted) && !isCustom) return false
+      if (selectedCountCustom.has(enums.CountCustomFilter.Unadjusted) && isCustom) return false
+    }
 
     // 凸数フィルター: サポートの現在の凸数が選択に含まれているか
     const cardUncap = cardUncaps[card.name] ?? constant.DEFAULT_UNCAP

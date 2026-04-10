@@ -9,7 +9,7 @@
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
-import { BadgeSizeType, ButtonSizeType, RarityType, CardType, PlanType, HelpSectionKey } from '../../types/enums'
+import { BadgeSizeType, ButtonSizeType, RarityType, CardType, PlanType, SourceType, HelpSectionKey } from '../../types/enums'
 import ModalOverlay from '../ui/ModalOverlay'
 import CloseButton from '../ui/CloseButton'
 import { Badge } from '../ui/Badge'
@@ -79,11 +79,22 @@ export default function HelpModal({ onClose, panelRightOffset }: HelpModalProps)
             })}
           </div>
           {/* プランバッジ例 */}
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 mb-2">
             {Object.values(PlanType).map((plan) => {
               const entry = data.getPlanBadge(plan)
               return (
                 <Badge key={plan} size={BadgeSizeType.Sm} color={entry.badge}>
+                  {t(entry.label)}
+                </Badge>
+              )
+            })}
+          </div>
+          {/* 入手種別バッジ例 */}
+          <div className="flex flex-wrap gap-1.5">
+            {Object.values(SourceType).map((source) => {
+              const entry = data.getSourceEntry(source)
+              return (
+                <Badge key={source} size={BadgeSizeType.Sm} color={entry.badge}>
                   {t(entry.label)}
                 </Badge>
               )

@@ -71,7 +71,7 @@ todo ファイルは「対応中タスク」「保留中のタスク」「Q&A管
 1. 作業開始時にセッション todo ファイルを読み、「追加の指示」を「対応中タスク」に移動する。
 2. 対応中タスクをすべて実装完了するまで作業を続ける。コード中の `Q:` コメントは、回答不要（実装のみ）なら対応中タスクとして処理し、回答が必要なら「Q&A管理」に Q と A を記録する（マークダウンリンク `[src/path/file.ts:行番号](../../src/path/file.ts#L行番号)` 形式で末尾に付記）。いずれの場合もコードから `Q:` を削除する。打ち返しが必要なら `ask_questions` で質問。
 3. コード内 `Q:` / `TODO:` を検索し、未対応があればタスクに追加。
-4. 未使用コード確認+削除（`npx knip --reporter compact`）、`npm run lint` + `npx tsc -p tsconfig.app.json --noEmit` でエラーなし確認。
+4. `npx prettier --check "src/**/*.{ts,tsx}"` でフォーマット確認（差分があれば `npx prettier --write` で修正）。未使用コード確認+削除（`npx knip --reporter compact`）、`npm run lint` + `npx tsc -p tsconfig.app.json --noEmit` でエラーなし確認。
 5. 「追加の指示」「対応中タスク」「Q&A管理」を再チェック。未対応があればステップ 2 に戻る。
 6. セッション終了手順に従う。
 
@@ -81,7 +81,7 @@ todo ファイルは「対応中タスク」「保留中のタスク」「Q&A管
 
 1. セッション todo「追加の指示」の内容がすべて反映済みであること。
 2. `npx knip --reporter compact` で不要なファイル・エクスポートがないこと。
-3. `npm run lint` + `npx tsc -p tsconfig.app.json --noEmit` でエラーがないこと。
+3. `npx prettier --check "src/**/*.{ts,tsx}"` でフォーマット差分がないこと。`npm run lint` + `npx tsc -p tsconfig.app.json --noEmit` でエラーがないこと。
 4. 完了済みタスク（`[x]`）は作業中は残す。
 5. Q&A管理セクションの整理はユーザーに確認してから行う。
 6. 一時ファイル・デバッグ用ファイルが残っていないこと。

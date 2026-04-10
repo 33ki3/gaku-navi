@@ -4,7 +4,7 @@
 export { AbilityParamKeywords, AbilityEffectKeywords, AbilityCategoryParam, AbilityKeywordMap } from './abilityKeyword'
 export { AllCards, CardByName } from './cards'
 export { AbilityBadgeMap } from './abilityBadge'
-export { getMemoryBadge, getSkillTypeBadge, getSourceBadge, getPlanBadge, SelectablePlanEntries } from './badge'
+export { getMemoryBadge, getSkillTypeBadge, getPlanBadge, SelectablePlanEntries } from './badge'
 export {
   EventFilterAcquireList,
   EventFilterModifyList,
@@ -16,6 +16,7 @@ export { getPItemRarityEntry } from './pItemRarityDisplay'
 export { getRarityEntry } from './rarityDisplay'
 export { getSkillCardRarityEntry } from './skillCardRarityDisplay'
 export { getSkillCardViewModeLabel } from './skillCardViewMode'
+export { SourceDisplayEntries, getSourceEntry } from './sourceDisplay'
 export { getTypeEntry, TypeDisplayEntries, SelectableTypeEntries } from './typeDisplay'
 export type { TypeDisplayEntry } from './typeDisplay'
 export { getEffectKeywordEntry } from './effectKeyword'

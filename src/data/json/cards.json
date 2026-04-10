@@ -9558,7 +9558,7 @@
     "type": "vocal",
     "parameter_type": "vocal",
     "source": "event",
-    "source_detail": "イベント「1年2組のアイドルたち」",
+    "source_detail": "1年2組のアイドルたち",
     "is_event_source": true,
     "release_date": "2024/09/11",
     "abilities": [
@@ -11304,7 +11304,7 @@
     "type": "dance",
     "parameter_type": "dance",
     "source": "event",
-    "source_detail": "イベント「仲良し？三人組の日常」",
+    "source_detail": "仲良し？三人組の日常",
     "is_event_source": true,
     "release_date": "2025/07/07",
     "abilities": [
@@ -12423,7 +12423,7 @@
     "type": "vocal",
     "parameter_type": "vocal",
     "source": "event",
-    "source_detail": "イベント「3年1組の修学旅行」",
+    "source_detail": "3年1組の修学旅行",
     "is_event_source": true,
     "release_date": "2025/04/11",
     "abilities": [
@@ -12996,7 +12996,7 @@
     "type": "vocal",
     "parameter_type": "vocal",
     "source": "event",
-    "source_detail": "イベント「リーリヤと清夏の日常」",
+    "source_detail": "リーリヤと清夏の日常",
     "is_event_source": true,
     "release_date": "2025/11/10",
     "abilities": [
@@ -14749,7 +14749,7 @@
     "type": "vocal",
     "parameter_type": "vocal",
     "source": "event",
-    "source_detail": "イベント「手毬と広の日常」",
+    "source_detail": "手毬と広の日常",
     "is_event_source": true,
     "release_date": "2026/01/27",
     "abilities": [
@@ -15808,7 +15808,7 @@
     "type": "visual",
     "parameter_type": "visual",
     "source": "event",
-    "source_detail": "イベント「クラス対抗初星大運動会」",
+    "source_detail": "クラス対抗初星大運動会",
     "is_event_source": true,
     "release_date": "2025/05/16",
     "abilities": [
@@ -15911,7 +15911,7 @@
     "type": "visual",
     "parameter_type": "visual",
     "source": "event",
-    "source_detail": "イベント「ことねと麻央の日常」",
+    "source_detail": "ことねと麻央の日常",
     "is_event_source": true,
     "release_date": "2026/01/05",
     "abilities": [
@@ -16558,7 +16558,7 @@
     "type": "dance",
     "parameter_type": "dance",
     "source": "event",
-    "source_detail": "イベント「生徒会1年組の日常」",
+    "source_detail": "生徒会1年組の日常",
     "is_event_source": true,
     "release_date": "2026/04/01",
     "abilities": [
@@ -16659,7 +16659,7 @@
     "type": "dance",
     "parameter_type": "dance",
     "source": "event",
-    "source_detail": "イベント「生徒会のアイドルたち」",
+    "source_detail": "生徒会のアイドルたち",
     "is_event_source": true,
     "release_date": "2024/11/16",
     "abilities": [
@@ -17400,7 +17400,7 @@
     "skill_card": {
       "name": "頭上に注意！",
       "rarity": "ssr",
-      "type": "active",
+      "type": "mental",
       "lesson_limit": 1,
       "no_duplicate": true,
       "effects": [
@@ -17546,7 +17546,7 @@
     "type": "visual",
     "parameter_type": "visual",
     "source": "shop",
-    "source_detail": "ショップ「アイテム交換所（コンテスト）」",
+    "source_detail": "アイテム交換所（コンテスト）",
     "is_event_source": true,
     "release_date": "2024/05/16",
     "abilities": [
@@ -17714,7 +17714,7 @@
     "type": "vocal",
     "parameter_type": "vocal",
     "source": "shop",
-    "source_detail": "ショップ「アイテム交換所（コンテスト）」",
+    "source_detail": "アイテム交換所（コンテスト）",
     "is_event_source": true,
     "release_date": "2025/08/01",
     "abilities": [
@@ -20482,7 +20482,7 @@
     "type": "dance",
     "parameter_type": "dance",
     "source": "event",
-    "source_detail": "イベント「3年1組の日常」",
+    "source_detail": "3年1組の日常",
     "is_event_source": true,
     "release_date": "2025/07/31",
     "abilities": [
@@ -20945,7 +20945,7 @@
     "type": "visual",
     "parameter_type": "visual",
     "source": "event",
-    "source_detail": "イベント「1年1組のアイドルたち」",
+    "source_detail": "1年1組のアイドルたち",
     "is_event_source": true,
     "release_date": "2024/05/22",
     "abilities": [
@@ -21504,7 +21504,7 @@
     "type": "visual",
     "parameter_type": "visual",
     "source": "event",
-    "source_detail": "イベント「星南と燕の日常」",
+    "source_detail": "星南と燕の日常",
     "is_event_source": true,
     "release_date": "2025/11/28",
     "abilities": [

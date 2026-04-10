@@ -43,7 +43,10 @@ function defaultParams() {
     spOnly: false,
     selectedAbilityKeywords: new Set<enums.AbilityKeywordType>(),
     selectedEventFilters: new Set<enums.EventFilterType>(),
+    selectedSources: new Set<enums.SourceType>(),
     selectedUncaps: new Set<enums.UncapType>(),
+    selectedCountCustom: new Set<enums.CountCustomFilter>(),
+    countCustomCardNames: new Set<string>(),
     cardUncaps: {} as Record<string, enums.UncapType>,
     sortCardUncaps: {} as Record<string, enums.UncapType>,
     sortMode: enums.SortModeType.Rarity,
@@ -276,6 +279,76 @@ describe('filterAndSortCards - フィルタリング', () => {
     expect(result.map((c) => c.name)).not.toContain('Cサポート')
     expect(result.map((c) => c.name)).not.toContain('Dサポート')
     expect(result).toHaveLength(1)
+  })
+
+  it('入手種別フィルター: ガチャのみ', () => {
+    const cardsWithSources = [
+      makeCard({ name: 'ガチャカード', source: enums.SourceType.Gacha }),
+      makeCard({ name: 'イベントカード', source: enums.SourceType.Event }),
+      makeCard({ name: '限定カード', source: enums.SourceType.SeasonLimited }),
+    ]
+    const params = { ...defaultParams(), selectedSources: new Set([enums.SourceType.Gacha]) }
+    const result = filterAndSortCards(cardsWithSources, params)
+    expect(result).toHaveLength(1)
+    expect(result[0].name).toBe('ガチャカード')
+  })
+
+  it('入手種別フィルター: 複数選択でOR判定', () => {
+    const cardsWithSources = [
+      makeCard({ name: 'ガチャカード', source: enums.SourceType.Gacha }),
+      makeCard({ name: 'イベントカード', source: enums.SourceType.Event }),
+      makeCard({ name: '限定カード', source: enums.SourceType.SeasonLimited }),
+    ]
+    const params = {
+      ...defaultParams(),
+      selectedSources: new Set([enums.SourceType.Gacha, enums.SourceType.Event]),
+    }
+    const result = filterAndSortCards(cardsWithSources, params)
+    expect(result).toHaveLength(2)
+    expect(result.map((c) => c.name)).toContain('ガチャカード')
+    expect(result.map((c) => c.name)).toContain('イベントカード')
+  })
+
+  it('回数調整フィルター: 調整済みのみ表示', () => {
+    const params = {
+      ...defaultParams(),
+      selectedCountCustom: new Set([enums.CountCustomFilter.Adjusted]),
+      countCustomCardNames: new Set(['Aサポート']),
+    }
+    const result = filterAndSortCards(cards, params)
+    expect(result).toHaveLength(1)
+    expect(result[0].name).toBe('Aサポート')
+  })
+
+  it('回数調整フィルター: 未調整のみ表示', () => {
+    const params = {
+      ...defaultParams(),
+      selectedCountCustom: new Set([enums.CountCustomFilter.Unadjusted]),
+      countCustomCardNames: new Set(['Aサポート']),
+    }
+    const result = filterAndSortCards(cards, params)
+    expect(result).toHaveLength(3)
+    expect(result.map((c) => c.name)).not.toContain('Aサポート')
+  })
+
+  it('回数調整フィルター: 両方選択で全件表示', () => {
+    const params = {
+      ...defaultParams(),
+      selectedCountCustom: new Set([enums.CountCustomFilter.Adjusted, enums.CountCustomFilter.Unadjusted]),
+      countCustomCardNames: new Set(['Aサポート']),
+    }
+    const result = filterAndSortCards(cards, params)
+    expect(result).toHaveLength(4)
+  })
+
+  it('回数調整フィルター: 未選択で全件表示', () => {
+    const params = {
+      ...defaultParams(),
+      selectedCountCustom: new Set<enums.CountCustomFilter>(),
+      countCustomCardNames: new Set(['Aサポート']),
+    }
+    const result = filterAndSortCards(cards, params)
+    expect(result).toHaveLength(4)
   })
 
   it('複合フィルター: SSR + vocal', () => {

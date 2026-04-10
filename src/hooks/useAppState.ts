@@ -5,7 +5,7 @@
  * UI状態、サポート凸数、スコア計算、フィルターなど
  * 他のフックを組み合わせて、App.tsx に返す。
  */
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import type { SupportCard, ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
 import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
@@ -49,7 +49,12 @@ export function useAppState() {
     uncaps.cardUncaps,
     countCustom.cardCountCustom,
   )
-  const filters = useFilteredCards(data.AllCards, cardScores, uncaps.cardUncaps, scoreSettings)
+  // 回数調整済みサポート名のセット（フィルター用）
+  const countCustomCardNames = useMemo(
+    () => new Set(Object.keys(countCustom.cardCountCustom)),
+    [countCustom.cardCountCustom],
+  )
+  const filters = useFilteredCards(data.AllCards, cardScores, uncaps.cardUncaps, scoreSettings, countCustomCardNames)
 
   // cardResults を ref で保持し、useCallback の依存配列から除外する
   const cardResultsRef = useRef(cardResults)

@@ -30,7 +30,7 @@ interface CardListItemProps {
   score: number
   /** アビリティバッジの翻訳キー一覧 */
   abilityBadges: TranslationKey[]
-  /** カウント調整が設定されているか */
+  /** 回数調整が設定されているか */
   hasCountCustom: boolean
 }
 
@@ -55,7 +55,7 @@ export const CardListItem = memo(function CardListItem({
   const planEntry = data.getPlanBadge(card.plan)
   const eventParts = getEventSummaryParts(card)
   const hasSP = hasSPAbility(card)
-  const sourceEntry = data.getSourceBadge(card.source)
+  const sourceEntry = data.getSourceEntry(card.source)
   const typeLabel = t(typeEntry.label)
 
   // クリックハンドラをメモ化して再描画を減らす
@@ -123,12 +123,12 @@ export const CardListItem = memo(function CardListItem({
             {score}
             {t('ui.unit.score')}
           </span>
-          {/* カウント調整済みアイコン */}
-          {hasCountCustom && (
-            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-violet-100 shrink-0">
-              <AdjustedIcon className="w-3 h-3 text-violet-500" title={t('card.count_adjusted')} />
-            </span>
-          )}
+          {/* 回数調整済みアイコン */}
+          <span
+            className={`w-5 h-5 flex items-center justify-center rounded-full shrink-0 ${hasCountCustom ? 'bg-violet-100' : ''}`}
+          >
+            {hasCountCustom && <AdjustedIcon className="w-3 h-3 text-violet-500" title={t('card.count_adjusted')} />}
+          </span>
           {/* アビリティバッジ */}
           {abilityBadges.length > 0 && (
             <div className="flex gap-0.5 ml-auto shrink-0">

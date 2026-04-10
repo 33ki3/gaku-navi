@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { AllCards } from '../../data'
+import { SourceType } from '../../types/enums'
 import { TriggerKeyType } from '../../types/enums'
 import { PERCENT_SIGN, PLUS_SIGN } from '../../constant'
 const validTriggerKeys = new Set(Object.values(TriggerKeyType))
@@ -25,12 +26,12 @@ describe('AllCards', () => {
 
   it('source_detail を持つサポートで詳細名を保持する', () => {
     // イベント配布サポートの入手先詳細が正しく保持されているか確認する
-    const card = AllCards.find((entry) => entry.source_detail?.startsWith('イベント「'))
+    const card = AllCards.find((entry) => entry.source === SourceType.Event && entry.source_detail)
     expect(card).toBeDefined()
 
     // source が 'event' で、source_detail にイベント名が含まれること
-    expect(card?.source).toBe('event')
-    expect(card?.source_detail).toContain('イベント「')
+    expect(card?.source).toBe(SourceType.Event)
+    expect(card?.source_detail).toBeTruthy()
   })
 
   it('全アビリティが有効な trigger_key を持つ', () => {

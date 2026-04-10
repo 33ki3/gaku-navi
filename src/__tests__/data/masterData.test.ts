@@ -101,8 +101,8 @@ describe('badge', () => {
     expect(typeof entry.badge).toBe('string')
   })
 
-  it.each(Object.values(enums.SourceType))('getSourceBadge(%s) がエントリを返す', (source) => {
-    const entry = data.getSourceBadge(source)
+  it.each(Object.values(enums.SourceType))('getSourceEntry(%s) がエントリを返す', (source) => {
+    const entry = data.getSourceEntry(source)
     expect(entry).toBeDefined()
     expect(typeof entry.label).toBe('string')
     expect(typeof entry.badge).toBe('string')

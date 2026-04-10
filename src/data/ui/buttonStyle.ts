@@ -44,6 +44,7 @@ const filterButtonStyle: Record<FilterButtonCategory, string> = {
   [FilterButtonCategory.AbilityEffect]: 'bg-purple-500 text-white shadow border border-transparent',
   [FilterButtonCategory.EventAcquire]: 'bg-teal-500 text-white shadow border border-transparent',
   [FilterButtonCategory.EventModify]: 'bg-cyan-600 text-white shadow border border-transparent',
+  [FilterButtonCategory.Source]: 'bg-green-600 text-white shadow border border-transparent',
 }
 
 /**

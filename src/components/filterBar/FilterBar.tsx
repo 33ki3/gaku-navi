@@ -10,11 +10,15 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CardFiltersReturn } from '../../hooks'
+import * as constant from '../../constant'
+import { ButtonSizeType, CountCustomFilter } from '../../types/enums'
 import { FilterSearchInput } from './FilterSearchInput'
 import { RarityTypePlanFilter } from './RarityTypePlanFilter'
 import { AbilityFilter } from './AbilityFilter'
 import { UncapFilter } from './UncapFilter'
 import { EventTypeFilter } from './EventTypeFilter'
+import { SourceFilter } from './SourceFilter'
+import { ToggleButton } from '../ui/ToggleButton'
 
 /** FilterBar コンポーネントに渡すプロパティ */
 interface FilterBarProps {
@@ -34,7 +38,9 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
     filters.spOnly ||
     filters.selectedAbilityKeywords.size > 0 ||
     filters.selectedEventFilters.size > 0 ||
-    filters.selectedUncaps.size > 0
+    filters.selectedSources.size > 0 ||
+    filters.selectedUncaps.size > 0 ||
+    filters.selectedCountCustom.size > 0
 
   return (
     <div className="mt-3 flex flex-col gap-3">
@@ -67,6 +73,32 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
         selectedEventFilters={filters.selectedEventFilters}
         toggleEventFilter={filters.toggleEventFilter}
       />
+
+      {/* 入手種別フィルター */}
+      <SourceFilter selectedSources={filters.selectedSources} toggleSource={filters.toggleSource} />
+
+      {/* 回数調整フィルター */}
+      <div>
+        <p className={constant.FILTER_SECTION_LABEL}>{t('ui.header.count_custom')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <ToggleButton
+            isActive={filters.selectedCountCustom.has(CountCustomFilter.Unadjusted)}
+            onClick={() => filters.toggleCountCustom(CountCustomFilter.Unadjusted)}
+            activeClass="bg-violet-500 text-white shadow border border-transparent"
+            size={ButtonSizeType.Sm}
+          >
+            {t('ui.filter.count_unadjusted')}
+          </ToggleButton>
+          <ToggleButton
+            isActive={filters.selectedCountCustom.has(CountCustomFilter.Adjusted)}
+            onClick={() => filters.toggleCountCustom(CountCustomFilter.Adjusted)}
+            activeClass="bg-violet-500 text-white shadow border border-transparent"
+            size={ButtonSizeType.Sm}
+          >
+            {t('ui.filter.count_adjusted')}
+          </ToggleButton>
+        </div>
+      </div>
 
       {/* フィルターが1つでもONなら「クリア」ボタンを表示 */}
       {hasActiveFilter && (

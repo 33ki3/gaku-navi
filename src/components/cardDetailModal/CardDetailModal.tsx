@@ -46,7 +46,7 @@ export default function CardDetailModal({
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
   const planEntry = data.getPlanBadge(card.plan)
-  const sourceEntry = data.getSourceBadge(card.source)
+  const sourceEntry = data.getSourceEntry(card.source)
 
   // 凸数が変わったら点数内訳を再計算する
   const scoreResult = useMemo(() => {
@@ -81,9 +81,12 @@ export default function CardDetailModal({
             </div>
             {/* 入手先の詳細情報（イベント名・ショップ名等） */}
             {card.source_detail && (
-              <p className="mt-2 text-sm text-slate-600 leading-snug">
-                {t('card.source_detail')}: {card.source_detail}
-              </p>
+              <div className="mt-2 flex items-center gap-1.5 bg-white/60 rounded-lg px-2.5 py-1.5">
+                <Badge size={BadgeSizeType.Sm} color={sourceEntry.badge}>
+                  {t(sourceEntry.label)}
+                </Badge>
+                <span className="text-xs text-slate-700">{card.source_detail}</span>
+              </div>
             )}
           </div>
           {/* 閉じるボタン */}

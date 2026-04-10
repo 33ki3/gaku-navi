@@ -27,7 +27,7 @@ interface UnitCardItemProps {
   member: UnitMember
   /** このサポートが固定されているか */
   isLocked: boolean
-  /** カウント調整が設定されているか */
+  /** 回数調整が設定されているか */
   hasCustom: boolean
   /** 固定トグルコールバック */
   onToggleLock: (cardName: string) => void
@@ -37,17 +37,17 @@ interface UnitCardItemProps {
   expanded: boolean
   /** 詳細展開トグルコールバック（サポート名を受け取る） */
   onToggleExpand: (cardName: string) => void
-  /** このサポートのカウント調整データ */
+  /** このサポートの回数調整データ */
   cardCustom: CardCustomData
-  /** 自動カウントのカウント調整を変更する（サポート名を受け取る） */
+  /** 自動カウントの回数調整を変更する（サポート名を受け取る） */
   onSelfTriggerChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** 自動カウントのカウント調整を個別に削除する（サポート名を受け取る） */
+  /** 自動カウントの回数調整を個別に削除する（サポート名を受け取る） */
   onRemoveSelfTrigger: (cardName: string, actionId: ActionIdType) => void
-  /** Pアイテム発動回数のカウント調整を変更する（サポート名を受け取る） */
+  /** Pアイテム発動回数の回数調整を変更する（サポート名を受け取る） */
   onPItemCountChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数のカウント調整を個別に削除する（サポート名を受け取る） */
+  /** Pアイテム発動回数の回数調整を個別に削除する（サポート名を受け取る） */
   onRemovePItemCount: (cardName: string, actionId: ActionIdType) => void
-  /** サポート別カウント調整をリセットする（サポート名を受け取る） */
+  /** サポート別回数調整をリセットする（サポート名を受け取る） */
   onClearCustom: (cardName: string) => void
 }
 

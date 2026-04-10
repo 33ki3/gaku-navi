@@ -1,10 +1,10 @@
 /**
  * バッジマスタデータ。
  *
- * コンテスト・スキルカード種別・入手方法・プランの4カテゴリの
+ * コンテスト・スキルカード種別・プランの3カテゴリの
  * バッジ色・ラベルを統合的に定義する。
  */
-import { PItemMemoryType, SkillCardType, SourceType, PlanType } from '../../types/enums'
+import { PItemMemoryType, SkillCardType, PlanType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
 
 /** メモリ化バッジエントリの型 */
@@ -17,13 +17,6 @@ interface MemoryBadgeEntry {
 /** スキルカード種別バッジエントリの型 */
 interface SkillTypeBadgeEntry {
   id: SkillCardType
-  label: TranslationKey
-  badge: string
-}
-
-/** 入手方法バッジエントリの型 */
-interface SourceBadgeEntry {
-  id: SourceType
   label: TranslationKey
   badge: string
 }
@@ -44,19 +37,6 @@ const memoryBadgeEntries: MemoryBadgeEntry[] = [
 const skillTypeBadgeEntries: SkillTypeBadgeEntry[] = [
   { id: SkillCardType.Mental, label: 'card.skill.mental', badge: 'bg-teal-100 text-teal-800' },
   { id: SkillCardType.Active, label: 'card.skill.active', badge: 'bg-orange-100 text-orange-800' },
-]
-
-const sourceBadgeEntries: SourceBadgeEntry[] = [
-  { id: SourceType.Gacha, label: 'card.source.gacha', badge: 'bg-green-100 text-green-700' },
-  { id: SourceType.CoinGacha, label: 'card.source.coin_gacha', badge: 'bg-amber-100 text-amber-700' },
-  { id: SourceType.SeasonLimited, label: 'card.source.season_limited', badge: 'bg-purple-100 text-purple-700' },
-  { id: SourceType.UnitLimited, label: 'card.source.unit_limited', badge: 'bg-purple-100 text-purple-700' },
-  { id: SourceType.LiveTourLimited, label: 'card.source.live_tour_limited', badge: 'bg-purple-100 text-purple-700' },
-  { id: SourceType.HatsuboshiFes, label: 'card.source.hatsuboshi_fes', badge: 'bg-orange-100 text-orange-700' },
-  { id: SourceType.Event, label: 'card.source.event', badge: 'bg-cyan-100 text-cyan-700' },
-  { id: SourceType.Initial, label: 'card.source.initial', badge: 'bg-slate-100 text-slate-500' },
-  { id: SourceType.Shop, label: 'card.source.shop', badge: 'bg-emerald-100 text-emerald-700' },
-  { id: SourceType.Pack, label: 'card.source.pack', badge: 'bg-rose-100 text-rose-700' },
 ]
 
 const planBadgeEntries: PlanBadgeEntry[] = [
@@ -88,7 +68,6 @@ const planBadgeEntries: PlanBadgeEntry[] = [
 
 const memoryBadgeMap = new Map(memoryBadgeEntries.map((e) => [e.id, e]))
 const skillTypeBadgeMap = new Map(skillTypeBadgeEntries.map((e) => [e.id, e]))
-const sourceBadgeMap = new Map(sourceBadgeEntries.map((e) => [e.id, e]))
 const planBadgeMap = new Map(planBadgeEntries.map((e) => [e.id, e]))
 
 /**
@@ -109,16 +88,6 @@ export function getMemoryBadge(memory: PItemMemoryType): MemoryBadgeEntry {
  */
 export function getSkillTypeBadge(skillType: SkillCardType): SkillTypeBadgeEntry {
   return skillTypeBadgeMap.get(skillType)!
-}
-
-/**
- * 入手方法バッジを取得する。
- *
- * @param source - 入手方法種別
- * @returns バッジエントリ
- */
-export function getSourceBadge(source: SourceType): SourceBadgeEntry {
-  return sourceBadgeMap.get(source)!
 }
 
 /**

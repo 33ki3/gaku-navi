@@ -276,7 +276,7 @@
     "release_date": "2024/05/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "da_lesson_bonus",
         "parameter_type": "dance",
         "values": {},
@@ -739,7 +739,7 @@
     "release_date": "2025/11/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "da_lesson_bonus",
         "parameter_type": "dance",
         "values": {},
@@ -806,7 +806,7 @@
     "release_date": "2024/05/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -1763,7 +1763,7 @@
     "release_date": "2024/06/19",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -3261,7 +3261,7 @@
     "skill_card": null
   },
   {
-    "name": "ひっぱりじゅーなん",
+    "name": "ひっぱり じゅーなん",
     "rarity": "sr",
     "plan": "anomaly",
     "type": "vocal",
@@ -3314,20 +3314,20 @@
       {
         "release": "initial",
         "effect_type": "p_item",
-        "title": ""
+        "title": "ついていくから！"
       },
       {
         "release": "lv20",
         "effect_type": "param_boost",
         "param_type": "vocal",
         "param_value": 15,
-        "title": ""
+        "title": "断捨離しなさい！"
       }
     ],
     "p_item": {
       "name": "切磋琢磨のタオル",
       "rarity": "sr",
-      "memory": "memorizable",
+      "memory": "non_memorizable",
       "effect": {
         "trigger": {
           "key": "consult_selection"
@@ -4903,7 +4903,7 @@
     "release_date": "2024/11/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -5204,7 +5204,7 @@
     "release_date": "2024/11/29",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "da_lesson_bonus",
         "parameter_type": "dance",
         "values": {},
@@ -5789,6 +5789,101 @@
           "count": 5
         }
       }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "パクパクもぐもぐ",
+    "rarity": "sr",
+    "plan": "logic",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "gacha",
+    "release_date": "2026/04/10",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vi_initial_stat",
+        "parameter_type": "visual",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "skill_acquire",
+        "trigger_key": "skill_acquire",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "change",
+        "trigger_key": "change",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 3
+      },
+      {
+        "name_key": "p_item_acquire",
+        "trigger_key": "p_item_acquire",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 6
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "もぐもぐ定食",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_acquire",
+          "keyword": "motivation"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 400
+        },
+        "body": [
+          {
+            "key": "select_change"
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      },
+      "actions": [
+        "change"
+      ]
     },
     "skill_card": null
   },
@@ -8518,7 +8613,7 @@
     "release_date": "2024/07/22",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vo_lesson_bonus",
         "parameter_type": "vocal",
         "values": {},
@@ -11116,7 +11211,7 @@
     "release_date": "2024/05/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -11315,7 +11410,7 @@
     "release_date": "2024/05/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -13752,7 +13847,7 @@
     "release_date": "2025/01/10",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vo_lesson_bonus",
         "parameter_type": "vocal",
         "values": {},
@@ -14307,7 +14402,7 @@
     "release_date": "2024/05/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vo_lesson_bonus",
         "parameter_type": "vocal",
         "values": {},
@@ -14402,7 +14497,7 @@
     "release_date": "2024/06/01",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vo_lesson_bonus",
         "parameter_type": "vocal",
         "values": {},
@@ -16457,6 +16552,107 @@
     }
   },
   {
+    "name": "パーティー楽しみだねっ！",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "event",
+    "source_detail": "イベント「生徒会1年組の日常」",
+    "is_event_source": true,
+    "release_date": "2026/04/01",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "da_parameter_bonus",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_hp",
+        "trigger_key": "da_sp_lesson_hp",
+        "parameter_type": "dance",
+        "values": {},
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "a_skill_enhance",
+        "trigger_key": "a_skill_enhance",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "exam_end",
+        "trigger_key": "exam_end",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "お揃いエコバッグ"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 20,
+        "title": "スーパーマーケット体験"
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_change",
+        "title": "初めてのおつかいは？"
+      }
+    ],
+    "p_item": {
+      "name": "おかいものバッグ",
+      "rarity": "ssr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "dance"
+        },
+        "trigger": {
+          "key": "direct_keyword_gain",
+          "keyword": "aggressive"
+        },
+        "condition": {
+          "key": "keyword_eq",
+          "keyword": "vitality",
+          "threshold": 0
+        },
+        "body": [
+          {
+            "key": "hp_cost_reduce_turns",
+            "turns": 1
+          }
+        ]
+      }
+    },
+    "skill_card": null
+  },
+  {
     "name": "プロデュースって大変ね",
     "rarity": "ssr",
     "plan": "anomaly",
@@ -17131,6 +17327,123 @@
     }
   },
   {
+    "name": "上かッ！！",
+    "rarity": "ssr",
+    "plan": "logic",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "gacha",
+    "release_date": "2026/04/10",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "da_parameter_bonus",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_20",
+        "trigger_key": "sp_lesson_20",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "da_sp_lesson_end",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "ssr_card_acquire",
+        "trigger_key": "ssr_card_acquire",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "頭上に注意！",
+      "rarity": "ssr",
+      "type": "active",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 4,
+          "effect": {
+            "use_condition": {
+              "key": "turn_gte",
+              "value": 3
+            },
+            "groups": [
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 3,
+                  "keyword": "motivation"
+                }
+              },
+              {
+                "action": {
+                  "key": "keyword_increase_boost",
+                  "turns": 3,
+                  "keyword": "motivation",
+                  "pct": 50
+                }
+              },
+              {
+                "action": {
+                  "key": "cost_reduce_flat",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": []
+    }
+  },
+  {
     "name": "二人ならあっという間だね",
     "rarity": "ssr",
     "plan": "free",
@@ -17572,7 +17885,7 @@
     "release_date": "2024/10/18",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -17670,7 +17983,7 @@
     "release_date": "2024/09/30",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "da_lesson_bonus",
         "parameter_type": "dance",
         "values": {},
@@ -18446,7 +18759,7 @@
     "release_date": "2024/07/22",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vo_lesson_bonus",
         "parameter_type": "vocal",
         "values": {},
@@ -19700,7 +20013,7 @@
     "release_date": "2024/06/10",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "da_lesson_bonus",
         "parameter_type": "dance",
         "values": {},
@@ -19996,7 +20309,7 @@
     "release_date": "2024/05/16",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vo_lesson_bonus",
         "parameter_type": "vocal",
         "values": {},
@@ -21027,7 +21340,7 @@
     "release_date": "2024/08/01",
     "abilities": [
       {
-        "name_key": "lesson_bonus",
+        "name_key": "parameter_bonus",
         "trigger_key": "vi_lesson_bonus",
         "parameter_type": "visual",
         "values": {},
@@ -21532,19 +21845,19 @@
       {
         "release": "initial",
         "effect_type": "p_item",
-        "title": ""
+        "title": "半年ぶりの再会"
       },
       {
         "release": "lv20",
         "effect_type": "param_boost",
         "param_type": "visual",
         "param_value": 20,
-        "title": ""
+        "title": "試験前夜のふたり"
       },
       {
         "release": "lv40",
         "effect_type": "card_enhance",
-        "title": ""
+        "title": "約束への第一歩！"
       }
     ],
     "p_item": {

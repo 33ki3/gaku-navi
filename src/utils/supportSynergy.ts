@@ -186,7 +186,7 @@ interface SynergyResult {
  * 各受取サポートに対する追加アクション回数マップと提供元詳細を返す。
  *
  * @param members - 編成メンバーのサポート配列
- * @param cardCountCustom - サポート別カウント調整（省略可）
+ * @param cardCountCustom - サポート別回数調整（省略可）
  * @param options - 提供アクション算出オプション（省略可）
  * @returns サポート間連携マップと提供元詳細
  */
@@ -195,12 +195,12 @@ export function computeUnitSupportSynergy(
   cardCountCustom?: CardCountCustom,
   options?: ProvidedActionsOptions,
 ): SynergyResult {
-  // 提供アクションを事前計算する（カウント調整があれば差分を反映）
+  // 提供アクションを事前計算する（回数調整があれば差分を反映）
   const providerActionMap = members.map((card) => {
     const provided = getProvidedActions(card, options)
     if (cardCountCustom?.[card.name]?.selfTrigger) {
       const customs = cardCountCustom[card.name].selfTrigger!
-      // カウント調整値は提供回数そのものを表す（ベースラインは getProvidedActions の値）
+      // 回数調整値は提供回数そのものを表す（ベースラインは getProvidedActions の値）
       for (const [actionId, customCount] of Object.entries(customs)) {
         const aid = actionId as ActionIdType
         const autoCount = provided[aid] ?? 0

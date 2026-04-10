@@ -34,7 +34,7 @@ interface ScoreCalculationResult {
  *
  * @param scoreSettings - ユーザーの点数設定（シナリオ・難易度・アクション回数など）
  * @param cardUncaps - サポート名 → 凸数のマップ
- * @param cardCountCustom - サポート名 → アクション回数カウント調整のマップ
+ * @param cardCountCustom - サポート名 → アクション回数回数調整のマップ
  * @returns 全サポートの計算結果と合計スコア
  */
 export function useCardScores(
@@ -93,11 +93,11 @@ export function useCardScores(
     return results
   }, [calcContext, scoreSettings])
 
-  // 凸数・カウント調整: デフォルト凸以外のサポートやカウント調整があるサポートだけ再計算して上書きする。
+  // 凸数・回数調整: デフォルト凸以外のサポートや回数調整があるサポートだけ再計算して上書きする。
   const cardResults = useMemo(() => {
     if (baseResults.size === 0) return baseResults
 
-    // 4凸固定モードでもカウント調整は適用する
+    // 4凸固定モードでも回数調整は適用する
     const hasCountCustom = Object.keys(cardCountCustom).length > 0
 
     // デフォルト凸以外のエントリを抽出する（未所持は計算をスキップ）
@@ -107,7 +107,7 @@ export function useCardScores(
           ([, uncap]) => uncap !== constant.DEFAULT_UNCAP && uncap !== enums.UncapType.NotOwned,
         )
 
-    // 全サポートがデフォルト凸でカウント調整もなければベース結果をそのまま返す
+    // 全サポートがデフォルト凸で回数調整もなければベース結果をそのまま返す
     const hasNotOwned =
       !scoreSettings.useFixedUncap && Object.values(cardUncaps).some((u) => u === enums.UncapType.NotOwned)
     if (fixedUncapEntries.length === 0 && !hasNotOwned && !hasCountCustom) return baseResults
@@ -124,7 +124,7 @@ export function useCardScores(
       }
     }
 
-    // 凸数変更サポートを再計算する（カウント調整も適用）
+    // 凸数変更サポートを再計算する（回数調整も適用）
     for (const [cardName, uncap] of fixedUncapEntries) {
       const card = data.CardByName.get(cardName)
       if (card) {
@@ -147,7 +147,7 @@ export function useCardScores(
       }
     }
 
-    // カウント調整のみのサポート（凸数はデフォルト）を再計算する
+    // 回数調整のみのサポート（凸数はデフォルト）を再計算する
     const alreadyRecalculated = new Set(fixedUncapEntries.map(([name]) => name))
     for (const cardName of Object.keys(cardCountCustom)) {
       if (alreadyRecalculated.has(cardName)) continue

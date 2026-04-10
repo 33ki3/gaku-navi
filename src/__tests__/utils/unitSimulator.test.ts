@@ -240,11 +240,11 @@ describe('最適編成', () => {
 
       if (!receiverCard) return
 
-      // カウント調整なし
+      // 回数調整なし
       const baseResult = computeUnitSupportSynergy([providerCard, receiverCard])
       const baseCount = baseResult.bonusMap.get(receiverCard.name)?.[commonAction] ?? 0
 
-      // カウント調整で自動ボーナスを0にする
+      // 回数調整で自動ボーナスを0にする
       const customCounts = {
         [providerCard.name]: {
           selfTrigger: { [commonAction]: 0 },
@@ -253,7 +253,7 @@ describe('最適編成', () => {
       const customResult = computeUnitSupportSynergy([providerCard, receiverCard], customCounts)
       const customCount = customResult.bonusMap.get(receiverCard.name)?.[commonAction] ?? 0
 
-      // カウント調整により受取回数が減ることを確認する
+      // 回数調整により受取回数が減ることを確認する
       expect(customCount).toBeLessThan(baseCount)
     })
 
@@ -307,11 +307,11 @@ describe('最適編成', () => {
       expect(baseReceiver).toBeDefined()
       expect(customReceiver).toBeDefined()
 
-      // カウント調整により合計スコアが変動する
+      // 回数調整により合計スコアが変動する
       expect(customResult.totalScore).not.toBe(baseResult.totalScore)
     })
 
-    it('selfTrigger カウント調整が連動グループ内の関連アクションにも伝播する', () => {
+    it('selfTrigger 回数調整が連動グループ内の関連アクションにも伝播する', () => {
       // Pアイテムの削除アクションを持つサポートを探す（delete/m_skill_delete/a_skill_delete を同時提供）
       const deleteProviderCard = AllCards.find((c) => {
         const actions = c.p_item?.actions ?? []
@@ -345,11 +345,11 @@ describe('最適編成', () => {
       ).find((aid) => (selfBonus[aid] ?? 0) > 0)
       if (!selfBonusDeleteKey) return
 
-      // カウント調整なし
+      // 回数調整なし
       const baseResult = computeUnitSupportSynergy([deleteProviderCard, receiverCard])
       const baseDeleteCount = baseResult.bonusMap.get(receiverCard.name)?.[enums.ActionIdType.Delete] ?? 0
 
-      // selfBonus の特定キーを 0 にカウント調整 → 連動で delete も減るはず
+      // selfBonus の特定キーを 0 に回数調整 → 連動で delete も減るはず
       const customCounts = {
         [deleteProviderCard.name]: {
           selfTrigger: { [selfBonusDeleteKey]: 0 },

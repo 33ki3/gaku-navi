@@ -2,7 +2,7 @@
  * サポート別カウント設定セクション
  *
  * 点数詳細モーダル内で、サポートのイベント・Pアイテムが提供するアクション回数と
- * Pアイテムの発動回数をサポート個別にカウント調整できるUI。
+ * Pアイテムの発動回数をサポート個別に回数調整できるUI。
  * 各項目に SpinnerInput を表示し、変更時に再計算をトリガーする。
  * アビリティやPアイテムに発動回数上限がある場合、SpinnerInput の最大値を制限する。
  */
@@ -18,19 +18,19 @@ import { SpinnerInput } from '../ui/SpinnerInput'
 interface CountCustomSectionProps {
   /** サポートカードデータ */
   card: SupportCard
-  /** イベント提供アクション回数のカウント調整値（スキルカード獲得、Pアイテム獲得等の回数を手動設定） */
+  /** イベント提供アクション回数の回数調整値（スキルカード獲得、Pアイテム獲得等の回数を手動設定） */
   selfTriggerCustom: Partial<Record<ActionIdType, number>>
-  /** Pアイテム発動回数のカウント調整値 */
+  /** Pアイテム発動回数の回数調整値 */
   pItemCountCustom: Partial<Record<ActionIdType, number>>
-  /** 自動カウント回数（カウント調整なし。Pアイテムの自動値表示用） */
+  /** 自動カウント回数（回数調整なし。Pアイテムの自動値表示用） */
   autoCounts: Partial<Record<ActionIdType, number>>
-  /** イベント提供アクション回数のカウント調整を変更する関数 */
+  /** イベント提供アクション回数の回数調整を変更する関数 */
   onSelfTriggerChange: (actionId: ActionIdType, count: number) => void
-  /** イベント提供アクション回数のカウント調整を個別に削除する関数 */
+  /** イベント提供アクション回数の回数調整を個別に削除する関数 */
   onRemoveSelfTrigger: (actionId: ActionIdType) => void
-  /** Pアイテム発動回数のカウント調整を変更する関数 */
+  /** Pアイテム発動回数の回数調整を変更する関数 */
   onPItemCountChange: (actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数のカウント調整を個別に削除する関数 */
+  /** Pアイテム発動回数の回数調整を個別に削除する関数 */
   onRemovePItemCount: (actionId: ActionIdType) => void
 }
 

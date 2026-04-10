@@ -475,9 +475,9 @@ export type SortModeType = (typeof SortModeType)[keyof typeof SortModeType]
  * 「未調整」「調整済」の2状態でサポートを絞り込む。
  */
 export const CountCustomFilter = {
-  /** 未調整（デフォルトのカウント） */
+  /** 未調整 */
   Unadjusted: 'unadjusted',
-  /** 調整済（カウントが変更されている） */
+  /** 調整済 */
   Adjusted: 'adjusted',
 } as const
 export type CountCustomFilter = (typeof CountCustomFilter)[keyof typeof CountCustomFilter]

@@ -1,8 +1,8 @@
 /**
- * サポート別カウント設定フック
+ * サポート別回数設定フック
  *
- * 各サポートの自動カウント（自身イベント効果の自動加算）と
- * Pアイテム発動回数のカウント調整を管理する。
+ * 各サポートの自動回数（自身イベント効果の自動加算）と
+ * Pアイテム発動回数の回数調整を管理する。
  * 未設定のアクションは自動計算値を使い、
  * 設定済みのアクションはサポート別の値を優先する。
  * 変更は localStorage に自動保存される。
@@ -11,18 +11,18 @@ import { useState, useCallback, useEffect } from 'react'
 import type { ActionIdType } from '../types/enums'
 import * as constant from '../constant'
 
-/** サポート1枚分のカウント調整データ */
+/** サポート1枚分の回数調整データ */
 export interface CardCustomData {
-  /** 自動カウント（selfBonus）のカウント調整 */
+  /** 自動カウント（selfBonus）の回数調整 */
   selfTrigger?: Partial<Record<ActionIdType, number>>
-  /** Pアイテム発動回数のカウント調整 */
+  /** Pアイテム発動回数の回数調整 */
   pItemCount?: Partial<Record<ActionIdType, number>>
 }
 
-/** サポート名 → カウント調整データ */
+/** サポート名 → 回数調整データ */
 export type CardCountCustom = Record<string, CardCustomData>
 
-/** localStorage からサポート別カウント設定を読み込む */
+/** localStorage からサポート別回数設定を読み込む */
 export function loadCardCountCustom(): CardCountCustom {
   try {
     const raw = localStorage.getItem(constant.CARD_COUNT_CUSTOM_KEY)
@@ -33,7 +33,7 @@ export function loadCardCountCustom(): CardCountCustom {
   }
 }
 
-/** カウント調整のサブマップが空かどうか */
+/** 回数調整のサブマップが空かどうか */
 function isEmptyPartial(obj: Partial<Record<string, number>> | undefined): boolean {
   if (!obj) return true
   return Object.keys(obj).length === 0
@@ -59,22 +59,22 @@ function saveCustom(custom: CardCountCustom): void {
 
 /** useCardCountCustom の返却型 */
 export interface CardCountCustomState {
-  /** 全サポートのカウント調整 */
+  /** 全サポートの回数調整 */
   cardCountCustom: CardCountCustom
-  /** 自動カウント（selfBonus）のカウント調整を設定する */
+  /** 自動カウント（selfBonus）の回数調整を設定する */
   setSelfTrigger: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** 自動カウントのカウント調整を個別に削除する */
+  /** 自動カウントの回数調整を個別に削除する */
   removeSelfTrigger: (cardName: string, actionId: ActionIdType) => void
-  /** Pアイテム発動回数のカウント調整を設定する */
+  /** Pアイテム発動回数の回数調整を設定する */
   setPItemCount: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数のカウント調整を個別に削除する */
+  /** Pアイテム発動回数の回数調整を個別に削除する */
   removePItemCount: (cardName: string, actionId: ActionIdType) => void
-  /** 特定サポートの全カウント調整をリセットする */
+  /** 特定サポートの全回数調整をリセットする */
   clearCardCustom: (cardName: string) => void
 }
 
 /**
- * サポート別カウント設定を管理するフック
+ * サポート別回数設定を管理するフック
  *
  * ページを読み込んだとき localStorage から復元し、
  * 変更があるたびに自動で保存する。
@@ -88,7 +88,7 @@ export function useCardCountCustom(): CardCountCustomState {
     return () => clearTimeout(timer)
   }, [cardCountCustom])
 
-  /** 自動カウント（selfBonus）のカウント調整を設定する */
+  /** 自動カウント（selfBonus）の回数調整を設定する */
   const setSelfTrigger = useCallback((cardName: string, actionId: ActionIdType, count: number) => {
     setCardCountCustom((prev) => ({
       ...prev,
@@ -99,7 +99,7 @@ export function useCardCountCustom(): CardCountCustomState {
     }))
   }, [])
 
-  /** 自動カウントのカウント調整を個別に削除する */
+  /** 自動カウントの回数調整を個別に削除する */
   const removeSelfTrigger = useCallback((cardName: string, actionId: ActionIdType) => {
     setCardCountCustom((prev) => {
       const card = prev[cardName]
@@ -118,7 +118,7 @@ export function useCardCountCustom(): CardCountCustomState {
     })
   }, [])
 
-  /** Pアイテム発動回数のカウント調整を設定する */
+  /** Pアイテム発動回数の回数調整を設定する */
   const setPItemCount = useCallback((cardName: string, actionId: ActionIdType, count: number) => {
     setCardCountCustom((prev) => ({
       ...prev,
@@ -129,7 +129,7 @@ export function useCardCountCustom(): CardCountCustomState {
     }))
   }, [])
 
-  /** Pアイテム発動回数のカウント調整を個別に削除する */
+  /** Pアイテム発動回数の回数調整を個別に削除する */
   const removePItemCount = useCallback((cardName: string, actionId: ActionIdType) => {
     setCardCountCustom((prev) => {
       const card = prev[cardName]
@@ -148,7 +148,7 @@ export function useCardCountCustom(): CardCountCustomState {
     })
   }, [])
 
-  /** 特定サポートの全カウント調整をリセットする */
+  /** 特定サポートの全回数調整をリセットする */
   const clearCardCustom = useCallback((cardName: string) => {
     setCardCountCustom((prev) => {
       const next = { ...prev }

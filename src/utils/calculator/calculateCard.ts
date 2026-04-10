@@ -65,8 +65,8 @@ function resolveActionId(triggerKey: TriggerKeyType): ActionIdType {
  * @param includeSelfTrigger - 自サポートのイベントによる自己発火を含めるか
  * @param includePItem - Pアイテムの効果を含めるか
  * @param parameterBonusPerLesson - レッスンごとの Vo/Da/Vi 上昇量（指定時はレッスンごとに切り捨て計算する）
- * @param selfBonusCustom - 自動カウント（selfBonus）のカウント調整（自身イベント効果の加算値を置換する）
- * @param pItemCountCustom - Pアイテム発動回数のカウント調整（Pアイテムのトリガー回数を置換する）
+ * @param selfBonusCustom - 自動カウント（selfBonus）の回数調整（自身イベント効果の加算値を置換する）
+ * @param pItemCountCustom - Pアイテム発動回数の回数調整（Pアイテムのトリガー回数を置換する）
  * @returns 各アビリティの寄与度を含む計算結果
  */
 export function calculateCardParameter(
@@ -142,7 +142,7 @@ export function calculateCardParameter(
     }
 
     // ベース回数 + 他サポート由来の追加回数 + 自己保有ボーナス
-    // 自動カウント（selfBonus）のカウント調整があれば自動計算値を置換する
+    // 自動カウント（selfBonus）の回数調整があれば自動計算値を置換する
     const actionId = resolveActionId(parsed.triggerKey)
     const baseCount = actionCounts[actionId] ?? 0
     const extraCount = extraEventCounts[actionId] ?? 0
@@ -151,7 +151,7 @@ export function calculateCardParameter(
       selfBonusCustom && actionId in selfBonusCustom ? selfBonusCustom[actionId]! : baseSelfBonus
     let totalCount = baseCount + extraCount + effectiveSelfBonus
 
-    // 自動カウント回数を記録する（カウント調整なしの値）
+    // 自動カウント回数を記録する（回数調整なしの値）
     if (!(actionId in autoCounts)) {
       autoCounts[actionId] = baseCount + extraCount + baseSelfBonus
     }
@@ -195,14 +195,14 @@ export function calculateCardParameter(
   // Pアイテムによるパラメータ上昇を処理する
   const pItemBoosts = includePItem ? parsePItemParameterBoost(card) : []
   for (const boost of pItemBoosts) {
-    // Pアイテム発動回数のカウント調整があれば回数を置換する
+    // Pアイテム発動回数の回数調整があれば回数を置換する
     const boostActionId = resolveActionId(boost.triggerKey)
     const baseCount = actionCounts[boostActionId] ?? 0
     const extraCount = extraEventCounts[boostActionId] ?? 0
     const selfBonusCount = selfBonus[boostActionId] ?? 0
     const rawCount = baseCount + extraCount + selfBonusCount
 
-    // 自動カウント回数を記録する（カウント調整なしの値）
+    // 自動カウント回数を記録する（回数調整なしの値）
     if (!(boostActionId in autoCounts)) {
       autoCounts[boostActionId] = rawCount
     }

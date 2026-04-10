@@ -23,23 +23,23 @@ interface UnitResultProps {
   result: UnitResultType
   /** 固定サポート名リスト */
   lockedCards: string[]
-  /** カウント調整が設定されているサポート名 */
+  /** 回数調整が設定されているサポート名 */
   customizedCardNames: ReadonlySet<string>
   /** 固定トグルコールバック */
   onToggleLock: (cardName: string) => void
   /** サポート削除コールバック */
   onRemove: (cardName: string) => void
-  /** サポート別カウント調整 */
+  /** サポート別回数調整 */
   cardCountCustom: CardCountCustom
-  /** 自動カウント（selfBonus）のカウント調整を設定する */
+  /** 自動カウント（selfBonus）の回数調整を設定する */
   onSelfTriggerChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** 自動カウントのカウント調整を個別に削除する */
+  /** 自動カウントの回数調整を個別に削除する */
   onRemoveSelfTrigger: (cardName: string, actionId: ActionIdType) => void
-  /** Pアイテム発動回数のカウント調整を設定する */
+  /** Pアイテム発動回数の回数調整を設定する */
   onPItemCountChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数のカウント調整を個別に削除する */
+  /** Pアイテム発動回数の回数調整を個別に削除する */
   onRemovePItemCount: (cardName: string, actionId: ActionIdType) => void
-  /** サポート別のカウント調整をリセットする */
+  /** サポート別の回数調整をリセットする */
   onClearCardCustom: (cardName: string) => void
   /** シナリオ種別（試験上昇量の算出に使用） */
   scenario: ScenarioType

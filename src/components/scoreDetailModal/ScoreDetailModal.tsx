@@ -4,7 +4,7 @@
  * サポートグリッドでスコアをクリックしたときに開くモーダル。
  * イベントブースト・アビリティ・パラメータボーナス・Pアイテムの
  * 内訳を表示し、右側に合計スコアを表示する。
- * サポート別のアクション回数カウント調整も設定できる。
+ * サポート別のアクション回数回数調整も設定できる。
  */
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,17 +30,17 @@ interface ScoreDetailModalProps {
   card: SupportCard
   /** スコア計算結果 */
   result: CardCalculationResult
-  /** このサポートのカウント調整データ */
+  /** このサポートの回数調整データ */
   countCustom: CardCustomData
-  /** 自動カウントのカウント調整を変更する関数 */
+  /** 自動カウントの回数調整を変更する関数 */
   onSelfTriggerChange: (actionId: ActionIdType, count: number) => void
-  /** 自動カウントのカウント調整を個別に削除する関数 */
+  /** 自動カウントの回数調整を個別に削除する関数 */
   onRemoveSelfTrigger: (actionId: ActionIdType) => void
-  /** Pアイテム発動回数のカウント調整を変更する関数 */
+  /** Pアイテム発動回数の回数調整を変更する関数 */
   onPItemCountChange: (actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数のカウント調整を個別に削除する関数 */
+  /** Pアイテム発動回数の回数調整を個別に削除する関数 */
   onRemovePItemCount: (actionId: ActionIdType) => void
-  /** このサポートの全カウント調整をリセットする関数 */
+  /** このサポートの全回数調整をリセットする関数 */
   onClearCardCustom: () => void
   /** モーダルを閉じる関数 */
   onClose: () => void
@@ -64,11 +64,11 @@ export default function ScoreDetailModal({
     [enums.ScoreDetailSectionKey.CountCustom]: false,
   })
 
-  // カウント調整があるかどうか
+  // 回数調整があるかどうか
   const hasCustom =
     Object.keys(countCustom.selfTrigger ?? {}).length > 0 || Object.keys(countCustom.pItemCount ?? {}).length > 0
 
-  // カウント調整の対象項目があるかどうか（なければセクション自体を非表示）
+  // 回数調整の対象項目があるかどうか（なければセクション自体を非表示）
   const hasCountItems = useMemo(() => {
     if (Object.keys(getProvidedActions(card)).length > 0) return true
     if (card.p_item?.boost && TriggerActionMap[card.p_item.boost.trigger_key]) return true

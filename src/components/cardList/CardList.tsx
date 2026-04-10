@@ -22,7 +22,7 @@ interface CardListProps {
   cardScores: ReadonlyMap<string, number>
   /** サポート名 → アビリティバッジ一覧のマップ */
   abilityBadgeMap: ReadonlyMap<string, TranslationKey[]>
-  /** サポート別カウント調整 */
+  /** サポート別回数調整 */
   cardCountCustom: CardCountCustom
   /** 設定パネルがピン留めされているか */
   settingsPinned: boolean

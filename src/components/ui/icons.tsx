@@ -67,7 +67,7 @@ export function InfoIcon({ className }: IconProps) {
   )
 }
 
-/** カウント調整済みマーク（スライダー）アイコン */
+/** 回数調整済みマーク（スライダー）アイコン */
 export function AdjustedIcon({ className, title }: IconProps) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">

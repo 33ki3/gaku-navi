@@ -38,7 +38,7 @@ interface UnitSimulatorPanelProps {
   unitCardSelectMode: boolean
   /** サポート一覧選択モードの切り替え */
   setUnitCardSelectMode: (mode: boolean) => void
-  /** カウント調整（Appと共有） */
+  /** 回数調整（Appと共有） */
   countCustom: CardCountCustomState
   /** スコア設定（Appと共有） */
   scoreSettings: ScoreSettings
@@ -128,7 +128,7 @@ export default function UnitSimulatorPanel({
     return () => registerIsCardEligible(null)
   }, [registerIsCardEligible, settings.plan, settings.allowedTypes, settings.manualCards])
 
-  // 点数詳細の発動回数カウント調整変更時にスコアのみ自動再計算する
+  // 点数詳細の発動回数回数調整変更時にスコアのみ自動再計算する
   // （最適化をやり直さず、現在のユニット構成のまま計算し直す）
   const isFirstRender = useRef(true)
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function UnitSimulatorPanel({
     }
   }, [settings.manualCards]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 点数詳細で発動回数をユーザーが手動変更（カウント調整）しているサポート名のセット
+  // 点数詳細で発動回数をユーザーが手動変更（回数調整）しているサポート名のセット
   // サポート一覧でバッジ表示するために使用する
   const customizedCardNames = useMemo(
     () => new Set(Object.keys(countCustom.cardCountCustom)),

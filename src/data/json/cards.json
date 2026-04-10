@@ -17400,7 +17400,7 @@
     "skill_card": {
       "name": "頭上に注意！",
       "rarity": "ssr",
-      "type": "active",
+      "type": "mental",
       "lesson_limit": 1,
       "no_duplicate": true,
       "effects": [

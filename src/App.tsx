@@ -68,8 +68,8 @@ function App() {
   )
 
   // サポート選択可否判定（ref で安定化）
+  // unitCardSelectMode の判定は CardListItem 側で行うため、ここでは eligibility のみ評価する
   const isCardEligible = useCallback((card: SupportCard) => {
-    if (!unitCardSelectModeRef.current) return true
     return isCardEligibleRef.current ? isCardEligibleRef.current(card) : true
   }, [])
 

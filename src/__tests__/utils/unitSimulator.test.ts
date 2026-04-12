@@ -69,6 +69,16 @@ function makeSimulatorSettings(
     plan: enums.PlanType.Anomaly,
     allowedTypes: [],
     spConstraint: { vocal: 0, dance: 0, visual: 0 },
+    typeCountMin: {
+      [enums.ParameterType.Vocal]: constant.TYPE_COUNT_MIN_DEFAULT,
+      [enums.ParameterType.Dance]: constant.TYPE_COUNT_MIN_DEFAULT,
+      [enums.ParameterType.Visual]: constant.TYPE_COUNT_MIN_DEFAULT,
+    },
+    typeCountMax: {
+      [enums.ParameterType.Vocal]: constant.TYPE_COUNT_MAX_DEFAULT,
+      [enums.ParameterType.Dance]: constant.TYPE_COUNT_MAX_DEFAULT,
+      [enums.ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
+    },
     paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
     manualRental: false,
     rentalCardName: null,
@@ -853,6 +863,23 @@ describe('最適編成', () => {
           counts.visual >= spConstraint.visual
         )
       }
+      // タイプ制約チェック用ヘルパー
+      const checkTypeConstraint = (names: string[]) => {
+        const counts: Record<enums.ParameterType, number> = {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        }
+        for (const n of names) {
+          const c = AllCards.find((c) => c.name === n)!
+          if (c.type in counts) counts[c.type as enums.ParameterType]++
+        }
+        for (const type of Object.values(enums.ParameterType)) {
+          if (counts[type] < settings.typeCountMin[type]) return false
+          if (counts[type] > settings.typeCountMax[type]) return false
+        }
+        return true
+      }
 
       // レンタル枠の特定
       const rentalName = result.members.find((m) => m.isRental)?.card.name ?? null
@@ -866,8 +893,9 @@ describe('最適編成', () => {
         for (const candidate of candidateCards) {
           const swappedNames = [...memberNames]
           swappedNames[i] = candidate.name
-          // SP制約を満たさないスワップはスキップする
+          // SP制約・タイプ制約を満たさないスワップはスキップする
           if (!checkSpConstraint(swappedNames)) continue
+          if (!checkTypeConstraint(swappedNames)) continue
           const swapSettings = makeSimulatorSettings(swappedNames, {
             plan,
             manualRental: true,
@@ -880,6 +908,199 @@ describe('最適編成', () => {
           expect(result.totalScore).toBeGreaterThanOrEqual(swapResult.totalScore)
         }
       }
+    })
+  })
+
+  describe('タイプ別枚数制約', () => {
+    const plan = enums.PlanType.Sense
+
+    it('最大枚数制約を超えるタイプがユニットに含まれない', () => {
+      // Dance max=1 に制限して最適化する
+      const scoreSettings = makeScoreSettings()
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
+          [enums.ParameterType.Dance]: 1,
+          [enums.ParameterType.Visual]: constant.UNIT_SIZE,
+        },
+      })
+
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      const danceCount = result.members.filter((m) => m.card.type === enums.CardType.Dance).length
+      expect(danceCount).toBeLessThanOrEqual(1)
+    })
+
+    it('最小枚数制約を下回るタイプがユニットに含まれない', () => {
+      // Vocal min=2 に制限して最適化する
+      const scoreSettings = makeScoreSettings()
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 2,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
+          [enums.ParameterType.Dance]: constant.UNIT_SIZE,
+          [enums.ParameterType.Visual]: constant.UNIT_SIZE,
+        },
+      })
+
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      const vocalCount = result.members.filter((m) => m.card.type === enums.CardType.Vocal).length
+      expect(vocalCount).toBeGreaterThanOrEqual(2)
+    })
+
+    it('SP制約とタイプ制約の両方を満たす編成が返る', () => {
+      // SP dance=2 + Dance max=2 の組み合わせ（ギリギリ実現可能）
+      const scoreSettings = makeScoreSettings()
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 2, visual: 0 },
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
+          [enums.ParameterType.Dance]: 2,
+          [enums.ParameterType.Visual]: constant.UNIT_SIZE,
+        },
+      })
+
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      expect(result.members).toHaveLength(constant.UNIT_SIZE)
+      const danceCount = result.members.filter((m) => m.card.type === enums.CardType.Dance).length
+      expect(danceCount).toBeLessThanOrEqual(2)
+
+      // SP制約も満たしていることを確認する
+      const danceSpCount = result.members.filter((m) =>
+        m.card.abilities.some((a) => a.trigger_key === enums.TriggerKeyType.DaSpLessonRate),
+      ).length
+      expect(danceSpCount).toBeGreaterThanOrEqual(2)
+    })
+
+    it('制約付きでも局所最適性を維持する', () => {
+      // Dance max=2, Visual min=1 の制約付きで最適化し、
+      // 制約を満たすスワップの中で改善がないことを確認する
+      const scoreSettings = makeScoreSettings()
+      const settings = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        spConstraint: { vocal: 0, dance: 0, visual: 0 },
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 1,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
+          [enums.ParameterType.Dance]: 2,
+          [enums.ParameterType.Visual]: constant.UNIT_SIZE,
+        },
+      })
+
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      // タイプ制約チェックヘルパー
+      const checkTypeConstraint = (names: string[]) => {
+        const counts: Record<enums.ParameterType, number> = {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        }
+        for (const n of names) {
+          const c = AllCards.find((c) => c.name === n)!
+          if (c.type in counts) counts[c.type as enums.ParameterType]++
+        }
+        for (const type of Object.values(enums.ParameterType)) {
+          if (counts[type] < settings.typeCountMin[type]) return false
+          if (counts[type] > settings.typeCountMax[type]) return false
+        }
+        return true
+      }
+
+      const selectedNames = new Set(result.members.map((m) => m.card.name))
+      const candidateCards = AllCards.filter(
+        (c) => (c.plan === plan || c.plan === enums.PlanType.Free) && !selectedNames.has(c.name),
+      )
+      const memberNames = result.members.map((m) => m.card.name)
+
+      for (let i = 0; i < memberNames.length; i++) {
+        for (const candidate of candidateCards) {
+          const swappedNames = [...memberNames]
+          swappedNames[i] = candidate.name
+          if (!checkTypeConstraint(swappedNames)) continue
+
+          const swapSettings = makeSimulatorSettings(swappedNames, { plan })
+          const swapResult = evaluateManualUnit({ settings: swapSettings, scoreSettings, cardUncaps: {} })
+          if (!swapResult) continue
+
+          expect(result.totalScore).toBeGreaterThanOrEqual(swapResult.totalScore)
+        }
+      }
+    })
+
+    it('最小/最大枚数の合計が不正な場合は null を返す', () => {
+      const scoreSettings = makeScoreSettings()
+
+      // 最小枚数合計 > 6: 実現不可能
+      const tooMuchMin = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 3,
+          [enums.ParameterType.Dance]: 3,
+          [enums.ParameterType.Visual]: 3,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
+          [enums.ParameterType.Dance]: constant.UNIT_SIZE,
+          [enums.ParameterType.Visual]: constant.UNIT_SIZE,
+        },
+      })
+      expect(optimizeUnit({ settings: tooMuchMin, scoreSettings, cardUncaps: {} })).toBeNull()
+
+      // 最大枚数合計 < 6: 実現不可能
+      const tooLittleMax = makeSimulatorSettings([], {
+        plan,
+        manualCards: [],
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: 1,
+          [enums.ParameterType.Dance]: 1,
+          [enums.ParameterType.Visual]: 1,
+        },
+      })
+      expect(optimizeUnit({ settings: tooLittleMax, scoreSettings, cardUncaps: {} })).toBeNull()
     })
   })
 

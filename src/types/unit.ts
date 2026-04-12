@@ -3,7 +3,7 @@
  *
  * 最適編成計算で使用する設定・結果の型を定義する。
  */
-import type { PlanType, CardType, UncapType, ActionIdType } from './enums'
+import type { PlanType, CardType, ParameterType, UncapType, ActionIdType } from './enums'
 import type { SupportCard, CardCalculationResult } from './card'
 
 /** SP発生率の枚数設定（Vo/Da/Vi それぞれの必要枚数） */
@@ -23,6 +23,9 @@ export interface ParameterValues {
   visual: number
 }
 
+/** タイプ別編成枚数（Vo/Da/Vi ごとの枚数） */
+export type TypeCountValues = Record<ParameterType, number>
+
 /** 最適編成の編成設定 */
 export interface UnitSimulatorSettings {
   /** 育成プラン */
@@ -31,6 +34,10 @@ export interface UnitSimulatorSettings {
   allowedTypes: CardType[]
   /** SP発生率の枚数制約 */
   spConstraint: SpRateConstraint
+  /** タイプ別最小編成枚数 */
+  typeCountMin: TypeCountValues
+  /** タイプ別最大編成枚数 */
+  typeCountMax: TypeCountValues
   /** パラメータボーナス%（プロデュース開始画面の値） */
   paramBonusPercent: ParameterValues
   /** レンタル枠を手動指定するか */

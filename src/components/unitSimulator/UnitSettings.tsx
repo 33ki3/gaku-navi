@@ -34,6 +34,20 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
 
   // SP枚数の合計
   const spTotal = settings.spConstraint.vocal + settings.spConstraint.dance + settings.spConstraint.visual
+  // タイプ別最小枚数の合計
+  const typeMinTotal =
+    settings.typeCountMin[ParameterType.Vocal] +
+    settings.typeCountMin[ParameterType.Dance] +
+    settings.typeCountMin[ParameterType.Visual]
+  // タイプ別最大枚数の合計
+  const typeMaxTotal =
+    settings.typeCountMax[ParameterType.Vocal] +
+    settings.typeCountMax[ParameterType.Dance] +
+    settings.typeCountMax[ParameterType.Visual]
+  // タイプごとに最小が最大を超えているか
+  const typeMinExceedsMax = data.SelectableTypeEntries.some(
+    (entry) => settings.typeCountMin[entry.parameterType] > settings.typeCountMax[entry.parameterType],
+  )
 
   /** プラン変更 */
   const handlePlanChange = useCallback(
@@ -59,6 +73,28 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
       onChange({
         ...settings,
         spConstraint: { ...settings.spConstraint, [key]: value },
+      })
+    },
+    [settings, onChange],
+  )
+
+  /** タイプ別最小枚数変更 */
+  const handleTypeMinChange = useCallback(
+    (type: ParameterType, value: number) => {
+      onChange({
+        ...settings,
+        typeCountMin: { ...settings.typeCountMin, [type]: value },
+      })
+    },
+    [settings, onChange],
+  )
+
+  /** タイプ別最大枚数変更 */
+  const handleTypeMaxChange = useCallback(
+    (type: ParameterType, value: number) => {
+      onChange({
+        ...settings,
+        typeCountMax: { ...settings.typeCountMax, [type]: value },
       })
     },
     [settings, onChange],
@@ -156,6 +192,63 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
         </div>
         {spTotal > constant.SP_TOTAL_MAX && (
           <p className="text-[10px] text-red-500 font-bold mt-1">{t('unit.settings.sp_over_limit')}</p>
+        )}
+      </section>
+
+      {/* タイプ別 最小枚数 */}
+      <section>
+        <h3 className={constant.SECTION_HEADING_SM_PX}>
+          {t('unit.settings.type_count_min')}
+          <HelpTooltip text={t('unit.settings.type_count_min_tip')} />
+          <span className="ml-2 text-slate-400">
+            ({typeMinTotal}/{constant.UNIT_SIZE})
+          </span>
+        </h3>
+        <div className="grid grid-cols-3 gap-2">
+          {data.SelectableTypeEntries.map((entry) => (
+            <div key={entry.cardType} className="flex flex-col items-center gap-1">
+              <span className={`text-[10px] font-bold ${entry.text}`}>{t(entry.displayLabel)}</span>
+              <SpinnerInput
+                value={settings.typeCountMin[entry.parameterType]}
+                min={0}
+                max={constant.UNIT_SIZE}
+                onChange={(v) => handleTypeMinChange(entry.parameterType, v)}
+              />
+            </div>
+          ))}
+        </div>
+        {typeMinTotal > constant.UNIT_SIZE && (
+          <p className="text-[10px] text-red-500 font-bold mt-1">{t('unit.settings.type_min_over_limit')}</p>
+        )}
+        {typeMinExceedsMax && (
+          <p className="text-[10px] text-red-500 font-bold mt-1">{t('unit.settings.type_min_exceeds_max')}</p>
+        )}
+      </section>
+
+      {/* タイプ別 最大枚数 */}
+      <section>
+        <h3 className={constant.SECTION_HEADING_SM_PX}>
+          {t('unit.settings.type_count_max')}
+          <HelpTooltip text={t('unit.settings.type_count_max_tip')} />
+          <span className="ml-2 text-slate-400">
+            ({typeMaxTotal}/{constant.UNIT_SIZE})
+          </span>
+        </h3>
+        <div className="grid grid-cols-3 gap-2">
+          {data.SelectableTypeEntries.map((entry) => (
+            <div key={entry.cardType} className="flex flex-col items-center gap-1">
+              <span className={`text-[10px] font-bold ${entry.text}`}>{t(entry.displayLabel)}</span>
+              <SpinnerInput
+                value={settings.typeCountMax[entry.parameterType]}
+                min={0}
+                max={constant.UNIT_SIZE}
+                onChange={(v) => handleTypeMaxChange(entry.parameterType, v)}
+              />
+            </div>
+          ))}
+        </div>
+        {typeMaxTotal < constant.UNIT_SIZE && (
+          <p className="text-[10px] text-red-500 font-bold mt-1">{t('unit.settings.type_max_under_limit')}</p>
         )}
       </section>
 

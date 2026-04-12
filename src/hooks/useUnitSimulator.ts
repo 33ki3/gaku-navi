@@ -9,7 +9,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import type { ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
 import type { UnitSimulatorSettings, UnitResult, SynergyProviderDetail } from '../types/unit'
-import { PlanType, CardType } from '../types/enums'
+import { PlanType, CardType, ParameterType } from '../types/enums'
 import { optimizeUnit, evaluateManualUnit } from '../utils/unitSimulator'
 import { loadScoreSettings } from '../utils/scoreSettings'
 import { loadCardCountCustom } from './useCardCountCustom'
@@ -22,6 +22,16 @@ const DEFAULT_SETTINGS: UnitSimulatorSettings = {
   plan: PlanType.Sense,
   allowedTypes: [CardType.Vocal, CardType.Dance, CardType.Visual],
   spConstraint: { vocal: 0, dance: 0, visual: 0 },
+  typeCountMin: {
+    [ParameterType.Vocal]: constant.TYPE_COUNT_MIN_DEFAULT,
+    [ParameterType.Dance]: constant.TYPE_COUNT_MIN_DEFAULT,
+    [ParameterType.Visual]: constant.TYPE_COUNT_MIN_DEFAULT,
+  },
+  typeCountMax: {
+    [ParameterType.Vocal]: constant.TYPE_COUNT_MAX_DEFAULT,
+    [ParameterType.Dance]: constant.TYPE_COUNT_MAX_DEFAULT,
+    [ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
+  },
   paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
   manualRental: false,
   rentalCardName: null,

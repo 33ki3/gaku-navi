@@ -68,3 +68,8 @@ export const UNIT_SIZE = 6
 export const SP_TOTAL_MAX = 6
 /** 局所探索の最大イテレーション回数 */
 export const MAX_SWAP_ITERATIONS = 10
+
+/** タイプ別編成枚数のデフォルト最小値 */
+export const TYPE_COUNT_MIN_DEFAULT = 0
+/** タイプ別編成枚数のデフォルト最大値 */
+export const TYPE_COUNT_MAX_DEFAULT = 3

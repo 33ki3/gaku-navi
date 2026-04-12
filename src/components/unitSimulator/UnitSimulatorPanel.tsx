@@ -112,21 +112,20 @@ export default function UnitSimulatorPanel({
     return () => registerAddManualCard(null)
   }, [registerAddManualCard, setUnitCardSelectMode])
 
-  // サポート選択可否判定関数を親に登録する（プラン・タイプフィルタ）
+  // サポート選択可否判定関数を親に登録する（プラン・重複チェック）
+  // allowedTypes は最適化専用フィルタのため、手動編成では適用しない
   useEffect(() => {
     const isEligible = (card: SupportCard) => {
       const s = settingsRef.current
       // プラン判定: Free はどのプランでも選択可能
       if (card.plan !== PlanType.Free && card.plan !== s.plan) return false
-      // タイプ判定: allowedTypes に含まれるサポートのみ選択可能
-      if (!s.allowedTypes.includes(card.type)) return false
       // 既に選択済みのサポートは選択不可
       if (s.manualCards.includes(card.name)) return false
       return true
     }
     registerIsCardEligible(isEligible)
     return () => registerIsCardEligible(null)
-  }, [registerIsCardEligible, settings.plan, settings.allowedTypes, settings.manualCards])
+  }, [registerIsCardEligible, settings.plan, settings.manualCards])
 
   // 点数詳細の発動回数回数調整変更時にスコアのみ自動再計算する
   // （最適化をやり直さず、現在のユニット構成のまま計算し直す）

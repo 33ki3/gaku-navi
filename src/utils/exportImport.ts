@@ -2,7 +2,7 @@
  * データ転送ユーティリティ
  *
  * ユーザーの設定データ（凸数・スコア設定・プリセット・フィルター状態・
- * ピン固定）を JSON ファイルとしてエクスポート/
+ * ピン固定・最適編成設定）を JSON ファイルとしてエクスポート/
  * インポートする機能。端末間のデータ移行やバックアップに使う。
  */
 import * as constant from '../constant'
@@ -16,6 +16,7 @@ const EXPORT_KEYS = [
   constant.SCORE_PRESETS_STORAGE_KEY,
   constant.FILTER_STORAGE_KEY,
   constant.CARD_COUNT_CUSTOM_KEY,
+  constant.UNIT_SIMULATOR_STORAGE_KEY,
 ] as const
 
 /** エクスポートされる JSON の構造 */

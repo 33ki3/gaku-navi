@@ -13,15 +13,21 @@ import type {
 } from '../types/card'
 import type { UncapType } from '../types/enums'
 import * as enums from '../types/enums'
-import type { UnitSimulatorSettings, UnitMember, UnitResult, SpRateConstraint } from '../types/unit'
+import type { UnitSimulatorSettings, UnitMember, UnitResult, SpRateConstraint, TypeCountValues } from '../types/unit'
 import type { CardCountCustom } from '../hooks/useCardCountCustom'
 import { calculateCardParameter } from './calculator/calculateCard'
 import { mergeScheduleCounts } from './scoreSettings'
 import { getPerLessonParameterValues } from './calculator/parameterBonus'
 import { computeUnitSupportSynergy } from './supportSynergy'
 import { parseAbility } from './calculator/helpers'
+import { getParamCap } from '../data/score/paramCap'
+import { getSpLessonTotal } from '../data/score/lesson'
+import { getExamData } from '../data/score/exam'
 import * as data from '../data'
 import * as constant from '../constant'
+
+/** ParameterType の値配列（ホットパスで Object.values() の再生成を避ける） */
+const PARAMETER_TYPES = Object.values(enums.ParameterType)
 
 /**
  * サポートのSP種別を判定する
@@ -84,6 +90,45 @@ interface OptimizeInput {
 interface ResolvedSchedule {
   effectiveCounts: Partial<Record<enums.ActionIdType, number>>
   perLessonValues: PerLessonParameterValues | undefined
+}
+
+/** パラメータキャップ最適化用の事前計算済み値 */
+interface ParameterContext {
+  /** サポート以外のパラメータ上昇量（初期パラ + SPレッスン + 試験） */
+  nonSupportParams: ParameterValues
+  /** パラメータ上限（null = 上限なし） */
+  paramCap: number | null
+}
+
+/**
+ * パラメータキャップ最適化コンテキストを構築する
+ *
+ * 初期パラメータ・SPレッスン・試験などサポート以外のパラメータ上昇量を
+ * 事前計算し、パラメータ上限と合わせてコンテキストにまとめる。
+ *
+ * @param input - 最適化入力
+ * @returns パラメータキャップ最適化コンテキスト
+ */
+function buildParameterContext(input: OptimizeInput): ParameterContext {
+  const { settings, scoreSettings } = input
+  const { scenario, difficulty, scheduleSelections } = scoreSettings
+
+  // SPレッスン上昇量
+  const spLesson = getSpLessonTotal(scenario, difficulty, scheduleSelections)
+
+  // 試験上昇量（中間 + 最終）
+  const examData = getExamData(scenario, difficulty)
+
+  // サポート以外のパラメータ上昇量を合算する
+  const nonSupportParams: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
+  for (const key of PARAMETER_TYPES) {
+    nonSupportParams[key] = settings.initialParams[key] + spLesson[key] + examData.mid[key] + examData.final[key]
+  }
+
+  return {
+    nonSupportParams,
+    paramCap: getParamCap(scenario, difficulty),
+  }
 }
 
 /**
@@ -202,17 +247,56 @@ function meetsSpConstraint(members: CandidateCard[], constraint: SpRateConstrain
 }
 
 /**
- * ユニットの合計スコアを計算する（サポート間連携込み）
+ * タイプ別編成枚数制約を満たすかチェックする
+ *
+ * @param members - ユニットメンバー
+ * @param constraint - タイプ別編成枚数制約
+ * @returns 制約を満たしていれば true
+ */
+function meetsTypeConstraint(
+  members: CandidateCard[],
+  typeCountMin: TypeCountValues,
+  typeCountMax: TypeCountValues,
+): boolean {
+  let vocal = 0
+  let dance = 0
+  let visual = 0
+  for (const m of members) {
+    switch (m.card.type) {
+      case enums.ParameterType.Vocal:
+        vocal++
+        break
+      case enums.ParameterType.Dance:
+        dance++
+        break
+      case enums.ParameterType.Visual:
+        visual++
+        break
+    }
+  }
+  if (vocal < typeCountMin.vocal || vocal > typeCountMax.vocal) return false
+  if (dance < typeCountMin.dance || dance > typeCountMax.dance) return false
+  if (visual < typeCountMin.visual || visual > typeCountMax.visual) return false
+  return true
+}
+
+/**
+ * ユニットの合計パラメータを計算する（サポート間連携・パラメータキャップ込み）
+ *
+ * サポート点数をパラメータタイプ別に集計し、サポート外パラメータと合算した上で
+ * パラメータ上限（2800等）を適用した合計値を返す。
  *
  * @param members - ユニットメンバー
  * @param input - 最適化入力
  * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
- * @returns 合計スコア
+ * @param paramCtx - パラメータキャップ最適化コンテキスト
+ * @returns 合計パラメータ値（キャップ適用済み）
  */
 function evaluateUnit(
   members: CandidateCard[],
   input: OptimizeInput,
   effectiveCounts: Partial<Record<enums.ActionIdType, number>>,
+  paramCtx: ParameterContext,
 ): number {
   const cards = members.map((m) => m.card)
   const { bonusMap: synergyMap } = computeUnitSupportSynergy(cards, input.cardCountCustom, {
@@ -221,11 +305,13 @@ function evaluateUnit(
     actionCounts: effectiveCounts,
   })
 
-  // ベーススコア合算 + サポート間連携による追加スコア概算
-  // 個別パラボは差し引き、ユニット全体のパラメータボーナスを後から加算する（buildResult と同一ロジック）
-  let total = 0
+  // サポート点数をパラメータタイプ別に集計する
+  const supportScore: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   for (const m of members) {
-    total += m.baseScore - m.baseResult.parameterBonus
+    // 個別パラボを含むベーススコアをそのまま parameter_type に集計する（パラボは後で再計算）
+    const paramKey = m.card.parameter_type as keyof ParameterValues
+    if (!(paramKey in supportScore)) continue
+    supportScore[paramKey] += m.baseScore - m.baseResult.parameterBonus
 
     // サポート間連携による追加回数でスコアを概算する（max_count を考慮）
     const synergyExtra = synergyMap.get(m.card.name)
@@ -251,24 +337,31 @@ function evaluateUnit(
           }
           if (extraCount > 0) {
             const parsed = parseAbility(ability, m.uncap)
-            total += Math.floor(parsed.numericValue * extraCount)
+            supportScore[paramKey] += Math.floor(parsed.numericValue * extraCount)
           }
         }
       }
     }
   }
 
-  // ユニット全体のパラメータボーナスを加算する（入力値はサポート外なので加算のみ）
+  // ユニット全体のパラメータボーナスを加算する
   const supportPercent: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   for (const m of members) {
-    for (const key of Object.values(enums.ParameterType)) {
+    for (const key of PARAMETER_TYPES) {
       supportPercent[key] += m.paramBonusPercent[key]
     }
   }
   const base = input.scoreSettings.parameterBonusBase
-  for (const key of Object.values(enums.ParameterType)) {
+  for (const key of PARAMETER_TYPES) {
     const totalPercent = supportPercent[key] + input.settings.paramBonusPercent[key]
-    total += Math.floor((base[key] * totalPercent) / constant.PERCENT_DIVISOR)
+    supportScore[key] += Math.floor((base[key] * totalPercent) / constant.PERCENT_DIVISOR)
+  }
+
+  // サポート外パラメータと合算してキャップを適用する
+  let total = 0
+  for (const key of PARAMETER_TYPES) {
+    const raw = paramCtx.nonSupportParams[key] + supportScore[key]
+    total += paramCtx.paramCap !== null ? Math.min(raw, paramCtx.paramCap) : raw
   }
 
   return total
@@ -277,11 +370,13 @@ function evaluateUnit(
 /**
  * 貪欲法で初期解を構築する
  *
- * SP制約を優先しつつ、ベーススコアの高いサポートから選ぶ。
- * SP制約を完全に満たせない場合でも、可能な限りサポートを選択して返す。
+ * SP制約・タイプ別枚数制約を優先しつつ、ベーススコアの高いサポートから選ぶ。
+ * 制約を完全に満たせない場合でも、可能な限りサポートを選択して返す。
  *
  * @param candidates - 候補サポート（スコア降順）
  * @param constraint - SP制約
+ * @param typeCountMin - タイプ別最小枚数
+ * @param typeCountMax - タイプ別最大枚数
  * @param lockedCards - 固定サポートの名前セット
  * @param rentalCard - レンタル枠のサポート名（null = 自動）
  * @returns 初期ユニット（最大6枚、候補不足時は6未満）
@@ -289,22 +384,33 @@ function evaluateUnit(
 function greedyInitial(
   candidates: CandidateCard[],
   constraint: SpRateConstraint,
+  typeCountMin: TypeCountValues,
+  typeCountMax: TypeCountValues,
   lockedCards: Set<string>,
   rentalCard: CandidateCard | null,
 ): CandidateCard[] {
   const selected: CandidateCard[] = []
   const usedNames = new Set<string>()
 
+  // タイプ別枚数カウンター（全フェーズで共通管理する。Assistは制約対象外）
+  const typeCounts: Record<enums.ParameterType, number> = {
+    [enums.ParameterType.Vocal]: 0,
+    [enums.ParameterType.Dance]: 0,
+    [enums.ParameterType.Visual]: 0,
+  }
+
   // 固定サポートとレンタル枠を先に追加する
   if (rentalCard) {
     selected.push(rentalCard)
     usedNames.add(rentalCard.card.name)
+    if (rentalCard.card.type in typeCounts) typeCounts[rentalCard.card.type as enums.ParameterType]++
   }
   for (const name of lockedCards) {
     const c = candidates.find((c) => c.card.name === name)
     if (c && !usedNames.has(name)) {
       selected.push(c)
       usedNames.add(name)
+      if (c.card.type in typeCounts) typeCounts[c.card.type as enums.ParameterType]++
     }
   }
 
@@ -323,24 +429,49 @@ function greedyInitial(
     }
   }
 
-  // SP制約を満たすサポートを優先的に追加する（見つからない場合はスキップ）
+  // SP制約を満たすサポートを優先的に追加する（タイプ最大枚数も考慮）
   const spCategories = [enums.SpCategoryType.Vocal, enums.SpCategoryType.Dance, enums.SpCategoryType.Visual] as const
   for (const category of spCategories) {
     while (spNeeded[category] > 0 && selected.length < constant.UNIT_SIZE) {
-      const best = candidates.find((c) => !usedNames.has(c.card.name) && c.spCategory === category)
+      const best = candidates.find(
+        (c) =>
+          !usedNames.has(c.card.name) &&
+          c.spCategory === category &&
+          (!(c.card.type in typeCounts) ||
+            typeCounts[c.card.type as enums.ParameterType] < typeCountMax[c.card.type as enums.ParameterType]),
+      )
       if (!best) break // 該当するSPサポートがなくても他のサポートで埋める
       selected.push(best)
       usedNames.add(best.card.name)
+      if (best.card.type in typeCounts) typeCounts[best.card.type as enums.ParameterType]++
       spNeeded[category]--
     }
   }
 
-  // 残り枠をベーススコア上位で埋める
+  // タイプ別最小枚数制約を満たすサポートを優先的に追加する
+  for (const type of PARAMETER_TYPES) {
+    while (typeCounts[type] < typeCountMin[type] && selected.length < constant.UNIT_SIZE) {
+      const best = candidates.find((c) => !usedNames.has(c.card.name) && c.card.type === type)
+      if (!best) break
+      selected.push(best)
+      usedNames.add(best.card.name)
+      typeCounts[type]++
+    }
+  }
+
+  // 残り枠をベーススコア上位で埋める（タイプ最大枚数制約を考慮）
   for (const c of candidates) {
     if (selected.length >= constant.UNIT_SIZE) break
     if (usedNames.has(c.card.name)) continue
+    // タイプ最大枚数を超えるサポートはスキップする（Assistは制約なし）
+    if (
+      c.card.type in typeCounts &&
+      typeCounts[c.card.type as enums.ParameterType] >= typeCountMax[c.card.type as enums.ParameterType]
+    )
+      continue
     selected.push(c)
     usedNames.add(c.card.name)
+    if (c.card.type in typeCounts) typeCounts[c.card.type as enums.ParameterType]++
   }
 
   return selected
@@ -357,6 +488,7 @@ function greedyInitial(
  * @param input - 最適化入力
  * @param lockedNames - 固定サポート名のセット
  * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
+ * @param paramCtx - パラメータキャップ最適化コンテキスト
  * @returns 改善後のユニット
  */
 function localSearch(
@@ -365,9 +497,10 @@ function localSearch(
   input: OptimizeInput,
   lockedNames: Set<string>,
   effectiveCounts: Partial<Record<enums.ActionIdType, number>>,
+  paramCtx: ParameterContext,
 ): CandidateCard[] {
   let current = [...unit]
-  let currentScore = evaluateUnit(current, input, effectiveCounts)
+  let currentScore = evaluateUnit(current, input, effectiveCounts, paramCtx)
 
   for (let iter = 0; iter < constant.MAX_SWAP_ITERATIONS; iter++) {
     let improved = false
@@ -387,8 +520,10 @@ function localSearch(
 
         // SP制約チェック
         if (!meetsSpConstraint(trial, input.settings.spConstraint)) continue
+        // タイプ別枚数制約チェック
+        if (!meetsTypeConstraint(trial, input.settings.typeCountMin, input.settings.typeCountMax)) continue
 
-        const trialScore = evaluateUnit(trial, input, effectiveCounts)
+        const trialScore = evaluateUnit(trial, input, effectiveCounts, paramCtx)
         if (trialScore > currentScore) {
           current = trial
           currentScore = trialScore
@@ -414,6 +549,7 @@ function localSearch(
  * @param members - 最適化されたサポート配列
  * @param input - 最適化入力
  * @param schedule - スケジュール解析結果（resolveSchedule の戻り値）
+ * @param paramCtx - パラメータキャップ最適化コンテキスト
  * @param unownedAt4 - 未所持サポートの4凸候補（レンタル枠検討用）
  * @returns レンタル指定済みサポート配列とレンタルサポート名
  */
@@ -421,12 +557,13 @@ function autoDesignateRental(
   members: CandidateCard[],
   input: OptimizeInput,
   schedule: ResolvedSchedule,
+  paramCtx: ParameterContext,
   unownedAt4: CandidateCard[] = [],
 ): { members: CandidateCard[]; rentalName: string | null } {
   if (members.length === 0) return { members, rentalName: null }
 
   // 現在のユニットスコア（シナジー込み）をベースラインとする
-  const currentScore = evaluateUnit(members, input, schedule.effectiveCounts)
+  const currentScore = evaluateUnit(members, input, schedule.effectiveCounts, paramCtx)
 
   // 4凸でないサポートを仮に4凸で再計算し、最もスコア向上が大きいサポートをレンタルに指定
   const { scoreSettings } = input
@@ -462,7 +599,7 @@ function autoDesignateRental(
       baseResult: result4,
       paramBonusPercent: getParamBonusPercent(m.card, enums.UncapType.Four),
     }
-    const trialScore = evaluateUnit(trial, input, effectiveCounts)
+    const trialScore = evaluateUnit(trial, input, effectiveCounts, paramCtx)
     if (trialScore > bestUpgradeScore) {
       bestUpgradeScore = trialScore
       bestUpgradeIdx = i
@@ -484,7 +621,8 @@ function autoDesignateRental(
       const trial = [...members]
       trial[i] = unowned
       if (!meetsSpConstraint(trial, input.settings.spConstraint)) continue
-      const trialScore = evaluateUnit(trial, input, effectiveCounts)
+      if (!meetsTypeConstraint(trial, input.settings.typeCountMin, input.settings.typeCountMax)) continue
+      const trialScore = evaluateUnit(trial, input, effectiveCounts, paramCtx)
       if (trialScore > bestSwapScore) {
         bestSwapScore = trialScore
         bestSwapMemberIdx = i
@@ -540,8 +678,17 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
   const spTotal = settings.spConstraint.vocal + settings.spConstraint.dance + settings.spConstraint.visual
   if (spTotal > constant.SP_TOTAL_MAX) return null
 
+  // タイプ別枚数制約バリデーション
+  const typeMinTotal = PARAMETER_TYPES.reduce((s, t) => s + settings.typeCountMin[t], 0)
+  const typeMaxTotal = PARAMETER_TYPES.reduce((s, t) => s + settings.typeCountMax[t], 0)
+  if (typeMinTotal > constant.UNIT_SIZE) return null
+  if (typeMaxTotal < constant.UNIT_SIZE) return null
+
   // スケジュール解析（1回だけ実行してキャッシュする）
   const schedule = resolveSchedule(scoreSettings)
+
+  // パラメータキャップ最適化コンテキストを構築する
+  const paramCtx = buildParameterContext(input)
 
   // 候補サポートの準備
   const candidates = prepareCandidates(input, schedule)
@@ -576,13 +723,20 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
   const lockedNames = new Set(settings.lockedCards)
 
   // Phase 1: 貪欲初期解（候補不足時は6枚未満でも返す）
-  const initial = greedyInitial(candidates, settings.spConstraint, lockedNames, rentalCandidate)
+  const initial = greedyInitial(
+    candidates,
+    settings.spConstraint,
+    settings.typeCountMin,
+    settings.typeCountMax,
+    lockedNames,
+    rentalCandidate,
+  )
   if (initial.length === 0) return null
 
   // Phase 2: 局所探索（6枚揃っている場合のみ実行）
   const optimized =
     initial.length === constant.UNIT_SIZE
-      ? localSearch(initial, candidates, input, lockedNames, schedule.effectiveCounts)
+      ? localSearch(initial, candidates, input, lockedNames, schedule.effectiveCounts, paramCtx)
       : initial
 
   // Phase 3: レンタル枠の自動選出（手動指定でない場合）
@@ -623,7 +777,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
       unownedAt4.sort((a, b) => b.baseScore - a.baseScore)
       unownedAt4.length = Math.min(unownedAt4.length, constant.UNIT_SIZE * 2)
     }
-    const { members: rentalMembers, rentalName } = autoDesignateRental(optimized, input, schedule, unownedAt4)
+    const { members: rentalMembers, rentalName } = autoDesignateRental(optimized, input, schedule, paramCtx, unownedAt4)
 
     // Phase 4: レンタルスワップ後の局所探索
     // autoDesignateRental が未所持サポートをスワップインした場合、ユニット構成が変わるため
@@ -633,7 +787,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     let postRental = rentalMembers
     if (rentalChanged && rentalMembers.length === constant.UNIT_SIZE) {
       const phase4Locked = rentalName ? new Set([...lockedNames, rentalName]) : lockedNames
-      postRental = localSearch(rentalMembers, candidates, input, phase4Locked, schedule.effectiveCounts)
+      postRental = localSearch(rentalMembers, candidates, input, phase4Locked, schedule.effectiveCounts, paramCtx)
     }
 
     // レンタルスワップ後の局所探索でレンタル対象が入れ替わった場合はレンタル名を維持する
@@ -676,7 +830,7 @@ function buildResult(
   // サポートカードのパラボ%を合計する
   const supportPercent: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   for (const m of members) {
-    for (const key of Object.values(enums.ParameterType)) {
+    for (const key of PARAMETER_TYPES) {
       supportPercent[key] += m.paramBonusPercent[key]
     }
   }
@@ -694,7 +848,7 @@ function buildResult(
   // パラメータボーナスの実数値を計算する
   const parameterBonus: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   const base = scoreSettings.parameterBonusBase
-  for (const key of Object.values(enums.ParameterType)) {
+  for (const key of PARAMETER_TYPES) {
     parameterBonus[key] = Math.floor((base[key] * totalParamBonusPercent[key]) / constant.PERCENT_DIVISOR)
   }
 
@@ -756,12 +910,23 @@ function buildResult(
     }
   })
 
-  // totalIncrease にはサポート個別のパラボが含まれているので差し引き、ユニット全体のパラボを加算する
-  const totalScore =
-    unitMembers.reduce((sum, m) => sum + (m.result.totalIncrease - m.result.parameterBonus) + m.supportSynergy, 0) +
-    parameterBonus.vocal +
-    parameterBonus.dance +
-    parameterBonus.visual
+  // サポート点数合計をパラメータタイプ別に集計する（キャップ適用のため）
+  // 個別パラボは除外し、ユニット全体のパラボはparameterBonusで別途加算する
+  const supportScore: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
+  for (const m of unitMembers) {
+    const paramKey = m.card.parameter_type as keyof ParameterValues
+    if (paramKey in supportScore) {
+      supportScore[paramKey] += m.result.totalIncrease - m.result.parameterBonus + m.supportSynergy
+    }
+  }
+
+  // パラメータキャップを適用した合計パラメータを算出する
+  const paramCtx = buildParameterContext(input)
+  let totalScore = 0
+  for (const key of PARAMETER_TYPES) {
+    const raw = paramCtx.nonSupportParams[key] + supportScore[key] + parameterBonus[key]
+    totalScore += paramCtx.paramCap !== null ? Math.min(raw, paramCtx.paramCap) : raw
+  }
 
   return {
     members: unitMembers,

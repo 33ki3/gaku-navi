@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://33ki3.github.io/gaku-navi/sitemap.xml

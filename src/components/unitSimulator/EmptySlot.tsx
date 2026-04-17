@@ -36,7 +36,7 @@ export const EmptySlot = memo(function EmptySlot({ onAdd, selectMode, isRental =
             ? 'border-emerald-300 bg-emerald-50 text-emerald-500'
             : 'border-emerald-200 bg-emerald-50/50 text-emerald-400 hover:border-emerald-300 hover:bg-emerald-50'
           : selectMode
-            ? 'border-blue-300 bg-blue-50 text-blue-500'
+            ? 'border-blue-300 bg-blue-50 text-blue-600'
             : 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100'
       }`}
     >

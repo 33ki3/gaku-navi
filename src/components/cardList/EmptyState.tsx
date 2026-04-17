@@ -22,7 +22,7 @@ export default function EmptyState({ onClearFilters }: EmptyStateProps) {
       <SearchIcon className="h-8 w-8 text-slate-400 mx-auto mb-3" />
       <h3 className="text-base font-bold text-slate-800 mb-1">{t('ui.message.not_found')}</h3>
       {/* フィルタークリアボタン */}
-      <button onClick={onClearFilters} className="mt-2 text-sm font-bold text-blue-500 hover:underline">
+      <button onClick={onClearFilters} className="mt-2 text-sm font-bold text-blue-600 hover:underline">
         {t('ui.message.clear_filters')}
       </button>
     </div>

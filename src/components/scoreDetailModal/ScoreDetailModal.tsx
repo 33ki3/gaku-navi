@@ -120,7 +120,7 @@ export default function ScoreDetailModal({
                     {hasCustom && (
                       <button
                         type="button"
-                        className="text-[10px] text-blue-500 hover:text-blue-700 font-bold ml-auto"
+                        className="text-[10px] text-blue-600 hover:text-blue-700 font-bold ml-auto"
                         onClick={(e) => {
                           e.stopPropagation()
                           onClearCardCustom()

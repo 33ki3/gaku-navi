@@ -21,7 +21,7 @@ export const BTN_HEADER_ACTION = 'flex items-center gap-1 px-2.5 py-1.5 rounded-
 
 /** アクションボタン（青塗り、小テキスト） */
 export const BTN_ACTION_PRIMARY =
-  'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors whitespace-nowrap'
+  'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors whitespace-nowrap'
 
 /** アクションボタン（ダーク塗り、小テキスト） */
 export const BTN_ACTION_DARK =
@@ -94,7 +94,7 @@ export const SPINNER_INPUT =
   'w-12 text-center text-xs border rounded py-1 focus:outline-none focus:ring-1 focus:ring-blue-500'
 
 /** チェックボックス入力 */
-export const CHECKBOX_INPUT = 'w-3.5 h-3.5 rounded border-slate-300 text-blue-500 focus:ring-blue-500'
+export const CHECKBOX_INPUT = 'w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600'
 
 /** セクションラベル（フォーム用） */
 export const FORM_SECTION_LABEL = 'text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5'

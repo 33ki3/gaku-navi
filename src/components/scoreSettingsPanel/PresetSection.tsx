@@ -97,7 +97,7 @@ export function PresetSection({ settings, onSettingsChange }: PresetSectionProps
         {/* 上書き保存ボタン */}
         <button
           type="button"
-          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={handleOverwrite}
           disabled={!selectedPresetName}
         >
@@ -106,7 +106,7 @@ export function PresetSection({ settings, onSettingsChange }: PresetSectionProps
         {/* 削除ボタン */}
         <button
           type="button"
-          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={handleDelete}
           disabled={!selectedPresetName}
         >

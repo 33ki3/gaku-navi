@@ -59,7 +59,7 @@ export default function SortControls({
         <div className="text-center mb-1 sm:hidden">
           <button
             onClick={onOpenScoreSettings}
-            className="text-[10px] text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
+            className="text-[10px] text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
           >
             {t('ui.message.score_settings_hint')}
           </button>
@@ -74,7 +74,7 @@ export default function SortControls({
         {!scheduleConfigured && !scoreSettingsVisible && (
           <button
             onClick={onOpenScoreSettings}
-            className="hidden sm:block text-[10px] text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
+            className="hidden sm:block text-[10px] text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
           >
             {t('ui.message.score_settings_hint')}
           </button>

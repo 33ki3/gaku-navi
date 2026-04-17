@@ -19,19 +19,19 @@ const entries: ActivityEntry[] = [
   {
     id: ActivityIdType.VoLesson,
     label: 'score.activity.vo_lesson',
-    color: 'bg-red-500 text-white',
+    color: 'bg-red-700 text-white',
     actions: [ActionIdType.SpLessonVo],
   },
   {
     id: ActivityIdType.DaLesson,
     label: 'score.activity.da_lesson',
-    color: 'bg-blue-500 text-white',
+    color: 'bg-blue-700 text-white',
     actions: [ActionIdType.SpLessonDa],
   },
   {
     id: ActivityIdType.ViLesson,
     label: 'score.activity.vi_lesson',
-    color: 'bg-yellow-500 text-white',
+    color: 'bg-yellow-500 text-yellow-900',
     actions: [ActionIdType.SpLessonVi],
   },
   {

@@ -105,7 +105,7 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
         <div className="flex justify-center">
           <button
             onClick={filters.clearFilters}
-            className="text-xs font-bold text-blue-500 hover:text-blue-700 hover:underline transition-colors"
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
           >
             {t('ui.message.clear_filters')}
           </button>

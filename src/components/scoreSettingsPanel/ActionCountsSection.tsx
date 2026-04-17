@@ -61,11 +61,11 @@ export function ActionCountsSection({
               return (
                 <div key={cat.id} className="flex items-center gap-2">
                   <label
-                    className={`text-[11px] flex-1 min-w-0 truncate ${isControlled ? 'text-blue-500 font-bold' : 'text-slate-700'}`}
+                    className={`text-[11px] flex-1 min-w-0 truncate ${isControlled ? 'text-blue-600 font-bold' : 'text-slate-700'}`}
                   >
                     {/* アクション名（例: 「ボーカルレッスン」「おでかけ」「休む」） */}
                     {t(cat.label)}
-                    {isControlled && <span className="ml-1 text-[9px] text-blue-500">{t('ui.settings.auto')}</span>}
+                    {isControlled && <span className="ml-1 text-[9px] text-blue-600">{t('ui.settings.auto')}</span>}
                   </label>
                   {/* 数値入力: スケジュール自動計算有効時は自動値で固定され操作不可 */}
                   <SpinnerInput

@@ -4,18 +4,26 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // GA4 gtagスニペットを<head>に挿入するプラグイン
+// ページ読み込み後に遅延ロードしてメインスレッドのブロックを回避する
 function gtagPlugin(gaId: string): Plugin {
   return {
     name: 'gtag',
     transformIndexHtml(html) {
       if (!gaId) return html
       const snippet = [
-        `  <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>`,
         '    <script>',
-        '      window.dataLayer = window.dataLayer || [];',
-        '      function gtag(){dataLayer.push(arguments);}',
-        "      gtag('js', new Date());",
-        `      gtag('config', '${gaId}');`,
+        '      window.addEventListener("load", function() {',
+        '        setTimeout(function() {',
+        `          var s = document.createElement("script");`,
+        `          s.src = "https://www.googletagmanager.com/gtag/js?id=${gaId}";`,
+        '          s.async = true;',
+        '          document.head.appendChild(s);',
+        '          window.dataLayer = window.dataLayer || [];',
+        '          function gtag(){dataLayer.push(arguments);}',
+        "          gtag('js', new Date());",
+        `          gtag('config', '${gaId}');`,
+        '        }, 0);',
+        '      });',
         '    </script>',
       ].join('\n')
       return html.replace('</head>', `${snippet}\n    </head>`)

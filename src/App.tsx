@@ -224,37 +224,41 @@ function App() {
               />
             </Suspense>
           )}
-          {/* 点数設定パネル（isOpen で開閉制御） */}
-          <Suspense fallback={null}>
-            <ScoreSettingsPanel
-              isOpen={state.ui.scoreSettingsOpen}
-              onClose={() => {
-                state.ui.setScoreSettingsOpen(false)
-                state.ui.setSettingsPinned(false)
-              }}
-              pinned={state.ui.settingsPinned}
-              settings={state.scores.scoreSettings}
-              onSettingsChange={state.scores.setScoreSettings}
-            />
-          </Suspense>
-          {/* 最適編成パネル */}
-          <Suspense fallback={null}>
-            <UnitSimulatorPanel
-              isOpen={state.ui.simulatorOpen}
-              onClose={() => {
-                state.ui.setSimulatorOpen(false)
-                state.ui.setSimulatorPinned(false)
-              }}
-              pinned={state.ui.simulatorPinned}
-              secondPanel={state.ui.bothPanelsPinned}
-              registerAddManualCard={registerAddManualCard}
-              registerIsCardEligible={registerIsCardEligible}
-              unitCardSelectMode={state.ui.unitCardSelectMode}
-              setUnitCardSelectMode={state.ui.setUnitCardSelectMode}
-              countCustom={state.scores.countCustom}
-              scoreSettings={state.scores.scoreSettings}
-            />
-          </Suspense>
+          {/* 点数設定パネル（開いた時のみマウントしてチャンクの初期ロードを回避） */}
+          {(state.ui.scoreSettingsOpen || state.ui.settingsPinned) && (
+            <Suspense fallback={null}>
+              <ScoreSettingsPanel
+                isOpen={state.ui.scoreSettingsOpen}
+                onClose={() => {
+                  state.ui.setScoreSettingsOpen(false)
+                  state.ui.setSettingsPinned(false)
+                }}
+                pinned={state.ui.settingsPinned}
+                settings={state.scores.scoreSettings}
+                onSettingsChange={state.scores.setScoreSettings}
+              />
+            </Suspense>
+          )}
+          {/* 最適編成パネル（開いた時のみマウントしてチャンクの初期ロードを回避） */}
+          {(state.ui.simulatorOpen || state.ui.simulatorPinned || state.ui.unitCardSelectMode) && (
+            <Suspense fallback={null}>
+              <UnitSimulatorPanel
+                isOpen={state.ui.simulatorOpen}
+                onClose={() => {
+                  state.ui.setSimulatorOpen(false)
+                  state.ui.setSimulatorPinned(false)
+                }}
+                pinned={state.ui.simulatorPinned}
+                secondPanel={state.ui.bothPanelsPinned}
+                registerAddManualCard={registerAddManualCard}
+                registerIsCardEligible={registerIsCardEligible}
+                unitCardSelectMode={state.ui.unitCardSelectMode}
+                setUnitCardSelectMode={state.ui.setUnitCardSelectMode}
+                countCustom={state.scores.countCustom}
+                scoreSettings={state.scores.scoreSettings}
+              />
+            </Suspense>
+          )}
         </div>
       </CardUIProvider>
     </CardDataProvider>

@@ -7,9 +7,9 @@
 import { ParameterType } from '../../types/enums'
 
 const parameterTextColor: Record<ParameterType, string> = {
-  [ParameterType.Vocal]: 'text-red-500',
-  [ParameterType.Dance]: 'text-blue-500',
-  [ParameterType.Visual]: 'text-yellow-500',
+  [ParameterType.Vocal]: 'text-red-600',
+  [ParameterType.Dance]: 'text-blue-600',
+  [ParameterType.Visual]: 'text-yellow-700',
 }
 
 /**

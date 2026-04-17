@@ -139,7 +139,7 @@ export default memo(function UnitCardItem({
               onToggleLock(card.name)
             }}
             className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${
-              isLocked ? 'text-blue-500' : 'text-slate-300 hover:text-slate-400'
+              isLocked ? 'text-blue-600' : 'text-slate-300 hover:text-slate-400'
             }`}
             title={isLocked ? t('unit.result.locked_label') : ''}
           >
@@ -292,7 +292,7 @@ export default memo(function UnitCardItem({
               {hasCustom && (
                 <button
                   type="button"
-                  className="absolute top-0 right-0 z-[1] text-[10px] text-blue-500 hover:text-blue-700 font-bold"
+                  className="absolute top-0 right-0 z-[1] text-[10px] text-blue-600 hover:text-blue-700 font-bold"
                   onClick={handleClearCustom}
                 >
                   {t('ui.button.reset')}

@@ -268,7 +268,7 @@ export default function UnitSimulatorPanel({
                   className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${
                     isCalculating
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                   }`}
                 >
                   {isCalculating ? t('unit.calculating') : t('unit.auto_optimize')}

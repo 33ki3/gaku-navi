@@ -37,9 +37,11 @@ export default defineConfig(({ mode }) => {
         manifest: false,
         scope: basePath,
         registerType: 'autoUpdate',
+        injectRegister: 'script-defer',
         workbox: {
           skipWaiting: true,
           clientsClaim: true,
+          navigateFallbackDenylist: [/\/(sitemap\.xml|robots\.txt)$/],
         },
       }),
     ],

@@ -48,8 +48,19 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
+          manualChunks(id) {
+            // React / React DOM（react-dom/client 含む）を vendor チャンクに分離
+            if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/')) {
+              return 'vendor'
+            }
+            // i18next ランタイムを別チャンクに分離
+            if (id.includes('node_modules/i18next/') || id.includes('node_modules/react-i18next/')) {
+              return 'i18n'
+            }
+            // 仮想スクロールライブラリを別チャンクに分離
+            if (id.includes('node_modules/@tanstack/')) {
+              return 'virtual'
+            }
           },
         },
       },

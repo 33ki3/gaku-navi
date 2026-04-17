@@ -59,7 +59,7 @@ export default function SortControls({
         <div className="text-center mb-1 sm:hidden">
           <button
             onClick={onOpenScoreSettings}
-            className="text-[10px] text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+            className="text-[10px] text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
           >
             {t('ui.message.score_settings_hint')}
           </button>
@@ -67,14 +67,14 @@ export default function SortControls({
       )}
       <div className="flex items-center justify-between">
         {/* 左: 表示件数 */}
-        <p className="text-xs font-medium text-slate-500">
+        <p className="text-xs font-medium text-slate-600">
           {count} {t('ui.unit.cards')}
         </p>
         {/* PC: ヒントを中央に表示 */}
         {!scheduleConfigured && !scoreSettingsVisible && (
           <button
             onClick={onOpenScoreSettings}
-            className="hidden sm:block text-[10px] text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+            className="hidden sm:block text-[10px] text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
           >
             {t('ui.message.score_settings_hint')}
           </button>

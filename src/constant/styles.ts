@@ -7,10 +7,10 @@
  */
 
 /** フィルターセクションラベル（10px） */
-export const FILTER_SECTION_LABEL = 'text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5'
+export const FILTER_SECTION_LABEL = 'text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5'
 
 /** セクション見出し（小・パディング付き） */
-export const SECTION_HEADING_SM_PX = 'text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 px-1'
+export const SECTION_HEADING_SM_PX = 'text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 px-1'
 
 /** テキスト入力（小、角丸XL） */
 export const INPUT_TEXT_XS =
@@ -52,7 +52,7 @@ export const DROPDOWN_PANEL =
 
 /** アビリティバッジ（グリッドサポート用） */
 export const BADGE_ABILITY_GRID =
-  'px-1 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap shrink-0'
+  'px-1 py-0.5 rounded-full text-[8px] font-bold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap shrink-0'
 
 /** フィルターグループ間の縦線 */
 export const FILTER_SEPARATOR = 'w-px h-5 bg-slate-200'
@@ -61,7 +61,7 @@ export const FILTER_SEPARATOR = 'w-px h-5 bg-slate-200'
 export const SECTION_DIVIDER = 'border-t border-slate-200 pt-3'
 
 /** トグルボタン: 非活性状態 */
-export const BTN_TOGGLE_INACTIVE = 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+export const BTN_TOGGLE_INACTIVE = 'bg-slate-100 text-slate-600 hover:bg-slate-200'
 
 /** トグルボタン: 活性状態 */
 export const BTN_TOGGLE_ACTIVE = 'bg-slate-900 text-white'
@@ -97,7 +97,7 @@ export const SPINNER_INPUT =
 export const CHECKBOX_INPUT = 'w-3.5 h-3.5 rounded border-slate-300 text-blue-500 focus:ring-blue-500'
 
 /** セクションラベル（フォーム用） */
-export const FORM_SECTION_LABEL = 'text-xs font-bold text-slate-500 mb-1.5 flex items-center gap-1.5'
+export const FORM_SECTION_LABEL = 'text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5'
 
 /** SSR のバッジグラデーション */
 export const RARITY_COLOR_SSR = 'bg-gradient-to-r from-rose-400 via-amber-300 to-sky-400 text-white'

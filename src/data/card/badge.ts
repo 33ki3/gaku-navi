@@ -31,7 +31,7 @@ interface PlanBadgeEntry {
 
 const memoryBadgeEntries: MemoryBadgeEntry[] = [
   { id: PItemMemoryType.Memorizable, label: 'card.memory.memorizable', badge: 'bg-emerald-100 text-emerald-700' },
-  { id: PItemMemoryType.NonMemorizable, label: 'card.memory.non_memorizable', badge: 'bg-slate-200 text-slate-500' },
+  { id: PItemMemoryType.NonMemorizable, label: 'card.memory.non_memorizable', badge: 'bg-slate-200 text-slate-600' },
 ]
 
 const skillTypeBadgeEntries: SkillTypeBadgeEntry[] = [

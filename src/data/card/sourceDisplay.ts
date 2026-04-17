@@ -22,7 +22,7 @@ const entries: SourceDisplayEntry[] = [
   { id: SourceType.LiveTourLimited, label: 'card.source.live_tour_limited', badge: 'bg-purple-100 text-purple-700' },
   { id: SourceType.HatsuboshiFes, label: 'card.source.hatsuboshi_fes', badge: 'bg-orange-100 text-orange-700' },
   { id: SourceType.Event, label: 'card.source.event', badge: 'bg-cyan-100 text-cyan-700' },
-  { id: SourceType.Initial, label: 'card.source.initial', badge: 'bg-slate-100 text-slate-500' },
+  { id: SourceType.Initial, label: 'card.source.initial', badge: 'bg-slate-100 text-slate-600' },
   { id: SourceType.Shop, label: 'card.source.shop', badge: 'bg-emerald-100 text-emerald-700' },
   { id: SourceType.Pack, label: 'card.source.pack', badge: 'bg-rose-100 text-rose-700' },
 ]

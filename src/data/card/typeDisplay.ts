@@ -53,7 +53,7 @@ export const TypeDisplayEntries: readonly TypeDisplayEntry[] = [
     label: 'common.type.short.visual',
     displayLabel: 'common.type.visual',
     parameterType: ParameterType.Visual,
-    text: 'text-yellow-600',
+    text: 'text-yellow-700',
     bg: 'bg-yellow-50',
     border: 'border-yellow-200',
     badge: 'bg-yellow-500 text-white',

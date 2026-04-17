@@ -65,7 +65,7 @@ export function ActionCountsSection({
                   >
                     {/* アクション名（例: 「ボーカルレッスン」「おでかけ」「休む」） */}
                     {t(cat.label)}
-                    {isControlled && <span className="ml-1 text-[9px] text-blue-400">{t('ui.settings.auto')}</span>}
+                    {isControlled && <span className="ml-1 text-[9px] text-blue-500">{t('ui.settings.auto')}</span>}
                   </label>
                   {/* 数値入力: スケジュール自動計算有効時は自動値で固定され操作不可 */}
                   <SpinnerInput

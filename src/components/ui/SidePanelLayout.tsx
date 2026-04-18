@@ -52,7 +52,10 @@ export function SidePanelLayout({ isOpen, onClose, pinned, secondPanel, children
 
   // オーバーレイ: 背景クリックでも閉じる
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex justify-end pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      onClick={onClose}
+    >
       <div className={constant.MODAL_BACKDROP} />
       <div ref={panelRef} onClick={(e) => e.stopPropagation()} className={constant.PANEL_OVERLAY}>
         {children}

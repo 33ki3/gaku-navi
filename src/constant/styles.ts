@@ -76,15 +76,16 @@ export const INPUT_LOCKED = 'bg-blue-50 border-blue-200 text-blue-600 cursor-not
 export const MODAL_BACKDROP = 'absolute inset-0 bg-black/40 backdrop-blur-sm'
 
 /** モーダル白パネル（サポート詳細用） */
-export const MODAL_PANEL_DETAIL = 'relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[90vh] overflow-y-auto'
+export const MODAL_PANEL_DETAIL =
+  'relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[90vh] h-[90dvh] overflow-y-auto'
 
 /** モーダル白パネル（スコア内訳用） */
 export const MODAL_PANEL_SCORE =
-  'relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col overflow-hidden'
+  'relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] max-h-[80dvh] flex flex-col overflow-hidden'
 
 /** モーダル白パネル（フィルタ・ソート用） */
 export const MODAL_PANEL_FILTER =
-  'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[85vh] flex flex-col overflow-hidden'
+  'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[85vh] h-[85dvh] flex flex-col overflow-hidden'
 
 /** SpinnerInput: +/- ボタン（通常時） */
 export const SPINNER_BTN = 'w-6 h-6 flex items-center justify-center rounded text-xs font-bold'

@@ -34,23 +34,6 @@ function App() {
   const { t } = useTranslation()
   const state = useAppState()
 
-  // アイドル時に遅延チャンクをプリフェッチ（モーダル操作時の読み込み待ちを解消）
-  useEffect(() => {
-    const preload = () => {
-      import('./components/cardDetailModal/CardDetailModal')
-      import('./components/scoreDetailModal/ScoreDetailModal')
-      import('./components/scoreSettingsPanel/ScoreSettingsPanel')
-      import('./components/filterBar/FilterSortModal')
-      import('./components/unitSimulator/UnitSimulatorPanel')
-    }
-    if ('requestIdleCallback' in window) {
-      const id = requestIdleCallback(preload)
-      return () => cancelIdleCallback(id)
-    }
-    const timer = setTimeout(preload, 2000)
-    return () => clearTimeout(timer)
-  }, [])
-
   // サポート一覧選択モード: UnitSimulatorPanel が登録する addCard コールバック
   const addManualCardRef = useRef<((cardName: string) => void) | null>(null)
   const registerAddManualCard = useCallback((fn: ((cardName: string) => void) | null) => {

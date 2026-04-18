@@ -34,6 +34,23 @@ function App() {
   const { t } = useTranslation()
   const state = useAppState()
 
+  // アイドル時に遅延チャンクをプリフェッチ（モーダル操作時の読み込み待ちを解消）
+  useEffect(() => {
+    const preload = () => {
+      import('./components/cardDetailModal/CardDetailModal')
+      import('./components/scoreDetailModal/ScoreDetailModal')
+      import('./components/scoreSettingsPanel/ScoreSettingsPanel')
+      import('./components/filterBar/FilterSortModal')
+      import('./components/unitSimulator/UnitSimulatorPanel')
+    }
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(preload)
+      return () => cancelIdleCallback(id)
+    }
+    const timer = setTimeout(preload, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
   // サポート一覧選択モード: UnitSimulatorPanel が登録する addCard コールバック
   const addManualCardRef = useRef<((cardName: string) => void) | null>(null)
   const registerAddManualCard = useCallback((fn: ((cardName: string) => void) | null) => {
@@ -155,7 +172,7 @@ function App() {
           </footer>
           {/* サポート一覧選択モード: フローティングバー */}
           {state.ui.unitCardSelectMode && (
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-blue-600 text-white px-5 py-3 rounded-2xl shadow-lg">
+            <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-blue-600 text-white px-5 py-3 rounded-2xl shadow-lg">
               <span className="text-xs font-bold">{t('unit.manual_select_bar')}</span>
               <button
                 onClick={() => {

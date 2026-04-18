@@ -53,7 +53,10 @@ export default function ModalOverlay({
   }, [handleKeyDown])
 
   return (
-    <div className={`fixed inset-0 z-50 flex ${getModalAlignClass(align)} p-4 ${className}`} onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-50 flex ${getModalAlignClass(align)} px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] ${className}`}
+      onClick={onClose}
+    >
       {/* 半透明の背景 */}
       <div className={MODAL_BACKDROP} />
       {/* stopPropagation でモーダル内側のクリックが背景に伝わらないようにする */}

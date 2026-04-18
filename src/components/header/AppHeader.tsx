@@ -6,7 +6,7 @@
  * データ管理パネル、モバイルメニューを含む。
  */
 import { useTranslation } from 'react-i18next'
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useCardUIContext } from '../../contexts/CardContext'
 import * as constant from '../../constant'
 import { getFilterButtonStyle } from '../../data/ui'
@@ -53,20 +53,6 @@ export default function AppHeader({
   const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-
-  // アイドル時にモーダルチャンクをプリフェッチ
-  useEffect(() => {
-    const preload = () => {
-      import('../helpModal/HelpModal')
-      import('../aboutModal/AboutModal')
-    }
-    if ('requestIdleCallback' in window) {
-      const id = requestIdleCallback(preload)
-      return () => cancelIdleCallback(id)
-    }
-    const timer = setTimeout(preload, 2000)
-    return () => clearTimeout(timer)
-  }, [])
 
   // ヘッダーボタンのスタイル
   const activeStyle = getFilterButtonStyle(FilterButtonCategory.Active)

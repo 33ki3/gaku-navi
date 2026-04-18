@@ -31,6 +31,27 @@ function gtagPlugin(gaId: string): Plugin {
   }
 }
 
+// 遅延チャンクをビルド時に <link rel="prefetch"> として注入するプラグイン
+function prefetchLazyChunks(basePath: string): Plugin {
+  return {
+    name: 'prefetch-lazy-chunks',
+    enforce: 'post',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        if (!ctx.bundle) return []
+        return Object.entries(ctx.bundle)
+          .filter(([, chunk]) => chunk.type === 'chunk' && !chunk.isEntry && chunk.isDynamicEntry)
+          .map(([fileName]) => ({
+            tag: 'link',
+            attrs: { rel: 'prefetch', href: `${basePath}${fileName}` },
+            injectTo: 'head' as const,
+          }))
+      },
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
@@ -41,6 +62,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       gtagPlugin(env.VITE_GA_ID || ''),
+      prefetchLazyChunks(basePath),
       VitePWA({
         manifest: false,
         scope: basePath,

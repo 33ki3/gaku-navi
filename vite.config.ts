@@ -31,7 +31,7 @@ function gtagPlugin(gaId: string): Plugin {
   }
 }
 
-// 遅延チャンクをビルド時に <link rel="prefetch"> として注入するプラグイン
+// 遅延チャンクをページ読み込み完了後に <link rel="prefetch"> で注入するプラグイン
 function prefetchLazyChunks(basePath: string): Plugin {
   return {
     name: 'prefetch-lazy-chunks',
@@ -40,13 +40,19 @@ function prefetchLazyChunks(basePath: string): Plugin {
       order: 'post',
       handler(_html, ctx) {
         if (!ctx.bundle) return []
-        return Object.entries(ctx.bundle)
+        const urls = Object.entries(ctx.bundle)
           .filter(([, chunk]) => chunk.type === 'chunk' && !chunk.isEntry && chunk.isDynamicEntry)
-          .map(([fileName]) => ({
-            tag: 'link',
-            attrs: { rel: 'prefetch', href: `${basePath}${fileName}` },
-            injectTo: 'head' as const,
-          }))
+          .map(([fileName]) => `${basePath}${fileName}`)
+        if (urls.length === 0) return []
+        const script = [
+          'window.addEventListener("load",function(){',
+          ...urls.map(
+            (u, i) =>
+              `var l${i}=document.createElement("link");l${i}.rel="prefetch";l${i}.href="${u}";document.head.appendChild(l${i});`,
+          ),
+          '});',
+        ].join('')
+        return [{ tag: 'script', attrs: { type: 'text/javascript' }, children: script, injectTo: 'body' as const }]
       },
     },
   }

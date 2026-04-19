@@ -25,6 +25,7 @@ const entries: SourceDisplayEntry[] = [
   { id: SourceType.Initial, label: 'card.source.initial', badge: 'bg-slate-100 text-slate-600' },
   { id: SourceType.Shop, label: 'card.source.shop', badge: 'bg-emerald-100 text-emerald-700' },
   { id: SourceType.Pack, label: 'card.source.pack', badge: 'bg-rose-100 text-rose-700' },
+  { id: SourceType.User, label: 'card.source.user', badge: 'bg-violet-100 text-violet-700' },
 ]
 
 /** 入手方法エントリ一覧（フィルター・バッジ共用） */

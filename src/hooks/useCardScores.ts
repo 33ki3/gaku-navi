@@ -32,12 +32,16 @@ interface ScoreCalculationResult {
  * 点数設定や凸数が変わるたびに再計算する。
  * ただし、アクション回数もパラメータボーナスもゼロなら計算をスキップする。
  *
+ * @param allCards - 全サポートの配列（マスターデータ + ユーザー定義）
+ * @param allCardByName - サポート名 → サポートの Map
  * @param scoreSettings - ユーザーの点数設定（シナリオ・難易度・アクション回数など）
  * @param cardUncaps - サポート名 → 凸数のマップ
  * @param cardCountCustom - サポート名 → アクション回数回数調整のマップ
  * @returns 全サポートの計算結果と合計スコア
  */
 export function useCardScores(
+  allCards: SupportCard[],
+  allCardByName: Map<string, SupportCard>,
   scoreSettings: ScoreSettings,
   cardUncaps: Record<string, UncapType>,
   cardCountCustom: CardCountCustom = {},
@@ -75,7 +79,7 @@ export function useCardScores(
     }
 
     const results = new Map<string, CardCalculationResult>()
-    for (const card of data.AllCards) {
+    for (const card of allCards) {
       results.set(
         card.name,
         calculateCardParameter(
@@ -91,7 +95,7 @@ export function useCardScores(
       )
     }
     return results
-  }, [calcContext, scoreSettings])
+  }, [allCards, calcContext, scoreSettings])
 
   // 凸数・回数調整: デフォルト凸以外のサポートや回数調整があるサポートだけ再計算して上書きする。
   const cardResults = useMemo(() => {
@@ -126,7 +130,7 @@ export function useCardScores(
 
     // 凸数変更サポートを再計算する（回数調整も適用）
     for (const [cardName, uncap] of fixedUncapEntries) {
-      const card = data.CardByName.get(cardName)
+      const card = allCardByName.get(cardName)
       if (card) {
         const ovr = cardCountCustom[cardName]
         results.set(
@@ -151,7 +155,7 @@ export function useCardScores(
     const alreadyRecalculated = new Set(fixedUncapEntries.map(([name]) => name))
     for (const cardName of Object.keys(cardCountCustom)) {
       if (alreadyRecalculated.has(cardName)) continue
-      const card = data.CardByName.get(cardName)
+      const card = allCardByName.get(cardName)
       if (!card) continue
       // 未所持サポートはスキップ
       if (!scoreSettings.useFixedUncap && cardUncaps[cardName] === enums.UncapType.NotOwned) continue
@@ -174,18 +178,18 @@ export function useCardScores(
     }
 
     return results
-  }, [baseResults, cardUncaps, cardCountCustom, calcContext, scoreSettings])
+  }, [baseResults, allCardByName, cardUncaps, cardCountCustom, calcContext, scoreSettings])
 
   // cardResults から合計スコアだけ取り出した簡易マップ（表示・ソート用）
   // 未所持サポートは 0 点として扱う
   const cardScores = useMemo(() => {
     const scores = new Map<string, number>()
-    for (const card of data.AllCards) {
+    for (const card of allCards) {
       const result = cardResults.get(card.name)
       scores.set(card.name, result ? result.totalIncrease : 0)
     }
     return scores
-  }, [cardResults])
+  }, [allCards, cardResults])
 
   /**
    * 任意のサポート・凸数でスコアを個別計算する

@@ -121,5 +121,8 @@ export function useFilteredCards(
     ],
   )
 
-  return { ...state, filteredCards, abilityBadgeMap: data.AbilityBadgeMap }
+  // ユーザー追加カードを含む全カードからアビリティバッジマップを構築する
+  const abilityBadgeMap = useMemo(() => data.buildAbilityBadgeMap(cards), [cards])
+
+  return { ...state, filteredCards, abilityBadgeMap }
 }

@@ -6,7 +6,7 @@
  */
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 
-import type { ScoreSettings } from '../types/card'
+import type { SupportCard, ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
 import type { UnitSimulatorSettings, UnitResult, SynergyProviderDetail } from '../types/unit'
 import { PlanType, CardType, ParameterType } from '../types/enums'
@@ -14,11 +14,30 @@ import { optimizeUnit, evaluateManualUnit } from '../utils/unitSimulator'
 import { loadScoreSettings } from '../utils/scoreSettings'
 import { loadCardCountCustom } from './useCardCountCustom'
 import type { CardCountCustom } from './useCardCountCustom'
-import { CardByName } from '../data/card/cards'
 import * as constant from '../constant'
 
+/** loadResult の復元結果 */
+interface LoadResultState {
+  result: UnitResult
+  hasCalculated: boolean
+}
+
+/** useUnitSimulator の戻り値 */
+interface UseUnitSimulatorReturn {
+  settings: UnitSimulatorSettings
+  setSettings: (next: UnitSimulatorSettings) => void
+  calculate: () => void
+  optimizeRemaining: () => void
+  recalculateScores: (custom?: CardCountCustom) => void
+  evaluateCurrentCards: () => void
+  isCalculating: boolean
+  result: UnitResult | null
+  hasCalculated: boolean
+  noCandidates: boolean
+}
+
 /** デフォルト設定 */
-const DEFAULT_SETTINGS: UnitSimulatorSettings = {
+const defaultSettings: UnitSimulatorSettings = {
   plan: PlanType.Sense,
   allowedTypes: [CardType.Vocal, CardType.Dance, CardType.Visual],
   spConstraint: { vocal: 0, dance: 0, visual: 0 },
@@ -43,11 +62,11 @@ const DEFAULT_SETTINGS: UnitSimulatorSettings = {
 function loadSettings(): UnitSimulatorSettings {
   try {
     const raw = localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)
-    if (!raw) return DEFAULT_SETTINGS
+    if (!raw) return defaultSettings
     const parsed = JSON.parse(raw)
-    return { ...DEFAULT_SETTINGS, ...parsed }
+    return { ...defaultSettings, ...parsed }
   } catch {
-    return DEFAULT_SETTINGS
+    return defaultSettings
   }
 }
 
@@ -89,7 +108,7 @@ function saveResult(result: UnitResult): void {
 }
 
 /** localStorage から計算結果を復元する */
-function loadResult(): { result: UnitResult; hasCalculated: boolean } {
+function loadResult(cardByName: Map<string, SupportCard>): LoadResultState {
   try {
     const raw = localStorage.getItem(constant.UNIT_RESULT_STORAGE_KEY)
     if (!raw) return { result: null as never, hasCalculated: false }
@@ -105,7 +124,7 @@ function loadResult(): { result: UnitResult; hasCalculated: boolean } {
         synergyProviders?: unknown[]
         paramBonusPercent?: { vocal: number; dance: number; visual: number }
       }) => {
-        const card = CardByName.get(m.cardName)
+        const card = cardByName.get(m.cardName)
         if (!card) return null
         return {
           card,
@@ -143,9 +162,14 @@ function loadResult(): { result: UnitResult; hasCalculated: boolean } {
  * 設定変更を localStorage に永続化し、計算実行時に最適解を求める。
  * 点数設定と凸数は既存のサポート一覧と localStorage 経由で共有する。
  *
+ * @param allCards - 全サポートカード配列
+ * @param cardByName - サポート名→カードのマップ
  * @returns 設定・計算結果・操作関数
  */
-export function useUnitSimulator() {
+export function useUnitSimulator(
+  allCards: SupportCard[],
+  cardByName: Map<string, SupportCard>,
+): UseUnitSimulatorReturn {
   const [settings, setSettingsRaw] = useState<UnitSimulatorSettings>(loadSettings)
   const [isCalculating, setIsCalculating] = useState(false)
   const settingsRef = useRef(settings)
@@ -154,7 +178,7 @@ export function useUnitSimulator() {
   }, [settings])
 
   // 初期化時に localStorage からキャッシュされた結果を復元する
-  const [cached] = useState(loadResult)
+  const [cached] = useState(() => loadResult(cardByName))
   const [result, setResult] = useState<UnitResult | null>(cached.hasCalculated ? cached.result : null)
   const [hasCalculated, setHasCalculated] = useState(cached.hasCalculated)
   const [noCandidates, setNoCandidates] = useState(false)
@@ -177,7 +201,7 @@ export function useUnitSimulator() {
     const scoreSettings: ScoreSettings = loadScoreSettings()
     const cardUncaps = loadUncaps()
     const cardCountCustom = loadCardCountCustom()
-    const input = { settings, scoreSettings, cardUncaps, cardCountCustom }
+    const input = { settings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
 
     // 非同期にして UI をブロックしない
     requestAnimationFrame(() => {
@@ -190,7 +214,7 @@ export function useUnitSimulator() {
         saveResult(optimized)
       }
     })
-  }, [settings])
+  }, [settings, allCards, cardByName])
 
   /** 手動選択サポートを固定して残り枠を自動最適化する */
   const optimizeRemaining = useCallback(() => {
@@ -208,7 +232,7 @@ export function useUnitSimulator() {
       manualRental: false,
       rentalCardName: null,
     }
-    const input = { settings: merged, scoreSettings, cardUncaps, cardCountCustom }
+    const input = { settings: merged, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
 
     requestAnimationFrame(() => {
       const optimized = optimizeUnit(input)
@@ -235,7 +259,7 @@ export function useUnitSimulator() {
         setSettings(synced)
       }
     })
-  }, [settings, setSettings])
+  }, [settings, setSettings, allCards, cardByName])
 
   /** 現在の編成メンバーを維持したままスコアのみ再計算する */
   const recalculateScores = useCallback(
@@ -251,14 +275,14 @@ export function useUnitSimulator() {
         manualCards: memberNames,
         // レンタルは末尾スロットから位置ベースで導出されるため rentalCardName の上書きは不要
       }
-      const input = { settings: recalcSettings, scoreSettings, cardUncaps, cardCountCustom }
+      const input = { settings: recalcSettings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
       const updated = evaluateManualUnit(input)
       if (updated) {
         setResult(updated)
         saveResult(updated)
       }
     },
-    [result, settings],
+    [result, settings, allCards, cardByName],
   )
 
   /** 現在の manualCards で評価する（最適化せず手持ちのサポートリストで計算） */
@@ -268,14 +292,21 @@ export function useUnitSimulator() {
     const scoreSettings: ScoreSettings = loadScoreSettings()
     const cardUncaps = loadUncaps()
     const cardCountCustom = loadCardCountCustom()
-    const input = { settings: { ...settings, manualCards: filledCards }, scoreSettings, cardUncaps, cardCountCustom }
+    const input = {
+      settings: { ...settings, manualCards: filledCards },
+      scoreSettings,
+      cardUncaps,
+      cardCountCustom,
+      allCards,
+      cardByName,
+    }
     requestAnimationFrame(() => {
       const evaluated = evaluateManualUnit(input)
       setResult(evaluated)
       setHasCalculated(true)
       if (evaluated) saveResult(evaluated)
     })
-  }, [settings])
+  }, [settings, allCards, cardByName])
 
   return useMemo(
     () => ({

@@ -11,6 +11,7 @@ import { renderHook } from '@testing-library/react'
 import { useCardScores } from '../../hooks/useCardScores'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
+import * as data from '../../data'
 
 /** 空のスコア設定（全アクション回数 0・パラメータボーナス 0） */
 function emptySettings(): ScoreSettings {
@@ -31,7 +32,7 @@ function emptySettings(): ScoreSettings {
 describe('useCardScores', () => {
   it('アクション回数・ボーナスが全て0なら計算結果は空でスコアは全て0', () => {
     // 全アクション回数0・パラメータボーナス0の設定でフックを実行する
-    const { result } = renderHook(() => useCardScores(emptySettings(), {}))
+    const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, emptySettings(), {}))
 
     // アクション回数が0なので計算対象サポートなし
     expect(result.current.cardResults.size).toBe(0)
@@ -47,7 +48,7 @@ describe('useCardScores', () => {
     // レッスン回数を10に設定してフックを実行する
     const settings = emptySettings()
     settings.actionCounts = { [enums.ActionIdType.Lesson]: 10 }
-    const { result } = renderHook(() => useCardScores(settings, {}))
+    const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // lesson_end トリガーのアビリティを持つサポートがスコア > 0 で計算されること
     expect(result.current.cardResults.size).toBeGreaterThan(0)
@@ -59,7 +60,7 @@ describe('useCardScores', () => {
     // レッスン回数5でフックを実行し、cardScores と cardResults の整合性を確認する
     const settings = emptySettings()
     settings.actionCounts = { [enums.ActionIdType.Lesson]: 5 }
-    const { result } = renderHook(() => useCardScores(settings, {}))
+    const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // cardScores の各値が対応する cardResults.totalIncrease と一致すること
     // （サポート一覧のスコア表示が計算詳細の合計と食い違わないための検証）
@@ -74,7 +75,7 @@ describe('useCardScores', () => {
     // 点数詳細モーダルで個別サポートの計算に使う calculateForCard の動作確認
     const settings = emptySettings()
     settings.actionCounts = { [enums.ActionIdType.Lesson]: 5 }
-    const { result } = renderHook(() => useCardScores(settings, {}))
+    const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // 一覧の先頭サポートで個別計算結果が取得できることを確認する
     const firstEntry = result.current.cardResults.entries().next().value
@@ -89,7 +90,7 @@ describe('useCardScores', () => {
     // アクション回数が全て0の状態で個別計算を試み、計算不要と判定されることを確認する
     // 計算入力（アクション回数）がない場合は undefined を返すのが正しい動作
     const settings = emptySettings()
-    const { result } = renderHook(() => useCardScores(settings, {}))
+    const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // ダミーサポートを作成して calculateForCard を呼び出す
     const dummyCard = {
@@ -114,7 +115,7 @@ describe('useCardScores', () => {
     // パラボ% アビリティを持つサポートはパラボ基礎値だけでスコアが発生する
     const settings = emptySettings()
     settings.parameterBonusBase = { vocal: 50, dance: 0, visual: 0 }
-    const { result } = renderHook(() => useCardScores(settings, {}))
+    const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // パラメータボーナスのアビリティを持つサポートが計算対象に含まれること
     expect(result.current.cardResults.size).toBeGreaterThan(0)

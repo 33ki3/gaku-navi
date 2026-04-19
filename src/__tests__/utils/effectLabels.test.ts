@@ -123,4 +123,43 @@ describe('effectLabels テンプレート補間', () => {
       expectNoUnresolved(label, `custom_slot_stage(${n})`)
     })
   })
+
+  describe('ユーザー定義サポートのPアイテム効果に未解決プレースホルダーがない', () => {
+    /** ユーザー定義で生成されうる body キーのパターン */
+    const userPItemBodies: { label: string; body: { key: string; [k: string]: unknown }[] }[] = [
+      { label: 'Enhance', body: [{ key: 'select_cards_enhance', count: 3 }] },
+      { label: 'Delete', body: [{ key: 'select_cards_delete', count: 2 }] },
+      { label: 'Change', body: [{ key: 'select_change' }] },
+      { label: 'TroubleDelete', body: [{ key: 'trouble_delete_param_up', param: 'vocal', value: 10 }] },
+      { label: 'PDrinkAcquire', body: [{ key: 'random_pdrink_count', count: 1 }] },
+      {
+        label: 'ParamUp+Enhance',
+        body: [
+          { key: 'param_up', param: 'vocal', value: 20 },
+          { key: 'select_cards_enhance', count: 5 },
+        ],
+      },
+      {
+        label: 'ParamUp+Delete',
+        body: [
+          { key: 'param_up', param: 'dance', value: 10 },
+          { key: 'select_cards_delete', count: 3 },
+        ],
+      },
+      { label: 'Null(bodyCountOnly)', body: [{ key: 'null', count: 2 }] },
+    ]
+
+    for (const { label, body } of userPItemBodies) {
+      it(`${label}: body キーが解決される`, () => {
+        const effect = {
+          trigger: { key: 'keyword_card_acquire', keyword: 'full_power' },
+          body,
+          limit: { key: 'per_produce', count: 3 },
+        }
+        const result = getPItemEffectLabel(effect as Parameters<typeof getPItemEffectLabel>[0], t)
+        expectNoMissingKeys(`user_pitem(${label})`)
+        expectNoUnresolved(result, `user_pitem(${label})`)
+      })
+    }
+  })
 })

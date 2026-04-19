@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCardUIContext } from '../../contexts/CardContext'
 import DataManagementPanel from './DataManagementPanel'
-import { CalculatorIcon, InfoIcon, MenuIcon, QuestionIcon, ScoreSettingsIcon, StarIcon } from '../ui/icons'
+import { CalculatorIcon, InfoIcon, MenuIcon, PlusIcon, QuestionIcon, ScoreSettingsIcon, StarIcon } from '../ui/icons'
 
 /** MobileMenu コンポーネントに渡すプロパティ */
 interface MobileMenuProps {
@@ -27,6 +27,8 @@ interface MobileMenuProps {
   onOpenHelp: () => void
   /** Aboutモーダルを開く関数 */
   onOpenAbout: () => void
+  /** サポート追加モーダルを開く関数 */
+  onOpenUserCardForm: () => void
 }
 
 /** モバイル用ハンバーガーメニュー */
@@ -38,6 +40,7 @@ export function MobileMenu({
   bothPanelsPinned,
   onOpenHelp,
   onOpenAbout,
+  onOpenUserCardForm,
 }: MobileMenuProps) {
   const { t } = useTranslation()
   const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
@@ -100,6 +103,17 @@ export function MobileMenu({
             </button>
             {/* 区切り線 */}
             <div className="border-t border-slate-100 my-1" />
+            {/* サポート追加ボタン */}
+            <button
+              onClick={() => {
+                onOpenUserCardForm()
+                setMenuOpen(false)
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <PlusIcon className="w-4 h-4" />
+              {t('userSupport.add_button')}
+            </button>
             {/* データ管理パネル（インポート/エクスポート） */}
             <div className="px-4 py-2">
               <DataManagementPanel />

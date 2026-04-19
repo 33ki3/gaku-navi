@@ -60,6 +60,9 @@ export const FILTER_SEPARATOR = 'w-px h-5 bg-slate-200'
 /** セクション区切り（上罫線 + 上余白） */
 export const SECTION_DIVIDER = 'border-t border-slate-200 pt-3'
 
+/** ユーザーフォーム：セクション区切り（上罫線 + 上下余白） */
+export const USER_FORM_SECTION_DIVIDER = 'border-t border-slate-200 pt-4 mt-4'
+
 /** トグルボタン: 非活性状態 */
 export const BTN_TOGGLE_INACTIVE = 'bg-slate-100 text-slate-600 hover:bg-slate-200'
 
@@ -86,6 +89,10 @@ export const MODAL_PANEL_SCORE =
 export const MODAL_PANEL_FILTER =
   'relative bg-white rounded-2xl shadow-2xl max-w-md w-full h-[85%] flex flex-col overflow-hidden'
 
+/** モーダル白パネル（ユーザーカード登録・編集用） */
+export const MODAL_PANEL_USER_CARD =
+  'relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90%] flex flex-col overflow-hidden'
+
 /** SpinnerInput: +/- ボタン（通常時） */
 export const SPINNER_BTN = 'w-6 h-6 flex items-center justify-center rounded text-xs font-bold'
 
@@ -107,3 +114,14 @@ export const RARITY_COLOR_SR = 'bg-gradient-to-r from-amber-400 to-yellow-500 te
 
 /** R のバッジグラデーション */
 export const RARITY_COLOR_R = 'bg-gradient-to-r from-slate-300 to-slate-400 text-white'
+
+/** ユーザーフォーム：セクションラベル（12px・太字・スレートグレー） */
+export const USER_FORM_SECTION_LABEL = 'text-xs font-bold text-slate-600 mb-1'
+
+/** ユーザーフォーム：テキスト入力（14px角丸） */
+export const USER_FORM_INPUT =
+  'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+
+/** ユーザーフォーム：セレクト・小入力（12px角丸） */
+export const USER_FORM_SELECT =
+  'w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500'

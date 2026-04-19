@@ -28,6 +28,8 @@ export function SupportAbilityList({ card, colors, uncap }: SupportAbilityListPr
   return (
     <div className="space-y-2">
       {card.abilities.map((ability, i) => {
+        // 空スロット（ユーザー定義カードで未設定のアビリティ）はスキップ
+        if (!ability.name_key) return null
         // パラメータ名を翻訳してからテンプレートに埋め込む
         // 例: parameter_type="vocal" → param="ボーカル"、name_key="vitality" → "元気{v}ボーカル"
         const param = ability.parameter_type ? t(data.getParamLabel(ability.parameter_type)) : ''

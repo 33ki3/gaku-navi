@@ -15,7 +15,7 @@ import { useCardUncaps } from './useCardUncaps'
 import { useCardCountCustom } from './useCardCountCustom'
 import { useFilteredCards } from './useFilteredCards'
 import { useCardScores } from './useCardScores'
-import * as data from '../data'
+import { useUserCards } from './useUserCards'
 
 /**
  * アプリ全体の状態をまとめて管理するフック
@@ -23,6 +23,7 @@ import * as data from '../data'
  * 内部で以下のフックを呼び出して統合している:
  * - useUIState() → モーダルやパネルの開閉
  * - useCardUncaps() → サポートの凸数
+ * - useUserCards() → ユーザー定義サポートの CRUD
  * - useCardScores() → 全サポートのスコア計算
  * - useFilteredCards() → フィルター・並び替え
  *
@@ -34,6 +35,7 @@ export function useAppState() {
   const { setSelectedCard, setScoreBreakdown, setUncapEditMode } = ui
   const uncaps = useCardUncaps()
   const countCustom = useCardCountCustom()
+  const userCards = useUserCards()
   const { setCardUncap } = uncaps
 
   // スコア設定（変更時に localStorage にも保存する）
@@ -45,6 +47,8 @@ export function useAppState() {
 
   // スコア計算とフィルタリングを実行する
   const { cardResults, cardScores, calculateForCard } = useCardScores(
+    userCards.allCards,
+    userCards.allCardByName,
     scoreSettings,
     uncaps.cardUncaps,
     countCustom.cardCountCustom,
@@ -54,7 +58,13 @@ export function useAppState() {
     () => new Set(Object.keys(countCustom.cardCountCustom)),
     [countCustom.cardCountCustom],
   )
-  const filters = useFilteredCards(data.AllCards, cardScores, uncaps.cardUncaps, scoreSettings, countCustomCardNames)
+  const filters = useFilteredCards(
+    userCards.allCards,
+    cardScores,
+    uncaps.cardUncaps,
+    scoreSettings,
+    countCustomCardNames,
+  )
 
   // cardResults を ref で保持し、useCallback の依存配列から除外する
   const cardResultsRef = useRef(cardResults)
@@ -103,6 +113,8 @@ export function useAppState() {
   return {
     // UI 状態（モーダル・パネルの開閉など）
     ui,
+    // ユーザー定義サポート
+    userCards,
     // スコア設定・計算結果・凸数
     scores: {
       scoreSettings,

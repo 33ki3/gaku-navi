@@ -90,7 +90,7 @@ export function calculateCardParameter(
 
   // サポートがイベントでスキルカードやPアイテムを提供する場合、
   // 対応する獲得系トリガーに +1 される（自分自身のイベントも発動回数に含む）
-  const selfBonus = includeSelfTrigger ? getSelfAcquisitionBonus(card) : {}
+  const selfBonus = includeSelfTrigger ? getSelfAcquisitionBonus(card, actionCounts) : {}
 
   const parsedAbilities = card.abilities.map((a) => parseAbility(a, uncap))
 
@@ -210,6 +210,9 @@ export function calculateCardParameter(
     let totalCount: number
     if (pItemCountCustom && boostActionId in pItemCountCustom) {
       totalCount = pItemCountCustom[boostActionId]!
+    } else if (card.p_item?.provided_action_ids && boost.maxCount !== null) {
+      // ユーザー定義カードの場合、max_count をデフォルトの最小値として使用する
+      totalCount = Math.max(rawCount, boost.maxCount)
     } else {
       totalCount = rawCount
     }

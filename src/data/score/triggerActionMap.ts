@@ -85,6 +85,7 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.EventBoost]: ActionIdType.Nothing,
   [TriggerKeyType.SupportRate]: ActionIdType.Nothing,
   [TriggerKeyType.Nothing]: ActionIdType.Nothing,
+  [TriggerKeyType.None]: ActionIdType.Nothing,
 }
 
 /**
@@ -105,5 +106,10 @@ export const PItemTriggerActionMap: Partial<
     [ParameterType.Vocal]: ActionIdType.LessonVo,
     [ParameterType.Dance]: ActionIdType.LessonDa,
     [ParameterType.Visual]: ActionIdType.LessonVi,
+  },
+  [EffectTemplateKeyType.ParamNormalLessonEnd]: {
+    [ParameterType.Vocal]: ActionIdType.NormalLessonVo,
+    [ParameterType.Dance]: ActionIdType.NormalLessonDa,
+    [ParameterType.Visual]: ActionIdType.NormalLessonVi,
   },
 }

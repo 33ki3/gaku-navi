@@ -8,6 +8,7 @@
 import type { SupportCard, SupportEvent, PItemEffect } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
+import { TriggerActionMap, LinkedActionGroups, PItemTriggerActionMap } from '../../data/score'
 
 /**
  * サポートのイベントからパラメータ上昇量を読み取る
@@ -86,9 +87,13 @@ export function parsePItemParameterBoost(card: SupportCard): PItemBoostEffect[] 
  * 3. 提供フラグとトリガーキーが一致する場合、追加回数 +1 する
  *
  * @param card - 対象のサポートカード
+ * @param actionCounts - スケジュール由来のアクション回数（無制限Pアイテムの発動回数解決用）
  * @returns アクションID → 追加回数のマッピング
  */
-export function getSelfAcquisitionBonus(card: SupportCard): Partial<Record<ActionIdType, number>> {
+export function getSelfAcquisitionBonus(
+  card: SupportCard,
+  actionCounts?: Partial<Record<ActionIdType, number>>,
+): Partial<Record<ActionIdType, number>> {
   const bonus: Partial<Record<ActionIdType, number>> = {}
 
   // イベントが提供/操作するものを判定する
@@ -187,6 +192,56 @@ export function getSelfAcquisitionBonus(card: SupportCard): Partial<Record<Actio
       if ((eventCondition || pItemCondition) && tk === triggerKey) {
         const count = (eventCondition ? 1 : 0) + (pItemCondition ? pItemTotalCount : 0)
         bonus[actionId] = (bonus[actionId] ?? 0) + count
+      }
+    }
+  }
+
+  // ユーザー定義カードの場合: provided_action_ids からPアイテム由来の自己ボーナスを追加する
+  // pActions が空のため dualSourceRules でPアイテム分がカウントされないので、ここで補完する
+  if (card.p_item?.provided_action_ids) {
+    const providedIds = card.p_item.provided_action_ids
+    // 発動回数を算出する（limitあり → limit.count、なし → トリガーのスケジュール回数 → 1）
+    let fireCount: number
+    if (card.p_item.effect?.limit?.count !== undefined) {
+      fireCount = card.p_item.effect.limit.count
+    } else if (actionCounts && card.p_item.effect) {
+      // パラメータ固有のトリガー → 汎用トリガー（boost.trigger_key）の順でフォールバック
+      let triggerActionId: ActionIdType | null = null
+      const paramMap = PItemTriggerActionMap[card.p_item.effect.trigger.key]
+      if (paramMap && card.p_item.effect.trigger.param) {
+        triggerActionId = paramMap[card.p_item.effect.trigger.param] ?? null
+      }
+      if (!triggerActionId && card.p_item.boost?.trigger_key) {
+        triggerActionId = TriggerActionMap[card.p_item.boost.trigger_key] ?? null
+      }
+      fireCount = triggerActionId ? (actionCounts[triggerActionId] ?? 1) : 1
+    } else {
+      fireCount = 1
+    }
+    // 子→親ロールアップを含む提供カウントマップを構築する
+    const rolledUp: Partial<Record<ActionIdType, number>> = {}
+    for (const [id, cnt] of Object.entries(providedIds)) {
+      rolledUp[id as ActionIdType] = cnt ?? 0
+    }
+    for (const [parentId, ...childIds] of LinkedActionGroups) {
+      let childSum = 0
+      for (const childId of childIds) childSum += rolledUp[childId] ?? 0
+      if (childSum > 0 && parentId in rolledUp) {
+        rolledUp[parentId] = (rolledUp[parentId] ?? 0) + childSum
+      }
+    }
+    // TroubleDelete は Delete も同時に提供する（トラブル削除＝スキルカード削除）
+    const troubleDeleteCount = rolledUp[enums.ActionIdType.TroubleDelete] ?? 0
+    if (troubleDeleteCount > 0) {
+      rolledUp[enums.ActionIdType.Delete] = (rolledUp[enums.ActionIdType.Delete] ?? 0) + troubleDeleteCount
+    }
+    for (const ability of card.abilities) {
+      if (!ability.trigger_key || ability.skip_calculation) continue
+      const actionId = TriggerActionMap[ability.trigger_key]
+      if (!actionId) continue
+      const cnt = rolledUp[actionId]
+      if (cnt !== undefined && cnt > 0) {
+        bonus[actionId] = (bonus[actionId] ?? 0) + cnt * fireCount
       }
     }
   }

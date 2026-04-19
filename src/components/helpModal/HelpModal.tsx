@@ -41,6 +41,7 @@ const initialSections: Record<HelpSectionKey, boolean> = {
   [HelpSectionKey.Uncap]: false,
   [HelpSectionKey.Data]: false,
   [HelpSectionKey.UnitSimulator]: false,
+  [HelpSectionKey.UserSupport]: false,
 }
 
 /** 各セクションの初期開閉状態（すべて閉じた状態） */
@@ -186,6 +187,15 @@ export default function HelpModal({ onClose, panelRightOffset }: HelpModalProps)
           <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
             {t('ui.help.unit_simulator_desc')}
           </p>
+        </HelpSection>
+
+        {/* サポート追加 */}
+        <HelpSection
+          title={t('ui.help.user_support_title')}
+          isOpen={sections.userSupport}
+          onToggle={() => toggle(HelpSectionKey.UserSupport)}
+        >
+          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{t('ui.help.user_support_desc')}</p>
         </HelpSection>
       </div>
     </ModalOverlay>

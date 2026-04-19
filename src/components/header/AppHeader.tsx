@@ -13,7 +13,7 @@ import { getFilterButtonStyle } from '../../data/ui'
 import { FilterButtonCategory } from '../../types/enums'
 import DataManagementPanel from './DataManagementPanel'
 import { MobileMenu } from './MobileMenu'
-import { InfoIcon } from '../ui/icons'
+import { InfoIcon, PlusIcon } from '../ui/icons'
 
 const HelpModal = lazy(() => import('../helpModal/HelpModal'))
 const AboutModal = lazy(() => import('../aboutModal/AboutModal'))
@@ -36,6 +36,8 @@ interface AppHeaderProps {
   bothPanelsPinned: boolean
   /** パネルの幅分だけ右を空けるためのCSSクラス */
   panelRightOffset: string
+  /** サポート追加モーダルを開く関数 */
+  onOpenUserCardForm: () => void
 }
 
 /** アプリケーションヘッダー */
@@ -48,6 +50,7 @@ export default function AppHeader({
   simulatorPinned,
   bothPanelsPinned,
   panelRightOffset,
+  onOpenUserCardForm,
 }: AppHeaderProps) {
   const { t } = useTranslation()
   const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
@@ -94,6 +97,11 @@ export default function AppHeader({
             >
               {t('ui.settings.unit_simulator')}
             </button>
+            {/* サポート追加ボタン */}
+            <button onClick={onOpenUserCardForm} className={`${constant.BTN_HEADER_ACTION} ${inactiveStyle}`}>
+              <PlusIcon className="w-3.5 h-3.5" />
+              {t('userSupport.add_button')}
+            </button>
             {/* データ管理パネル（インポート/エクスポート） */}
             <DataManagementPanel />
             {/* ヘルプボタン */}
@@ -122,6 +130,7 @@ export default function AppHeader({
             bothPanelsPinned={bothPanelsPinned}
             onOpenHelp={() => setHelpOpen(true)}
             onOpenAbout={() => setAboutOpen(true)}
+            onOpenUserCardForm={onOpenUserCardForm}
           />
         </div>
       </div>

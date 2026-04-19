@@ -8,7 +8,7 @@ import { evaluateManualUnit, optimizeUnit } from '../../utils/unitSimulator'
 import { calculateCardParameter } from '../../utils/calculator/calculateCard'
 import { computeUnitSupportSynergy, getProvidedActions } from '../../utils/supportSynergy'
 import { getSelfAcquisitionBonus } from '../../utils/calculator/events'
-import { ActionCategoryList, AllCards, getScheduleData, TriggerActionMap } from '../../data'
+import { ActionCategoryList, AllCards, CardByName, getScheduleData, TriggerActionMap } from '../../data'
 import { mergeScheduleCounts } from '../../utils/scoreSettings'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
@@ -108,6 +108,8 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
       })
 
       if (!result) return
@@ -160,6 +162,8 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
       })
 
       if (!result) return
@@ -200,6 +204,8 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
       })
 
       if (!result) return
@@ -299,7 +305,13 @@ describe('最適編成', () => {
       const builderSettings = makeSimulatorSettings([providerCard.name, receiverCard.name])
 
       // 回数調整なしで計算
-      const baseResult = evaluateManualUnit({ settings: builderSettings, scoreSettings, cardUncaps: {} })
+      const baseResult = evaluateManualUnit({
+        settings: builderSettings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       // 回数調整で自動ボーナスを 0 にして計算
       const customCounts = { [providerCard.name]: { selfTrigger: { [commonAction]: 0 } } }
       const customResult = evaluateManualUnit({
@@ -307,6 +319,8 @@ describe('最適編成', () => {
         scoreSettings,
         cardUncaps: {},
         cardCountCustom: customCounts,
+        allCards: AllCards,
+        cardByName: CardByName,
       })
 
       if (!baseResult || !customResult) return
@@ -403,7 +417,13 @@ describe('最適編成', () => {
         actionCounts: { [actionId]: maxCountAbility.max_count! },
       })
       const builderSettings = makeSimulatorSettings([providerCard.name, receiverCard.name])
-      const result = evaluateManualUnit({ settings: builderSettings, scoreSettings, cardUncaps: {} })
+      const result = evaluateManualUnit({
+        settings: builderSettings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       if (!result) return
 
       const receiver = result.members.find((m) => m.card.name === receiverCard.name)
@@ -548,7 +568,13 @@ describe('最適編成', () => {
         spConstraint: { vocal: 0, dance: 3, visual: 1 },
       })
 
-      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -566,6 +592,8 @@ describe('最適編成', () => {
           settings: makeSimulatorSettings(fuwafuwaUnit),
           scoreSettings,
           cardUncaps: {},
+          allCards: AllCards,
+          cardByName: CardByName,
         })
         // ふわふわの方がスコアが高ければ最適化のバグ
         if (fuwafuwaResult && fuwafuwaResult.totalScore > result.totalScore) {
@@ -603,7 +631,13 @@ describe('最適編成', () => {
       })
 
       // 4凸固定モードで最適化を実行してベースラインを取得する
-      const baseline = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const baseline = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(baseline).not.toBeNull()
       if (!baseline) return
 
@@ -616,7 +650,13 @@ describe('最適編成', () => {
         [targetCard]: enums.UncapType.NotOwned,
       }
 
-      const result = optimizeUnit({ settings, scoreSettings: uncapSettings, cardUncaps })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings: uncapSettings,
+        cardUncaps,
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -637,7 +677,13 @@ describe('最適編成', () => {
       })
 
       // 4凸固定モードで最適化を実行する
-      const baseline = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const baseline = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       if (!baseline) return
 
       // ベースラインの1番目のメンバーを未所持にする
@@ -647,7 +693,13 @@ describe('最適編成', () => {
         [targetCard]: enums.UncapType.NotOwned,
       }
 
-      const result = optimizeUnit({ settings, scoreSettings: uncapSettings, cardUncaps })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings: uncapSettings,
+        cardUncaps,
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       if (!result) return
 
       // optimizeUnit の結果を evaluateManualUnit で再評価してスコアが一致することを確認する
@@ -662,7 +714,13 @@ describe('最適編成', () => {
         rentalCardName: rentalName,
       })
 
-      const manual = evaluateManualUnit({ settings: manualSettings, scoreSettings: uncapSettings, cardUncaps })
+      const manual = evaluateManualUnit({
+        settings: manualSettings,
+        scoreSettings: uncapSettings,
+        cardUncaps,
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(manual).not.toBeNull()
       expect(manual!.totalScore).toBe(result.totalScore)
     })
@@ -682,6 +740,8 @@ describe('最適編成', () => {
         settings,
         scoreSettings: makeRealisticScoreSettings({ useFixedUncap: true }),
         cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
       })
       if (!baseline) return
 
@@ -698,14 +758,26 @@ describe('最適編成', () => {
 
         // 0凸で最適化し、ターゲットが選出されるか確認する
         const uncapsZero = { ...cardUncaps, [target]: enums.UncapType.Zero }
-        const resultZero = optimizeUnit({ settings, scoreSettings, cardUncaps: uncapsZero })
+        const resultZero = optimizeUnit({
+          settings,
+          scoreSettings,
+          cardUncaps: uncapsZero,
+          allCards: AllCards,
+          cardByName: CardByName,
+        })
         if (!resultZero) continue
         const inZero = resultZero.members.some((m) => m.card.name === target)
         if (!inZero) continue // 0凸で入らない場合はスキップ
 
         // NotOwnedで最適化する
         const uncapsNotOwned = { ...cardUncaps, [target]: enums.UncapType.NotOwned }
-        const resultNotOwned = optimizeUnit({ settings, scoreSettings, cardUncaps: uncapsNotOwned })
+        const resultNotOwned = optimizeUnit({
+          settings,
+          scoreSettings,
+          cardUncaps: uncapsNotOwned,
+          allCards: AllCards,
+          cardByName: CardByName,
+        })
         expect(resultNotOwned).not.toBeNull()
         if (!resultNotOwned) continue
 
@@ -737,7 +809,13 @@ describe('最適編成', () => {
           })
 
           // 最適化を実行する
-          const optimized = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+          const optimized = optimizeUnit({
+            settings,
+            scoreSettings,
+            cardUncaps: {},
+            allCards: AllCards,
+            cardByName: CardByName,
+          })
           if (!optimized) return
 
           // 最適化結果のサポート名とレンタル指定で手動評価する
@@ -752,7 +830,13 @@ describe('最適編成', () => {
             rentalCardName: rentalName,
           })
 
-          const manual = evaluateManualUnit({ settings: manualSettings, scoreSettings, cardUncaps: {} })
+          const manual = evaluateManualUnit({
+            settings: manualSettings,
+            scoreSettings,
+            cardUncaps: {},
+            allCards: AllCards,
+            cardByName: CardByName,
+          })
 
           // 手動評価の結果が存在し、スコアが完全一致すること
           expect(manual).not.toBeNull()
@@ -771,7 +855,13 @@ describe('最適編成', () => {
           })
 
           // 最適化を実行する
-          const optimized = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+          const optimized = optimizeUnit({
+            settings,
+            scoreSettings,
+            cardUncaps: {},
+            allCards: AllCards,
+            cardByName: CardByName,
+          })
           if (!optimized) return
 
           // 候補サポートから選択済みサポートを除外する
@@ -796,7 +886,13 @@ describe('最適編成', () => {
                 manualRental: true,
                 rentalCardName: rentalNameOpt,
               })
-              const swapResult = evaluateManualUnit({ settings: swapSettings, scoreSettings, cardUncaps: {} })
+              const swapResult = evaluateManualUnit({
+                settings: swapSettings,
+                scoreSettings,
+                cardUncaps: {},
+                allCards: AllCards,
+                cardByName: CardByName,
+              })
               if (!swapResult) continue
 
               // 入れ替え後のスコアが最適化結果以下であること
@@ -830,7 +926,7 @@ describe('最適編成', () => {
         spConstraint: { vocal: 0, dance: 3, visual: 1 },
       })
 
-      const result = optimizeUnit({ settings, scoreSettings, cardUncaps })
+      const result = optimizeUnit({ settings, scoreSettings, cardUncaps, allCards: AllCards, cardByName: CardByName })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -902,7 +998,13 @@ describe('最適編成', () => {
             rentalCardName: rentalName,
           })
           // 未所持カードが入っている場合は4凸で評価する
-          const swapResult = evaluateManualUnit({ settings: swapSettings, scoreSettings, cardUncaps })
+          const swapResult = evaluateManualUnit({
+            settings: swapSettings,
+            scoreSettings,
+            cardUncaps,
+            allCards: AllCards,
+            cardByName: CardByName,
+          })
           if (!swapResult) continue
 
           expect(result.totalScore).toBeGreaterThanOrEqual(swapResult.totalScore)
@@ -933,7 +1035,13 @@ describe('最適編成', () => {
         },
       })
 
-      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -960,7 +1068,13 @@ describe('最適編成', () => {
         },
       })
 
-      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -987,7 +1101,13 @@ describe('最適編成', () => {
         },
       })
 
-      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -1022,7 +1142,13 @@ describe('最適編成', () => {
         },
       })
 
-      const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
       expect(result).not.toBeNull()
       if (!result) return
 
@@ -1057,7 +1183,13 @@ describe('最適編成', () => {
           if (!checkTypeConstraint(swappedNames)) continue
 
           const swapSettings = makeSimulatorSettings(swappedNames, { plan })
-          const swapResult = evaluateManualUnit({ settings: swapSettings, scoreSettings, cardUncaps: {} })
+          const swapResult = evaluateManualUnit({
+            settings: swapSettings,
+            scoreSettings,
+            cardUncaps: {},
+            allCards: AllCards,
+            cardByName: CardByName,
+          })
           if (!swapResult) continue
 
           expect(result.totalScore).toBeGreaterThanOrEqual(swapResult.totalScore)
@@ -1083,7 +1215,15 @@ describe('最適編成', () => {
           [enums.ParameterType.Visual]: constant.UNIT_SIZE,
         },
       })
-      expect(optimizeUnit({ settings: tooMuchMin, scoreSettings, cardUncaps: {} })).toBeNull()
+      expect(
+        optimizeUnit({
+          settings: tooMuchMin,
+          scoreSettings,
+          cardUncaps: {},
+          allCards: AllCards,
+          cardByName: CardByName,
+        }),
+      ).toBeNull()
 
       // 最大枚数合計 < 6: 実現不可能
       const tooLittleMax = makeSimulatorSettings([], {
@@ -1100,7 +1240,15 @@ describe('最適編成', () => {
           [enums.ParameterType.Visual]: 1,
         },
       })
-      expect(optimizeUnit({ settings: tooLittleMax, scoreSettings, cardUncaps: {} })).toBeNull()
+      expect(
+        optimizeUnit({
+          settings: tooLittleMax,
+          scoreSettings,
+          cardUncaps: {},
+          allCards: AllCards,
+          cardByName: CardByName,
+        }),
+      ).toBeNull()
     })
   })
 
@@ -1175,7 +1323,13 @@ describe('最適編成', () => {
             manualRental: true,
             rentalCardName: null,
           })
-          const result = evaluateManualUnit({ settings: manualSettings, scoreSettings, cardUncaps: {} })
+          const result = evaluateManualUnit({
+            settings: manualSettings,
+            scoreSettings,
+            cardUncaps: {},
+            allCards: AllCards,
+            cardByName: CardByName,
+          })
           if (result && result.totalScore > exhaustiveBest) {
             exhaustiveBest = result.totalScore
           }
@@ -1187,7 +1341,13 @@ describe('最適編成', () => {
           manualCards: [],
           spConstraint,
         })
-        const optimized = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+        const optimized = optimizeUnit({
+          settings,
+          scoreSettings,
+          cardUncaps: {},
+          allCards: AllCards,
+          cardByName: CardByName,
+        })
         expect(optimized).not.toBeNull()
         expect(optimized!.totalScore).toBeGreaterThanOrEqual(exhaustiveBest)
       })
@@ -1218,7 +1378,13 @@ describe('最適編成', () => {
           manualCards: [],
           lockedCards: lockedNames,
         })
-        const result = optimizeUnit({ settings, scoreSettings, cardUncaps: {} })
+        const result = optimizeUnit({
+          settings,
+          scoreSettings,
+          cardUncaps: {},
+          allCards: AllCards,
+          cardByName: CardByName,
+        })
         expect(result).not.toBeNull()
 
         // 固定サポートが全て結果に含まれること

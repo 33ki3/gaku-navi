@@ -28,6 +28,8 @@ export const FILTER_SORT_TAB_KEY = 'gaku-navi-filter-sort-tab'
 export const UNIT_SIMULATOR_STORAGE_KEY = 'gaku-navi-unit-builder'
 /** 最適編成計算結果の保存キー。UnitResult を JSON で保存する。 */
 export const UNIT_RESULT_STORAGE_KEY = 'gaku-navi-unit-result'
+/** ユーザー定義サポートの保存キー。SupportCard[] を JSON で保存する。 */
+export const USER_SUPPORTS_STORAGE_KEY = 'gaku-navi-user-supports'
 /** フィルター保存のデバウンス待機時間（ms）。連続でフィルターが変更されたときに保存回数を減らす。 */
 export const FILTER_SAVE_DEBOUNCE_MS = 300
 
@@ -64,6 +66,8 @@ export const PERCENT_DIVISOR = 100
 
 /** 最適編成の編成枚数 */
 export const UNIT_SIZE = 6
+/** アビリティスロット数 */
+export const SLOT_COUNT = 6
 /** SP制約の上限（UNIT_SIZEと同値だが意味が異なる） */
 export const SP_TOTAL_MAX = 6
 /** 局所探索の最大イテレーション回数 */

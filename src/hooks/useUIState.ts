@@ -45,6 +45,12 @@ interface UIState {
   /** 手動編成のサポート一覧選択モード */
   unitCardSelectMode: boolean
   setUnitCardSelectMode: (mode: boolean) => void
+  /** ユーザーカード登録・編集モーダルが開いているか */
+  userCardFormOpen: boolean
+  setUserCardFormOpen: (open: boolean) => void
+  /** 編集中のユーザーカード（新規作成時は null） */
+  editingUserCard: SupportCard | null
+  setEditingUserCard: (card: SupportCard | null) => void
 }
 
 /**
@@ -72,6 +78,8 @@ export function useUIState(): UIState {
     result: CardCalculationResult
   } | null>(null)
   const [unitCardSelectMode, setUnitCardSelectMode] = useState(false)
+  const [userCardFormOpen, setUserCardFormOpen] = useState(false)
+  const [editingUserCard, setEditingUserCard] = useState<SupportCard | null>(null)
 
   /** タブ変更時に localStorage にも保存する */
   const setFilterSortTab = useCallback((tab: FilterSortTab) => {
@@ -129,5 +137,9 @@ export function useUIState(): UIState {
     setScoreBreakdown,
     unitCardSelectMode,
     setUnitCardSelectMode,
+    userCardFormOpen,
+    setUserCardFormOpen,
+    editingUserCard,
+    setEditingUserCard,
   }
 }

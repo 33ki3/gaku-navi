@@ -93,8 +93,10 @@ export function CountCustomSection({
     if (!card.p_item?.boost) return null
     const actionId = TriggerActionMap[card.p_item.boost.trigger_key]
     if (!actionId) return null
-    const autoCount = autoCounts[actionId] ?? 0
+    const rawAutoCount = autoCounts[actionId] ?? 0
     const maxCount = card.p_item.boost.max_count
+    // max_count がある場合、自動カウントの下限を max_count で保証する（PItem発動回数をデフォルトに反映）
+    const autoCount = maxCount !== undefined ? Math.max(rawAutoCount, maxCount) : rawAutoCount
     return { actionId, autoCount, maxCount, name: card.p_item.name }
   }, [card, autoCounts])
 

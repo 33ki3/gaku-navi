@@ -111,6 +111,8 @@ export const SourceType = {
   Shop: 'shop',
   /** パック購入 */
   Pack: 'pack',
+  /** ユーザー定義 */
+  User: 'user',
 } as const
 export type SourceType = (typeof SourceType)[keyof typeof SourceType]
 
@@ -914,6 +916,8 @@ export const TriggerKeyType = {
   SupportRate: 'support_rate',
   /** 効果なし（計算スキップ用） */
   Nothing: 'nothing',
+  /** 未設定（ユーザー定義サポートのデフォルト） */
+  None: 'none',
 } as const
 export type TriggerKeyType = (typeof TriggerKeyType)[keyof typeof TriggerKeyType]
 
@@ -1190,12 +1194,16 @@ export const EffectTemplateKeyType = {
   SelectEnhanceHp: 'select_enhance_hp',
   /** スキルカード複数選択強化 */
   SelectCardsEnhance: 'select_cards_enhance',
+  /** スキルカード複数選択削除 */
+  SelectCardsDelete: 'select_cards_delete',
   /** スキルカード選択コピー+Pポイント */
   SelectCopyPp: 'select_copy_pp',
   /** スキルカード選択削除+アイテム獲得 */
   SelectDeleteAcquireItem: 'select_delete_acquire_item',
   /** スキルカード選択削除+Pポイント */
   SelectDeletePp: 'select_delete_pp',
+  /** スキルカード選択チェンジ */
+  SelectChange: 'select_change',
   /** スキルカード選択ホールド */
   SelectHold: 'select_hold',
   /** スキルカード選択ホールド（山札/捨札） */
@@ -1377,10 +1385,54 @@ export const EffectTemplateKeyType = {
   ParamLessonEnd: 'param_lesson_end',
   /** SPレッスン終了時パラメータ */
   ParamSpLessonEnd: 'param_sp_lesson_end',
+  /** レッスン終了時（汎用） */
+  LessonEnd: 'lesson_end',
+  /** 通常レッスン終了時（汎用） */
+  NormalLessonEnd: 'normal_lesson_end',
+  /** 通常レッスン終了時パラメータ */
+  ParamNormalLessonEnd: 'param_normal_lesson_end',
   /** レッスンリミット解除 */
   RemoveLessonLimit: 'remove_lesson_limit',
+  /** スキルカード獲得時 */
+  SkillAcquire: 'skill_acquire',
+  /** メンタルスキルカード獲得時 */
+  MSkillAcquire: 'm_skill_acquire',
+  /** アクティブスキルカード獲得時 */
+  ASkillAcquire: 'a_skill_acquire',
+  /** メンタルスキルカード強化時 */
+  MSkillEnhance: 'm_skill_enhance',
+  /** アクティブスキルカード強化時 */
+  ASkillEnhance: 'a_skill_enhance',
+  /** スキルカード削除時 */
+  SkillDelete: 'skill_delete',
+  /** メンタルスキルカード削除時 */
+  MSkillDelete: 'm_skill_delete',
+  /** アクティブスキルカード削除時 */
+  ASkillDelete: 'a_skill_delete',
+  /** スキルカードチェンジ時 */
+  SkillChange: 'skill_change',
+  /** SSRカード獲得時 */
+  SsrCardAcquire: 'ssr_card_acquire',
+  /** 眠気カード獲得時 */
+  DrowsyAcquire: 'drowsy_acquire',
+  /** Pドリンク獲得時 */
+  PDrinkAcquire: 'p_drink_acquire',
+  /** Pドリンク交換時 */
+  PDrinkExchange: 'p_drink_exchange',
+  /** 休む時 */
+  Rest: 'rest',
+  /** カスタマイズ時 */
+  Customize: 'customize',
+  /** Pアイテム獲得時 */
+  PItemAcquire: 'p_item_acquire',
+  /** SPレッスン終了時（カード20枚以上） */
+  SpLesson20: 'sp_lesson_20',
+  /** SPレッスン終了時（汎用） */
+  SpLessonEnd: 'sp_lesson_end',
   /** 特別指導開始 */
   SpecialTrainingStart: 'special_training_start',
+  /** トラブルカード削除時 */
+  TroubleDelete: 'trouble_delete',
 
   /** ランダムPドリンク複数獲得 */
   RandomPdrinkCount: 'random_pdrink_count',
@@ -1411,6 +1463,8 @@ export const EffectTemplateKeyType = {
   TroubleDeleteParamUp: 'trouble_delete_param_up',
   /** トラブルカード削除+Pポイント */
   TroubleDeletePp: 'trouble_delete_pp',
+  /** ユーザー定義: 回数付き効果（強化・削除・獲得等） */
+  SimpleEffectCount: 'simple_effect_count',
 } as const
 export type EffectTemplateKeyType = (typeof EffectTemplateKeyType)[keyof typeof EffectTemplateKeyType]
 
@@ -1434,6 +1488,8 @@ export const HelpSectionKey = {
   Data: 'data',
   /** 最適編成 */
   UnitSimulator: 'unitSimulator',
+  /** サポート追加 */
+  UserSupport: 'userSupport',
 } as const
 export type HelpSectionKey = (typeof HelpSectionKey)[keyof typeof HelpSectionKey]
 
@@ -1478,6 +1534,21 @@ export const SimulatorSectionKey = {
   Result: 'result',
 } as const
 export type SimulatorSectionKey = (typeof SimulatorSectionKey)[keyof typeof SimulatorSectionKey]
+
+/**
+ * ユーザーサポートフォームの折りたたみセクションキー。
+ */
+export const UserFormSectionKey = {
+  /** アビリティ */
+  Abilities: 'abilities',
+  /** イベント */
+  Events: 'events',
+  /** Pアイテム */
+  PItem: 'pitem',
+  /** スキルカード */
+  SkillCard: 'skillcard',
+} as const
+export type UserFormSectionKey = (typeof UserFormSectionKey)[keyof typeof UserFormSectionKey]
 
 /**
  * フィルタ・ソートモーダルのタブ種別。

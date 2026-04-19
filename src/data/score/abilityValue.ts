@@ -194,6 +194,16 @@ export function getSchedule(rarityTier: RarityTierType, slot: number): readonly 
  * @param nameKey - アビリティ名キー
  * @returns 段階別効果値配列
  */
-export function getStages(rarityTier: RarityTierType, nameKey: AbilityNameKeyType): readonly string[] {
-  return stages[rarityTier][nameKey]!
+export function getStages(rarityTier: RarityTierType, nameKey: AbilityNameKeyType): readonly string[] | undefined {
+  return stages[rarityTier][nameKey]
+}
+
+/**
+ * レアリティ階層で定義されているアビリティ名キーの一覧を返す。
+ *
+ * @param rarityTier - レアリティ階層
+ * @returns 利用可能なアビリティ名キーの配列
+ */
+export function getAvailableAbilities(rarityTier: RarityTierType): AbilityNameKeyType[] {
+  return Object.keys(stages[rarityTier]) as AbilityNameKeyType[]
 }

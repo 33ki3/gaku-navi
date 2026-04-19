@@ -84,6 +84,10 @@ interface OptimizeInput {
   scoreSettings: ScoreSettings
   cardUncaps: Record<string, UncapType>
   cardCountCustom?: CardCountCustom
+  /** 全サポート一覧（ユーザー追加カード含む） */
+  allCards: SupportCard[]
+  /** サポート名→サポートのマップ（ユーザー追加カード含む） */
+  cardByName: Map<string, SupportCard>
 }
 
 /** resolveSchedule の戻り値型 */
@@ -166,7 +170,7 @@ function resolveSchedule(scoreSettings: ScoreSettings): ResolvedSchedule {
  * @returns 候補サポート配列
  */
 function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedule): CandidateCard[] {
-  const { settings, scoreSettings, cardUncaps, cardCountCustom } = input
+  const { settings, scoreSettings, cardUncaps, cardCountCustom, allCards } = input
 
   const { effectiveCounts, perLessonValues } = schedule
 
@@ -174,7 +178,7 @@ function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedule): Ca
 
   const lockedNameSet = new Set(settings.lockedCards)
 
-  for (const card of data.AllCards) {
+  for (const card of allCards) {
     const isLocked = lockedNameSet.has(card.name)
 
     // プラン不一致の固定サポートは自動解除する（例: アノマリーサポートを固定してセンスで最適化した場合）
@@ -745,7 +749,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     const unownedAt4: CandidateCard[] = []
     if (!scoreSettings.useFixedUncap) {
       const candidateNames = new Set(candidates.map((c) => c.card.name))
-      for (const card of data.AllCards) {
+      for (const card of input.allCards) {
         if (card.plan !== settings.plan && card.plan !== enums.PlanType.Free) continue
         if (settings.allowedTypes.length > 0 && !settings.allowedTypes.includes(card.type)) continue
         const uncap = input.cardUncaps[card.name] ?? constant.DEFAULT_UNCAP
@@ -974,7 +978,7 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
   // サポート名からサポートを検索して計算する
   const candidates: CandidateCard[] = []
   for (const cardName of cardNames) {
-    const card = data.CardByName.get(cardName)
+    const card = input.cardByName.get(cardName)
     if (!card) continue
 
     // 凸数: 4凸固定モード or レンタル枠なら4凸、それ以外は設定された凸数

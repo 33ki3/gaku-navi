@@ -140,6 +140,8 @@ export interface PItemEffectPart {
   card_name?: string
   /** 獲得対象のPアイテム名（例: Pアイテム「ハッピー♪」獲得→"ハッピー♪"） */
   item_name?: string
+  /** 汎用テンプレートで使用するアクションID（ユーザー定義サポート用。表示時にアプリ側でi18nキーを解決する） */
+  action_id?: ActionIdType
 }
 
 /** Pアイテム効果の構造化データ（分解済み）。 */
@@ -170,6 +172,10 @@ export interface PItem {
   boost?: PItemBoost
   /** Pアイテムが行うアクション一覧（例: ["delete", "enhance", "p_drink_acquire"]） */
   actions?: PItemActionType[]
+  /** ユーザー定義サポート用：スコア計算で提供するアクションIDと回数 */
+  provided_action_ids?: Partial<Record<ActionIdType, number>>
+  /** ユーザー定義サポート用：boost がない場合でも発動条件を保持する */
+  trigger_key?: TriggerKeyType
 }
 
 /** スキルカード効果のアクション部品（条件・時間修飾・トリガー・本体アクション共通）。 */

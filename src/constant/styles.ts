@@ -91,7 +91,7 @@ export const MODAL_PANEL_FILTER =
 
 /** モーダル白パネル（ユーザーカード登録・編集用） */
 export const MODAL_PANEL_USER_CARD =
-  'relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden'
+  'relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90%] flex flex-col overflow-hidden'
 
 /** SpinnerInput: +/- ボタン（通常時） */
 export const SPINNER_BTN = 'w-6 h-6 flex items-center justify-center rounded text-xs font-bold'

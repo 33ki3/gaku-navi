@@ -15,19 +15,16 @@ import type { AbilityFormRow, EventFormRow, UserCardFormState } from './formHelp
 import { deriveAbilityConfig } from '../utils/abilityDeriver'
 import { resolveEffectTrigger } from '../utils/pItemResolver'
 
-/** ActionIdType → 汎用テンプレートの i18n ラベルキー */
-const ACTION_LABEL_MAP: Record<enums.ActionIdType, string> = Object.fromEntries(
-  data.PITEM_EFFECT_OPTIONS.map((opt) => [opt.value, opt.labelKey]),
-) as Record<enums.ActionIdType, string>
+/** 有効な ActionIdType のセット（存在チェック用） */
+const VALID_ACTION_IDS = new Set<string>(data.PITEM_EFFECT_OPTIONS.map((opt) => opt.value))
 
-/** ActionIdType → effect.body エントリに変換する（表示用） */
+/** ActionIdType → effect.body エントリに変換する（表示用）。action_id を保存し i18n 解決はアプリ側で行う */
 function actionIdToBodyEntry(
   action: enums.ActionIdType,
   count: number,
 ): { key: enums.EffectTemplateKeyType; [k: string]: unknown } | null {
-  const labelKey = ACTION_LABEL_MAP[action]
-  if (!labelKey) return null
-  return { key: enums.EffectTemplateKeyType.SimpleEffectCount, label_key: labelKey, count }
+  if (!VALID_ACTION_IDS.has(action)) return null
+  return { key: enums.EffectTemplateKeyType.SimpleEffectCount, action_id: action, count }
 }
 
 /** バリデーションエラー */
@@ -273,8 +270,8 @@ export function useUserCardForm(editingCard?: SupportCard, existingNames?: Set<s
         const count = Number(effect.count) || 1
         const entry = actionIdToBodyEntry(effect.action, count)
         if (!entry) continue
-        // テンプレートキー + ラベルキーで一意にする（汎用テンプレートは label_key で区別）
-        const mapKey = entry.label_key ? `${entry.key}:${entry.label_key}` : entry.key
+        // テンプレートキー + action_id で一意にする（汎用テンプレートは action_id で区別）
+        const mapKey = entry.action_id ? `${entry.key}:${entry.action_id as string}` : entry.key
         const existing = bodyMap.get(mapKey)
         if (existing && 'count' in existing && 'count' in entry) {
           existing.count = (existing.count as number) + (entry.count as number)

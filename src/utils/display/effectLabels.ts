@@ -139,8 +139,11 @@ function buildPItemInterpolation(part: PItemEffectPart, t: TFunction): Record<st
   // カード名・アイテム名（固有名詞をそのまま設定）
   if (part.card_name) result.card_name = part.card_name
   if (part.item_name) result.item_name = part.item_name
-  // 汎用テンプレートのラベル名（i18nキーを翻訳して設定）
-  if (part.label_key) result.name = t(part.label_key as TranslationKey)
+  // 汎用テンプレートのアクションIDからラベル名を解決する（i18nキーはアプリ側で決定）
+  if (part.action_id) {
+    const opt = data.PITEM_EFFECT_OPTIONS.find((o) => o.value === part.action_id)
+    if (opt) result.name = t(opt.labelKey)
+  }
   return result
 }
 

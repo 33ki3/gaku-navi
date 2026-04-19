@@ -140,8 +140,8 @@ export interface PItemEffectPart {
   card_name?: string
   /** 獲得対象のPアイテム名（例: Pアイテム「ハッピー♪」獲得→"ハッピー♪"） */
   item_name?: string
-  /** 汎用テンプレートで使用する i18n ラベルキー（ユーザー定義サポート用） */
-  label_key?: string
+  /** 汎用テンプレートで使用するアクションID（ユーザー定義サポート用。表示時にアプリ側でi18nキーを解決する） */
+  action_id?: ActionIdType
 }
 
 /** Pアイテム効果の構造化データ（分解済み）。 */

@@ -51,6 +51,85 @@ export function getProvidedActions(
   const { includeSelfTrigger = true, includePItem = true, actionCounts } = options ?? {}
   const provided: Partial<Record<ActionIdType, number>> = {}
 
+  // ユーザー定義サポートの場合: provided_action_ids から直接取得する
+  if (card.p_item?.provided_action_ids && includePItem) {
+    // Pアイテムの発動回数を算出する
+    let fireCount: number
+    if (card.p_item?.effect?.limit?.count !== undefined) {
+      fireCount = card.p_item.effect.limit.count
+    } else if (actionCounts && card.p_item?.effect) {
+      // パラメータ固有のトリガー → 汎用トリガー（boost.trigger_key）の順でフォールバック
+      const triggerActionId =
+        resolvePItemTriggerActionId(card.p_item.effect) ??
+        (card.p_item.boost?.trigger_key ? TriggerActionMap[card.p_item.boost.trigger_key] : null)
+      fireCount = triggerActionId ? (actionCounts[triggerActionId] ?? 1) : 1
+    } else {
+      fireCount = 1
+    }
+    for (const [actionId, count] of Object.entries(card.p_item.provided_action_ids)) {
+      provided[actionId as ActionIdType] = (provided[actionId as ActionIdType] ?? 0) + (count ?? 0) * fireCount
+    }
+
+    // 子→親アクションのロールアップ（MSkillEnhance → SkillEnhance 等）
+    for (const [parentId, ...childIds] of LinkedActionGroups) {
+      let childSum = 0
+      for (const childId of childIds) {
+        childSum += provided[childId] ?? 0
+      }
+      if (childSum > 0 && parentId in provided) {
+        provided[parentId] = (provided[parentId] ?? 0) + childSum
+      }
+    }
+
+    // TroubleDelete は Delete も同時に提供する（トラブル削除＝スキルカード削除）
+    const troubleCount = provided[enums.ActionIdType.TroubleDelete] ?? 0
+    if (troubleCount > 0) {
+      provided[enums.ActionIdType.Delete] = (provided[enums.ActionIdType.Delete] ?? 0) + troubleCount
+    }
+
+    // イベント由来のアクションも追加する
+    const hasEventEffectType = (...types: enums.EventEffectType[]) =>
+      includeSelfTrigger && card.events.some((e: SupportEvent) => types.includes(e.effect_type))
+    const givesSkillCard = hasEventEffectType(enums.EventEffectType.SkillCard)
+    const givesPItem = hasEventEffectType(enums.EventEffectType.PItem)
+    if (givesSkillCard) {
+      provided[enums.ActionIdType.SkillAcquire] = (provided[enums.ActionIdType.SkillAcquire] ?? 0) + 1
+      if (card.skill_card?.type === enums.SkillCardType.Mental) {
+        provided[enums.ActionIdType.MSkillAcquire] = (provided[enums.ActionIdType.MSkillAcquire] ?? 0) + 1
+      }
+      if (card.skill_card?.type === enums.SkillCardType.Active) {
+        provided[enums.ActionIdType.ASkillAcquire] = (provided[enums.ActionIdType.ASkillAcquire] ?? 0) + 1
+      }
+      if (card.rarity === enums.RarityType.SSR) {
+        provided[enums.ActionIdType.SsrCardAcquire] = (provided[enums.ActionIdType.SsrCardAcquire] ?? 0) + 1
+      }
+    }
+    if (givesPItem) {
+      provided[enums.ActionIdType.PItemAcquire] = (provided[enums.ActionIdType.PItemAcquire] ?? 0) + 1
+    }
+    // イベント由来の強化・削除・チェンジ・トラブル削除
+    const enhanceEvent = hasEventEffectType(enums.EventEffectType.CardEnhance, enums.EventEffectType.SelectEnhance)
+    if (enhanceEvent) {
+      provided[enums.ActionIdType.SkillEnhance] = (provided[enums.ActionIdType.SkillEnhance] ?? 0) + 1
+      provided[enums.ActionIdType.MSkillEnhance] = provided[enums.ActionIdType.MSkillEnhance] ?? 0
+      provided[enums.ActionIdType.ASkillEnhance] = provided[enums.ActionIdType.ASkillEnhance] ?? 0
+    }
+    const deleteEvent = hasEventEffectType(enums.EventEffectType.CardDelete, enums.EventEffectType.SelectDelete)
+    if (deleteEvent) {
+      provided[enums.ActionIdType.Delete] = (provided[enums.ActionIdType.Delete] ?? 0) + 1
+      provided[enums.ActionIdType.MSkillDelete] = provided[enums.ActionIdType.MSkillDelete] ?? 0
+      provided[enums.ActionIdType.ASkillDelete] = provided[enums.ActionIdType.ASkillDelete] ?? 0
+    }
+    if (hasEventEffectType(enums.EventEffectType.TroubleDelete)) {
+      provided[enums.ActionIdType.TroubleDelete] = (provided[enums.ActionIdType.TroubleDelete] ?? 0) + 1
+      provided[enums.ActionIdType.Delete] = (provided[enums.ActionIdType.Delete] ?? 0) + 1
+    }
+    if (hasEventEffectType(enums.EventEffectType.CardChange)) {
+      provided[enums.ActionIdType.Change] = (provided[enums.ActionIdType.Change] ?? 0) + 1
+    }
+    return provided
+  }
+
   // イベントのフラグを判定する
   const givesSkillCard =
     includeSelfTrigger && card.events.some((e: SupportEvent) => e.effect_type === enums.EventEffectType.SkillCard)
@@ -78,8 +157,9 @@ export function getProvidedActions(
   const pDrinkBodyCount =
     card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount)?.count ?? 1
   const pDrinkTotalCount = pItemFireCount * pDrinkBodyCount
-  // Pアイテムの1回あたり操作枚数（body内の最初のエントリのcount、なければ1）
-  const pItemBodyCount = card.p_item?.effect?.body?.[0]?.count ?? 1
+  // Pアイテムの1回あたり操作枚数（body内のSelectCardsEnhanceのcount、なければ1）
+  const pItemBodyCount =
+    card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.SelectCardsEnhance)?.count ?? 1
   const pItemTotalCount = pItemFireCount * pItemBodyCount
 
   // タイプ別サブアクション: 対象がアクティブかメンタルかはランダム/選択のため
@@ -114,20 +194,18 @@ export function getProvidedActions(
   const enhanceEvent = hasEventEffectType(enums.EventEffectType.CardEnhance, enums.EventEffectType.SelectEnhance)
   const enhancePItem = pActions.includes(enums.PItemActionType.Enhance)
   const deleteEvent = hasEventEffectType(enums.EventEffectType.CardDelete, enums.EventEffectType.SelectDelete)
+  const troubleDeletePItem = pActions.includes(enums.PItemActionType.TroubleDelete)
   const deletePItem = pActions.includes(enums.PItemActionType.Delete)
 
   const dualRules: [boolean, boolean, ActionIdType][] = [
     [enhanceEvent, enhancePItem, enums.ActionIdType.SkillEnhance],
     [enhanceEvent, enhancePItem, enums.ActionIdType.MSkillEnhance],
     [enhanceEvent, enhancePItem, enums.ActionIdType.ASkillEnhance],
-    [deleteEvent, deletePItem, enums.ActionIdType.Delete],
+    // トラブル削除もスキルカード削除としてカウント（メンタル/アクティブ個別削除には寄与しない）
+    [deleteEvent, deletePItem || troubleDeletePItem, enums.ActionIdType.Delete],
     [deleteEvent, deletePItem, enums.ActionIdType.MSkillDelete],
     [deleteEvent, deletePItem, enums.ActionIdType.ASkillDelete],
-    [
-      hasEventEffectType(enums.EventEffectType.TroubleDelete),
-      pActions.includes(enums.PItemActionType.TroubleDelete),
-      enums.ActionIdType.TroubleDelete,
-    ],
+    [hasEventEffectType(enums.EventEffectType.TroubleDelete), troubleDeletePItem, enums.ActionIdType.TroubleDelete],
     [
       hasEventEffectType(enums.EventEffectType.CardChange),
       pActions.includes(enums.PItemActionType.Change),

@@ -17,6 +17,7 @@ const EXPORT_KEYS = [
   constant.FILTER_STORAGE_KEY,
   constant.CARD_COUNT_CUSTOM_KEY,
   constant.UNIT_SIMULATOR_STORAGE_KEY,
+  constant.USER_SUPPORTS_STORAGE_KEY,
 ] as const
 
 /** エクスポートされる JSON の構造 */

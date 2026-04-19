@@ -14,17 +14,10 @@ import { AbilityExceptionMap } from '../data/score/abilityException'
 /** values の辞書型。 */
 type AbilityValues = Record<string, string>
 
-/**
- * サポートの rarity_tier をマスタ参照用の RarityTierType に変換する。
- *
- * @param card - 対象サポート
- * @returns RarityTierType
- */
-function getRarityTier(card: SupportCard): RarityTierType {
-  if (card.rarity !== RarityType.SSR) {
-    return card.rarity as RarityTierType
-  }
-  return card.is_event_source ? RarityTierType.EventSSR : RarityTierType.SSR
+/** getRarityTier はレアリティとイベントSSRフラグからレアリティ階層を導出する */
+function getRarityTier(rarity: RarityType, isEventSource: boolean): RarityTierType {
+  if (rarity !== RarityType.SSR) return rarity as RarityTierType
+  return isEventSource ? RarityTierType.EventSSR : RarityTierType.SSR
 }
 
 /**
@@ -51,12 +44,12 @@ export function resolveAbilityValues(card: SupportCard, ability: Ability, slotIn
   }
 
   // 効果段階 + スケジュールから凸別値を組み立てる
-  const rarityTier = getRarityTier(card)
+  const rarityTier = getRarityTier(card.rarity, card.is_event_source ?? false)
   const stages = getStages(rarityTier, ability.name_key)
   const schedule = getSchedule(rarityTier, slot)
 
   // 段階データまたはスケジュールが未定義 → 凸別上書きなし
-  if (stages.length === 0 || schedule.length === 0) {
+  if (!stages || stages.length === 0 || !schedule || schedule.length === 0) {
     return {}
   }
 

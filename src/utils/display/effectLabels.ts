@@ -139,6 +139,8 @@ function buildPItemInterpolation(part: PItemEffectPart, t: TFunction): Record<st
   // カード名・アイテム名（固有名詞をそのまま設定）
   if (part.card_name) result.card_name = part.card_name
   if (part.item_name) result.item_name = part.item_name
+  // 汎用テンプレートのラベル名（i18nキーを翻訳して設定）
+  if (part.label_key) result.name = t(part.label_key as TranslationKey)
   return result
 }
 
@@ -175,10 +177,11 @@ export function getPItemEffectLabel(effect: PItemEffect, t: TFunction): string {
     parts.push(t(condKey, buildPItemInterpolation(effect.condition, t)))
   }
 
-  // 本体効果（例: "パラメータ+10"）— 複数ある場合もある
-  for (const action of effect.body) {
-    const bodyKey = getEffectLabelKey(EffectSectionType.PitemBody, action.key)
-    parts.push(t(bodyKey, buildPItemInterpolation(action, t)))
+  // 本体効果（例: "パラメータ+10"）— 複数ある場合は「、」で区切る
+  for (let i = 0; i < effect.body.length; i++) {
+    if (i > 0) parts.push(t('userSupport.pitem_body_separator'))
+    const bodyKey = getEffectLabelKey(EffectSectionType.PitemBody, effect.body[i].key)
+    parts.push(t(bodyKey, buildPItemInterpolation(effect.body[i], t)))
   }
 
   // 回数制限（例: "（プロデュース中3回）"）

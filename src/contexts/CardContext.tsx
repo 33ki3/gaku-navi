@@ -26,6 +26,10 @@ export interface CardDataContextValue {
   onScoreClick: (card: SupportCard, e: React.MouseEvent) => void
   /** サポートの凸数を変更するハンドラ */
   onUncapChange: (cardName: string, uncap: UncapType) => void
+  /** ユーザー定義カードを編集するハンドラ */
+  onEditUserCard?: (card: SupportCard) => void
+  /** ユーザー定義カードを削除するハンドラ */
+  onDeleteUserCard?: (cardName: string) => void
 }
 
 /** CardUIContext が提供する値の型（変化する UI 状態） */

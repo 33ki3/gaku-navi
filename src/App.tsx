@@ -24,6 +24,7 @@ const ScoreDetailModal = lazy(() => import('./components/scoreDetailModal/ScoreD
 const ScoreSettingsPanel = lazy(() => import('./components/scoreSettingsPanel/ScoreSettingsPanel'))
 const FilterSortModal = lazy(() => import('./components/filterBar/FilterSortModal'))
 const UnitSimulatorPanel = lazy(() => import('./components/unitSimulator/UnitSimulatorPanel'))
+const UserCardFormModal = lazy(() => import('./components/userCardForm/UserCardFormModal'))
 
 /**
  * メインアプリケーションコンポーネント
@@ -73,6 +74,21 @@ function App() {
     return isCardEligibleRef.current ? isCardEligibleRef.current(card) : true
   }, [])
 
+  // ユーザー定義カードの編集・削除ハンドラ
+  const handleEditUserCard = useCallback(
+    (card: SupportCard) => {
+      state.ui.setEditingUserCard(card)
+      state.ui.setUserCardFormOpen(true)
+    },
+    [state.ui],
+  )
+  const handleDeleteUserCard = useCallback(
+    (cardName: string) => {
+      state.userCards.deleteUserCard(cardName)
+    },
+    [state.userCards],
+  )
+
   // CardDataContext: 安定したアクション関数（凸数変更時のみ再生成）
   const cardDataCtx = useMemo<CardDataContextValue>(
     () => ({
@@ -80,8 +96,17 @@ function App() {
       onCardClick,
       onScoreClick: handleScoreClick,
       onUncapChange: handleUncapChange,
+      onEditUserCard: handleEditUserCard,
+      onDeleteUserCard: handleDeleteUserCard,
     }),
-    [state.scores.getCardUncap, onCardClick, handleScoreClick, handleUncapChange],
+    [
+      state.scores.getCardUncap,
+      onCardClick,
+      handleScoreClick,
+      handleUncapChange,
+      handleEditUserCard,
+      handleDeleteUserCard,
+    ],
   )
 
   // CardUIContext: 変化する UI 状態（編集モード・選択モード切替時のみ再生成）
@@ -115,6 +140,7 @@ function App() {
             simulatorPinned={state.ui.simulatorPinned}
             bothPanelsPinned={state.ui.bothPanelsPinned}
             panelRightOffset={panelRightOffset}
+            onOpenUserCardForm={() => state.ui.setUserCardFormOpen(true)}
           />
 
           <main className={`mx-auto px-4 py-5 sm:px-6 lg:px-8 ${state.ui.anyPanelPinned ? '' : 'max-w-7xl'}`}>
@@ -194,6 +220,8 @@ function App() {
                 }
                 calculateForCard={state.scores.calculateForCard}
                 onClose={() => state.ui.setSelectedCard(null)}
+                onEditUserCard={handleEditUserCard}
+                onDeleteUserCard={handleDeleteUserCard}
               />
             </Suspense>
           )}
@@ -256,6 +284,28 @@ function App() {
                 setUnitCardSelectMode={state.ui.setUnitCardSelectMode}
                 countCustom={state.scores.countCustom}
                 scoreSettings={state.scores.scoreSettings}
+                allCards={state.userCards.allCards}
+                allCardByName={state.userCards.allCardByName}
+              />
+            </Suspense>
+          )}
+          {/* ユーザーカード登録・編集モーダル */}
+          {state.ui.userCardFormOpen && (
+            <Suspense fallback={null}>
+              <UserCardFormModal
+                onClose={() => {
+                  state.ui.setUserCardFormOpen(false)
+                  state.ui.setEditingUserCard(null)
+                }}
+                onSave={(card) => {
+                  if (state.ui.editingUserCard) {
+                    state.userCards.updateUserCard(state.ui.editingUserCard.name, card)
+                  } else {
+                    state.userCards.addUserCard(card)
+                  }
+                }}
+                editingCard={state.ui.editingUserCard ?? undefined}
+                existingNames={state.userCards.userCardNames}
               />
             </Suspense>
           )}

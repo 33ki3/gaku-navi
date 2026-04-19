@@ -42,6 +42,10 @@ interface UnitSimulatorPanelProps {
   countCustom: CardCountCustomState
   /** スコア設定（Appと共有） */
   scoreSettings: ScoreSettings
+  /** 全サポート一覧（ユーザー追加カード含む） */
+  allCards: SupportCard[]
+  /** サポート名→サポートのマップ（ユーザー追加カード含む） */
+  allCardByName: Map<string, SupportCard>
 }
 
 /**
@@ -60,6 +64,8 @@ export default function UnitSimulatorPanel({
   setUnitCardSelectMode,
   countCustom,
   scoreSettings,
+  allCards,
+  allCardByName,
 }: UnitSimulatorPanelProps) {
   const { t } = useTranslation()
   const {
@@ -72,7 +78,7 @@ export default function UnitSimulatorPanel({
     result,
     hasCalculated,
     noCandidates,
-  } = useUnitSimulator()
+  } = useUnitSimulator(allCards, allCardByName)
 
   // サポート一覧選択モード用: addCard コールバックを親に登録する（自動/手動両対応）
   const settingsRef = useRef(settings)

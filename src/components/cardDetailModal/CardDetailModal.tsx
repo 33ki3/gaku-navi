@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
 import type { SupportCard, CardCalculationResult } from '../../types/card'
 import * as data from '../../data'
 import * as constant from '../../constant'
-import { BadgeSizeType, BadgeWeightType, ButtonSizeType, UncapType } from '../../types/enums'
+import { BadgeSizeType, BadgeWeightType, ButtonSizeType, SourceType, UncapType } from '../../types/enums'
 import { Badge } from '../ui/Badge'
 import CloseButton from '../ui/CloseButton'
 import ModalOverlay from '../ui/ModalOverlay'
@@ -28,6 +28,10 @@ interface CardDetailModalProps {
   calculateForCard: (card: SupportCard, uncap: UncapType) => CardCalculationResult | undefined
   /** モーダルを閉じる関数 */
   onClose: () => void
+  /** ユーザー定義カード編集コールバック */
+  onEditUserCard?: (card: SupportCard) => void
+  /** ユーザー定義カード削除コールバック */
+  onDeleteUserCard?: (cardName: string) => void
 }
 
 /** サポート詳細モーダル */
@@ -37,8 +41,11 @@ export default function CardDetailModal({
   scoreResult: initialScoreResult,
   calculateForCard,
   onClose,
+  onEditUserCard,
+  onDeleteUserCard,
 }: CardDetailModalProps) {
   const { t } = useTranslation()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   // 未所持サポートは4凸で表示する（モーダル内で凸数を切り替え可能、永続保存はしない）
   const [uncap, setUncap] = useState<UncapType>(
     initialUncap === UncapType.NotOwned ? constant.DEFAULT_UNCAP : initialUncap,
@@ -102,6 +109,53 @@ export default function CardDetailModal({
         onUncapChange={setUncap}
         scoreResult={scoreResult}
       />
+
+      {/* ユーザー定義カードの編集・削除ボタン */}
+      {card.source === SourceType.User && (onEditUserCard || onDeleteUserCard) && (
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur px-6 py-3 flex items-center gap-3 rounded-b-2xl">
+          {/* 左側: 通常時は編集ボタン、削除確認時は確認テキスト+確定ボタン */}
+          {!showDeleteConfirm && onEditUserCard && (
+            <button
+              onClick={() => {
+                onEditUserCard(card)
+                onClose()
+              }}
+              className="flex-1 px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              {t('userSupport.edit_button')}
+            </button>
+          )}
+          {showDeleteConfirm && (
+            <div className="flex-1 flex items-center gap-2">
+              <span className="text-xs text-red-600 font-bold">{t('userSupport.delete_confirm')}</span>
+              <button
+                onClick={() => {
+                  onDeleteUserCard?.(card.name)
+                  onClose()
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+              >
+                {t('userSupport.delete_confirm_yes')}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                {t('userSupport.delete_confirm_no')}
+              </button>
+            </div>
+          )}
+          {/* 右側: 削除ボタン（確認中は非表示） */}
+          {!showDeleteConfirm && onDeleteUserCard && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex-1 px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              {t('userSupport.delete_button')}
+            </button>
+          )}
+        </div>
+      )}
     </ModalOverlay>
   )
 }

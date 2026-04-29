@@ -22074,5 +22074,217 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "あなたとふたり、電車で",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gacha",
+    "release_date": "2026/04/29",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vo_initial_stat",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_20",
+        "trigger_key": "sp_lesson_20",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "ssr_card_acquire",
+        "trigger_key": "ssr_card_acquire",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "ガタゴトすやすや",
+      "rarity": "ssr",
+      "type": "active",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 1,
+          "effect": {
+            "use_condition": {
+              "key": "keyword_state",
+              "keyword": "reserve"
+            },
+            "groups": [
+              {
+                "action": {
+                  "key": "change_policy",
+                  "keyword": "aggressive"
+                }
+              },
+              {
+                "action": {
+                  "key": "param_up",
+                  "value": 11
+                }
+              },
+              {
+                "action": {
+                  "key": "replace_all_hand"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": []
+    }
+  },
+  {
+    "name": "のんびり美味しいひととき",
+    "rarity": "sr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "gacha",
+    "release_date": "2026/04/29",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vi_initial_stat",
+        "parameter_type": "visual",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vi_sp_lesson_rate",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_20",
+        "trigger_key": "sp_lesson_20",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "skill_acquire",
+        "trigger_key": "skill_acquire",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "のんびりアフタヌーン",
+      "rarity": "sr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "visual"
+        },
+        "trigger": {
+          "key": "direct_keyword_gain",
+          "keyword": "full_power_value"
+        },
+        "condition": {
+          "key": "keyword_state",
+          "keyword": "full_power"
+        },
+        "body": [
+          {
+            "key": "keyword_up",
+            "keyword": "full_power_value",
+            "value": 6
+          }
+        ],
+        "limit": {
+          "key": "per_lesson",
+          "count": 1
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

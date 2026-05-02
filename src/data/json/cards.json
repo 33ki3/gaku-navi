@@ -13031,7 +13031,8 @@
       {
         "name_key": "activity_supply_gift_hp",
         "trigger_key": "activity_supply_gift",
-        "values": {}
+        "values": {},
+        "skip_calculation": true
       },
       {
         "name_key": "event_boost",
@@ -16688,7 +16689,8 @@
       {
         "name_key": "activity_supply_gift_hp",
         "trigger_key": "activity_supply_gift",
-        "values": {}
+        "values": {},
+        "skip_calculation": true
       },
       {
         "name_key": "exam_end",

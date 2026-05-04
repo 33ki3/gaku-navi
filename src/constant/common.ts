@@ -72,6 +72,8 @@ export const SLOT_COUNT = 6
 export const SP_TOTAL_MAX = 6
 /** 局所探索の最大イテレーション回数 */
 export const MAX_SWAP_ITERATIONS = 10
+/** レンタル候補の最大試行枚数（マルチスタートおよびレンタル自動選出で試すカードの上限） */
+export const RENTAL_CANDIDATE_LIMIT = 20
 
 /** タイプ別編成枚数のデフォルト最小値 */
 export const TYPE_COUNT_MIN_DEFAULT = 0

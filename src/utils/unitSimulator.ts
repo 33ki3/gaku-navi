@@ -611,26 +611,68 @@ function autoDesignateRental(
     }
   }
 
-  // 未所持サポートの4凸スワップを検討する（シナジー込みで評価）
+  // 未所持または既所持だが編成にいないサポートを4凸レンタル候補として検討する（シナジー込みで評価）
   const lockedNames = new Set(input.settings.lockedCards)
   const memberNames = new Set(members.map((m) => m.card.name))
+
+  // 既所持で編成外のサポートを4凸で再計算してスワップ候補に追加する
+  // 例: 0凸所持の高スコアカードが greedy で選ばれなかった場合にレンタルとして使えるようにする
+  const ownedNonMemberAt4: CandidateCard[] = []
+  if (!scoreSettings.useFixedUncap) {
+    for (const card of input.allCards) {
+      if (memberNames.has(card.name)) continue
+      if (card.plan !== input.settings.plan && card.plan !== enums.PlanType.Free) continue
+      if (input.settings.allowedTypes.length > 0 && !input.settings.allowedTypes.includes(card.type)) continue
+      const uncap = input.cardUncaps[card.name] ?? constant.DEFAULT_UNCAP
+      if (uncap === enums.UncapType.NotOwned) continue // unownedAt4 に含まれる
+      const customData = input.cardCountCustom?.[card.name]
+      const baseResult = calculateCardParameter(
+        card,
+        enums.UncapType.Four,
+        effectiveCounts,
+        {},
+        scoreSettings.parameterBonusBase,
+        scoreSettings.includeSelfTrigger,
+        scoreSettings.includePItem,
+        perLessonValues,
+        customData?.selfTrigger,
+        customData?.pItemCount,
+      )
+      ownedNonMemberAt4.push({
+        card,
+        uncap: enums.UncapType.Four,
+        baseScore: baseResult.totalIncrease,
+        baseResult,
+        spCategory: getSpCategory(card),
+        paramBonusPercent: getParamBonusPercent(card, enums.UncapType.Four),
+      })
+    }
+  }
+
+  // 全スワップ候補（未所持 + 既所持の非編成）をスコア上位 RENTAL_CANDIDATE_LIMIT 枚に絞る
+  const allSwapCandidates = [...unownedAt4, ...ownedNonMemberAt4]
+  allSwapCandidates.sort((a, b) => b.baseScore - a.baseScore)
+  if (allSwapCandidates.length > constant.RENTAL_CANDIDATE_LIMIT) {
+    allSwapCandidates.length = constant.RENTAL_CANDIDATE_LIMIT
+  }
+
   let bestSwapScore = -Infinity
   let bestSwapMemberIdx = -1
   let bestSwapCandidate: CandidateCard | null = null
 
-  for (const unowned of unownedAt4) {
-    if (memberNames.has(unowned.card.name)) continue
+  for (const candidate of allSwapCandidates) {
+    if (memberNames.has(candidate.card.name)) continue
     for (let i = 0; i < members.length; i++) {
       if (lockedNames.has(members[i].card.name)) continue
       const trial = [...members]
-      trial[i] = unowned
+      trial[i] = candidate
       if (!meetsSpConstraint(trial, input.settings.spConstraint)) continue
       if (!meetsTypeConstraint(trial, input.settings.typeCountMin, input.settings.typeCountMax)) continue
       const trialScore = evaluateUnit(trial, input, effectiveCounts, paramCtx)
       if (trialScore > bestSwapScore) {
         bestSwapScore = trialScore
         bestSwapMemberIdx = i
-        bestSwapCandidate = unowned
+        bestSwapCandidate = candidate
       }
     }
   }
@@ -665,6 +707,92 @@ function autoDesignateRental(
   // 全員4凸かつ未所持スワップなし: スコアが最も低いサポートをレンタルとする
   const lowestIdx = members.reduce((minIdx, m, i) => (m.baseScore < members[minIdx].baseScore ? i : minIdx), 0)
   return { members, rentalName: members[lowestIdx].card.name }
+}
+
+/**
+ * 全サポートから 4凸レンタル候補を最大 RENTAL_CANDIDATE_LIMIT 枚取得する
+ *
+ * 実アクション回数でのスコア上位と、カウントゼロでのスコア上位の和集合を返す。
+ * これにより、アクション回数依存型（m_skill_enhance 等）と非依存型のどちらも
+ * 漏れなく候補に含め、Phase 0 マルチスタートでの評価バイアスを解消する。
+ *
+ * @param input - 最適化入力
+ * @param schedule - スケジュール解析結果
+ * @param excludedNames - 除外するサポート名（固定カード等）
+ * @returns 4凸レンタル候補配列（baseScore降順・最大 RENTAL_CANDIDATE_LIMIT 枚）
+ */
+function buildRentalPool(
+  input: OptimizeInput,
+  schedule: ResolvedSchedule,
+  excludedNames: Set<string>,
+): CandidateCard[] {
+  const { scoreSettings } = input
+  const { effectiveCounts, perLessonValues } = schedule
+
+  // 各カードについて実m値とカウントゼロの両スコアを計算する
+  const scoredCards: { candidate: CandidateCard; zeroCountScore: number }[] = []
+
+  for (const card of input.allCards) {
+    if (excludedNames.has(card.name)) continue
+    if (card.plan !== input.settings.plan && card.plan !== enums.PlanType.Free) continue
+    if (input.settings.allowedTypes.length > 0 && !input.settings.allowedTypes.includes(card.type)) continue
+    const customData = input.cardCountCustom?.[card.name]
+
+    // 実アクション回数でのスコア計算（試行フェーズで使う baseResult として利用）
+    const actualResult = calculateCardParameter(
+      card,
+      enums.UncapType.Four,
+      effectiveCounts,
+      {},
+      scoreSettings.parameterBonusBase,
+      scoreSettings.includeSelfTrigger,
+      scoreSettings.includePItem,
+      perLessonValues,
+      customData?.selfTrigger,
+      customData?.pItemCount,
+    )
+    // カウントゼロでのスコア計算（アクション回数依存バイアスを排除したランキング用）
+    const zeroResult = calculateCardParameter(
+      card,
+      enums.UncapType.Four,
+      {},
+      {},
+      scoreSettings.parameterBonusBase,
+      scoreSettings.includeSelfTrigger,
+      scoreSettings.includePItem,
+      perLessonValues,
+      customData?.selfTrigger,
+      customData?.pItemCount,
+    )
+
+    scoredCards.push({
+      candidate: {
+        card,
+        uncap: enums.UncapType.Four,
+        baseScore: actualResult.totalIncrease,
+        baseResult: actualResult,
+        spCategory: getSpCategory(card),
+        paramBonusPercent: getParamBonusPercent(card, enums.UncapType.Four),
+      },
+      zeroCountScore: zeroResult.totalIncrease,
+    })
+  }
+
+  // 実m値ランキング上位 ceil(N/2) とカウントゼロランキング上位 ceil(N/2) の和集合を取る
+  const halfLimit = Math.ceil(constant.RENTAL_CANDIDATE_LIMIT / 2)
+  const byActual = [...scoredCards].sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
+  const byZero = [...scoredCards].sort((a, b) => b.zeroCountScore - a.zeroCountScore)
+
+  const poolMap = new Map<string, CandidateCard>()
+  for (const { candidate } of byActual.slice(0, halfLimit)) {
+    poolMap.set(candidate.card.name, candidate)
+  }
+  for (const { candidate } of byZero.slice(0, halfLimit)) {
+    poolMap.set(candidate.card.name, candidate)
+  }
+
+  // 最終的に実m値スコア降順で返す
+  return [...poolMap.values()].sort((a, b) => b.baseScore - a.baseScore)
 }
 
 /**
@@ -725,6 +853,46 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
   }
 
   const lockedNames = new Set(settings.lockedCards)
+
+  // Phase 0: レンタルファースト マルチスタート（手動レンタル指定なしの場合のみ）
+  // 上位 RENTAL_CANDIDATE_LIMIT 枚を 4凸レンタル固定として greedy + localSearch を実行し、
+  // 最良のレンタル候補を特定する。後段の Phase1-4 結果と比較して高スコアの方を採用する。
+  let multiStartBest: { members: CandidateCard[]; rentalName: string; score: number } | null = null
+  if (!settings.manualRental) {
+    const rentalPool = buildRentalPool(input, schedule, lockedNames)
+    for (const rentalCand of rentalPool) {
+      const trial = greedyInitial(
+        candidates,
+        settings.spConstraint,
+        settings.typeCountMin,
+        settings.typeCountMax,
+        lockedNames,
+        rentalCand,
+      )
+      if (trial.length !== constant.UNIT_SIZE) continue
+      const trialScore = evaluateUnit(trial, input, schedule.effectiveCounts, paramCtx)
+      if (multiStartBest === null || trialScore > multiStartBest.score) {
+        multiStartBest = { members: trial, rentalName: rentalCand.card.name, score: trialScore }
+      }
+    }
+    // 最良のマルチスタート初期解に対して局所探索を実行する
+    if (multiStartBest) {
+      const rentalLockedNames = new Set([...lockedNames, multiStartBest.rentalName])
+      const searched = localSearch(
+        multiStartBest.members,
+        candidates,
+        input,
+        rentalLockedNames,
+        schedule.effectiveCounts,
+        paramCtx,
+      )
+      multiStartBest = {
+        members: searched,
+        rentalName: multiStartBest.rentalName,
+        score: evaluateUnit(searched, input, schedule.effectiveCounts, paramCtx),
+      }
+    }
+  }
 
   // Phase 1: 貪欲初期解（候補不足時は6枚未満でも返す）
   const initial = greedyInitial(
@@ -797,6 +965,11 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     // レンタルスワップ後の局所探索でレンタル対象が入れ替わった場合はレンタル名を維持する
     const finalRentalName = postRental.some((m) => m.card.name === rentalName) ? rentalName : null
 
+    // マルチスタート最良と比較して高スコアの方を採用する
+    const phase4Score = evaluateUnit(postRental, input, schedule.effectiveCounts, paramCtx)
+    if (multiStartBest && multiStartBest.score > phase4Score) {
+      return buildResult(multiStartBest.members, input, schedule.effectiveCounts, multiStartBest.rentalName)
+    }
     return buildResult(postRental, input, schedule.effectiveCounts, finalRentalName ?? undefined)
   }
 

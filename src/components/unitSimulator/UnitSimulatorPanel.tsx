@@ -144,12 +144,14 @@ export default function UnitSimulatorPanel({
       while (padded.length < constant.UNIT_SIZE) padded.push(null)
       const effectiveTargetIdx = targetSlotIndexRef.current !== null ? targetSlotIndexRef.current : padded.indexOf(null)
       const isRentalSlot = effectiveTargetIdx === constant.UNIT_SIZE - 1
-      if (!isRentalSlot && cardUncapsRef.current[card.name] === UncapType.NotOwned) return false
+      // 4凸固定モード（useFixedUncap）のときは未所持チェックをスキップする
+      if (!isRentalSlot && !scoreSettings.useFixedUncap && cardUncapsRef.current[card.name] === UncapType.NotOwned)
+        return false
       return true
     }
     registerIsCardEligible(isEligible)
     return () => registerIsCardEligible(null)
-  }, [registerIsCardEligible, settings.plan, settings.manualCards])
+  }, [registerIsCardEligible, settings.plan, settings.manualCards, scoreSettings.useFixedUncap])
 
   // 点数詳細の発動回数回数調整変更時にスコアのみ自動再計算する
   // （最適化をやり直さず、現在のユニット構成のまま計算し直す）

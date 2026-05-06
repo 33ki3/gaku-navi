@@ -1395,4 +1395,168 @@ describe('最適編成', () => {
       })
     }
   })
+
+  describe('タイプ枚数制約の遵守', () => {
+    it('Voロック3枚 + typeCountMax.Vocal=3 のとき最適化結果のVo枚数が3以下になる', () => {
+      const scoreSettings = makeScoreSettings()
+      const voCards = AllCards.filter(
+        (c) =>
+          (c.plan === enums.PlanType.Anomaly || c.plan === enums.PlanType.Free) && c.type === enums.ParameterType.Vocal,
+      )
+      if (voCards.length < 3) return
+
+      const lockedVoNames = voCards.slice(0, 3).map((c) => c.name)
+      const settings = makeSimulatorSettings([], {
+        lockedCards: lockedVoNames,
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: 3,
+          [enums.ParameterType.Dance]: constant.TYPE_COUNT_MAX_DEFAULT,
+          [enums.ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
+        },
+      })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+      if (!result) return
+
+      const voCount = result.members.filter((m) => m.card.type === enums.ParameterType.Vocal).length
+      expect(voCount).toBeLessThanOrEqual(3)
+    })
+
+    it('manualRental=true + Vo レンタル指定 + Voロック3枚 + typeCountMax.Vocal=3 のとき固定・レンタルが優先されVo枚数が4になる', () => {
+      const scoreSettings = makeScoreSettings()
+      const voCards = AllCards.filter(
+        (c) =>
+          (c.plan === enums.PlanType.Anomaly || c.plan === enums.PlanType.Free) && c.type === enums.ParameterType.Vocal,
+      )
+      if (voCards.length < 4) return
+
+      const lockedVoNames = voCards.slice(0, 3).map((c) => c.name)
+      const rentalVoName = voCards[3].name
+
+      // manualRental=true で Vo をレンタルに指定しつつ Vo を3枚ロック
+      // レンタルを固定しているため rentalCardName の Vo がそのまま編成に含まれ、固定3枚と合わせて Vo=4 になる
+      const settings = makeSimulatorSettings([], {
+        manualRental: true,
+        rentalCardName: rentalVoName,
+        lockedCards: lockedVoNames,
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: 3,
+          [enums.ParameterType.Dance]: constant.TYPE_COUNT_MAX_DEFAULT,
+          [enums.ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
+        },
+      })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+      if (!result) return
+
+      // 固定3枚 + レンタル1枚 = Vo4枚（typeCountMax を超えるが意図的に許容）
+      const voCount = result.members.filter((m) => m.card.type === enums.ParameterType.Vocal).length
+      expect(voCount).toBe(4)
+      // 固定カードがすべて含まれること
+      const resultNames = result.members.map((m) => m.card.name)
+      for (const name of lockedVoNames) {
+        expect(resultNames).toContain(name)
+      }
+      // レンタルカードが含まれること
+      expect(resultNames).toContain(rentalVoName)
+    })
+
+    it('manualRental=true + Vo レンタル指定 + Voロック3枚 + typeCountMax.Vocal=3: 実際のユニット構成を検証', () => {
+      // このテストは実際の関数呼び出し結果をログ出力して動作確認する
+      const scoreSettings = makeScoreSettings()
+      const voCards = AllCards.filter(
+        (c) =>
+          (c.plan === enums.PlanType.Anomaly || c.plan === enums.PlanType.Free) && c.type === enums.ParameterType.Vocal,
+      )
+      // Vo カードが4枚以上あることを確認（なければ失敗させてテストデータ不足を検知）
+      expect(voCards.length).toBeGreaterThanOrEqual(4)
+
+      const lockedVoNames = voCards.slice(0, 3).map((c) => c.name)
+      const rentalVoName = voCards[3].name
+
+      const settings = makeSimulatorSettings([], {
+        manualRental: true,
+        rentalCardName: rentalVoName,
+        lockedCards: lockedVoNames,
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: 3,
+          [enums.ParameterType.Dance]: constant.TYPE_COUNT_MAX_DEFAULT,
+          [enums.ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
+        },
+      })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+
+      expect(result).not.toBeNull()
+      // 3固定 + 1レンタル = Vo4枚
+      const voCount = result!.members.filter((m) => m.card.type === enums.ParameterType.Vocal).length
+      expect(voCount).toBe(4)
+      const resultNames = result!.members.map((m) => m.card.name)
+      // 固定3枚が全て含まれること
+      for (const name of lockedVoNames) {
+        expect(resultNames).toContain(name)
+      }
+      // レンタルカードが含まれること
+      expect(resultNames).toContain(rentalVoName)
+      // レンタルバッジが付いていること
+      const rentalMember = result!.members.find((m) => m.card.name === rentalVoName)
+      expect(rentalMember?.isRental).toBe(true)
+    })
+
+    it('manualRental=false + Voロック4枚 + typeCountMax.Vocal=3 のとき自動レンタルはVoを選出しない', () => {
+      // Voが固定カードで原則上限(3)を超えている場合、自動レンタルはVoを選ばないこと
+      const scoreSettings = makeScoreSettings()
+      const voCards = AllCards.filter(
+        (c) =>
+          (c.plan === enums.PlanType.Anomaly || c.plan === enums.PlanType.Free) && c.type === enums.ParameterType.Vocal,
+      )
+      expect(voCards.length).toBeGreaterThanOrEqual(4)
+
+      const lockedVoNames = voCards.slice(0, 4).map((c) => c.name)
+
+      const settings = makeSimulatorSettings([], {
+        manualRental: false,
+        rentalCardName: null,
+        lockedCards: lockedVoNames,
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: 3,
+          [enums.ParameterType.Dance]: constant.TYPE_COUNT_MAX_DEFAULT,
+          [enums.ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
+        },
+      })
+      const result = optimizeUnit({
+        settings,
+        scoreSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+
+      const rentalMember = result?.members.find((m) => m.isRental)
+
+      expect(result).not.toBeNull()
+      // 固定4枚Voが含まれること
+      const resultNames = result!.members.map((m) => m.card.name)
+      for (const name of lockedVoNames) {
+        expect(resultNames).toContain(name)
+      }
+      // 自動レンタルは Vo を選出しないこと
+      expect(rentalMember?.card.type).not.toBe(enums.ParameterType.Vocal)
+    })
+  })
 })

@@ -705,8 +705,11 @@ function autoDesignateRental(
   }
 
   // 全員4凸かつ未所持スワップなし: スコアが最も低いサポートをレンタルとする
-  const lowestIdx = members.reduce((minIdx, m, i) => (m.baseScore < members[minIdx].baseScore ? i : minIdx), 0)
-  return { members, rentalName: members[lowestIdx].card.name }
+  // 固定サポートはレンタル指定の対象外とする（非固定サポートが優先）
+  const nonLockedForRental = members.filter((m) => !lockedNames.has(m.card.name))
+  const rentalCandidatesForFallback = nonLockedForRental.length > 0 ? nonLockedForRental : members
+  const lowestMember = rentalCandidatesForFallback.reduce((min, m) => (m.baseScore < min.baseScore ? m : min))
+  return { members, rentalName: lowestMember.card.name }
 }
 
 /**
@@ -826,10 +829,39 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
   const candidates = prepareCandidates(input, schedule)
   if (candidates.length === 0) return null
 
-  // レンタル枠のサポート（manualRental は現在常に false だが、将来のUI追加に備えて残す）
+  // 手動指定レンタル（manualRental が true の場合は rentalCardName を4凸レンタル固定する）
   let rentalCandidate: CandidateCard | null = null
   if (settings.manualRental && settings.rentalCardName) {
-    const found = candidates.find((c) => c.card.name === settings.rentalCardName)
+    let found = candidates.find((c) => c.card.name === settings.rentalCardName)
+    if (!found) {
+      // 未所持カードがレンタル固定された場合: candidates に含まれないため allCards から直接追加する
+      const card = input.cardByName.get(settings.rentalCardName)
+      if (card) {
+        const customData = input.cardCountCustom?.[card.name]
+        const baseResult = calculateCardParameter(
+          card,
+          enums.UncapType.Four,
+          schedule.effectiveCounts,
+          {},
+          scoreSettings.parameterBonusBase,
+          scoreSettings.includeSelfTrigger,
+          scoreSettings.includePItem,
+          schedule.perLessonValues,
+          customData?.selfTrigger,
+          customData?.pItemCount,
+        )
+        found = {
+          card,
+          uncap: enums.UncapType.Four,
+          baseScore: baseResult.totalIncrease,
+          baseResult,
+          spCategory: getSpCategory(card),
+          paramBonusPercent: getParamBonusPercent(card, enums.UncapType.Four),
+        }
+        // localSearch でも使えるよう candidates に追加する
+        candidates.push(found)
+      }
+    }
     if (found) {
       // レンタル枠は4凸で再計算する
       const result = calculateCardParameter(
@@ -854,23 +886,86 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
 
   const lockedNames = new Set(settings.lockedCards)
 
+  // 固定カード・レンタルカードのタイプ別枚数を集計し、typeCountMax を緩和する
+  // 固定・レンタルカードはタイプ枚数制約に関わらず常に編成に含める（制約は自由枠の選択のみに適用）
+  const forcedTypeCount: Record<enums.ParameterType, number> = {
+    [enums.ParameterType.Vocal]: 0,
+    [enums.ParameterType.Dance]: 0,
+    [enums.ParameterType.Visual]: 0,
+  }
+  for (const name of lockedNames) {
+    const c = candidates.find((c) => c.card.name === name)
+    if (c && PARAMETER_TYPES.includes(c.card.type as enums.ParameterType)) {
+      forcedTypeCount[c.card.type as enums.ParameterType]++
+    }
+  }
+  if (rentalCandidate && PARAMETER_TYPES.includes(rentalCandidate.card.type as enums.ParameterType)) {
+    forcedTypeCount[rentalCandidate.card.type as enums.ParameterType]++
+  }
+  const adjustedTypeCountMax: TypeCountValues = {
+    [enums.ParameterType.Vocal]: Math.max(
+      settings.typeCountMax[enums.ParameterType.Vocal],
+      forcedTypeCount[enums.ParameterType.Vocal],
+    ),
+    [enums.ParameterType.Dance]: Math.max(
+      settings.typeCountMax[enums.ParameterType.Dance],
+      forcedTypeCount[enums.ParameterType.Dance],
+    ),
+    [enums.ParameterType.Visual]: Math.max(
+      settings.typeCountMax[enums.ParameterType.Visual],
+      forcedTypeCount[enums.ParameterType.Visual],
+    ),
+  }
+  // localSearch / autoDesignateRental に渡す input を adjustedTypeCountMax で更新する
+  const adjustedInput: OptimizeInput = { ...input, settings: { ...settings, typeCountMax: adjustedTypeCountMax } }
+
   // Phase 0: レンタルファースト マルチスタート（手動レンタル指定なしの場合のみ）
   // 上位 RENTAL_CANDIDATE_LIMIT 枚を 4凸レンタル固定として greedy + localSearch を実行し、
   // 最良のレンタル候補を特定する。後段の Phase1-4 結果と比較して高スコアの方を採用する。
   let multiStartBest: { members: CandidateCard[]; rentalName: string; score: number } | null = null
   if (!settings.manualRental) {
-    const rentalPool = buildRentalPool(input, schedule, lockedNames)
+    const rentalPool = buildRentalPool(adjustedInput, schedule, lockedNames)
     for (const rentalCand of rentalPool) {
+      // 固定カードで既に original typeCountMax に達しているタイプは自動レンタル候補から除外する
+      // （例: Vo4枚ロック + typeCountMax.Vocal=3 の場合、Vo のレンタル候補はスキップ）
+      const rentalType = rentalCand.card.type as enums.ParameterType
+      if (PARAMETER_TYPES.includes(rentalType) && forcedTypeCount[rentalType] >= settings.typeCountMax[rentalType]) {
+        continue
+      }
+      // Phase 0 では rentalCand ごとに adjustedTypeCountMax を再計算する（rentalCand のタイプを考慮）
+      const phase0ForcedTypeCount: Record<enums.ParameterType, number> = { ...forcedTypeCount }
+      if (PARAMETER_TYPES.includes(rentalCand.card.type as enums.ParameterType)) {
+        phase0ForcedTypeCount[rentalCand.card.type as enums.ParameterType]++
+      }
+      const phase0AdjMax: TypeCountValues = {
+        [enums.ParameterType.Vocal]: Math.max(
+          settings.typeCountMax[enums.ParameterType.Vocal],
+          phase0ForcedTypeCount[enums.ParameterType.Vocal],
+        ),
+        [enums.ParameterType.Dance]: Math.max(
+          settings.typeCountMax[enums.ParameterType.Dance],
+          phase0ForcedTypeCount[enums.ParameterType.Dance],
+        ),
+        [enums.ParameterType.Visual]: Math.max(
+          settings.typeCountMax[enums.ParameterType.Visual],
+          phase0ForcedTypeCount[enums.ParameterType.Visual],
+        ),
+      }
+      const phase0Input: OptimizeInput = {
+        ...input,
+        settings: { ...settings, typeCountMax: phase0AdjMax },
+      }
       const trial = greedyInitial(
         candidates,
         settings.spConstraint,
         settings.typeCountMin,
-        settings.typeCountMax,
+        phase0AdjMax,
         lockedNames,
         rentalCand,
       )
       if (trial.length !== constant.UNIT_SIZE) continue
-      const trialScore = evaluateUnit(trial, input, schedule.effectiveCounts, paramCtx)
+      if (!meetsTypeConstraint(trial, settings.typeCountMin, phase0AdjMax)) continue
+      const trialScore = evaluateUnit(trial, phase0Input, schedule.effectiveCounts, paramCtx)
       if (multiStartBest === null || trialScore > multiStartBest.score) {
         multiStartBest = { members: trial, rentalName: rentalCand.card.name, score: trialScore }
       }
@@ -881,7 +976,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
       const searched = localSearch(
         multiStartBest.members,
         candidates,
-        input,
+        adjustedInput,
         rentalLockedNames,
         schedule.effectiveCounts,
         paramCtx,
@@ -889,7 +984,7 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
       multiStartBest = {
         members: searched,
         rentalName: multiStartBest.rentalName,
-        score: evaluateUnit(searched, input, schedule.effectiveCounts, paramCtx),
+        score: evaluateUnit(searched, adjustedInput, schedule.effectiveCounts, paramCtx),
       }
     }
   }
@@ -899,16 +994,18 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     candidates,
     settings.spConstraint,
     settings.typeCountMin,
-    settings.typeCountMax,
+    adjustedTypeCountMax,
     lockedNames,
     rentalCandidate,
   )
   if (initial.length === 0) return null
 
   // Phase 2: 局所探索（6枚揃っている場合のみ実行）
+  // レンタルカードが固定されている場合は localSearch でも swap されないよう lockedNames に追加する
+  const phase2LockedNames = rentalCandidate ? new Set([...lockedNames, rentalCandidate.card.name]) : lockedNames
   const optimized =
     initial.length === constant.UNIT_SIZE
-      ? localSearch(initial, candidates, input, lockedNames, schedule.effectiveCounts, paramCtx)
+      ? localSearch(initial, candidates, adjustedInput, phase2LockedNames, schedule.effectiveCounts, paramCtx)
       : initial
 
   // Phase 3: レンタル枠の自動選出（手動指定でない場合）
@@ -949,7 +1046,13 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
       unownedAt4.sort((a, b) => b.baseScore - a.baseScore)
       unownedAt4.length = Math.min(unownedAt4.length, constant.UNIT_SIZE * 2)
     }
-    const { members: rentalMembers, rentalName } = autoDesignateRental(optimized, input, schedule, paramCtx, unownedAt4)
+    const { members: rentalMembers, rentalName } = autoDesignateRental(
+      optimized,
+      adjustedInput,
+      schedule,
+      paramCtx,
+      unownedAt4,
+    )
 
     // Phase 4: レンタルスワップ後の局所探索
     // autoDesignateRental が未所持サポートをスワップインした場合、ユニット構成が変わるため
@@ -959,14 +1062,21 @@ export function optimizeUnit(input: OptimizeInput): UnitResult | null {
     let postRental = rentalMembers
     if (rentalChanged && rentalMembers.length === constant.UNIT_SIZE) {
       const phase4Locked = rentalName ? new Set([...lockedNames, rentalName]) : lockedNames
-      postRental = localSearch(rentalMembers, candidates, input, phase4Locked, schedule.effectiveCounts, paramCtx)
+      postRental = localSearch(
+        rentalMembers,
+        candidates,
+        adjustedInput,
+        phase4Locked,
+        schedule.effectiveCounts,
+        paramCtx,
+      )
     }
 
     // レンタルスワップ後の局所探索でレンタル対象が入れ替わった場合はレンタル名を維持する
     const finalRentalName = postRental.some((m) => m.card.name === rentalName) ? rentalName : null
 
     // マルチスタート最良と比較して高スコアの方を採用する
-    const phase4Score = evaluateUnit(postRental, input, schedule.effectiveCounts, paramCtx)
+    const phase4Score = evaluateUnit(postRental, adjustedInput, schedule.effectiveCounts, paramCtx)
     if (multiStartBest && multiStartBest.score > phase4Score) {
       return buildResult(multiStartBest.members, input, schedule.effectiveCounts, multiStartBest.rentalName)
     }
@@ -1133,10 +1243,15 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
   const cardNames = settings.manualCards.filter((n): n is string => n !== null)
   if (cardNames.length === 0) return null
 
-  // レンタル枠は末尾スロット（6枠目）のカードから導出する
+  // レンタル枠は末尾スロット（6枠目）のカードから導出する（manualRental に関わらず常に末尾スロットをレンタルとして扱う）
   const padded = [...settings.manualCards]
   while (padded.length < constant.UNIT_SIZE) padded.push(null)
-  const derivedRentalName = settings.manualRental ? padded[constant.UNIT_SIZE - 1] : null
+  let derivedRentalName = padded[constant.UNIT_SIZE - 1]
+  // 6枚未満のとき末尾スロットが null になるため、settings.rentalCardName が現在のカードリストに含まれていれば
+  // それをレンタルとして引き継ぐ（バッジ表示・4凸強制・パラボ計算を正しく保つ）
+  if (derivedRentalName === null && settings.rentalCardName && cardNames.includes(settings.rentalCardName)) {
+    derivedRentalName = settings.rentalCardName
+  }
 
   // スケジュールからアクション回数を導出する
   const schedule = resolveSchedule(scoreSettings)
@@ -1154,10 +1269,12 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
     const card = input.cardByName.get(cardName)
     if (!card) continue
 
-    // 凸数: 4凸固定モード or レンタル枠なら4凸、それ以外は設定された凸数
-    const isRental = settings.manualRental && derivedRentalName === cardName
+    // 凸数: 4凸固定モード or 末尾スロット（レンタル枠）なら4凸、それ以外は設定された凸数
+    const isRentalSlot = derivedRentalName === cardName
     const uncap =
-      scoreSettings.useFixedUncap || isRental ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
+      scoreSettings.useFixedUncap || isRentalSlot
+        ? enums.UncapType.Four
+        : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
     const customData = input.cardCountCustom?.[card.name]
     const baseResult = calculateCardParameter(
       card,
@@ -1184,5 +1301,7 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
 
   if (candidates.length === 0) return null
 
-  return buildResult(candidates, evalInput, effectiveCounts)
+  // derivedRentalName を autoRentalName として渡し、末尾スロットのカードに isRental: true をセットする
+  // manualRental の状態に関わらず末尾スロットのカードは常にレンタルとして表示する
+  return buildResult(candidates, evalInput, effectiveCounts, derivedRentalName ?? undefined)
 }

@@ -225,12 +225,12 @@ export function useUnitSimulator(
     const cardCountCustom = loadCardCountCustom()
 
     // 明示的にロックされたサポートのみ固定する（ロックボタンで固定したサポートのみ最適化から除外）
-    // 最適化時はレンタル枠を自動選出するため manualRental を無効化する
+    // manualRental が true（ユーザーがレンタル枠を固定済み）の場合はそのまま維持する
+    // false の場合のみ自動選出のためリセットする
     const merged: UnitSimulatorSettings = {
       ...settings,
       manualCards: settings.manualCards.filter((n): n is string => n !== null),
-      manualRental: false,
-      rentalCardName: null,
+      ...(settings.manualRental ? {} : { manualRental: false, rentalCardName: null }),
     }
     const input = { settings: merged, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
 
@@ -250,10 +250,10 @@ export function useUnitSimulator(
           ? [...optimized.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalName]
           : optimized.members.map((m) => m.card.name)
         const latest = settingsRef.current
+        // manualRental はユーザーの明示的な設定を維持する（上書きしない）
         const synced: UnitSimulatorSettings = {
           ...latest,
           manualCards: ordered,
-          manualRental: rentalName !== null,
           rentalCardName: rentalName,
         }
         setSettings(synced)
@@ -269,11 +269,14 @@ export function useUnitSimulator(
       const scoreSettings: ScoreSettings = loadScoreSettings()
       const cardUncaps = loadUncaps()
       const cardCountCustom = custom ?? loadCardCountCustom()
-      const memberNames = result.members.map((m) => m.card.name)
+      // レンタルメンバーを末尾に配置して evaluateManualUnit で末尾スロット = レンタル枠の判定が正しく動くようにする
+      const rentalMember = result.members.find((m) => m.isRental)
+      const memberNames = rentalMember
+        ? [...result.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalMember.card.name]
+        : result.members.map((m) => m.card.name)
       const recalcSettings: UnitSimulatorSettings = {
         ...settings,
         manualCards: memberNames,
-        // レンタルは末尾スロットから位置ベースで導出されるため rentalCardName の上書きは不要
       }
       const input = { settings: recalcSettings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
       const updated = evaluateManualUnit(input)

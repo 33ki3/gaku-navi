@@ -16,7 +16,7 @@ import UnitSlotEditor from './UnitSlotEditor'
 import { useUnitSimulator } from '../../hooks/useUnitSimulator'
 import type { CardCountCustomState } from '../../hooks/useCardCountCustom'
 import { useAccordionState } from '../../hooks'
-import { ButtonSizeType, CollapsibleVariantType, PlanType, SimulatorSectionKey } from '../../types/enums'
+import { ButtonSizeType, CollapsibleVariantType, PlanType, SimulatorSectionKey, UncapType } from '../../types/enums'
 import type { SupportCard, ScoreSettings } from '../../types/card'
 import * as constant from '../../constant'
 
@@ -46,6 +46,8 @@ interface UnitSimulatorPanelProps {
   allCards: SupportCard[]
   /** サポート名→サポートのマップ（ユーザー追加カード含む） */
   allCardByName: Map<string, SupportCard>
+  /** サポート凸数マップ（未所持判定に使用） */
+  cardUncaps: Record<string, UncapType>
 }
 
 /**
@@ -66,6 +68,7 @@ export default function UnitSimulatorPanel({
   scoreSettings,
   allCards,
   allCardByName,
+  cardUncaps,
 }: UnitSimulatorPanelProps) {
   const { t } = useTranslation()
   const {
@@ -111,14 +114,22 @@ export default function UnitSimulatorPanel({
         if (emptyIdx >= 0) padded[emptyIdx] = cardName
       }
       targetSlotIndexRef.current = null
-      setSettingsRef.current({ ...s, manualCards: padded })
+      // 末尾スロットが変わったら rentalCardName を更新する（manualRental に関わらず）
+      const newRentalName = padded[constant.UNIT_SIZE - 1] !== null ? padded[constant.UNIT_SIZE - 1] : s.rentalCardName
+      setSettingsRef.current({ ...s, manualCards: padded, rentalCardName: newRentalName })
       if (padded.filter((n) => n !== null).length >= constant.UNIT_SIZE) setUnitCardSelectMode(false)
     }
     registerAddManualCard(addCard)
     return () => registerAddManualCard(null)
   }, [registerAddManualCard, setUnitCardSelectMode])
 
-  // サポート選択可否判定関数を親に登録する（プラン・重複チェック）
+  // cardUncaps を ref で保持して isEligible から参照できるようにする
+  const cardUncapsRef = useRef(cardUncaps)
+  useEffect(() => {
+    cardUncapsRef.current = cardUncaps
+  }, [cardUncaps])
+
+  // サポート選択可否判定関数を親に登録する（プラン・重複チェック・未所持チェック）
   // allowedTypes は最適化専用フィルタのため、手動編成では適用しない
   useEffect(() => {
     const isEligible = (card: SupportCard) => {
@@ -127,11 +138,20 @@ export default function UnitSimulatorPanel({
       if (card.plan !== PlanType.Free && card.plan !== s.plan) return false
       // 既に選択済みのサポートは選択不可
       if (s.manualCards.includes(card.name)) return false
+      // レンタル枠以外では未所持サポートは選択不可
+      // targetSlotIndexRef が null（連続選択中など）の場合は次に埋まる枠を計算する
+      const padded = [...s.manualCards]
+      while (padded.length < constant.UNIT_SIZE) padded.push(null)
+      const effectiveTargetIdx = targetSlotIndexRef.current !== null ? targetSlotIndexRef.current : padded.indexOf(null)
+      const isRentalSlot = effectiveTargetIdx === constant.UNIT_SIZE - 1
+      // 4凸固定モード（useFixedUncap）のときは未所持チェックをスキップする
+      if (!isRentalSlot && !scoreSettings.useFixedUncap && cardUncapsRef.current[card.name] === UncapType.NotOwned)
+        return false
       return true
     }
     registerIsCardEligible(isEligible)
     return () => registerIsCardEligible(null)
-  }, [registerIsCardEligible, settings.plan, settings.manualCards])
+  }, [registerIsCardEligible, settings.plan, settings.manualCards, scoreSettings.useFixedUncap])
 
   // 点数詳細の発動回数回数調整変更時にスコアのみ自動再計算する
   // （最適化をやり直さず、現在のユニット構成のまま計算し直す）
@@ -202,6 +222,18 @@ export default function UnitSimulatorPanel({
   /** サポート固定トグル */
   const handleToggleLock = useCallback(
     (cardName: string) => {
+      // レンタルカード判定: 末尾スロット（インデックス5）のカードをレンタル枠とする
+      const isRentalCard = settings.manualCards[constant.UNIT_SIZE - 1] === cardName
+      if (isRentalCard) {
+        const nowRentalLocked = settings.manualRental && settings.rentalCardName === cardName
+        if (nowRentalLocked) {
+          setSettings({ ...settings, manualRental: false, rentalCardName: null })
+        } else {
+          setSettings({ ...settings, manualRental: true, rentalCardName: cardName })
+        }
+        return
+      }
+      // 通常カードの固定アイコン: lockedCards をトグルする
       const locked = settings.lockedCards
       const next = locked.includes(cardName) ? locked.filter((n) => n !== cardName) : [...locked, cardName]
       setSettings({ ...settings, lockedCards: next })
@@ -214,8 +246,15 @@ export default function UnitSimulatorPanel({
     (name: string) => {
       const nextCards = settings.manualCards.map((n) => (n === name ? null : n))
       const nextLocked = settings.lockedCards.filter((n) => n !== name)
-      // レンタルは末尾スロット（6枠目）で位置ベースに決まるため rentalCardName のクリアは不要
-      setSettings({ ...settings, manualCards: nextCards, lockedCards: nextLocked })
+      // 末尾スロットのカードを削除したとき rentalCardName とロック状態をクリアする
+      const isRentalSlot = settings.manualCards[constant.UNIT_SIZE - 1] === name
+      setSettings({
+        ...settings,
+        manualCards: nextCards,
+        lockedCards: nextLocked,
+        manualRental: isRentalSlot ? false : settings.manualRental,
+        rentalCardName: isRentalSlot ? null : settings.rentalCardName,
+      })
     },
     [settings, setSettings],
   )
@@ -303,7 +342,11 @@ export default function UnitSimulatorPanel({
               {result !== null && (
                 <UnitResult
                   result={result}
-                  lockedCards={settings.lockedCards}
+                  lockedCards={[
+                    ...settings.lockedCards,
+                    // レンタル固定中のカードも isLocked として表示する
+                    ...(settings.manualRental && settings.rentalCardName ? [settings.rentalCardName] : []),
+                  ]}
                   customizedCardNames={customizedCardNames}
                   onToggleLock={handleToggleLock}
                   onRemove={handleRemoveCard}

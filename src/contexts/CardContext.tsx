@@ -42,6 +42,8 @@ export interface CardUIContextValue {
   unitCardSelectMode?: boolean
   /** サポート選択モード中にサポートが選択可能かどうか判定する関数 */
   isCardEligible?: (card: SupportCard) => boolean
+  /** isCardEligible の更新バージョン（変化時に CardListItem を強制再レンダリングするため） */
+  eligibilityVersion?: number
 }
 
 /** データ層 Context 本体（初期値 null） */

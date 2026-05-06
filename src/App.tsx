@@ -6,7 +6,7 @@
  * 組み合わせて表示する。useAppState で全体の状態を管理する。
  */
 import { useTranslation } from 'react-i18next'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 
 import AppHeader from './components/header/AppHeader'
 import CardList from './components/cardList/CardList'
@@ -43,8 +43,11 @@ function App() {
 
   // サポート一覧選択モード: サポート選択可否判定関数
   const isCardEligibleRef = useRef<((card: SupportCard) => boolean) | null>(null)
+  // isCardEligible の更新を CardListItem に伝えるためのバージョンカウンター
+  const [eligibilityVersion, setEligibilityVersion] = useState(0)
   const registerIsCardEligible = useCallback((fn: ((card: SupportCard) => boolean) | null) => {
     isCardEligibleRef.current = fn
+    if (fn !== null) setEligibilityVersion((v) => v + 1)
   }, [])
 
   // unitCardSelectMode を ref で保持して onCardClick / isCardEligible を安定化する
@@ -66,6 +69,15 @@ function App() {
       handleCardClick(card)
     },
     [handleCardClick],
+  )
+
+  // 選択モード中はスコアモーダルを開かない（ref で安定化）
+  const onScoreClick = useCallback(
+    (card: SupportCard, e: MouseEvent) => {
+      if (unitCardSelectModeRef.current) return
+      handleScoreClick(card, e)
+    },
+    [handleScoreClick],
   )
 
   // サポート選択可否判定（ref で安定化）
@@ -94,19 +106,12 @@ function App() {
     () => ({
       getCardUncap: state.scores.getCardUncap,
       onCardClick,
-      onScoreClick: handleScoreClick,
+      onScoreClick,
       onUncapChange: handleUncapChange,
       onEditUserCard: handleEditUserCard,
       onDeleteUserCard: handleDeleteUserCard,
     }),
-    [
-      state.scores.getCardUncap,
-      onCardClick,
-      handleScoreClick,
-      handleUncapChange,
-      handleEditUserCard,
-      handleDeleteUserCard,
-    ],
+    [state.scores.getCardUncap, onCardClick, onScoreClick, handleUncapChange, handleEditUserCard, handleDeleteUserCard],
   )
 
   // CardUIContext: 変化する UI 状態（編集モード・選択モード切替時のみ再生成）
@@ -116,8 +121,9 @@ function App() {
       onToggleUncapEdit: handleToggleUncapEdit,
       unitCardSelectMode: state.ui.unitCardSelectMode,
       isCardEligible,
+      eligibilityVersion,
     }),
-    [state.ui.uncapEditMode, handleToggleUncapEdit, state.ui.unitCardSelectMode, isCardEligible],
+    [state.ui.uncapEditMode, handleToggleUncapEdit, state.ui.unitCardSelectMode, isCardEligible, eligibilityVersion],
   )
 
   // パネル表示に応じてモーダルの右オフセットクラスを計算する
@@ -286,6 +292,7 @@ function App() {
                 scoreSettings={state.scores.scoreSettings}
                 allCards={state.userCards.allCards}
                 allCardByName={state.userCards.allCardByName}
+                cardUncaps={state.scores.cardUncaps}
               />
             </Suspense>
           )}

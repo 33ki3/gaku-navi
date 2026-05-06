@@ -142,8 +142,7 @@ export default function UnitSimulatorPanel({
       // targetSlotIndexRef が null（連続選択中など）の場合は次に埋まる枠を計算する
       const padded = [...s.manualCards]
       while (padded.length < constant.UNIT_SIZE) padded.push(null)
-      const effectiveTargetIdx =
-        targetSlotIndexRef.current !== null ? targetSlotIndexRef.current : padded.indexOf(null)
+      const effectiveTargetIdx = targetSlotIndexRef.current !== null ? targetSlotIndexRef.current : padded.indexOf(null)
       const isRentalSlot = effectiveTargetIdx === constant.UNIT_SIZE - 1
       if (!isRentalSlot && cardUncapsRef.current[card.name] === UncapType.NotOwned) return false
       return true

@@ -1538,19 +1538,6 @@ export const ScoreDetailSectionKey = {
 export type ScoreDetailSectionKey = (typeof ScoreDetailSectionKey)[keyof typeof ScoreDetailSectionKey]
 
 /**
- * 最適編成パネルのセクションキー。
- */
-export const SimulatorSectionKey = {
-  /** 編成設定 */
-  Settings: 'settings',
-  /** スロット編集 */
-  Slots: 'slots',
-  /** 結果 */
-  Result: 'result',
-} as const
-export type SimulatorSectionKey = (typeof SimulatorSectionKey)[keyof typeof SimulatorSectionKey]
-
-/**
  * ユーザーサポートフォームの折りたたみセクションキー。
  */
 export const UserFormSectionKey = {

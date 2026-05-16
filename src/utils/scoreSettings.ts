@@ -6,7 +6,7 @@
  * スケジュール選択からのアクション回数集計を行う。
  */
 
-import type { ScoreSettings } from '../types/card'
+import type { ScoreSettings, PerLessonParameterValues, ParameterValues } from '../types/card'
 import type { TranslationKey } from '../i18n'
 import * as data from '../data'
 import type { ScheduleWeekData } from '../data'
@@ -49,7 +49,32 @@ function createDefaultSettings(): ScoreSettings {
     includeSelfTrigger: true,
     includePItem: true,
     useFixedUncap: false,
+    useCustomMode: false,
+    customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+    customClassBonus: { vocal: 0, dance: 0, visual: 0 },
+    customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
   }
+}
+
+/**
+ * localStorage から復元した actionCounts を安全な数値に正規化する。
+ *
+ * - 未定義・NaN・負数は 0 に丸める
+ * - 文字列数値は Number() で復元する
+ * - 既知のアクションIDのみを残し、それ以外の古いキーは捨てる
+ */
+function normalizeActionCounts(
+  raw: Partial<Record<enums.ActionIdType, unknown>> | undefined,
+): Partial<Record<enums.ActionIdType, number>> {
+  const normalized: Partial<Record<enums.ActionIdType, number>> = {}
+
+  for (const cat of data.ActionCategoryList) {
+    const value = raw?.[cat.id]
+    const numeric = typeof value === 'number' ? value : Number(value)
+    normalized[cat.id] = Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : 0
+  }
+
+  return normalized
 }
 
 /**
@@ -118,7 +143,8 @@ export function mergeScheduleCounts(
 ): Partial<Record<enums.ActionIdType, number>> {
   // スケジュール自動計算が無効なら、手動入力の値をそのまま返す
   if (!settings.useScheduleLimits) {
-    return settings.actionCounts
+    // 参照共有による後段の意図しない変更を防ぐため、常にコピーを返す
+    return { ...settings.actionCounts }
   }
 
   // スケジュール選択からアクション回数を計算する
@@ -173,6 +199,23 @@ function computeLessonTotals(merged: Partial<Record<enums.ActionIdType, number>>
 }
 
 /**
+ * 読み込んだ設定に旧フォーマットで欠けているフィールドを補完する
+ */
+export function migrateScoreSettings(parsed: ScoreSettings): ScoreSettings {
+  // カスタムモードフィールドが存在しない旧データに対してデフォルト値を補完する
+  // シナリオがカスタムなら useCustomMode を true に揃える
+  const isCustomScenario = parsed.scenario === enums.ScenarioType.Custom
+  return {
+    ...parsed,
+    actionCounts: normalizeActionCounts(parsed.actionCounts),
+    useCustomMode: isCustomScenario || (parsed.useCustomMode ?? false),
+    customParamBonusRows: parsed.customParamBonusRows ?? [{ vocal: 0, dance: 0, visual: 0 }],
+    customClassBonus: parsed.customClassBonus ?? { vocal: 0, dance: 0, visual: 0 },
+    customNonBonusGain: parsed.customNonBonusGain ?? { vocal: 0, dance: 0, visual: 0 },
+  }
+}
+
+/**
  * localStorage からスコア設定を読み込む
  * 保存データがないか壊れている場合はデフォルト値を返す
  *
@@ -194,9 +237,38 @@ export function loadScoreSettings(): ScoreSettings {
     ) {
       return createDefaultSettings()
     }
-    return parsed
+    // 旧フォーマットのデータに欠けているフィールドを補完する
+    return migrateScoreSettings(parsed)
   } catch {
     return createDefaultSettings()
+  }
+}
+
+/**
+ * カスタムパラメータボーナス行配列を PerLessonParameterValues に変換する
+ *
+ * @param rows - カスタムパラメータボーナス行の配列
+ * @returns レッスンごとの Vo/Da/Vi 配列
+ */
+export function customRowsToPerLessonValues(rows: ParameterValues[]): PerLessonParameterValues {
+  return {
+    vocal: rows.map((r) => r.vocal),
+    dance: rows.map((r) => r.dance),
+    visual: rows.map((r) => r.visual),
+  }
+}
+
+/**
+ * カスタムパラメータボーナス行配列の合計値を返す
+ *
+ * @param rows - カスタムパラメータボーナス行の配列
+ * @returns Vo/Da/Vi の合計値
+ */
+export function sumCustomParamBonusRows(rows: ParameterValues[]): ParameterValues {
+  return {
+    vocal: rows.reduce((s, r) => s + r.vocal, 0),
+    dance: rows.reduce((s, r) => s + r.dance, 0),
+    visual: rows.reduce((s, r) => s + r.visual, 0),
   }
 }
 

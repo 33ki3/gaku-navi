@@ -20,6 +20,7 @@ import { useAccordionState } from '../../hooks'
 import { ButtonSizeType, CollapsibleVariantType, PlanType, SimulatorSectionKey, UncapType } from '../../types/enums'
 import type { SupportCard, ScoreSettings } from '../../types/card'
 import * as constant from '../../constant'
+import { resolveParamCap } from '../../data/score/paramCap'
 
 /** UnitSimulatorPanel に渡すプロパティ */
 interface UnitSimulatorPanelProps {
@@ -194,6 +195,12 @@ export default function UnitSimulatorPanel({
     [countCustom.cardCountCustom],
   )
 
+  // シナリオ既定値とユーザー上書きを解決した最終的なパラメータ上限値
+  const resolvedParamCap = useMemo(
+    () => resolveParamCap(scoreSettings.scenario, scoreSettings.difficulty, settings.paramCapOverride),
+    [scoreSettings.scenario, scoreSettings.difficulty, settings.paramCapOverride],
+  )
+
   // アコーディオン
   const { state: sections, toggle } = useAccordionState({
     [SimulatorSectionKey.Settings]: true,
@@ -289,7 +296,12 @@ export default function UnitSimulatorPanel({
             variant={CollapsibleVariantType.Panel}
           >
             <div className="mt-2">
-              <UnitSettings settings={settings} onChange={setSettings} />
+              <UnitSettings
+                settings={settings}
+                onChange={setSettings}
+                scenario={scoreSettings.scenario}
+                resolvedParamCap={resolvedParamCap}
+              />
             </div>
           </CollapsibleSection>
         </div>
@@ -378,7 +390,11 @@ export default function UnitSimulatorPanel({
                   scenario={scoreSettings.scenario}
                   difficulty={scoreSettings.difficulty}
                   scheduleSelections={scoreSettings.scheduleSelections}
+                  useCustomMode={scoreSettings.useCustomMode}
+                  customClassBonus={scoreSettings.customClassBonus}
+                  customNonBonusGain={scoreSettings.customNonBonusGain}
                   initialParams={settings.initialParams}
+                  paramCapOverride={settings.paramCapOverride}
                   manualCards={settings.manualCards}
                   onStartSelect={handleSlotSelect}
                   selectMode={unitCardSelectMode}

@@ -7,6 +7,7 @@
 
 import type { ScoreSettings } from '../types/card'
 import * as constant from '../constant'
+import { migrateScoreSettings } from './scoreSettings'
 
 /** プリセット1件のデータ。保存名と設定値を持つ。 */
 export interface ScorePreset {
@@ -27,14 +28,19 @@ export function loadPresets(): ScorePreset[] {
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown[]
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (item): item is ScorePreset =>
-        typeof item === 'object' &&
-        item !== null &&
-        typeof (item as ScorePreset).name === 'string' &&
-        typeof (item as ScorePreset).settings === 'object' &&
-        (item as ScorePreset).settings !== null,
-    )
+    return parsed
+      .filter(
+        (item): item is ScorePreset =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as ScorePreset).name === 'string' &&
+          typeof (item as ScorePreset).settings === 'object' &&
+          (item as ScorePreset).settings !== null,
+      )
+      .map((preset) => ({
+        ...preset,
+        settings: migrateScoreSettings(preset.settings),
+      }))
   } catch {
     return []
   }

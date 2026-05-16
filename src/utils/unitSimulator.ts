@@ -11,6 +11,7 @@ import type { UnitSimulatorSettings, UnitMember, UnitResult, TypeCountValues } f
 import type { CardCountCustom } from '../hooks/useCardCountCustom'
 import { mergeScheduleCounts } from './scoreSettings'
 import { getPerLessonParameterValues } from './calculator/parameterBonus'
+import { customRowsToPerLessonValues } from './scoreSettings'
 import { computeUnitSupportSynergy } from './supportSynergy'
 import { countSpTypeConstrainedCombos, spTypeConstrainedCombos } from './unitOptimizer/combinatorics'
 import { createEvaluatorSeed, evaluateUnitScoreWithSeed } from './unitOptimizer/evaluator'
@@ -23,7 +24,7 @@ import {
   createRentalPool,
   prepareCandidates,
 } from './unitOptimizer/candidatePreparation'
-import { getParamCap } from '../data/score/paramCap'
+import { resolveParamCap } from '../data/score/paramCap'
 import { getSpLessonTotal } from '../data/score/lesson'
 import { getExamData } from '../data/score/exam'
 import * as data from '../data'
@@ -65,7 +66,7 @@ interface ResolvedSchedule {
 
 /** パラメータキャップ最適化用の事前計算済み値 */
 interface ParameterContext {
-  /** サポート以外のパラメータ上昇量（初期パラ + SPレッスン + 試験） */
+  /** サポート以外のパラメータ上昇量（初期パラ + SPレッスン + 試験 + カスタム対象外上昇） */
   nonSupportParams: ParameterValues
   /** パラメータ上限（null = 上限なし） */
   paramCap: number | null
@@ -119,17 +120,41 @@ function buildParameterContext(input: OptimizeInput): ParameterContext {
   const spLesson = getSpLessonTotal(scenario, difficulty, scheduleSelections)
 
   // 試験上昇量（中間 + 最終）
-  const examData = getExamData(scenario, difficulty)
+  const examData = scoreSettings.useCustomMode
+    ? {
+        mid: { vocal: 0, dance: 0, visual: 0 },
+        final: { vocal: 0, dance: 0, visual: 0 },
+      }
+    : getExamData(scenario, difficulty)
+
+  const customTargetGain = scoreSettings.useCustomMode
+    ? scoreSettings.parameterBonusBase
+    : { vocal: 0, dance: 0, visual: 0 }
+
+  // カスタムモード時は、授業や試験などパラボ対象外の入力値も合計へ加算する
+  const customNonBonusGain = scoreSettings.useCustomMode
+    ? {
+        vocal: scoreSettings.customClassBonus.vocal + scoreSettings.customNonBonusGain.vocal,
+        dance: scoreSettings.customClassBonus.dance + scoreSettings.customNonBonusGain.dance,
+        visual: scoreSettings.customClassBonus.visual + scoreSettings.customNonBonusGain.visual,
+      }
+    : { vocal: 0, dance: 0, visual: 0 }
 
   // サポート以外のパラメータ上昇量を合算する
   const nonSupportParams: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   for (const key of PARAMETER_TYPES) {
-    nonSupportParams[key] = settings.initialParams[key] + spLesson[key] + examData.mid[key] + examData.final[key]
+    nonSupportParams[key] =
+      settings.initialParams[key] +
+      spLesson[key] +
+      customTargetGain[key] +
+      examData.mid[key] +
+      examData.final[key] +
+      customNonBonusGain[key]
   }
 
   return {
     nonSupportParams,
-    paramCap: getParamCap(scenario, difficulty),
+    paramCap: resolveParamCap(scenario, difficulty, settings.paramCapOverride),
   }
 }
 
@@ -145,18 +170,26 @@ function buildParameterContext(input: OptimizeInput): ParameterContext {
 function resolveSchedule(scoreSettings: ScoreSettings): ResolvedSchedule {
   // シナリオ・難易度からスケジュールデータを取得する
   const schedule = data.getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
+  // カスタムモード時はスケジュール自動計算を無効にしてすべて手動入力値を使う
+  const settingsForCount = scoreSettings.useCustomMode ? { ...scoreSettings, useScheduleLimits: false } : scoreSettings
   // スケジュールからアクション別の発動回数マップを構築する
-  const effectiveCounts = mergeScheduleCounts(scoreSettings, schedule)
-  // 試験中Pアイテム取得回数を通常のPアイテム取得回数に合算する
-  const examPItemCount = effectiveCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
-  if (examPItemCount > 0) {
-    effectiveCounts[enums.ActionIdType.PItemAcquire] =
-      (effectiveCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount
-  }
+  const mergedCounts = mergeScheduleCounts(settingsForCount, schedule)
+  // 試験後Pアイテム回数を合算する際に元オブジェクトを変更しないよう、常に新しいオブジェクトを構築する
+  const examPItemCount = mergedCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
+  const effectiveCounts =
+    examPItemCount > 0
+      ? {
+          ...mergedCounts,
+          [enums.ActionIdType.PItemAcquire]: (mergedCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount,
+        }
+      : { ...mergedCounts }
   // スケジュール上限あり設定の場合はレッスン別パラメータ値を取得する
-  const perLessonValues = scoreSettings.useScheduleLimits
-    ? getPerLessonParameterValues(scoreSettings.scheduleSelections, scoreSettings.scenario, scoreSettings.difficulty)
-    : undefined
+  // カスタムモード時は customParamBonusRows から per-lesson 値を導出する
+  const perLessonValues = scoreSettings.useCustomMode
+    ? customRowsToPerLessonValues(scoreSettings.customParamBonusRows)
+    : scoreSettings.useScheduleLimits
+      ? getPerLessonParameterValues(scoreSettings.scheduleSelections, scoreSettings.scenario, scoreSettings.difficulty)
+      : undefined
   return { effectiveCounts, perLessonValues }
 }
 

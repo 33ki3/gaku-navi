@@ -67,6 +67,10 @@ function makeUserScoreSettings(pDrinkAcquire = 10): ScoreSettings {
     includeSelfTrigger: true,
     includePItem: true,
     useFixedUncap: false,
+    useCustomMode: false,
+    customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+    customClassBonus: { vocal: 0, dance: 0, visual: 0 },
+    customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
   }
 }
 /** バックアップから復元したユーザーの凸数設定 */

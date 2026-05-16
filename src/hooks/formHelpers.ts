@@ -184,7 +184,6 @@ export function cleanAbilityLabel(raw: string): string {
   return raw
     .replace(/\+\{v\}/g, '')
     .replace(/\{v\}/g, '')
-    .replace(/（プロデュース中\d*回）/g, '')
     .replace(/\+N/g, '')
     .replace(/、\s*上昇/g, '')
     .trim()

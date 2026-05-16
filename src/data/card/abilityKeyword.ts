@@ -161,8 +161,8 @@ const entries: AbilityKeywordEntry[] = [
   },
   {
     id: AbilityKeywordType.OutingCount,
-    label: 'card.ability.outing',
-    badge: 'card.badge.outing',
+    label: 'card.ability.outing_count',
+    badge: 'card.badge.outing_count',
     isParamCategory: false,
     triggers: [TriggerKeyType.OutingCount],
   },

@@ -18,6 +18,7 @@ export const ABILITY_MAX_COUNT: Partial<Record<AbilityNameKeyType, number>> = {
   [AbilityNameKeyType.Customize]: 6,
   [AbilityNameKeyType.ExamEnd]: 2,
   [AbilityNameKeyType.ExamHp]: 1,
+  [AbilityNameKeyType.OutingCount]: 2,
   [AbilityNameKeyType.PItemAcquire]: 6,
   [AbilityNameKeyType.SpLesson20]: 4,
   [AbilityNameKeyType.SpecialTraining]: 3,

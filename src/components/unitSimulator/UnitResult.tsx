@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useCallback, useMemo, useState } from 'react'
 
 import * as constant from '../../constant'
-import { PlusIcon } from '../ui/icons'
+import { PlusIcon, ChevronRightIcon } from '../ui/icons'
 import UnitCardItem from './UnitCardItem'
 import BreakdownRow from './BreakdownRow'
 import type { ActionIdType, ScenarioType, DifficultyType, ActivityIdType } from '../../types/enums'
@@ -55,6 +55,8 @@ interface UnitResultProps {
   onStartSelect: (slotIndex: number) => void
   /** 一覧選択モード中か */
   selectMode: boolean
+  /** 最適化計算中か（計算中は表示順をレンタル末尾で固定する） */
+  isCalculating: boolean
 }
 
 /**
@@ -82,6 +84,7 @@ export default function UnitResult({
   manualCards,
   onStartSelect,
   selectMode,
+  isCalculating,
 }: UnitResultProps) {
   const { t } = useTranslation()
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
@@ -101,11 +104,19 @@ export default function UnitResult({
 
   // スロット順でサポート/空き枠を表示する
   const displayItems = useMemo(() => {
+    if (isCalculating) {
+      const inOrder: Array<(typeof result.members)[number] | null> = [
+        ...result.members.filter((m) => !m.isRental),
+        ...result.members.filter((m) => m.isRental),
+      ]
+      while (inOrder.length < constant.UNIT_SIZE) inOrder.push(null)
+      return inOrder
+    }
     const byName = new Map(result.members.map((m) => [m.card.name, m]))
     const padded = [...manualCards]
     while (padded.length < constant.UNIT_SIZE) padded.push(null)
     return padded.map((name) => (name ? (byName.get(name) ?? null) : null))
-  }, [result.members, manualCards])
+  }, [result, manualCards, isCalculating])
 
   // サポート外パラボ（基礎値 × サポート外% で直接計算）
   const outsideParamBonus = useMemo(
@@ -190,16 +201,21 @@ export default function UnitResult({
       {/* 合計スコア */}
       <div className="bg-slate-50 rounded-lg px-4 py-2.5 cursor-pointer" onClick={handleToggleBreakdown}>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-500">
-            {t('unit.result.total_score')}
-            {classTotal > 0 && (
-              <span className="text-[10px] font-bold text-slate-500 ml-0.5">
-                （{t('unit.result.breakdown_class')}
-                {t('ui.symbol.plus')}
-                {classTotal.toLocaleString()}）
-              </span>
-            )}
-          </span>
+          <div className="flex items-center gap-1">
+            <ChevronRightIcon
+              className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showBreakdown ? 'rotate-90' : ''}`}
+            />
+            <span className="text-xs font-bold text-slate-500">
+              {t('unit.result.total_score')}
+              {classTotal > 0 && (
+                <span className="text-[10px] font-bold text-slate-500 ml-0.5">
+                  （{t('unit.result.breakdown_class')}
+                  {t('ui.symbol.plus')}
+                  {classTotal.toLocaleString()}）
+                </span>
+              )}
+            </span>
+          </div>
           <span className="text-lg font-black text-slate-800">{grandTotal.toLocaleString()}</span>
         </div>
         {/* スコア内訳（VoDaVi別） */}

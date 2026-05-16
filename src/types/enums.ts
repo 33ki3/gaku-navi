@@ -157,6 +157,8 @@ export const AbilityKeywordType = {
   ActivitySupplyGift: 'activity_supply_gift',
   /** お出かけ */
   Outing: 'outing',
+  /** お出かけ（回数制限） */
+  OutingCount: 'outing_count',
   /** 相談 */
   Consult: 'consult',
   /** Pドリンク */
@@ -236,6 +238,8 @@ export const AbilityNameKeyType = {
   ActivitySupplyGift: 'activity_supply_gift',
   /** お出かけ */
   Outing: 'outing',
+  /** お出かけ（回数制限） */
+  OutingCount: 'outing_count',
   /** 相談 */
   Consult: 'consult',
   /** Pドリンク交換 */
@@ -837,6 +841,8 @@ export const TriggerKeyType = {
   ActivitySupplyGift: 'activity_supply_gift',
   /** お出かけ */
   Outing: 'outing',
+  /** お出かけ（回数制限） */
+  OutingCount: 'outing_count',
   /** 相談 */
   Consult: 'consult',
   /** Pドリンク獲得 */
@@ -1223,6 +1229,8 @@ export const EffectTemplateKeyType = {
   SelectHoldDeckDiscard: 'select_hold_deck_discard',
   /** アイドル固有スキルカード移動+手札強化 */
   MoveIdolEnhanceHand: 'move_idol_enhance_hand',
+  /** アイドル固有スキルカード移動（強化なし） */
+  MoveIdolHand: 'move_idol_hand',
   /** SSRスキルカード移動 */
   KeywordUpMoveSsr: 'keyword_up_move_ssr',
 

@@ -5,7 +5,7 @@
  * 最適編成を表示する。
  */
 import { useTranslation } from 'react-i18next'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { SidePanelLayout } from '../ui/SidePanelLayout'
 import CollapsibleSection from '../ui/CollapsibleSection'
@@ -16,8 +16,7 @@ import UnitResult from './UnitResult'
 import UnitSlotEditor from './UnitSlotEditor'
 import { useUnitSimulator } from '../../hooks/useUnitSimulator'
 import type { CardCountCustomState } from '../../hooks/useCardCountCustom'
-import { useAccordionState } from '../../hooks'
-import { ButtonSizeType, CollapsibleVariantType, PlanType, SimulatorSectionKey, UncapType } from '../../types/enums'
+import { ButtonSizeType, CollapsibleVariantType, PlanType, UncapType } from '../../types/enums'
 import type { SupportCard, ScoreSettings } from '../../types/card'
 import * as constant from '../../constant'
 import { resolveParamCap } from '../../data/score/paramCap'
@@ -201,12 +200,8 @@ export default function UnitSimulatorPanel({
     [scoreSettings.scenario, scoreSettings.difficulty, settings.paramCapOverride],
   )
 
-  // アコーディオン
-  const { state: sections, toggle } = useAccordionState({
-    [SimulatorSectionKey.Settings]: true,
-    [SimulatorSectionKey.Slots]: true,
-    [SimulatorSectionKey.Result]: true,
-  })
+  // 育成プラン設定セクションの開閉状態
+  const [isSettingsOpen, setIsSettingsOpen] = useState(true)
 
   /** 一覧から選択モードの切り替え */
   const handleToggleSelectMode = useCallback(() => {
@@ -291,8 +286,8 @@ export default function UnitSimulatorPanel({
                 {t('unit.settings.title')} <HelpTooltip text={t('unit.settings.title_tip')} />
               </>
             }
-            isOpen={sections[SimulatorSectionKey.Settings]}
-            onToggle={() => toggle(SimulatorSectionKey.Settings)}
+            isOpen={isSettingsOpen}
+            onToggle={() => setIsSettingsOpen((prev) => !prev)}
             variant={CollapsibleVariantType.Panel}
           >
             <div className="mt-2">
@@ -308,108 +303,104 @@ export default function UnitSimulatorPanel({
 
         {/* 最適編成セクション */}
         <div className={constant.SECTION_DIVIDER}>
-          <CollapsibleSection
-            title={t('ui.settings.unit_simulator')}
-            isOpen={sections[SimulatorSectionKey.Slots]}
-            onToggle={() => toggle(SimulatorSectionKey.Slots)}
-            variant={CollapsibleVariantType.Panel}
-          >
-            <div className="mt-2 space-y-4">
-              {/* アクションボタン（上部） */}
-              <div className="flex gap-2">
-                {/* 最適化ボタン（ロック済み以外を最適編成で埋める） */}
-                <button
-                  onClick={() => {
-                    if (isCalculating) {
-                      if (window.confirm(t('unit.cancel_confirm'))) {
-                        cancelOptimize()
-                      }
-                      return
+          <div className="flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-500 uppercase tracking-widest py-1">
+            {t('ui.settings.unit_simulator')}
+          </div>
+          <div className="mt-2 space-y-4">
+            {/* アクションボタン（上部） */}
+            <div className="flex gap-2">
+              {/* 最適化ボタン（ロック済み以外を最適編成で埋める） */}
+              <button
+                onClick={() => {
+                  if (isCalculating) {
+                    if (window.confirm(t('unit.cancel_confirm'))) {
+                      cancelOptimize()
                     }
-                    // サポート選択モード中なら解除する
-                    if (unitCardSelectMode) {
-                      setUnitCardSelectMode(false)
-                      targetSlotIndexRef.current = null
-                    }
-                    optimizeRemaining()
-                  }}
-                  title={t('unit.auto_optimize_tip')}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${
-                    isCalculating
-                      ? 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
-                  }`}
-                >
-                  {isCalculating && exhaustiveProgress !== null
-                    ? t('unit.progress_count', {
-                        done: exhaustiveProgress.done.toLocaleString(),
-                        total: exhaustiveProgress.total.toLocaleString(),
-                      })
-                    : isCalculating
-                      ? t('unit.calculating')
-                      : t('unit.auto_optimize')}
-                </button>
-              </div>
-
-              {/* 候補なし警告 */}
-              {noCandidates && (
-                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
-                  {t('unit.no_candidates')}
-                </div>
-              )}
-
-              {/* スロットエディター（結果表示時は非表示） */}
-              {!isCalculating && result === null && (
-                <UnitSlotEditor
-                  cards={settings.manualCards}
-                  onRemoveCard={handleRemoveCard}
-                  onStartSelect={handleSlotSelect}
-                  selectMode={unitCardSelectMode}
-                  rentalCardName={settings.rentalCardName}
-                />
-              )}
-
-              {/* 計算結果 */}
-              {result !== null && (
-                <UnitResult
-                  result={result}
-                  lockedCards={[
-                    ...settings.lockedCards,
-                    // レンタル固定中のカードも isLocked として表示する
-                    ...(settings.manualRental && settings.rentalCardName ? [settings.rentalCardName] : []),
-                  ]}
-                  customizedCardNames={customizedCardNames}
-                  onToggleLock={handleToggleLock}
-                  onRemove={handleRemoveCard}
-                  cardCountCustom={countCustom.cardCountCustom}
-                  onSelfTriggerChange={countCustom.setSelfTrigger}
-                  onRemoveSelfTrigger={countCustom.removeSelfTrigger}
-                  onPItemCountChange={countCustom.setPItemCount}
-                  onRemovePItemCount={countCustom.removePItemCount}
-                  onClearCardCustom={countCustom.clearCardCustom}
-                  scenario={scoreSettings.scenario}
-                  difficulty={scoreSettings.difficulty}
-                  scheduleSelections={scoreSettings.scheduleSelections}
-                  useCustomMode={scoreSettings.useCustomMode}
-                  customClassBonus={scoreSettings.customClassBonus}
-                  customNonBonusGain={scoreSettings.customNonBonusGain}
-                  initialParams={settings.initialParams}
-                  paramCapOverride={settings.paramCapOverride}
-                  manualCards={settings.manualCards}
-                  onStartSelect={handleSlotSelect}
-                  selectMode={unitCardSelectMode}
-                  isCalculating={isCalculating}
-                />
-              )}
-
-              {/* 計算結果なし */}
-              {result === null && hasCalculated && !isCalculating && (
-                <div className="text-center py-4">
-                  <p className="text-xs text-slate-500">{t('unit.no_result')}</p>
-                </div>
-              )}
+                    return
+                  }
+                  // サポート選択モード中なら解除する
+                  if (unitCardSelectMode) {
+                    setUnitCardSelectMode(false)
+                    targetSlotIndexRef.current = null
+                  }
+                  optimizeRemaining()
+                }}
+                title={t('unit.auto_optimize_tip')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  isCalculating
+                    ? 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                }`}
+              >
+                {isCalculating && exhaustiveProgress !== null
+                  ? t('unit.progress_count', {
+                      done: exhaustiveProgress.done.toLocaleString(),
+                      total: exhaustiveProgress.total.toLocaleString(),
+                    })
+                  : isCalculating
+                    ? t('unit.calculating')
+                    : t('unit.auto_optimize')}
+              </button>
             </div>
-          </CollapsibleSection>
+
+            {/* 候補なし警告 */}
+            {noCandidates && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+                {t('unit.no_candidates')}
+              </div>
+            )}
+
+            {/* スロットエディター（結果表示時は非表示） */}
+            {!isCalculating && result === null && (
+              <UnitSlotEditor
+                cards={settings.manualCards}
+                onRemoveCard={handleRemoveCard}
+                onStartSelect={handleSlotSelect}
+                selectMode={unitCardSelectMode}
+                rentalCardName={settings.rentalCardName}
+              />
+            )}
+
+            {/* 計算結果 */}
+            {result !== null && (
+              <UnitResult
+                result={result}
+                lockedCards={[
+                  ...settings.lockedCards,
+                  // レンタル固定中のカードも isLocked として表示する
+                  ...(settings.manualRental && settings.rentalCardName ? [settings.rentalCardName] : []),
+                ]}
+                customizedCardNames={customizedCardNames}
+                onToggleLock={handleToggleLock}
+                onRemove={handleRemoveCard}
+                cardCountCustom={countCustom.cardCountCustom}
+                onSelfTriggerChange={countCustom.setSelfTrigger}
+                onRemoveSelfTrigger={countCustom.removeSelfTrigger}
+                onPItemCountChange={countCustom.setPItemCount}
+                onRemovePItemCount={countCustom.removePItemCount}
+                onClearCardCustom={countCustom.clearCardCustom}
+                scenario={scoreSettings.scenario}
+                difficulty={scoreSettings.difficulty}
+                scheduleSelections={scoreSettings.scheduleSelections}
+                useCustomMode={scoreSettings.useCustomMode}
+                customClassBonus={scoreSettings.customClassBonus}
+                customNonBonusGain={scoreSettings.customNonBonusGain}
+                initialParams={settings.initialParams}
+                paramCapOverride={settings.paramCapOverride}
+                manualCards={settings.manualCards}
+                onStartSelect={handleSlotSelect}
+                selectMode={unitCardSelectMode}
+                isCalculating={isCalculating}
+              />
+            )}
+
+            {/* 計算結果なし */}
+            {result === null && hasCalculated && !isCalculating && (
+              <div className="text-center py-4">
+                <p className="text-xs text-slate-500">{t('unit.no_result')}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </SidePanelLayout>

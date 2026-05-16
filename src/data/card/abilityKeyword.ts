@@ -160,6 +160,13 @@ const entries: AbilityKeywordEntry[] = [
     triggers: [TriggerKeyType.Outing],
   },
   {
+    id: AbilityKeywordType.OutingCount,
+    label: 'card.ability.outing_count',
+    badge: 'card.badge.outing_count',
+    isParamCategory: false,
+    triggers: [TriggerKeyType.OutingCount],
+  },
+  {
     id: AbilityKeywordType.Consult,
     label: 'card.ability.consult',
     badge: 'card.badge.consult',

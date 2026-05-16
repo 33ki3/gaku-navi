@@ -31,6 +31,23 @@ interface AbilitySectionProps {
 export default function AbilitySection({ form, updateAbility, abilityError }: AbilitySectionProps) {
   const { t } = useTranslation()
 
+  // name_key から能力固有のパラメータ種別を推定する（vo_/da_/vi_ の接頭辞を優先）
+  const inferParamType = (nameKey: enums.AbilityNameKeyType): enums.ParameterType | undefined => {
+    if (nameKey.startsWith('vo_')) return enums.ParameterType.Vocal
+    if (nameKey.startsWith('da_')) return enums.ParameterType.Dance
+    if (nameKey.startsWith('vi_')) return enums.ParameterType.Visual
+    return undefined
+  }
+
+  // 選択肢ラベルは count / param を実データで補間して、同名に見える項目を区別しやすくする
+  const getOptionLabel = (nameKey: enums.AbilityNameKeyType): string => {
+    const inferredParamType = inferParamType(nameKey)
+    const paramType = inferredParamType ?? form.parameterType
+    const param = t(data.getParamLabel(paramType))
+    const count = data.ABILITY_MAX_COUNT[nameKey] ?? 0
+    return cleanAbilityLabel(t(`card.ability_name.${nameKey}` as TranslationKey, { param, v: '', count }))
+  }
+
   // アシストタイプの場合はアビリティ設定不可
   if (form.type === enums.CardType.Assist) {
     return <p className="text-xs text-slate-400">{t('userSupport.assist_no_ability')}</p>
@@ -84,9 +101,7 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
               <option value={data.SLOT_NONE}>-</option>
               {getSlotOptions(slotIdx, rarityTier, freeSlotAbilities).map((nameKey) => (
                 <option key={nameKey} value={nameKey}>
-                  {cleanAbilityLabel(
-                    t(`card.ability_name.${nameKey}` as TranslationKey, { param: '', v: '', count: 0 }),
-                  )}
+                  {getOptionLabel(nameKey)}
                 </option>
               ))}
             </select>

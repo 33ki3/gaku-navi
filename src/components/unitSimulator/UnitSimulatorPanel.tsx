@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { SidePanelLayout } from '../ui/SidePanelLayout'
 import CollapsibleSection from '../ui/CollapsibleSection'
 import CloseButton from '../ui/CloseButton'
+import { HelpTooltip } from '../ui/HelpTooltip'
 import UnitSettings from './UnitSettings'
 import UnitResult from './UnitResult'
 import UnitSlotEditor from './UnitSlotEditor'
@@ -75,12 +76,14 @@ export default function UnitSimulatorPanel({
     settings,
     setSettings,
     optimizeRemaining,
+    cancelOptimize,
     recalculateScores,
     evaluateCurrentCards,
     isCalculating,
     result,
     hasCalculated,
     noCandidates,
+    exhaustiveProgress,
   } = useUnitSimulator(allCards, allCardByName)
 
   // サポート一覧選択モード用: addCard コールバックを親に登録する（自動/手動両対応）
@@ -276,7 +279,11 @@ export default function UnitSimulatorPanel({
         {/* 育成プラン設定 */}
         <div className={constant.SECTION_DIVIDER}>
           <CollapsibleSection
-            title={t('unit.settings.plan')}
+            title={
+              <>
+                {t('unit.settings.plan')} <HelpTooltip text={t('unit.settings.plan_tip')} />
+              </>
+            }
             isOpen={sections[SimulatorSectionKey.Settings]}
             onToggle={() => toggle(SimulatorSectionKey.Settings)}
             variant={CollapsibleVariantType.Panel}
@@ -301,6 +308,12 @@ export default function UnitSimulatorPanel({
                 {/* 最適化ボタン（ロック済み以外を最適編成で埋める） */}
                 <button
                   onClick={() => {
+                    if (isCalculating) {
+                      if (window.confirm(t('unit.cancel_confirm'))) {
+                        cancelOptimize()
+                      }
+                      return
+                    }
                     // サポート選択モード中なら解除する
                     if (unitCardSelectMode) {
                       setUnitCardSelectMode(false)
@@ -308,15 +321,21 @@ export default function UnitSimulatorPanel({
                     }
                     optimizeRemaining()
                   }}
-                  disabled={isCalculating}
                   title={t('unit.auto_optimize_tip')}
                   className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${
                     isCalculating
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      ? 'bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700'
                       : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                   }`}
                 >
-                  {isCalculating ? t('unit.calculating') : t('unit.auto_optimize')}
+                  {isCalculating && exhaustiveProgress !== null
+                    ? t('unit.progress_count', {
+                        done: exhaustiveProgress.done.toLocaleString(),
+                        total: exhaustiveProgress.total.toLocaleString(),
+                      })
+                    : isCalculating
+                      ? t('unit.calculating')
+                      : t('unit.auto_optimize')}
                 </button>
               </div>
 
@@ -328,7 +347,7 @@ export default function UnitSimulatorPanel({
               )}
 
               {/* スロットエディター（結果表示時は非表示） */}
-              {result === null && (
+              {!isCalculating && result === null && (
                 <UnitSlotEditor
                   cards={settings.manualCards}
                   onRemoveCard={handleRemoveCard}
@@ -363,6 +382,7 @@ export default function UnitSimulatorPanel({
                   manualCards={settings.manualCards}
                   onStartSelect={handleSlotSelect}
                   selectMode={unitCardSelectMode}
+                  isCalculating={isCalculating}
                 />
               )}
 

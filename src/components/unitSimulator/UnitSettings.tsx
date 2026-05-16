@@ -122,13 +122,21 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
     [settings, onChange],
   )
 
+  /** 候補上限枚数変更 */
+  const handleCandidateLimitChange = useCallback(
+    (value: number) => {
+      onChange({ ...settings, exhaustiveCandidateLimit: value })
+    },
+    [settings, onChange],
+  )
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
       {/* 育成プラン選択 */}
       <section>
         <h3 className={constant.SECTION_HEADING_SM_PX}>
-          {t('unit.settings.plan')}
-          <HelpTooltip text={t('unit.settings.plan_tip')} />
+          {t('unit.settings.plan_heading')}
+          <HelpTooltip text={t('unit.settings.plan_heading_tip')} />
         </h3>
         <div className="flex gap-1.5">
           {data.SelectablePlanEntries.map((opt) => (
@@ -292,6 +300,23 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
               />
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* 総当たり最適化オプション */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className={constant.SECTION_HEADING_SM_PX}>
+            {t('unit.settings.candidate_limit')}
+            <HelpTooltip text={t('unit.settings.candidate_limit_tip')} />
+          </span>
+          <SpinnerInput
+            value={settings.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT}
+            min={10}
+            max={100}
+            step={1}
+            onChange={handleCandidateLimitChange}
+          />
         </div>
       </section>
     </div>

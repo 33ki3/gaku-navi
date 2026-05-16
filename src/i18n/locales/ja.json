@@ -759,11 +759,15 @@
     "rental_slot_empty": "レンタル枠",
     "manual_optimize": "残り枠を自動最適化",
     "auto_optimize": "最適化",
+    "progress_count": "{{done}} / {{total}} 通り目",
+    "cancel_confirm": "計算をキャンセルしますか？現在見つかっている最良結果を保持します。",
     "auto_optimize_tip": "固定サポート以外を自動で最適な組み合わせに入れ替えます",
     "no_candidates": "条件に合うサポートが見つかりませんでした。所持サポートや編成条件を確認してください。",
     "settings": {
-      "plan": "編成条件",
+      "plan": "育成プラン",
       "plan_tip": "最適化対象の育成プランを選択します",
+      "plan_heading": "育成プラン",
+      "plan_heading_tip": "最適化対象の育成プランを選択します",
       "type_filter": "サポートタイプ",
       "type_filter_tip": "編成に含めるサポートタイプを制限します",
       "sp_count": "SP発生率 枚数",
@@ -783,7 +787,9 @@
       "rental": "レンタル枠",
       "rental_auto": "自動選出",
       "rental_manual": "手動指定",
-      "rental_placeholder": "サポート名を入力"
+      "rental_placeholder": "サポート名を入力",
+      "candidate_limit": "全サポート 上位枚数",
+      "candidate_limit_tip": "全サポートの点数上位何枚で最適化を実施するか設定します。枚数が多いほど精度が上がりますが計算時間が長くなります"
     },
     "result": {
       "title": "最適編成",

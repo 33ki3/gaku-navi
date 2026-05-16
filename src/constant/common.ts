@@ -70,10 +70,20 @@ export const UNIT_SIZE = 6
 export const SLOT_COUNT = 6
 /** SP制約の上限（UNIT_SIZEと同値だが意味が異なる） */
 export const SP_TOTAL_MAX = 6
-/** 局所探索の最大イテレーション回数 */
-export const MAX_SWAP_ITERATIONS = 10
+/** 総当たり最適化の候補枚数のデフォルト値 */
+export const EXHAUSTIVE_CANDIDATE_LIMIT = 30
 /** レンタル候補の最大試行枚数（マルチスタートおよびレンタル自動選出で試すカードの上限） */
 export const RENTAL_CANDIDATE_LIMIT = 20
+/** 総当たり進捗の目標更新回数（UI更新頻度の目安） */
+export const EXHAUSTIVE_PROGRESS_TARGET_UPDATES = 200
+/** 総当たり進捗バッチサイズの下限（更新しすぎ防止） */
+export const EXHAUSTIVE_PROGRESS_MIN_BATCH_SIZE = 1000
+/** 総当たり進捗バッチサイズの上限（更新遅延防止） */
+export const EXHAUSTIVE_PROGRESS_MAX_BATCH_SIZE = 20000
+/** SPタイプ内訳キャッシュの最大件数（組み合わせ数計算のメモリ上限） */
+export const SP_TYPE_STATES_CACHE_MAX = 300
+/** SP+タイプ制約の通数キャッシュ最大件数（組み合わせ数計算のメモリ上限） */
+export const SP_TYPE_COUNT_CACHE_MAX = 500
 
 /** タイプ別編成枚数のデフォルト最小値 */
 export const TYPE_COUNT_MIN_DEFAULT = 0

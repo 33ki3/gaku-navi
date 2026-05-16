@@ -71,10 +71,32 @@ export function SpinnerInput({ value, onChange, disabled = false, min = 0, max, 
     }
   }
 
+  /** 現在の表示値（rawValue）から数値を取り出す。無効な場合は props の value を使う */
+  const getCurrentValue = () => {
+    const parsed = decimals > 0 ? parseFloat(rawValue) : parseInt(rawValue)
+    return isNaN(parsed) ? value : parsed
+  }
+
+  /** step 分だけ減算して反映する（連打時も rawValue 基準でズレないようにする） */
+  const handleDecrement = () => {
+    const current = getCurrentValue()
+    const next = clamp(current - step)
+    setRawValue(String(next))
+    onChange(next)
+  }
+
+  /** step 分だけ加算して反映する（連打時も rawValue 基準でズレないようにする） */
+  const handleIncrement = () => {
+    const current = getCurrentValue()
+    const next = clamp(current + step)
+    setRawValue(String(next))
+    onChange(next)
+  }
+
   return (
     <div className="flex items-center gap-2">
       {/* マイナスボタン（値を step 分減らす。最小値で止まる） */}
-      <button onClick={() => onChange(clamp(value - step))} disabled={disabled} className={btnClass}>
+      <button onClick={handleDecrement} disabled={disabled} className={btnClass}>
         {t('ui.symbol.minus')}
       </button>
       {/* 数値入力欄（直接キーボードで値を入力できる） */}
@@ -88,11 +110,7 @@ export function SpinnerInput({ value, onChange, disabled = false, min = 0, max, 
         className={`${constant.SPINNER_INPUT} ${disabled ? constant.INPUT_LOCKED : 'border-slate-200'}`}
       />
       {/* プラスボタン（値を step 分増やす） */}
-      <button
-        onClick={() => onChange(clamp(value + step))}
-        disabled={disabled || (max !== undefined && value >= max)}
-        className={btnClass}
-      >
+      <button onClick={handleIncrement} disabled={disabled || (max !== undefined && value >= max)} className={btnClass}>
         {t('ui.symbol.plus')}
       </button>
     </div>

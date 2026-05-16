@@ -8,9 +8,10 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 
 import type { SupportCard, ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
-import type { UnitSimulatorSettings, UnitResult, SynergyProviderDetail } from '../types/unit'
+import type { UnitSimulatorSettings, UnitResult, SynergyProviderDetail, ExhaustiveProgress } from '../types/unit'
 import { PlanType, CardType, ParameterType } from '../types/enums'
-import { optimizeUnit, evaluateManualUnit } from '../utils/unitSimulator'
+import { evaluateManualUnit } from '../utils/unitSimulator'
+import { runOptimizerAsync } from './unitOptimizerRunner'
 import { loadScoreSettings } from '../utils/scoreSettings'
 import { loadCardCountCustom } from './useCardCountCustom'
 import type { CardCountCustom } from './useCardCountCustom'
@@ -28,12 +29,14 @@ interface UseUnitSimulatorReturn {
   setSettings: (next: UnitSimulatorSettings) => void
   calculate: () => void
   optimizeRemaining: () => void
+  cancelOptimize: () => void
   recalculateScores: (custom?: CardCountCustom) => void
   evaluateCurrentCards: () => void
   isCalculating: boolean
   result: UnitResult | null
   hasCalculated: boolean
   noCandidates: boolean
+  exhaustiveProgress: ExhaustiveProgress | null
 }
 
 /** デフォルト設定 */
@@ -57,6 +60,8 @@ const defaultSettings: UnitSimulatorSettings = {
   lockedCards: [],
   manualCards: [],
   initialParams: { vocal: 0, dance: 0, visual: 0 },
+  paramCapOverride: null,
+  exhaustiveCandidateLimit: constant.EXHAUSTIVE_CANDIDATE_LIMIT,
 }
 /** localStorage から設定を読み込む */
 function loadSettings(): UnitSimulatorSettings {
@@ -157,6 +162,19 @@ function loadResult(cardByName: Map<string, SupportCard>): LoadResultState {
 }
 
 /**
+ * 編成一覧を UI 表示順（レンタルを末尾）に正規化する
+ *
+ * @param members - 結果に含まれる編成配列
+ * @returns manualCards 用のカード名配列
+ */
+function toOrderedMemberNames(members: UnitResult['members']): string[] {
+  const rentalMember = members.find((m) => m.isRental)
+  return rentalMember
+    ? [...members.filter((m) => !m.isRental).map((m) => m.card.name), rentalMember.card.name]
+    : members.map((m) => m.card.name)
+}
+
+/**
  * 最適編成の状態を管理するフック
  *
  * 設定変更を localStorage に永続化し、計算実行時に最適解を求める。
@@ -172,6 +190,10 @@ export function useUnitSimulator(
 ): UseUnitSimulatorReturn {
   const [settings, setSettingsRaw] = useState<UnitSimulatorSettings>(loadSettings)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [exhaustiveProgress, setExhaustiveProgress] = useState<ExhaustiveProgress | null>(null)
+  const exhaustiveRunIdRef = useRef(0)
+  const optimizeWorkerRef = useRef<Worker | null>(null)
+  const bestResultDuringRunRef = useRef<UnitResult | null>(null)
   const settingsRef = useRef(settings)
   useEffect(() => {
     settingsRef.current = settings
@@ -193,15 +215,48 @@ export function useUnitSimulator(
     }
   }, [])
 
+  /** 最適化結果を保存し、manualCards/rentalCardName に同期する */
+  const applyOptimizedResult = useCallback(
+    (optimized: UnitResult) => {
+      saveResult(optimized)
+      const rentalMember = optimized.members.find((m) => m.isRental)
+      const rentalName = rentalMember?.card.name ?? null
+      // レンタルサポートを末尾に配置する（スロット順表示で最下部に表示させるため）
+      const ordered = toOrderedMemberNames(optimized.members)
+      const latest = settingsRef.current
+      // manualRental はユーザーの明示的な設定を維持する（上書きしない）
+      setSettings({ ...latest, manualCards: ordered, rentalCardName: rentalName })
+    },
+    [setSettings],
+  )
+
+  /** 総当たり中の「現時点ベスト」をUIへ反映する */
+  const applyBetterResultPreview = useCallback((betterResult: UnitResult) => {
+    bestResultDuringRunRef.current = betterResult
+    setResult(betterResult)
+  }, [])
+
+  /** 総当たりで使用中の Worker を停止して参照をクリアする */
+  const terminateOptimizeWorker = useCallback(() => {
+    optimizeWorkerRef.current?.terminate()
+    optimizeWorkerRef.current = null
+  }, [])
+
+  /** 実行時入力を構築する（点数設定・凸数・回数調整を都度最新化する） */
+  const buildRuntimeInput = useCallback(
+    (nextSettings: UnitSimulatorSettings, customCardCount?: CardCountCustom) => {
+      const scoreSettings: ScoreSettings = loadScoreSettings()
+      const cardUncaps = loadUncaps()
+      const cardCountCustom = customCardCount ?? loadCardCountCustom()
+      return { settings: nextSettings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
+    },
+    [allCards, cardByName],
+  )
+
   /** 計算を実行する */
   const calculate = useCallback(() => {
     setIsCalculating(true)
-
-    // localStorage から最新の点数設定と凸数を読み取る
-    const scoreSettings: ScoreSettings = loadScoreSettings()
-    const cardUncaps = loadUncaps()
-    const cardCountCustom = loadCardCountCustom()
-    const input = { settings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
+    const input = buildRuntimeInput(settings)
 
     // 非同期にして UI をブロックしない
     requestAnimationFrame(() => {
@@ -214,15 +269,31 @@ export function useUnitSimulator(
         saveResult(optimized)
       }
     })
-  }, [settings, allCards, cardByName])
+  }, [settings, buildRuntimeInput])
+
+  /** 進行中の総当たり最適化をキャンセルする */
+  const cancelOptimize = useCallback(() => {
+    const best = bestResultDuringRunRef.current
+    exhaustiveRunIdRef.current++
+    terminateOptimizeWorker()
+    if (best) {
+      setResult(best)
+      setHasCalculated(true)
+      applyOptimizedResult(best)
+      bestResultDuringRunRef.current = null
+    }
+    setIsCalculating(false)
+    setExhaustiveProgress(null)
+  }, [applyOptimizedResult, terminateOptimizeWorker])
 
   /** 手動選択サポートを固定して残り枠を自動最適化する */
   const optimizeRemaining = useCallback(() => {
+    // 進行中の総当たり最適化をキャンセルするためにIDを更新する
+    const myRunId = ++exhaustiveRunIdRef.current
+    bestResultDuringRunRef.current = null
     setIsCalculating(true)
-
-    const scoreSettings: ScoreSettings = loadScoreSettings()
-    const cardUncaps = loadUncaps()
-    const cardCountCustom = loadCardCountCustom()
+    setExhaustiveProgress(null)
+    terminateOptimizeWorker()
 
     // 明示的にロックされたサポートのみ固定する（ロックボタンで固定したサポートのみ最適化から除外）
     // manualRental が true（ユーザーがレンタル枠を固定済み）の場合はそのまま維持する
@@ -232,84 +303,73 @@ export function useUnitSimulator(
       manualCards: settings.manualCards.filter((n): n is string => n !== null),
       ...(settings.manualRental ? {} : { manualRental: false, rentalCardName: null }),
     }
-    const input = { settings: merged, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
+    const input = buildRuntimeInput(merged)
 
     requestAnimationFrame(() => {
-      const optimized = optimizeUnit(input)
-      setResult(optimized)
-      setNoCandidates(optimized === null)
       setHasCalculated(true)
-      setIsCalculating(false)
-      if (optimized) {
-        saveResult(optimized)
-        // 最適化結果のサポートを manualCards に同期してスロットエディターと削除を正しく動作させる
-        const rentalMember = optimized.members.find((m) => m.isRental)
-        const rentalName = rentalMember?.card.name ?? null
-        // レンタルサポートを末尾に配置する（スロット順表示で最下部に表示させるため）
-        const ordered = rentalName
-          ? [...optimized.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalName]
-          : optimized.members.map((m) => m.card.name)
-        const latest = settingsRef.current
-        // manualRental はユーザーの明示的な設定を維持する（上書きしない）
-        const synced: UnitSimulatorSettings = {
-          ...latest,
-          manualCards: ordered,
-          rentalCardName: rentalName,
+
+      const finalize = (exhaustiveResult: UnitResult | null) => {
+        if (exhaustiveRunIdRef.current !== myRunId) return
+        if (exhaustiveResult !== null) {
+          applyBetterResultPreview(exhaustiveResult)
+          applyOptimizedResult(exhaustiveResult)
         }
-        setSettings(synced)
+        bestResultDuringRunRef.current = null
+        setNoCandidates(exhaustiveResult === null)
+        setExhaustiveProgress(null)
+        setIsCalculating(false)
       }
+
+      // Worker または main thread で最適化を実行し、完了・中断ごとに finalize を呼ぶ
+      const worker = runOptimizerAsync({
+        input,
+        isCancelled: () => exhaustiveRunIdRef.current !== myRunId,
+        onProgress: (done, total) => setExhaustiveProgress({ done, total }),
+        onBetter: applyBetterResultPreview,
+        onDone: (result) => {
+          // Worker が自己終了済みのため参照をクリアしてから完了処理する
+          optimizeWorkerRef.current = null
+          finalize(result)
+        },
+      })
+      // 外部キャンセル（cancelOptimize）のために Worker 参照を保持する
+      if (worker) optimizeWorkerRef.current = worker
     })
-  }, [settings, setSettings, allCards, cardByName])
+  }, [settings, applyOptimizedResult, applyBetterResultPreview, terminateOptimizeWorker, buildRuntimeInput])
 
   /** 現在の編成メンバーを維持したままスコアのみ再計算する */
   const recalculateScores = useCallback(
     (custom?: CardCountCustom) => {
       if (!result || result.members.length === 0) return
 
-      const scoreSettings: ScoreSettings = loadScoreSettings()
-      const cardUncaps = loadUncaps()
-      const cardCountCustom = custom ?? loadCardCountCustom()
       // レンタルメンバーを末尾に配置して evaluateManualUnit で末尾スロット = レンタル枠の判定が正しく動くようにする
-      const rentalMember = result.members.find((m) => m.isRental)
-      const memberNames = rentalMember
-        ? [...result.members.filter((m) => !m.isRental).map((m) => m.card.name), rentalMember.card.name]
-        : result.members.map((m) => m.card.name)
+      const memberNames = toOrderedMemberNames(result.members)
       const recalcSettings: UnitSimulatorSettings = {
         ...settings,
         manualCards: memberNames,
       }
-      const input = { settings: recalcSettings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
+      const input = buildRuntimeInput(recalcSettings, custom)
       const updated = evaluateManualUnit(input)
       if (updated) {
         setResult(updated)
         saveResult(updated)
       }
     },
-    [result, settings, allCards, cardByName],
+    [result, settings, buildRuntimeInput],
   )
 
   /** 現在の manualCards で評価する（最適化せず手持ちのサポートリストで計算） */
   const evaluateCurrentCards = useCallback(() => {
     const filledCards = settings.manualCards.filter((n): n is string => n !== null)
     if (filledCards.length === 0) return
-    const scoreSettings: ScoreSettings = loadScoreSettings()
-    const cardUncaps = loadUncaps()
-    const cardCountCustom = loadCardCountCustom()
-    const input = {
-      settings: { ...settings, manualCards: filledCards },
-      scoreSettings,
-      cardUncaps,
-      cardCountCustom,
-      allCards,
-      cardByName,
-    }
+    const input = buildRuntimeInput({ ...settings, manualCards: filledCards })
     requestAnimationFrame(() => {
       const evaluated = evaluateManualUnit(input)
       setResult(evaluated)
       setHasCalculated(true)
       if (evaluated) saveResult(evaluated)
     })
-  }, [settings, allCards, cardByName])
+  }, [settings, buildRuntimeInput])
 
   return useMemo(
     () => ({
@@ -317,24 +377,28 @@ export function useUnitSimulator(
       setSettings,
       calculate,
       optimizeRemaining,
+      cancelOptimize,
       recalculateScores,
       evaluateCurrentCards,
       isCalculating,
       result,
       hasCalculated,
       noCandidates,
+      exhaustiveProgress,
     }),
     [
       settings,
       setSettings,
       calculate,
       optimizeRemaining,
+      cancelOptimize,
       recalculateScores,
       evaluateCurrentCards,
       isCalculating,
       result,
       hasCalculated,
       noCandidates,
+      exhaustiveProgress,
     ],
   )
 }

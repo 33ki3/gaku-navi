@@ -28,6 +28,7 @@ import { ScheduleWeekSelector } from './ScheduleWeekSelector'
 import { SettingsOptionToggles } from './SettingsOptionToggles'
 import { PresetSection } from './PresetSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
+import { CustomParamBonusRows } from './CustomParamBonusRows'
 
 /** ScoreSettingsContent コンポーネントに渡すプロパティ */
 interface ScoreSettingsContentProps {
@@ -56,14 +57,20 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
   )
 
   const scheduleCounts = useMemo(() => {
-    if (!settings.useScheduleLimits) return null
+    if (!settings.useScheduleLimits || settings.useCustomMode) return null
     return calculateCountsFromSchedule(settings.scheduleSelections, scheduleData)
-  }, [scheduleData, settings.scheduleSelections, settings.useScheduleLimits])
+  }, [scheduleData, settings.scheduleSelections, settings.useScheduleLimits, settings.useCustomMode])
 
   const paramBonusBreakdown = useMemo(() => {
-    if (!settings.useScheduleLimits) return []
+    if (!settings.useScheduleLimits || settings.useCustomMode) return []
     return getParameterBonusBreakdown(settings.scheduleSelections, settings.scenario, settings.difficulty)
-  }, [settings.scheduleSelections, settings.scenario, settings.difficulty, settings.useScheduleLimits])
+  }, [
+    settings.scheduleSelections,
+    settings.scenario,
+    settings.difficulty,
+    settings.useScheduleLimits,
+    settings.useCustomMode,
+  ])
 
   const handleScheduleSelect = (week: number, activityId: enums.ActivityIdType) => {
     const newSelections = { ...settings.scheduleSelections, [week]: activityId }
@@ -110,66 +117,81 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
           <ScenarioDifficultySection settings={settings} onSettingsChange={onSettingsChange} />
         </CollapsibleSection>
       </div>
-      {/* スケジュール週毎選択 UI */}
+      {/* スケジュール週毎選択 UI / カスタムモード: パラメータ上昇設定 */}
       <div className={constant.SECTION_DIVIDER}>
         <CollapsibleSection
           title={
-            <>
-              {t('ui.header.schedule')} <HelpTooltip text={t('ui.help.tooltip_schedule')} />
-            </>
+            <span className="inline-flex items-center gap-1">
+              {settings.useCustomMode ? t('ui.header.param_bonus_settings') : t('ui.header.schedule')}
+              <HelpTooltip
+                text={
+                  settings.useCustomMode ? t('ui.help.tooltip_custom_param_settings') : t('ui.help.tooltip_schedule')
+                }
+              />
+            </span>
           }
           isOpen={sections[enums.ScoreSettingsSectionKey.Schedule]}
           onToggle={() => toggle(enums.ScoreSettingsSectionKey.Schedule)}
           variant={CollapsibleVariantType.Panel}
         >
           <div className="mt-2 space-y-2">
-            {/* スケジュール自動計算の有効/無効チェックボックス */}
-            <CheckboxField
-              label={t('ui.settings.schedule_auto')}
-              checked={settings.useScheduleLimits}
-              onChange={(checked) => onSettingsChange({ ...settings, useScheduleLimits: checked })}
-            />
-            {/* 週ごとのアクティビティ選択UI */}
-            <ScheduleWeekSelector
-              scheduleData={scheduleData!}
-              scheduleSelections={settings.scheduleSelections}
-              onSelect={handleScheduleSelect}
-            />
-            {/* スケジュールから算出した回数サマリー（自動計算有効時のみ） */}
-            {scheduleCounts && (
-              <ScheduleSummary
-                scheduleCounts={scheduleCounts}
-                settings={settings}
-                paramBonusBreakdown={paramBonusBreakdown}
-              />
+            {settings.useCustomMode ? (
+              /* カスタムシナリオ: パラメータボーナス行入力 */
+              <CustomParamBonusRows settings={settings} onSettingsChange={onSettingsChange} />
+            ) : (
+              /* スケジュールモード: 週ごとのアクティビティ選択 */
+              <>
+                {/* スケジュール自動計算の有効/無効チェックボックス */}
+                <CheckboxField
+                  label={t('ui.settings.schedule_auto')}
+                  checked={settings.useScheduleLimits}
+                  onChange={(checked) => onSettingsChange({ ...settings, useScheduleLimits: checked })}
+                />
+                {/* 週ごとのアクティビティ選択UI */}
+                <ScheduleWeekSelector
+                  scheduleData={scheduleData!}
+                  scheduleSelections={settings.scheduleSelections}
+                  onSelect={handleScheduleSelect}
+                />
+                {/* スケジュールから算出した回数サマリー（自動計算有効時のみ） */}
+                {scheduleCounts && (
+                  <ScheduleSummary
+                    scheduleCounts={scheduleCounts}
+                    settings={settings}
+                    paramBonusBreakdown={paramBonusBreakdown}
+                  />
+                )}
+              </>
             )}
           </div>
         </CollapsibleSection>
       </div>
 
-      {/* パラメータボーナス入力（スケジュール有効時は自動ロック） */}
-      <div className={constant.SECTION_DIVIDER}>
-        <CollapsibleSection
-          title={
-            <>
-              {t('ui.settings.param_bonus_target')}
-              {settings.useScheduleLimits && scheduleData ? ` (${t('ui.settings.auto')})` : ''}{' '}
-              <HelpTooltip text={t('ui.help.tooltip_param_bonus')} />
-            </>
-          }
-          isOpen={sections[enums.ScoreSettingsSectionKey.ParamBonus]}
-          onToggle={() => toggle(enums.ScoreSettingsSectionKey.ParamBonus)}
-          variant={CollapsibleVariantType.Panel}
-        >
-          <div className="mt-2">
-            <ParameterBonusInputs
-              settings={settings}
-              onSettingsChange={onSettingsChange}
-              isLocked={settings.useScheduleLimits && scheduleData != null}
-            />
-          </div>
-        </CollapsibleSection>
-      </div>
+      {/* パラメータボーナス入力（カスタムモード時は非表示、スケジュール有効時は自動ロック） */}
+      {!settings.useCustomMode && (
+        <div className={constant.SECTION_DIVIDER}>
+          <CollapsibleSection
+            title={
+              <span className="inline-flex items-center gap-1">
+                {t('ui.settings.param_bonus_target')}
+                {settings.useScheduleLimits && scheduleData ? ` (${t('ui.settings.auto')})` : ''}
+                <HelpTooltip text={t('ui.help.tooltip_param_bonus')} />
+              </span>
+            }
+            isOpen={sections[enums.ScoreSettingsSectionKey.ParamBonus]}
+            onToggle={() => toggle(enums.ScoreSettingsSectionKey.ParamBonus)}
+            variant={CollapsibleVariantType.Panel}
+          >
+            <div className="mt-2">
+              <ParameterBonusInputs
+                settings={settings}
+                onSettingsChange={onSettingsChange}
+                isLocked={settings.useScheduleLimits && scheduleData != null}
+              />
+            </div>
+          </CollapsibleSection>
+        </div>
+      )}
 
       {/* アクション回数セクション */}
       <div className={constant.SECTION_DIVIDER}>

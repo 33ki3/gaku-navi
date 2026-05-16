@@ -30,6 +30,12 @@ const data: Record<ScenarioType, DifficultyMap> = {
     [DifficultyType.Master]: {},
     [DifficultyType.Legend]: {},
   },
+  [ScenarioType.Custom]: {
+    [DifficultyType.Regular]: {},
+    [DifficultyType.Pro]: {},
+    [DifficultyType.Master]: {},
+    [DifficultyType.Legend]: {},
+  },
 }
 
 /**

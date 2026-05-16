@@ -50,6 +50,10 @@ export interface UnitSimulatorSettings {
   manualCards: (string | null)[]
   /** 初期パラメータ（プロデュース開始時のアイドルステータス） */
   initialParams: ParameterValues
+  /** パラメータ上限値の上書き設定（null の場合はシナリオ既定値） */
+  paramCapOverride?: number | null
+  /** 総当たり最適化の候補上位枚数（未設定時は既定値） */
+  exhaustiveCandidateLimit?: number
 }
 
 /** アビリティごとのサポート間連携追加回数 */
@@ -86,6 +90,14 @@ export interface UnitMember {
   synergyProviders: SynergyProviderDetail[]
   /** このサポートのパラメータボーナス%（Vo/Da/Vi 別） */
   paramBonusPercent: ParameterValues
+}
+
+/** 総当たり最適化の進捗 */
+export interface ExhaustiveProgress {
+  /** 評価済み組み合わせ数 */
+  done: number
+  /** 総組み合わせ数 */
+  total: number
 }
 
 /** ユニット計算結果 */

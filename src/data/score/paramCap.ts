@@ -14,7 +14,7 @@ const data: Record<ScenarioType, DifficultyMap> = {
     [DifficultyType.Regular]: null,
     [DifficultyType.Pro]: null,
     [DifficultyType.Master]: null,
-    [DifficultyType.Legend]: 2800,
+    [DifficultyType.Legend]: 3000,
   },
   [ScenarioType.Nia]: {
     [DifficultyType.Regular]: null,

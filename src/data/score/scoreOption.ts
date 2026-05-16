@@ -23,6 +23,7 @@ export const DifficultyOptionList: readonly ScoreOptionEntry<DifficultyType>[] =
 
 /** シナリオ選択肢マスタ */
 export const ScenarioOptionList: readonly ScoreOptionEntry<ScenarioType>[] = [
+  { value: ScenarioType.Custom, label: 'score.scenario.custom', enabled: true },
   { value: ScenarioType.Hajime, label: 'score.scenario.hajime', enabled: true },
   { value: ScenarioType.Nia, label: 'score.scenario.nia', enabled: false },
 ]

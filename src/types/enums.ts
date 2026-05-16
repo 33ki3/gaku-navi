@@ -69,6 +69,17 @@ export const ParameterType = {
 export type ParameterType = (typeof ParameterType)[keyof typeof ParameterType]
 
 /**
+ * カスタム時のパラボ対象外入力フィールドキー。
+ */
+export const CustomNonBonusFieldType = {
+  /** 授業分 */
+  ClassBonus: 'customClassBonus',
+  /** 試験・その他分 */
+  OtherGain: 'customNonBonusGain',
+} as const
+export type CustomNonBonusFieldType = (typeof CustomNonBonusFieldType)[keyof typeof CustomNonBonusFieldType]
+
+/**
  * 育成プラン定数。
  * サポートカードが対応する育成プラン。
  * Sense / Logic / Anomaly のほか、プラン制限のない Free がある。
@@ -746,6 +757,8 @@ export type LessonType = (typeof LessonType)[keyof typeof LessonType]
  * シナリオごとにスケジュールやレッスン内容が異なる。
  */
 export const ScenarioType = {
+  /** カスタムモード（シナリオ非依存の手動設定） */
+  Custom: 'custom',
   /** 初シナリオ */
   Hajime: 'hajime',
   /** N.I.Aシナリオ */
@@ -1504,6 +1517,8 @@ export const ScoreSettingsSectionKey = {
   Scenario: 'scenario',
   /** スケジュール */
   Schedule: 'schedule',
+  /** カスタム授業設定 */
+  CustomClass: 'customClass',
   /** パラメータボーナス */
   ParamBonus: 'paramBonus',
   /** アクション回数 */

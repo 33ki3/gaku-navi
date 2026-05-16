@@ -8,7 +8,7 @@
 import { useMemo, useCallback } from 'react'
 import type { SupportCard, ScoreSettings, CardCalculationResult } from '../types/card'
 import type { UncapType } from '../types/enums'
-import { mergeScheduleCounts } from '../utils/scoreSettings'
+import { mergeScheduleCounts, customRowsToPerLessonValues } from '../utils/scoreSettings'
 import { calculateCardParameter } from '../utils/calculator/calculateCard'
 import { getPerLessonParameterValues } from '../utils/calculator/parameterBonus'
 import * as data from '../data'
@@ -49,14 +49,21 @@ export function useCardScores(
   // スコア設定から共有の計算入力を導出する（scoreSettings のみに依存）
   const calcContext = useMemo(() => {
     const schedule = data.getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
-    const effectiveCounts = mergeScheduleCounts(scoreSettings, schedule)
+    // カスタムモード時はスケジュール自動計算を無効にしてすべて手動入力値を使う
+    const settingsForCount = scoreSettings.useCustomMode
+      ? { ...scoreSettings, useScheduleLimits: false }
+      : scoreSettings
+    const mergedCounts = mergeScheduleCounts(settingsForCount, schedule)
 
     // 試験後Pアイテム獲得の回数を通常のPアイテム獲得に合算する
-    const examPItemCount = effectiveCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
-    if (examPItemCount > 0) {
-      effectiveCounts[enums.ActionIdType.PItemAcquire] =
-        (effectiveCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount
-    }
+    const examPItemCount = mergedCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
+    const effectiveCounts =
+      examPItemCount > 0
+        ? {
+            ...mergedCounts,
+            [enums.ActionIdType.PItemAcquire]: (mergedCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount,
+          }
+        : { ...mergedCounts }
 
     const hasAnyAction = Object.values(effectiveCounts).some((v) => v > 0)
     const hasAnyBonus =
@@ -64,9 +71,15 @@ export function useCardScores(
       scoreSettings.parameterBonusBase.dance > 0 ||
       scoreSettings.parameterBonusBase.visual > 0
 
-    const perLessonValues = scoreSettings.useScheduleLimits
-      ? getPerLessonParameterValues(scoreSettings.scheduleSelections, scoreSettings.scenario, scoreSettings.difficulty)
-      : undefined
+    const perLessonValues = scoreSettings.useCustomMode
+      ? customRowsToPerLessonValues(scoreSettings.customParamBonusRows)
+      : scoreSettings.useScheduleLimits
+        ? getPerLessonParameterValues(
+            scoreSettings.scheduleSelections,
+            scoreSettings.scenario,
+            scoreSettings.difficulty,
+          )
+        : undefined
 
     return { effectiveCounts, hasAnyAction, hasAnyBonus, perLessonValues }
   }, [scoreSettings])

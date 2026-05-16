@@ -39,6 +39,12 @@ const data: Record<ScenarioType, DifficultyMap> = {
     [DifficultyType.Master]: {},
     [DifficultyType.Legend]: {},
   },
+  [ScenarioType.Custom]: {
+    [DifficultyType.Regular]: {},
+    [DifficultyType.Pro]: {},
+    [DifficultyType.Master]: {},
+    [DifficultyType.Legend]: {},
+  },
 }
 
 /** 1週分のレッスン情報（コンパイル済み構造） */

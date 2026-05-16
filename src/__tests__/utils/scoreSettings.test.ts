@@ -35,6 +35,10 @@ describe('hasAllScheduleSelections', () => {
     includeSelfTrigger: true,
     includePItem: true,
     useFixedUncap: false,
+    useCustomMode: false,
+    customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+    customClassBonus: { vocal: 0, dance: 0, visual: 0 },
+    customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
   }
 
   it('空のスケジュール選択は false', () => {
@@ -136,6 +140,10 @@ describe('mergeScheduleCounts', () => {
     includeSelfTrigger: true,
     includePItem: true,
     useFixedUncap: false,
+    useCustomMode: false,
+    customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+    customClassBonus: { vocal: 0, dance: 0, visual: 0 },
+    customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
   }
 
   it('useScheduleLimits = false の場合、手動入力の値をそのまま返す', () => {

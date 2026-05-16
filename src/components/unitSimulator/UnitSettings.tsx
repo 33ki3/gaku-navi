@@ -11,7 +11,7 @@ import { ToggleButton } from '../ui/ToggleButton'
 import { SpinnerInput } from '../ui/SpinnerInput'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import * as constant from '../../constant'
-import { PlanType, CardType, ButtonSizeType, ParameterType } from '../../types/enums'
+import { PlanType, CardType, ButtonSizeType, ParameterType, ScenarioType } from '../../types/enums'
 import * as data from '../../data'
 import type { UnitSimulatorSettings } from '../../types/unit'
 
@@ -21,6 +21,10 @@ interface UnitSettingsProps {
   settings: UnitSimulatorSettings
   /** 設定変更コールバック */
   onChange: (settings: UnitSimulatorSettings) => void
+  /** 現在のシナリオ */
+  scenario: ScenarioType
+  /** 現在有効なパラメータ上限値 */
+  resolvedParamCap: number | null
 }
 
 /**
@@ -29,7 +33,7 @@ interface UnitSettingsProps {
  * @param props - コンポーネントプロパティ
  * @returns 設定フォーム要素
  */
-export default function UnitSettings({ settings, onChange }: UnitSettingsProps) {
+export default function UnitSettings({ settings, onChange, scenario, resolvedParamCap }: UnitSettingsProps) {
   const { t } = useTranslation()
 
   // SP枚数の合計
@@ -118,6 +122,22 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
         ...settings,
         initialParams: { ...settings.initialParams, [key]: value },
       })
+    },
+    [settings, onChange],
+  )
+
+  /** 候補上限枚数変更 */
+  const handleCandidateLimitChange = useCallback(
+    (value: number) => {
+      onChange({ ...settings, exhaustiveCandidateLimit: value })
+    },
+    [settings, onChange],
+  )
+
+  /** パラメータ上限値変更 */
+  const handleParamCapChange = useCallback(
+    (value: number) => {
+      onChange({ ...settings, paramCapOverride: value })
     },
     [settings, onChange],
   )
@@ -292,6 +312,32 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
               />
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* 総当たり最適化オプション */}
+      <section className="space-y-2">
+        {scenario === ScenarioType.Custom && (
+          <div className="flex items-center justify-between gap-2">
+            <span className={constant.SECTION_HEADING_SM_PX}>
+              {t('unit.settings.param_cap')}
+              <HelpTooltip text={t('unit.settings.param_cap_tip')} />
+            </span>
+            <SpinnerInput value={resolvedParamCap ?? 0} min={0} max={9999} step={1} onChange={handleParamCapChange} />
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <span className={constant.SECTION_HEADING_SM_PX}>
+            {t('unit.settings.candidate_limit')}
+            <HelpTooltip text={t('unit.settings.candidate_limit_tip')} />
+          </span>
+          <SpinnerInput
+            value={settings.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT}
+            min={10}
+            max={100}
+            step={1}
+            onChange={handleCandidateLimitChange}
+          />
         </div>
       </section>
     </div>

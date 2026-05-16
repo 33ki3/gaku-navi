@@ -88,4 +88,4 @@ export const SP_TYPE_COUNT_CACHE_MAX = 500
 /** タイプ別編成枚数のデフォルト最小値 */
 export const TYPE_COUNT_MIN_DEFAULT = 0
 /** タイプ別編成枚数のデフォルト最大値 */
-export const TYPE_COUNT_MAX_DEFAULT = 3
+export const TYPE_COUNT_MAX_DEFAULT = 4

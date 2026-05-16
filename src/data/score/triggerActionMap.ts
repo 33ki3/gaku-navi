@@ -40,6 +40,7 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.ExamEnd]: ActionIdType.ExamEnd,
   [TriggerKeyType.ActivitySupplyGift]: ActionIdType.ActivitySupplyGift,
   [TriggerKeyType.Outing]: ActionIdType.Outing,
+  [TriggerKeyType.OutingCount]: ActionIdType.Outing,
   [TriggerKeyType.Consult]: ActionIdType.Consult,
   [TriggerKeyType.PDrinkAcquire]: ActionIdType.PDrinkAcquire,
   [TriggerKeyType.PDrinkExchange]: ActionIdType.PDrinkExchange,

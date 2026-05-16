@@ -70,6 +70,7 @@ const stageData = {
     [AbilityNameKeyType.MSkillEnhance]: ['7', '9'],
     [AbilityNameKeyType.MaxHp]: ['6', '7', '8', '9', '9'],
     [AbilityNameKeyType.Outing]: ['11', '15'],
+    [AbilityNameKeyType.OutingCount]: ['28', '38'],
     [AbilityNameKeyType.PDrinkAcquire]: ['4', '5'],
     [AbilityNameKeyType.PDrinkExchange]: ['8', '11'],
     [AbilityNameKeyType.PItemAcquire]: ['11', '15'],

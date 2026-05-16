@@ -9707,6 +9707,117 @@
     "skill_card": null
   },
   {
+    "name": "……騒々しいお祭りね",
+    "rarity": "ssr",
+    "plan": "sense",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/05/16",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "exam_end",
+        "trigger_key": "exam_end",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "outing_count",
+        "trigger_key": "outing_count",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "想定外のチケット",
+      "rarity": "ssr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "visual"
+        },
+        "trigger": {
+          "key": "turn_start_after"
+        },
+        "condition": {
+          "key": "keyword_turns_gte",
+          "keyword": "good_condition",
+          "threshold": 10
+        },
+        "body": [
+          {
+            "key": "keyword_turns",
+            "keyword": "good_condition",
+            "turns": 3
+          },
+          {
+            "key": "move_idol_hand",
+            "value": 1
+          },
+          {
+            "key": "extra_card_use",
+            "value": 1
+          }
+        ],
+        "limit": {
+          "key": "per_lesson",
+          "count": 1
+        }
+      }
+    },
+    "skill_card": null
+  },
+  {
     "name": "「ア」じゃなくて「エ」！",
     "rarity": "ssr",
     "plan": "logic",

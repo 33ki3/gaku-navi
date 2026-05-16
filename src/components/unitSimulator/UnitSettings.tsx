@@ -135,8 +135,8 @@ export default function UnitSettings({ settings, onChange }: UnitSettingsProps) 
       {/* 育成プラン選択 */}
       <section>
         <h3 className={constant.SECTION_HEADING_SM_PX}>
-          {t('unit.settings.plan_heading')}
-          <HelpTooltip text={t('unit.settings.plan_heading_tip')} />
+          {t('unit.settings.plan')}
+          <HelpTooltip text={t('unit.settings.plan_tip')} />
         </h3>
         <div className="flex gap-1.5">
           {data.SelectablePlanEntries.map((opt) => (

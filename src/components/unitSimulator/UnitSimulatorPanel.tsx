@@ -281,7 +281,7 @@ export default function UnitSimulatorPanel({
           <CollapsibleSection
             title={
               <>
-                {t('unit.settings.plan')} <HelpTooltip text={t('unit.settings.plan_tip')} />
+                {t('unit.settings.title')} <HelpTooltip text={t('unit.settings.title_tip')} />
               </>
             }
             isOpen={sections[SimulatorSectionKey.Settings]}

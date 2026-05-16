@@ -33,3 +33,12 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* iOS Safari でのテキストフィールドズームイン防止（font-size < 16px はズームを引き起こすため） */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

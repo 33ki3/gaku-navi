@@ -50,6 +50,8 @@ export interface UnitSimulatorSettings {
   manualCards: (string | null)[]
   /** 初期パラメータ（プロデュース開始時のアイドルステータス） */
   initialParams: ParameterValues
+  /** パラメータ上限値の上書き設定（null の場合はシナリオ既定値） */
+  paramCapOverride?: number | null
   /** 総当たり最適化の候補上位枚数（未設定時は既定値） */
   exhaustiveCandidateLimit?: number
 }

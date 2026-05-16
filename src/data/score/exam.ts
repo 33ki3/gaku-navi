@@ -34,6 +34,12 @@ const data: Record<ScenarioType, DifficultyMap> = {
     [DifficultyType.Master]: { mid: { vocal: 0, dance: 0, visual: 0 }, final: { vocal: 0, dance: 0, visual: 0 } },
     [DifficultyType.Legend]: { mid: { vocal: 0, dance: 0, visual: 0 }, final: { vocal: 0, dance: 0, visual: 0 } },
   },
+  [ScenarioType.Custom]: {
+    [DifficultyType.Regular]: { mid: { vocal: 0, dance: 0, visual: 0 }, final: { vocal: 0, dance: 0, visual: 0 } },
+    [DifficultyType.Pro]: { mid: { vocal: 0, dance: 0, visual: 0 }, final: { vocal: 0, dance: 0, visual: 0 } },
+    [DifficultyType.Master]: { mid: { vocal: 0, dance: 0, visual: 0 }, final: { vocal: 0, dance: 0, visual: 0 } },
+    [DifficultyType.Legend]: { mid: { vocal: 0, dance: 0, visual: 0 }, final: { vocal: 0, dance: 0, visual: 0 } },
+  },
 }
 
 /**

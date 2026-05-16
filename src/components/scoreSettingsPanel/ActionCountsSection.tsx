@@ -6,6 +6,7 @@
  * スケジュール自動計算が有効なカテゴリはロックされる。
  */
 import { useTranslation } from 'react-i18next'
+import { useEffect, useRef } from 'react'
 import type { ScoreSettings } from '../../types/card'
 import type { ScheduleWeekData } from '../../data'
 import { SpinnerInput } from '../ui/SpinnerInput'
@@ -33,13 +34,23 @@ export function ActionCountsSection({
   scheduleData,
 }: ActionCountsSectionProps) {
   const { t } = useTranslation()
+  const latestSettingsRef = useRef(settings)
+
+  useEffect(() => {
+    latestSettingsRef.current = settings
+  }, [settings])
 
   // アクション回数を更新する（0未満にならないようにガード）
   const updateCount = (id: enums.ActionIdType, value: number) => {
-    onSettingsChange({
-      ...settings,
-      actionCounts: { ...settings.actionCounts, [id]: Math.max(0, value) },
-    })
+    const current = latestSettingsRef.current
+    const sanitized = Math.max(0, value)
+    const next = {
+      ...current,
+      actionCounts: { ...current.actionCounts, [id]: sanitized },
+    }
+    // 親コンポーネントの反映前に参照を進め、連打時の上書き逆転を防ぐ
+    latestSettingsRef.current = next
+    onSettingsChange(next)
   }
 
   return (
@@ -54,19 +65,24 @@ export function ActionCountsSection({
           <div className="space-y-1">
             {categories.map((cat) => {
               const isControlled =
-                settings.useScheduleLimits && scheduleData != null && data.ScheduleControlledIds.has(cat.id)
+                settings.useScheduleLimits &&
+                !settings.useCustomMode &&
+                scheduleData != null &&
+                data.ScheduleControlledIds.has(cat.id)
               // スケジュール制御下なら自動計算値、そうでなければ手動値
               const displayValue = isControlled ? (scheduleCounts?.[cat.id] ?? 0) : (settings.actionCounts[cat.id] ?? 0)
 
               return (
                 <div key={cat.id} className="flex items-center gap-2">
-                  <label
-                    className={`text-[11px] flex-1 min-w-0 truncate ${isControlled ? 'text-blue-600 font-bold' : 'text-slate-700'}`}
-                  >
-                    {/* アクション名（例: 「ボーカルレッスン」「おでかけ」「休む」） */}
-                    {t(cat.label)}
-                    {isControlled && <span className="ml-1 text-[9px] text-blue-600">{t('ui.settings.auto')}</span>}
-                  </label>
+                  <div className="flex-1 min-w-0">
+                    <label
+                      className={`text-[11px] block truncate ${isControlled ? 'text-blue-600 font-bold' : 'text-slate-700'}`}
+                    >
+                      {/* アクション名（例: 「ボーカルレッスン」「おでかけ」「休む」） */}
+                      {t(cat.label)}
+                      {isControlled && <span className="ml-1 text-[9px] text-blue-600">{t('ui.settings.auto')}</span>}
+                    </label>
+                  </div>
                   {/* 数値入力: スケジュール自動計算有効時は自動値で固定され操作不可 */}
                   <SpinnerInput
                     value={displayValue}

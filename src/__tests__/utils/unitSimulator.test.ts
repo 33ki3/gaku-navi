@@ -9,6 +9,7 @@ import { calculateCardParameter } from '../../utils/calculator/calculateCard'
 import { computeUnitSupportSynergy, getProvidedActions } from '../../utils/supportSynergy'
 import { getSelfAcquisitionBonus } from '../../utils/calculator/events'
 import { AllCards, CardByName, getScheduleData, TriggerActionMap } from '../../data'
+import { resolveParamCap } from '../../data/score/paramCap'
 import { mergeScheduleCounts } from '../../utils/scoreSettings'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
@@ -28,6 +29,10 @@ function makeScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSetting
     includePItem: true,
     parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
     actionCounts: {},
+    useCustomMode: false,
+    customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+    customClassBonus: { vocal: 0, dance: 0, visual: 0 },
+    customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
     ...overrides,
   }
 }
@@ -62,6 +67,16 @@ function makeSimulatorSettings(
 }
 
 describe('最適編成', () => {
+  describe('パラメータ上限値', () => {
+    it('通常シナリオではoverrideを無視してシナリオ既定値を使う', () => {
+      expect(resolveParamCap(enums.ScenarioType.Hajime, enums.DifficultyType.Legend, 3200)).toBe(3000)
+    })
+
+    it('カスタムシナリオではoverride未設定時に3200を使う', () => {
+      expect(resolveParamCap(enums.ScenarioType.Custom, enums.DifficultyType.Regular, null)).toBe(3200)
+    })
+  })
+
   describe('パラメータボーナス二重計算防止', () => {
     it('パラボ持ちサポートの totalScore がサポート個別パラボとユニットパラボで二重計算されない', () => {
       // パラメータボーナスを持つサポートを使用する
@@ -142,6 +157,52 @@ describe('最適編成', () => {
 
       const member = result.members[0]
       expect(result.totalScore).toBe(member.result.totalIncrease + member.supportSynergy)
+    })
+
+    it('カスタムモードではパラボ対象上昇と対象外上昇が合計値に加算される', () => {
+      const card = AllCards.find(
+        (c) =>
+          (c.plan === enums.PlanType.Anomaly || c.plan === enums.PlanType.Free) &&
+          !c.abilities.some((a) => a.is_parameter_bonus),
+      )
+      if (!card) return
+
+      const baseSettings = makeScoreSettings({
+        scenario: enums.ScenarioType.Custom,
+        useCustomMode: true,
+        parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
+        customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+        customClassBonus: { vocal: 0, dance: 0, visual: 0 },
+        customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+      })
+      const customSettings = makeScoreSettings({
+        scenario: enums.ScenarioType.Custom,
+        useCustomMode: true,
+        parameterBonusBase: { vocal: 10, dance: 20, visual: 30 },
+        customParamBonusRows: [{ vocal: 10, dance: 20, visual: 30 }],
+        customClassBonus: { vocal: 1, dance: 2, visual: 3 },
+        customNonBonusGain: { vocal: 4, dance: 5, visual: 6 },
+      })
+      const builderSettings = makeSimulatorSettings([card.name])
+
+      const baseResult = evaluateManualUnit({
+        settings: builderSettings,
+        scoreSettings: baseSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+      const customResult = evaluateManualUnit({
+        settings: builderSettings,
+        scoreSettings: customSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+
+      if (!baseResult || !customResult) return
+
+      expect(customResult.totalScore - baseResult.totalScore).toBe(81)
     })
   })
 

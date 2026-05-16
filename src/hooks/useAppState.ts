@@ -41,8 +41,19 @@ export function useAppState() {
   // スコア設定（変更時に localStorage にも保存する）
   const [scoreSettings, setScoreSettingsRaw] = useState(loadScoreSettings)
   const setScoreSettings = useCallback((settings: ScoreSettings) => {
-    setScoreSettingsRaw(settings)
-    saveScoreSettings(settings)
+    // setState 後に外部参照が変更されても状態が汚染されないよう、保存前に値を複製する
+    const safeSettings: ScoreSettings = {
+      ...settings,
+      parameterBonusBase: { ...settings.parameterBonusBase },
+      actionCounts: { ...settings.actionCounts },
+      scheduleSelections: { ...settings.scheduleSelections },
+      customParamBonusRows: settings.customParamBonusRows.map((row) => ({ ...row })),
+      customClassBonus: { ...settings.customClassBonus },
+      customNonBonusGain: { ...settings.customNonBonusGain },
+    }
+
+    setScoreSettingsRaw(() => safeSettings)
+    saveScoreSettings(safeSettings)
   }, [])
 
   // スコア計算とフィルタリングを実行する

@@ -433,4 +433,12 @@ export interface ScoreSettings {
   includePItem: boolean
   /** 凸数設定を無視して4凸で点数を表示するか */
   useFixedUncap: boolean
+  /** カスタムモードを使用するか（スケジュール週選択を使わない場合に true） */
+  useCustomMode: boolean
+  /** カスタムモードでのパラメータボーナス複数行入力 */
+  customParamBonusRows: ParameterValues[]
+  /** カスタムモードでの授業パラメータ上昇量（Vo/Da/Vi別） */
+  customClassBonus: ParameterValues
+  /** カスタムモードでの試験などパラメータボーナス対象外の上昇量（Vo/Da/Vi別） */
+  customNonBonusGain: ParameterValues
 }

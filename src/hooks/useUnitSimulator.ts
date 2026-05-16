@@ -60,6 +60,7 @@ const defaultSettings: UnitSimulatorSettings = {
   lockedCards: [],
   manualCards: [],
   initialParams: { vocal: 0, dance: 0, visual: 0 },
+  paramCapOverride: null,
   exhaustiveCandidateLimit: constant.EXHAUSTIVE_CANDIDATE_LIMIT,
 }
 /** localStorage から設定を読み込む */

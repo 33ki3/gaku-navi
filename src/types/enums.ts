@@ -707,8 +707,26 @@ export const ActivityIdType = {
   DaLesson: 'da_lesson',
   /** Viレッスン */
   ViLesson: 'vi_lesson',
+  /** Voレッスン（サブDa） */
+  VoLessonDa: 'vo_lesson_da',
+  /** Voレッスン（サブVi） */
+  VoLessonVi: 'vo_lesson_vi',
+  /** Daレッスン（サブVo） */
+  DaLessonVo: 'da_lesson_vo',
+  /** Daレッスン（サブVi） */
+  DaLessonVi: 'da_lesson_vi',
+  /** Viレッスン（サブVo） */
+  ViLessonVo: 'vi_lesson_vo',
+  /** Viレッスン（サブDa） */
+  ViLessonDa: 'vi_lesson_da',
   /** 授業 */
   Class: 'class',
+  /** Vo授業 */
+  ClassVo: 'class_vo',
+  /** Da授業 */
+  ClassDa: 'class_da',
+  /** Vi授業 */
+  ClassVi: 'class_vi',
   /** お出かけ */
   Outing: 'outing',
   /** 相談 */
@@ -728,12 +746,41 @@ export const ActivityIdType = {
 } as const
 export type ActivityIdType = (typeof ActivityIdType)[keyof typeof ActivityIdType]
 
+/** HIF公開レッスンのメイン/サブ区分 */
+export const LessonPart = {
+  /** メイン属性 */
+  Main: 'main',
+  /** サブ属性 */
+  Sub: 'sub',
+} as const
+export type LessonPart = (typeof LessonPart)[keyof typeof LessonPart]
+
+/** パラメータボーナス内訳行の種別 */
+export const BreakdownRowKindType = {
+  /** 授業行 */
+  Class: 'class',
+  /** 試験行 */
+  Exam: 'exam',
+} as const
+export type BreakdownRowKindType = (typeof BreakdownRowKindType)[keyof typeof BreakdownRowKindType]
+
+/** HIFスケジュールのステージ区分 */
+export const HifStage = {
+  /** 選抜ステージ */
+  Selection: 'selection',
+  /** 本選ステージ */
+  Final: 'final',
+} as const
+export type HifStage = (typeof HifStage)[keyof typeof HifStage]
+
 /**
  * 難易度定数。
  * プロデュースの難易度。Regular → Pro → Master → Legend の順に難しくなる。
  * スケジュールやレッスンのスコアテーブルが難易度で変わる。
  */
 export const DifficultyType = {
+  /** 難易度なし（HIF・カスタムなど難易度の概念がないシナリオ専用） */
+  None: 'none',
   /** レギュラー */
   Regular: 'regular',
   /** プロ */
@@ -757,7 +804,6 @@ export type LessonType = (typeof LessonType)[keyof typeof LessonType]
 
 /**
  * シナリオ種別定数。
- * プロデュースのシナリオ。Hajime = 初（はじめ）、Nia = ニア。
  * シナリオごとにスケジュールやレッスン内容が異なる。
  */
 export const ScenarioType = {
@@ -767,6 +813,8 @@ export const ScenarioType = {
   Hajime: 'hajime',
   /** N.I.Aシナリオ */
   Nia: 'nia',
+  /** H.I.Fシナリオ */
+  Hif: 'hif',
 } as const
 export type ScenarioType = (typeof ScenarioType)[keyof typeof ScenarioType]
 

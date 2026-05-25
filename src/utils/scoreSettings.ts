@@ -12,36 +12,30 @@ import * as data from '../data'
 import type { ScheduleWeekData } from '../data'
 import * as constant from '../constant'
 import * as enums from '../types/enums'
-
-export { calculateParameterBonusFromSchedule, getParameterBonusBreakdown } from './calculator/parameterBonus'
-export type { ParameterBonusBreakdownRow } from './calculator/parameterBonus'
+import { resolveHifLessonPair } from './hifScheduleHelpers'
 
 /**
  * デフォルトのスコア設定を作る
  * シナリオ=初、難易度=レジェンド で初期化し、
- * 固定スケジュール（試験等）は自動選択、自由選択週は空にする。
+ * 週選択は固定週を含めて全シナリオで空から開始する。
  * 自動計算チェックはON。
  */
-function createDefaultSettings(): ScoreSettings {
+export function createDefaultSettings(scenario: enums.ScenarioType = constant.DEFAULT_SCENARIO): ScoreSettings {
+  const isNoneDifficultyScenario = scenario === enums.ScenarioType.Hif || scenario === enums.ScenarioType.Custom
+  const scheduleDifficulty = isNoneDifficultyScenario ? enums.DifficultyType.None : constant.DEFAULT_DIFFICULTY
+
   // 全アクションカテゴリの回数を0で初期化する
   const actionCounts: Partial<Record<enums.ActionIdType, number>> = {}
   for (const cat of data.ActionCategoryList) {
     actionCounts[cat.id] = 0
   }
 
-  // 完全固定の週のみ自動選択する（試験等：fixed=true かつ 休めない週）
   const scheduleSelections: Record<number, enums.ActivityIdType> = {}
-  const scheduleData = data.getScheduleData(constant.DEFAULT_SCENARIO, constant.DEFAULT_DIFFICULTY)
-  for (const week of scheduleData) {
-    if (week.fixed && !week.canRest && week.activities.length > 0) {
-      scheduleSelections[week.week] = week.activities[0].id
-    }
-  }
 
   return {
     name: '',
-    scenario: constant.DEFAULT_SCENARIO,
-    difficulty: constant.DEFAULT_DIFFICULTY,
+    scenario,
+    difficulty: scheduleDifficulty,
     parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
     actionCounts,
     scheduleSelections,
@@ -49,32 +43,140 @@ function createDefaultSettings(): ScoreSettings {
     includeSelfTrigger: true,
     includePItem: true,
     useFixedUncap: false,
-    useCustomMode: false,
+    useCustomMode: scenario === enums.ScenarioType.Custom,
     customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
     customClassBonus: { vocal: 0, dance: 0, visual: 0 },
     customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+    hifExamRatios: [
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+    ],
+    hifLessonSplitSub: true,
   }
 }
 
 /**
- * localStorage から復元した actionCounts を安全な数値に正規化する。
+ * 現在のスコア設定からスケジュール選択のみを初期化した設定を返す。
  *
- * - 未定義・NaN・負数は 0 に丸める
- * - 文字列数値は Number() で復元する
- * - 既知のアクションIDのみを残し、それ以外の古いキーは捨てる
+ * @param settings - 現在のスコア設定
+ * @returns scheduleSelections のみ初期化した設定
  */
-function normalizeActionCounts(
-  raw: Partial<Record<enums.ActionIdType, unknown>> | undefined,
-): Partial<Record<enums.ActionIdType, number>> {
-  const normalized: Partial<Record<enums.ActionIdType, number>> = {}
+export function resetScheduleSelectionsOnly(settings: ScoreSettings): ScoreSettings {
+  const defaultScheduleSelections = createDefaultSettings(settings.scenario).scheduleSelections
+  return {
+    ...settings,
+    scheduleSelections: defaultScheduleSelections,
+  }
+}
 
-  for (const cat of data.ActionCategoryList) {
-    const value = raw?.[cat.id]
-    const numeric = typeof value === 'number' ? value : Number(value)
-    normalized[cat.id] = Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : 0
+/** localStorage の生データを安全にパースして ScoreSettings に変換する。 */
+function parseStoredScoreSettings(raw: string | null): ScoreSettings | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as ScoreSettings
+    const validScenarios = new Set(Object.values(enums.ScenarioType))
+    const validDifficulties = new Set(Object.values(enums.DifficultyType))
+
+    if (
+      !parsed.scenario ||
+      !parsed.actionCounts ||
+      !validScenarios.has(parsed.scenario) ||
+      parsed.difficulty === undefined ||
+      !validDifficulties.has(parsed.difficulty)
+    ) {
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+/** シナリオ別スケジュール選択の保存形式。 */
+type ScenarioScheduleSelections = Partial<Record<enums.ScenarioType, Record<number, enums.ActivityIdType>>>
+
+/**
+ * 指定シナリオの週データに存在する活動IDだけを残す。
+ *
+ * @param scenario - シナリオ
+ * @param difficulty - 難易度
+ * @param selections - 週番号→活動ID
+ * @returns 無効な活動IDを除外した選択マップ
+ */
+function sanitizeScheduleSelections(
+  scenario: enums.ScenarioType,
+  difficulty: enums.DifficultyType,
+  selections: Record<number, enums.ActivityIdType>,
+): Record<number, enums.ActivityIdType> {
+  const allowedByWeek = new Map<number, Set<enums.ActivityIdType>>()
+  const scheduleData = data.getScheduleData(scenario, difficulty)
+  for (const week of scheduleData) {
+    const allowed = allowedByWeek.get(week.week) ?? new Set<enums.ActivityIdType>()
+    for (const activity of week.activities) {
+      allowed.add(activity.id)
+    }
+    if (
+      scenario === enums.ScenarioType.Hif &&
+      week.activities.some((activity) => resolveHifLessonPair(activity.id) !== null)
+    ) {
+      allowed.add(enums.ActivityIdType.VoLesson)
+      allowed.add(enums.ActivityIdType.DaLesson)
+      allowed.add(enums.ActivityIdType.ViLesson)
+    }
+    allowedByWeek.set(week.week, allowed)
   }
 
-  return normalized
+  const sanitized: Record<number, enums.ActivityIdType> = {}
+  for (const [weekRaw, activityId] of Object.entries(selections)) {
+    const week = Number(weekRaw)
+    const allowed = allowedByWeek.get(week)
+    if (allowed?.has(activityId)) {
+      sanitized[week] = activityId
+    }
+  }
+  return sanitized
+}
+
+/**
+ * 指定シナリオのスケジュール選択を読み込む。
+ * 未保存の場合は空選択を返す。
+ *
+ * @param scenario - シナリオ
+ * @returns 週番号 → 活動ID のマッピング
+ */
+export function loadScheduleSelections(scenario: enums.ScenarioType): Record<number, enums.ActivityIdType> {
+  try {
+    // カスタムシナリオはスケジュールの概念がないため空を返す
+    if (scenario === enums.ScenarioType.Custom) return {}
+
+    // Hajime は共有キーの scheduleSelections を使用する
+    if (scenario === enums.ScenarioType.Hajime) {
+      const parsed = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
+      if (parsed?.scheduleSelections && Object.keys(parsed.scheduleSelections).length > 0) {
+        return sanitizeScheduleSelections(scenario, constant.DEFAULT_DIFFICULTY, parsed.scheduleSelections)
+      }
+      return {}
+    }
+
+    // Hajime 以外はシナリオ別キーを優先する
+    const raw = localStorage.getItem(constant.SCHEDULE_SELECTIONS_STORAGE_KEY)
+    if (raw) {
+      const all = JSON.parse(raw) as ScenarioScheduleSelections
+      const stored = all[scenario]
+      if (stored && Object.keys(stored).length > 0) {
+        if (scenario === enums.ScenarioType.Hif) {
+          return sanitizeScheduleSelections(scenario, enums.DifficultyType.None, stored)
+        }
+        return stored
+      }
+    }
+    return {}
+  } catch {
+    /* 読み込み失敗はデフォルトで返す */
+  }
+
+  return {}
 }
 
 /**
@@ -86,7 +188,21 @@ export function hasAllScheduleSelections(settings: ScoreSettings): boolean {
   const scheduleData = data.getScheduleData(settings.scenario, settings.difficulty)
   for (const week of scheduleData) {
     const isFullyFixed = week.fixed && !week.canRest
-    if (!isFullyFixed && !settings.scheduleSelections[week.week]) {
+    const selected = settings.scheduleSelections[week.week]
+    const isValidSelection = (() => {
+      if (!selected) return false
+      if (week.activities.some((activity) => activity.id === selected)) return true
+      if (settings.scenario !== enums.ScenarioType.Hif) return false
+
+      const isHifLessonWeek = week.activities.some((activity) => resolveHifLessonPair(activity.id) !== null)
+      const isMainOnlySelection =
+        selected === enums.ActivityIdType.VoLesson ||
+        selected === enums.ActivityIdType.DaLesson ||
+        selected === enums.ActivityIdType.ViLesson
+
+      return isHifLessonWeek && isMainOnlySelection
+    })()
+    if (!isFullyFixed && !isValidSelection) {
       return false
     }
   }
@@ -199,23 +315,6 @@ function computeLessonTotals(merged: Partial<Record<enums.ActionIdType, number>>
 }
 
 /**
- * 読み込んだ設定に旧フォーマットで欠けているフィールドを補完する
- */
-export function migrateScoreSettings(parsed: ScoreSettings): ScoreSettings {
-  // カスタムモードフィールドが存在しない旧データに対してデフォルト値を補完する
-  // シナリオがカスタムなら useCustomMode を true に揃える
-  const isCustomScenario = parsed.scenario === enums.ScenarioType.Custom
-  return {
-    ...parsed,
-    actionCounts: normalizeActionCounts(parsed.actionCounts),
-    useCustomMode: isCustomScenario || (parsed.useCustomMode ?? false),
-    customParamBonusRows: parsed.customParamBonusRows ?? [{ vocal: 0, dance: 0, visual: 0 }],
-    customClassBonus: parsed.customClassBonus ?? { vocal: 0, dance: 0, visual: 0 },
-    customNonBonusGain: parsed.customNonBonusGain ?? { vocal: 0, dance: 0, visual: 0 },
-  }
-}
-
-/**
  * localStorage からスコア設定を読み込む
  * 保存データがないか壊れている場合はデフォルト値を返す
  *
@@ -223,22 +322,18 @@ export function migrateScoreSettings(parsed: ScoreSettings): ScoreSettings {
  */
 export function loadScoreSettings(): ScoreSettings {
   try {
-    const raw = localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY)
-    if (!raw) return createDefaultSettings()
-    const parsed = JSON.parse(raw) as ScoreSettings
-    const validScenarios = new Set(Object.values(enums.ScenarioType))
-    const validDifficulties = new Set(Object.values(enums.DifficultyType))
-    if (
-      !parsed.scenario ||
-      !parsed.difficulty ||
-      !parsed.actionCounts ||
-      !validScenarios.has(parsed.scenario) ||
-      !validDifficulties.has(parsed.difficulty)
-    ) {
-      return createDefaultSettings()
+    const parsed = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
+    if (!parsed) return createDefaultSettings()
+    if (parsed.scenario === enums.ScenarioType.Hif) {
+      // HIF のスケジュール選択はシナリオ別キーから読み込む
+      const scheduleSelections = loadScheduleSelections(parsed.scenario)
+      return {
+        ...parsed,
+        scheduleSelections,
+      }
     }
-    // 旧フォーマットのデータに欠けているフィールドを補完する
-    return migrateScoreSettings(parsed)
+    // HIF 以外は共有キーの scheduleSelections を使用する（旧来通り）
+    return parsed
   } catch {
     return createDefaultSettings()
   }
@@ -279,7 +374,31 @@ export function sumCustomParamBonusRows(rows: ParameterValues[]): ParameterValue
  */
 export function saveScoreSettings(settings: ScoreSettings): void {
   try {
-    localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+    // Hajime 以外（カスタム除く）の scheduleSelections はシナリオ別キーに保存する
+    if (settings.scenario !== enums.ScenarioType.Custom && settings.scenario !== enums.ScenarioType.Hajime) {
+      const rawSchedules = localStorage.getItem(constant.SCHEDULE_SELECTIONS_STORAGE_KEY)
+      const allSchedules: ScenarioScheduleSelections = rawSchedules
+        ? (JSON.parse(rawSchedules) as ScenarioScheduleSelections)
+        : {}
+      allSchedules[settings.scenario] = { ...settings.scheduleSelections }
+      localStorage.setItem(constant.SCHEDULE_SELECTIONS_STORAGE_KEY, JSON.stringify(allSchedules))
+    }
+
+    if (settings.scenario === enums.ScenarioType.Hajime) {
+      // Hajime は scheduleSelections を含めて共有キーに保存する
+      localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+    } else {
+      // Hajime 以外は scheduleSelections を除いた設定を共有キーに保存する。
+      // 共有キーの scheduleSelections は Hajime 用として保持する。
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { scheduleSelections: _omit, ...settingsWithoutSchedule } = settings
+      const previousShared = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
+      const preservedHajimeSchedules = previousShared?.scheduleSelections
+      const sharedPayload = preservedHajimeSchedules
+        ? { ...settingsWithoutSchedule, scheduleSelections: preservedHajimeSchedules }
+        : settingsWithoutSchedule
+      localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(sharedPayload))
+    }
   } catch {
     /* 容量超過等は無視する */
   }

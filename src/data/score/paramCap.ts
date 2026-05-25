@@ -7,7 +7,7 @@
 import { ScenarioType, DifficultyType } from '../../types/enums'
 
 /** 難易度→上限（null = 上限なし） */
-type DifficultyMap = Record<DifficultyType, number | null>
+type DifficultyMap = Partial<Record<DifficultyType, number | null>>
 
 const data: Record<ScenarioType, DifficultyMap> = {
   [ScenarioType.Hajime]: {
@@ -16,17 +16,19 @@ const data: Record<ScenarioType, DifficultyMap> = {
     [DifficultyType.Master]: null,
     [DifficultyType.Legend]: 3000,
   },
+  // HIF は難易度の概念がないため None キーのみ使用する
+  [ScenarioType.Hif]: {
+    [DifficultyType.None]: 3200,
+  },
   [ScenarioType.Nia]: {
     [DifficultyType.Regular]: null,
     [DifficultyType.Pro]: null,
     [DifficultyType.Master]: null,
     [DifficultyType.Legend]: null,
   },
+  // Custom は難易度の概念がないため None キーのみ使用する
   [ScenarioType.Custom]: {
-    [DifficultyType.Regular]: 3200,
-    [DifficultyType.Pro]: 3200,
-    [DifficultyType.Master]: 3200,
-    [DifficultyType.Legend]: 3200,
+    [DifficultyType.None]: 3200,
   },
 }
 
@@ -38,7 +40,7 @@ const data: Record<ScenarioType, DifficultyMap> = {
  * @returns 各軸の上限値（null の場合は上限なし）
  */
 function getParamCap(scenario: ScenarioType, difficulty: DifficultyType): number | null {
-  return data[scenario][difficulty]
+  return data[scenario][difficulty] ?? null
 }
 
 /**
@@ -54,6 +56,11 @@ export function resolveParamCap(
   difficulty: DifficultyType,
   override?: number | null,
 ): number | null {
-  if (scenario === ScenarioType.Custom && override !== undefined && override !== null) return override
+  if (
+    (scenario === ScenarioType.Custom || scenario === ScenarioType.Hif) &&
+    override !== undefined &&
+    override !== null
+  )
+    return override
   return getParamCap(scenario, difficulty)
 }

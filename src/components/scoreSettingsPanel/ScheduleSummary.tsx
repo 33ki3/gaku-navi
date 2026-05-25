@@ -7,12 +7,12 @@
  */
 import { useTranslation } from 'react-i18next'
 import type { ScoreSettings } from '../../types/card'
-import type { ParameterBonusBreakdownRow } from '../../utils/scoreSettings'
 import { formatScheduleSummary } from '../../utils/scoreSettings'
+import type { ParameterBonusBreakdownRow } from '../../utils/calculator/parameterBonus'
 import { getParameterTextColor } from '../../data/ui'
 import { ParameterType } from '../../types/enums'
 import type { ActionIdType } from '../../types/enums'
-import { ParamBonusBreakdown } from './ParamBonusBreakdown'
+import { ScheduleParamBonusBreakdown } from './ScheduleParamBonusBreakdown'
 
 /** ScheduleSummary コンポーネントに渡すプロパティ */
 interface ScheduleSummaryProps {
@@ -24,7 +24,12 @@ interface ScheduleSummaryProps {
   paramBonusBreakdown: ParameterBonusBreakdownRow[]
 }
 
-/** スケジュールの自動計算サマリー */
+/**
+ * スケジュール自動計算の要約と内訳テーブルを表示する。
+ *
+ * @param props - サマリー表示に必要な設定・集計値
+ * @returns スケジュールサマリー要素
+ */
 export function ScheduleSummary({ scheduleCounts, settings, paramBonusBreakdown }: ScheduleSummaryProps) {
   const { t } = useTranslation()
 
@@ -52,8 +57,10 @@ export function ScheduleSummary({ scheduleCounts, settings, paramBonusBreakdown 
               {t('ui.settings.attr_vi')} {settings.parameterBonusBase.visual}
             </span>
           </div>
-          {/* 週毎のボーナス内訳テーブル */}
-          <ParamBonusBreakdown breakdown={paramBonusBreakdown} bonusBase={settings.parameterBonusBase} />
+          {/* パラメータボーナス内訳テーブルコンポーネント */}
+          <div className="mt-1 space-y-2">
+            <ScheduleParamBonusBreakdown breakdown={paramBonusBreakdown} emptyLabel={t('ui.message.no_lessons')} />
+          </div>
         </div>
       )}
     </div>

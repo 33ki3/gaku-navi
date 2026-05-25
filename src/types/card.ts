@@ -441,4 +441,8 @@ export interface ScoreSettings {
   customClassBonus: ParameterValues
   /** カスタムモードでの試験などパラメータボーナス対象外の上昇量（Vo/Da/Vi別） */
   customNonBonusGain: ParameterValues
+  /** HIF選抜試験3回分のVo:Da:Vi配分比率（x:y:z） */
+  hifExamRatios: ParameterValues[]
+  /** HIFレッスンのサブ値を残り2属性に半分ずつ割り振るか */
+  hifLessonSplitSub: boolean
 }

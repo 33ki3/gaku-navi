@@ -13,6 +13,7 @@ import * as enums from '../../types/enums'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { CloseIcon, PlusIcon } from '../ui/icons'
 import { sumCustomParamBonusRows } from '../../utils/scoreSettings'
+import { ParameterValueInputs } from './ParameterValueInputs'
 
 /** CustomParamBonusRows コンポーネントに渡すプロパティ */
 interface CustomParamBonusRowsProps {
@@ -20,38 +21,6 @@ interface CustomParamBonusRowsProps {
   settings: ScoreSettings
   /** 設定値が変わったときに呼ばれる関数 */
   onSettingsChange: (settings: ScoreSettings) => void
-}
-
-/** 共通入力欄のプロパティ */
-interface ParameterValueInputsProps {
-  /** 入力値 */
-  values: ParameterValues
-  /** 値変更時コールバック */
-  onChange: (key: enums.ParameterType, raw: string) => void
-}
-
-/** 共通の Vo/Da/Vi 入力欄 */
-function ParameterValueInputs({ values, onChange }: ParameterValueInputsProps) {
-  return (
-    <div className="grid grid-cols-3 gap-1">
-      {Object.values(enums.ParameterType).map((key) => (
-        <input
-          key={key}
-          type="number"
-          value={values[key]}
-          onChange={(e) => onChange(key, e.target.value)}
-          className={`w-full px-1.5 py-1 border rounded text-xs text-center focus:outline-none focus:ring-1 border-slate-200 ${
-            key === enums.ParameterType.Vocal
-              ? 'focus:ring-pink-300'
-              : key === enums.ParameterType.Dance
-                ? 'focus:ring-blue-300'
-                : 'focus:ring-green-300'
-          }`}
-          min={0}
-        />
-      ))}
-    </div>
-  )
 }
 
 /** 行を更新したときに parameterBonusBase も合計値で同期する */

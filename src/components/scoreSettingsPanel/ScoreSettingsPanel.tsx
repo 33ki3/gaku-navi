@@ -21,6 +21,8 @@ interface ScoreSettingsPanelProps {
   settings: ScoreSettings
   /** 設定値が変わったときに呼ばれる関数 */
   onSettingsChange: (settings: ScoreSettings) => void
+  /** モバイルで最適編成パネルへ切り替える関数 */
+  onSwitchToSimulator?: () => void
 }
 
 /** 点数設定パネル */
@@ -30,6 +32,7 @@ export default function ScoreSettingsPanel({
   pinned,
   settings,
   onSettingsChange,
+  onSwitchToSimulator,
 }: ScoreSettingsPanelProps) {
   // パネルが閉じていてピン留めでもない場合は何も描画しない
   if (!isOpen && !pinned) return null
@@ -38,7 +41,7 @@ export default function ScoreSettingsPanel({
     // ピン留め時はサイドパネル、非ピン時はオーバーレイモーダルとして表示
     <SidePanelLayout isOpen={isOpen} onClose={onClose} pinned={pinned}>
       {/* ヘッダー: タイトル + 閉じるボタン */}
-      <SettingsPanelHeader onClose={onClose} />
+      <SettingsPanelHeader onClose={onClose} onSwitchToSimulator={onSwitchToSimulator} />
       <ScoreSettingsContent settings={settings} onSettingsChange={onSettingsChange} />
     </SidePanelLayout>
   )

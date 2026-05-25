@@ -367,6 +367,12 @@ function makeSettings(selections: Record<number, enums.ActivityIdType>): ScoreSe
     customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
     customClassBonus: { vocal: 0, dance: 0, visual: 0 },
     customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+    hifExamRatios: [
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+    ],
+    hifLessonSplitSub: true,
   }
 }
 

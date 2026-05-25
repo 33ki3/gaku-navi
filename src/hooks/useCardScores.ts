@@ -48,7 +48,13 @@ export function useCardScores(
 ): ScoreCalculationResult {
   // スコア設定から共有の計算入力を導出する（scoreSettings のみに依存）
   const calcContext = useMemo(() => {
-    const schedule = data.getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
+    // 固定難易度シナリオ（HIF/Custom）では difficulty=null のため None を使う
+    const resolvedDifficulty =
+      scoreSettings.difficulty ??
+      (scoreSettings.scenario === enums.ScenarioType.Hif || scoreSettings.scenario === enums.ScenarioType.Custom
+        ? enums.DifficultyType.None
+        : constant.DEFAULT_DIFFICULTY)
+    const schedule = data.getScheduleData(scoreSettings.scenario, resolvedDifficulty)
     // カスタムモード時はスケジュール自動計算を無効にしてすべて手動入力値を使う
     const settingsForCount = scoreSettings.useCustomMode
       ? { ...scoreSettings, useScheduleLimits: false }
@@ -77,7 +83,9 @@ export function useCardScores(
         ? getPerLessonParameterValues(
             scoreSettings.scheduleSelections,
             scoreSettings.scenario,
-            scoreSettings.difficulty,
+            resolvedDifficulty,
+            scoreSettings.hifLessonSplitSub,
+            scoreSettings.hifExamRatios,
           )
         : undefined
 

@@ -18,7 +18,7 @@ interface LessonEntry {
 type WeekMap = Record<string, LessonEntry[]>
 
 /** 難易度→週マップ */
-type DifficultyMap = Record<DifficultyType, WeekMap>
+type DifficultyMap = Partial<Record<DifficultyType, WeekMap>>
 
 const data: Record<ScenarioType, DifficultyMap> = {
   [ScenarioType.Hajime]: {
@@ -33,17 +33,24 @@ const data: Record<ScenarioType, DifficultyMap> = {
       '16': [{ type: LessonType.Sp, main: 570, sub: 115 }],
     },
   },
+  [ScenarioType.Hif]: {
+    // HIF は難易度の概念がないため None キーのみ使用する
+    [DifficultyType.None]: {
+      '2': [{ type: LessonType.Sp, main: 60, sub: 20 }],
+      '4': [{ type: LessonType.Sp, main: 80, sub: 50 }],
+      '9': [{ type: LessonType.Sp, main: 80, sub: 20 }],
+      '11': [{ type: LessonType.Sp, main: 100, sub: 60 }],
+      '15': [{ type: LessonType.Sp, main: 100, sub: 20 }],
+      '18': [{ type: LessonType.Sp, main: 120, sub: 70 }],
+      '22': [{ type: LessonType.Sp, main: 120, sub: 20 }],
+      '25': [{ type: LessonType.Sp, main: 140, sub: 80 }],
+    },
+  },
   [ScenarioType.Nia]: {
-    [DifficultyType.Regular]: {},
-    [DifficultyType.Pro]: {},
-    [DifficultyType.Master]: {},
-    [DifficultyType.Legend]: {},
+    [DifficultyType.None]: {},
   },
   [ScenarioType.Custom]: {
-    [DifficultyType.Regular]: {},
-    [DifficultyType.Pro]: {},
-    [DifficultyType.Master]: {},
-    [DifficultyType.Legend]: {},
+    [DifficultyType.None]: {},
   },
 }
 
@@ -61,7 +68,7 @@ interface LessonData {
  * @returns LessonData の配列
  */
 export function getLessonData(scenario: ScenarioType, difficulty: DifficultyType): LessonData[] {
-  const weekMap = data[scenario][difficulty]
+  const weekMap = data[scenario][difficulty] ?? {}
 
   // 週番号を数値化し、各週のレッスン情報を配列として返す
   return Object.entries(weekMap).map(([weekStr, entries]) => ({
@@ -75,6 +82,22 @@ const LESSON_MAIN_PARAM: Partial<Record<ActivityIdType, keyof ParameterValues>> 
   [ActivityIdType.VoLesson]: ParameterType.Vocal,
   [ActivityIdType.DaLesson]: ParameterType.Dance,
   [ActivityIdType.ViLesson]: ParameterType.Visual,
+  [ActivityIdType.VoLessonDa]: ParameterType.Vocal,
+  [ActivityIdType.VoLessonVi]: ParameterType.Vocal,
+  [ActivityIdType.DaLessonVo]: ParameterType.Dance,
+  [ActivityIdType.DaLessonVi]: ParameterType.Dance,
+  [ActivityIdType.ViLessonVo]: ParameterType.Visual,
+  [ActivityIdType.ViLessonDa]: ParameterType.Visual,
+}
+
+/** 活動IDからサブパラメータを判定するマップ（指定がない場合は2軸同時扱い） */
+const LESSON_SUB_PARAM: Partial<Record<ActivityIdType, keyof ParameterValues>> = {
+  [ActivityIdType.VoLessonDa]: ParameterType.Dance,
+  [ActivityIdType.VoLessonVi]: ParameterType.Visual,
+  [ActivityIdType.DaLessonVo]: ParameterType.Vocal,
+  [ActivityIdType.DaLessonVi]: ParameterType.Visual,
+  [ActivityIdType.ViLessonVo]: ParameterType.Vocal,
+  [ActivityIdType.ViLessonDa]: ParameterType.Dance,
 }
 
 /**
@@ -98,11 +121,20 @@ export function getSpLessonTotal(
     const mainKey = selection ? LESSON_MAIN_PARAM[selection] : undefined
     if (!mainKey) continue
 
+    const selectedSub = selection ? LESSON_SUB_PARAM[selection] : undefined
+
     for (const entry of lesson.lessonTypes) {
-      // メインパラメータに main を加算、他の2軸に sub を加算
+      // メインパラメータに main を加算する
       total[mainKey] += entry.main
-      for (const key of Object.values(ParameterType)) {
-        if (key !== mainKey) total[key] += entry.sub
+
+      // サブパラメータが明示的に選択されている場合はその1軸のみに sub を加算する
+      if (selectedSub) {
+        total[selectedSub] += entry.sub
+      } else {
+        // 従来シナリオはサブ2軸同時上昇として扱う
+        for (const key of Object.values(ParameterType)) {
+          if (key !== mainKey) total[key] += entry.sub
+        }
       }
     }
   }

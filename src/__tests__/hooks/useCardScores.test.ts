@@ -30,6 +30,12 @@ function emptySettings(): ScoreSettings {
     customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
     customClassBonus: { vocal: 0, dance: 0, visual: 0 },
     customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+    hifExamRatios: [
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+    ],
+    hifLessonSplitSub: true,
   }
 }
 
@@ -123,5 +129,71 @@ describe('useCardScores', () => {
 
     // パラメータボーナスのアビリティを持つサポートが計算対象に含まれること
     expect(result.current.cardResults.size).toBeGreaterThan(0)
+  })
+
+  it('HIF選抜比率の変更がカード一覧スコアに反映される', () => {
+    const paramBonusCard = data.AllCards.find((c) => c.abilities.some((a) => a.is_parameter_bonus))
+    if (!paramBonusCard) return
+
+    const ownType = paramBonusCard.parameter_type
+    const otherType =
+      ownType === enums.ParameterType.Vocal
+        ? enums.ParameterType.Dance
+        : ownType === enums.ParameterType.Dance
+          ? enums.ParameterType.Visual
+          : enums.ParameterType.Vocal
+
+    const base = emptySettings()
+    base.scenario = enums.ScenarioType.Hif
+    base.difficulty = enums.DifficultyType.None
+    base.useScheduleLimits = true
+    base.actionCounts = { [enums.ActionIdType.Lesson]: 1 }
+    base.hifLessonSplitSub = false
+    base.hifExamRatios = [
+      {
+        vocal: ownType === enums.ParameterType.Vocal ? 1 : 0,
+        dance: ownType === enums.ParameterType.Dance ? 1 : 0,
+        visual: ownType === enums.ParameterType.Visual ? 1 : 0,
+      },
+      {
+        vocal: ownType === enums.ParameterType.Vocal ? 1 : 0,
+        dance: ownType === enums.ParameterType.Dance ? 1 : 0,
+        visual: ownType === enums.ParameterType.Visual ? 1 : 0,
+      },
+      {
+        vocal: ownType === enums.ParameterType.Vocal ? 1 : 0,
+        dance: ownType === enums.ParameterType.Dance ? 1 : 0,
+        visual: ownType === enums.ParameterType.Visual ? 1 : 0,
+      },
+    ]
+    base.parameterBonusBase = { vocal: 1, dance: 1, visual: 1 }
+
+    const compare = {
+      ...base,
+      hifExamRatios: [
+        {
+          vocal: otherType === enums.ParameterType.Vocal ? 1 : 0,
+          dance: otherType === enums.ParameterType.Dance ? 1 : 0,
+          visual: otherType === enums.ParameterType.Visual ? 1 : 0,
+        },
+        {
+          vocal: otherType === enums.ParameterType.Vocal ? 1 : 0,
+          dance: otherType === enums.ParameterType.Dance ? 1 : 0,
+          visual: otherType === enums.ParameterType.Visual ? 1 : 0,
+        },
+        {
+          vocal: otherType === enums.ParameterType.Vocal ? 1 : 0,
+          dance: otherType === enums.ParameterType.Dance ? 1 : 0,
+          visual: otherType === enums.ParameterType.Visual ? 1 : 0,
+        },
+      ],
+    }
+
+    const ownFocus = renderHook(() => useCardScores(data.AllCards, data.CardByName, base, {}))
+    const otherFocus = renderHook(() => useCardScores(data.AllCards, data.CardByName, compare, {}))
+
+    const ownScore = ownFocus.result.current.cardScores.get(paramBonusCard.name) ?? 0
+    const otherScore = otherFocus.result.current.cardScores.get(paramBonusCard.name) ?? 0
+    expect(ownScore).toBeGreaterThan(otherScore)
   })
 })

@@ -18,6 +18,8 @@ export const SETTINGS_PINNED_KEY = 'gaku-navi-settings-pinned'
 export const FILTER_STORAGE_KEY = 'gaku-navi-filter-state'
 /** 点数設定の保存キー。ScoreSettings オブジェクトを JSON で保存する。 */
 export const SCORE_SETTINGS_STORAGE_KEY = 'gaku-navi-score-settings'
+/** シナリオ別スケジュール選択の保存キー。Hajime以外（HIF/NIA など）のスケジュール情報を保存する。シナリオ名 → 週番号 → 活動ID の形式。 */
+export const SCHEDULE_SELECTIONS_STORAGE_KEY = 'gaku-navi-schedule-selections'
 /** 点数設定プリセットの保存キー。ScorePreset[] を JSON で保存する。 */
 export const SCORE_PRESETS_STORAGE_KEY = 'gaku-navi-score-presets'
 /** サポート別回数設定の保存キー。サポート名→アクションID→回数の Map を JSON で保存する。 */

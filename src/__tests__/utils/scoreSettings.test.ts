@@ -13,11 +13,43 @@ import {
   calculateCountsFromSchedule,
   mergeScheduleCounts,
   loadScoreSettings,
+  loadScheduleSelections,
+  createDefaultSettings,
+  resetScheduleSelectionsOnly,
   saveScoreSettings,
 } from '../../utils/scoreSettings'
 import type { ScoreSettings } from '../../types/card'
 import type { ScheduleWeekData } from '../../data'
+import * as data from '../../data'
 import * as enums from '../../types/enums'
+import * as constant from '../../constant'
+
+/** createDefaultSettings のデフォルト選択仕様テスト */
+describe('createDefaultSettings', () => {
+  it('Hajime は空選択から開始する', () => {
+    const defaults = createDefaultSettings(enums.ScenarioType.Hajime)
+    expect(defaults.scheduleSelections).toEqual({})
+  })
+
+  it('HIF は空選択から開始する', () => {
+    const defaults = createDefaultSettings(enums.ScenarioType.Hif)
+    expect(defaults.scheduleSelections).toEqual({})
+  })
+
+  it('resetScheduleSelectionsOnly は scheduleSelections のみ初期化する', () => {
+    const base = createDefaultSettings(enums.ScenarioType.Hif)
+    const next = resetScheduleSelectionsOnly({
+      ...base,
+      name: 'preset',
+      scheduleSelections: { 7: enums.ActivityIdType.MidExam },
+      actionCounts: { [enums.ActionIdType.ClassWork]: 2 },
+    })
+
+    expect(next.scheduleSelections).toEqual({})
+    expect(next.name).toBe('preset')
+    expect(next.actionCounts[enums.ActionIdType.ClassWork]).toBe(2)
+  })
+})
 
 // --- hasAllScheduleSelections ---
 
@@ -39,6 +71,12 @@ describe('hasAllScheduleSelections', () => {
     customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
     customClassBonus: { vocal: 0, dance: 0, visual: 0 },
     customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+    hifExamRatios: [
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+    ],
+    hifLessonSplitSub: true,
   }
 
   it('空のスケジュール選択は false', () => {
@@ -46,12 +84,54 @@ describe('hasAllScheduleSelections', () => {
   })
 
   it('全週埋めれば true（完全固定週は自動で除外される）', () => {
-    // 大量の選択をセット（全18週分を埋める）
+    // 各週で選択可能な先頭活動を設定する
+    const selections: Record<number, enums.ActivityIdType> = {}
+    for (const week of data.getScheduleData(enums.ScenarioType.Hajime, enums.DifficultyType.Legend)) {
+      if (week.activities.length > 0) {
+        selections[week.week] = week.activities[0].id
+      }
+    }
+    const settings = { ...baseSettings, scheduleSelections: selections }
+    expect(hasAllScheduleSelections(settings)).toBe(true)
+  })
+
+  it('Hajimeで legacy class 値は未設定扱いになる', () => {
     const selections: Record<number, enums.ActivityIdType> = {}
     for (let week = 1; week <= 18; week++) {
       selections[week] = enums.ActivityIdType.VoLesson
     }
+    selections[1] = enums.ActivityIdType.Class
     const settings = { ...baseSettings, scheduleSelections: selections }
+    expect(hasAllScheduleSelections(settings)).toBe(false)
+  })
+
+  it('HIF公開レッスン週はメイン属性のみ選択でも全週選択扱いになる', () => {
+    const hifSelections: Record<number, enums.ActivityIdType> = {}
+    for (const week of data.getScheduleData(enums.ScenarioType.Hif, enums.DifficultyType.None)) {
+      if (week.activities.length === 0) continue
+      const first = week.activities[0].id
+      if (
+        first === enums.ActivityIdType.VoLessonDa ||
+        first === enums.ActivityIdType.VoLessonVi ||
+        first === enums.ActivityIdType.DaLessonVo ||
+        first === enums.ActivityIdType.DaLessonVi ||
+        first === enums.ActivityIdType.ViLessonVo ||
+        first === enums.ActivityIdType.ViLessonDa
+      ) {
+        hifSelections[week.week] = enums.ActivityIdType.VoLesson
+      } else {
+        hifSelections[week.week] = first
+      }
+    }
+
+    const settings: ScoreSettings = {
+      ...baseSettings,
+      scenario: enums.ScenarioType.Hif,
+      difficulty: enums.DifficultyType.None,
+      scheduleSelections: hifSelections,
+      hifLessonSplitSub: true,
+    }
+
     expect(hasAllScheduleSelections(settings)).toBe(true)
   })
 })
@@ -144,6 +224,12 @@ describe('mergeScheduleCounts', () => {
     customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
     customClassBonus: { vocal: 0, dance: 0, visual: 0 },
     customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+    hifExamRatios: [
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+    ],
+    hifLessonSplitSub: true,
   }
 
   it('useScheduleLimits = false の場合、手動入力の値をそのまま返す', () => {
@@ -237,14 +323,230 @@ describe('loadScoreSettings / saveScoreSettings', () => {
   })
 
   it('壊れたJSONの場合はデフォルトを返す', () => {
-    mockStorage['gaku-navi-score-settings'] = 'invalid json{'
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = 'invalid json{'
     const settings = loadScoreSettings()
     expect(settings.scenario).toBe(enums.ScenarioType.Hajime)
   })
 
   it('必須フィールドが欠けた場合はデフォルトを返す', () => {
-    mockStorage['gaku-navi-score-settings'] = JSON.stringify({ name: 'test' })
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({ name: 'test' })
     const settings = loadScoreSettings()
     expect(settings.scenario).toBe(enums.ScenarioType.Hajime)
+  })
+
+  it('初は共有キー、追加シナリオはシナリオ別キーへ scheduleSelections を保存する', () => {
+    const shared = loadScoreSettings()
+    shared.scenario = enums.ScenarioType.Hajime
+    shared.scheduleSelections = { 4: enums.ActivityIdType.VoLesson }
+    saveScoreSettings(shared)
+
+    const hif = {
+      ...shared,
+      scenario: enums.ScenarioType.Hif,
+      scheduleSelections: { 10: enums.ActivityIdType.MidExam },
+      hifExamRatios: [
+        { vocal: 2, dance: 1, visual: 1 },
+        { vocal: 1, dance: 2, visual: 1 },
+        { vocal: 1, dance: 1, visual: 2 },
+      ],
+    }
+    saveScoreSettings(hif)
+
+    const sharedRaw = JSON.parse(mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]) as Partial<ScoreSettings>
+    const schedulesRaw = JSON.parse(mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]) as Record<
+      string,
+      Record<number, enums.ActivityIdType>
+    >
+
+    // 共有キーには非HIFの scheduleSelections を保持する
+    expect(sharedRaw.scheduleSelections).toEqual({ 4: enums.ActivityIdType.VoLesson })
+    // シナリオ別キーにはHIFのみ保存する
+    expect(schedulesRaw[enums.ScenarioType.Hif]).toEqual({ 10: enums.ActivityIdType.MidExam })
+  })
+
+  it('共有キーに保存されたHajime scheduleSelectionsはHIF保存後も共有キーに保持される', () => {
+    const legacy = loadScoreSettings()
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...legacy,
+      scenario: enums.ScenarioType.Hajime,
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson, 10: enums.ActivityIdType.MidExam },
+    })
+    delete mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]
+
+    saveScoreSettings({
+      ...legacy,
+      scenario: enums.ScenarioType.Hif,
+      difficulty: enums.DifficultyType.None,
+      scheduleSelections: { 7: enums.ActivityIdType.MidExam },
+    })
+
+    const sharedRaw = JSON.parse(mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]) as Partial<ScoreSettings>
+    const schedulesRaw = JSON.parse(mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]) as Record<
+      string,
+      Record<number, enums.ActivityIdType>
+    >
+    expect(sharedRaw.scheduleSelections).toEqual({
+      4: enums.ActivityIdType.VoLesson,
+      10: enums.ActivityIdType.MidExam,
+    })
+    expect(schedulesRaw[enums.ScenarioType.Hif]).toEqual({ 7: enums.ActivityIdType.MidExam })
+  })
+
+  it('共有キーに保存されたHajime複数週選択はHIF保存後も有効活動のみ復元できる', () => {
+    const legacy = loadScoreSettings()
+    const legacyHajimeSelections = {
+      1: enums.ActivityIdType.Class,
+      2: enums.ActivityIdType.Class,
+      4: enums.ActivityIdType.DaLesson,
+      8: enums.ActivityIdType.Consult,
+      10: enums.ActivityIdType.MidExam,
+      18: enums.ActivityIdType.FinalExam,
+    }
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...legacy,
+      scenario: enums.ScenarioType.Hajime,
+      scheduleSelections: legacyHajimeSelections,
+    })
+    delete mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]
+
+    saveScoreSettings({
+      ...legacy,
+      scenario: enums.ScenarioType.Hif,
+      difficulty: enums.DifficultyType.None,
+      scheduleSelections: { 7: enums.ActivityIdType.MidExam },
+    })
+
+    expect(loadScheduleSelections(enums.ScenarioType.Hajime)).toEqual({
+      4: enums.ActivityIdType.DaLesson,
+      8: enums.ActivityIdType.Consult,
+      10: enums.ActivityIdType.MidExam,
+      18: enums.ActivityIdType.FinalExam,
+    })
+  })
+
+  it('共有キーにHIFシナリオが保存されている場合はHIFとして読み込む', () => {
+    const base = loadScoreSettings()
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...base,
+      scenario: enums.ScenarioType.Hif,
+      hifExamRatios: [
+        { vocal: 9, dance: 9, visual: 9 },
+        { vocal: 9, dance: 9, visual: 9 },
+        { vocal: 9, dance: 9, visual: 9 },
+      ],
+    })
+
+    const loaded = loadScoreSettings()
+
+    // 新設計では HIF も共有キーから読むのでシナリオが HIF で返る
+    expect(loaded.scenario).toBe(enums.ScenarioType.Hif)
+  })
+
+  it('シナリオ別キーにHIFが無い場合、共有キーのscheduleSelectionsは採用せず既定値を使う', () => {
+    const base = loadScoreSettings()
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...base,
+      scenario: enums.ScenarioType.Hif,
+      scheduleSelections: { 7: enums.ActivityIdType.MidExam },
+    })
+    mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
+      [enums.ScenarioType.Hajime]: { 4: enums.ActivityIdType.VoLesson },
+    })
+
+    const loaded = loadScoreSettings()
+    expect(loaded.scenario).toBe(enums.ScenarioType.Hif)
+    expect(loaded.scheduleSelections).toEqual(createDefaultSettings(enums.ScenarioType.Hif).scheduleSelections)
+  })
+
+  it('HIFの公開レッスンでメイン属性のみIDを保存していても再読込で消えない', () => {
+    const base = loadScoreSettings()
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...base,
+      scenario: enums.ScenarioType.Hif,
+      difficulty: enums.DifficultyType.None,
+    })
+    mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
+      [enums.ScenarioType.Hif]: {
+        2: enums.ActivityIdType.VoLesson,
+      },
+    })
+
+    const loaded = loadScoreSettings()
+    expect(loaded.scheduleSelections[2]).toBe(enums.ActivityIdType.VoLesson)
+  })
+
+  it('HIFのシナリオ別キーに無効活動が混ざる場合は無効分を読み込み時に除外する', () => {
+    mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
+      [enums.ScenarioType.Hif]: {
+        7: enums.ActivityIdType.MidExam,
+        8: enums.ActivityIdType.Class,
+      },
+    })
+
+    const loadedSelections = loadScheduleSelections(enums.ScenarioType.Hif)
+    expect(loadedSelections).toEqual({ 7: enums.ActivityIdType.MidExam })
+  })
+
+  // 共有キー側に残っている値を誤ってHIFへ流用しないことを確認する。
+  it('共有キーがHIFでもシナリオ別キー未保存ならHIF既定スケジュールへフォールバックする', () => {
+    const base = loadScoreSettings()
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...base,
+      scenario: enums.ScenarioType.Hif,
+      scheduleSelections: {
+        1: enums.ActivityIdType.ClassVo,
+        10: enums.ActivityIdType.MidExam,
+        18: enums.ActivityIdType.FinalExam,
+      },
+    })
+    delete mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]
+
+    const loadedSelections = loadScheduleSelections(enums.ScenarioType.Hif)
+    expect(loadedSelections).toEqual(createDefaultSettings(enums.ScenarioType.Hif).scheduleSelections)
+  })
+
+  it('HIFシナリオ別キー未保存時はHIF既定スケジュールで読み込める', () => {
+    delete mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]
+    const loadedSelections = loadScheduleSelections(enums.ScenarioType.Hif)
+    const defaults = createDefaultSettings(enums.ScenarioType.Hif).scheduleSelections
+    expect(loadedSelections).toEqual(defaults)
+  })
+
+  // Hajimeはシナリオ別キーを読まない仕様を回帰で固定する。
+  it('非HIFはシナリオ別キーにデータがあっても共有キーのscheduleSelectionsを優先する', () => {
+    const base = loadScoreSettings()
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...base,
+      scenario: enums.ScenarioType.Hajime,
+      scheduleSelections: { 4: enums.ActivityIdType.DaLesson },
+    })
+    mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
+      [enums.ScenarioType.Hajime]: { 4: enums.ActivityIdType.VoLesson },
+    })
+
+    expect(loadScheduleSelections(enums.ScenarioType.Hajime)).toEqual({ 4: enums.ActivityIdType.DaLesson })
+  })
+
+  it('Hajime で保存データがない場合は空選択を返す', () => {
+    delete mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]
+    expect(loadScheduleSelections(enums.ScenarioType.Hajime)).toEqual({})
+  })
+
+  it('Hajime以外はシナリオ別キーのscheduleSelectionsを優先する', () => {
+    const base = loadScoreSettings()
+    const niaSchedule = data.getScheduleData(enums.ScenarioType.Nia, enums.DifficultyType.Legend)
+    const niaWeek = niaSchedule.find((week) => week.activities.length > 0)
+    const niaWeekNumber = niaWeek?.week ?? 1
+    const niaActivity = niaWeek?.activities[0]?.id ?? enums.ActivityIdType.MidExam
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
+      ...base,
+      scenario: enums.ScenarioType.Hajime,
+      scheduleSelections: { 4: enums.ActivityIdType.DaLesson },
+    })
+    mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
+      [enums.ScenarioType.Nia]: { [niaWeekNumber]: niaActivity },
+    })
+
+    expect(loadScheduleSelections(enums.ScenarioType.Nia)).toEqual({ [niaWeekNumber]: niaActivity })
   })
 })

@@ -12,7 +12,6 @@ import type { UnitSimulatorSettings, UnitResult, SynergyProviderDetail, Exhausti
 import { PlanType, CardType, ParameterType } from '../types/enums'
 import { evaluateManualUnit } from '../utils/unitSimulator'
 import { runOptimizerAsync } from './unitOptimizerRunner'
-import { loadScoreSettings } from '../utils/scoreSettings'
 import { loadCardCountCustom } from './useCardCountCustom'
 import type { CardCountCustom } from './useCardCountCustom'
 import * as constant from '../constant'
@@ -182,11 +181,13 @@ function toOrderedMemberNames(members: UnitResult['members']): string[] {
  *
  * @param allCards - 全サポートカード配列
  * @param cardByName - サポート名→カードのマップ
+ * @param scoreSettings - 現在の点数設定
  * @returns 設定・計算結果・操作関数
  */
 export function useUnitSimulator(
   allCards: SupportCard[],
   cardByName: Map<string, SupportCard>,
+  scoreSettings: ScoreSettings,
 ): UseUnitSimulatorReturn {
   const [settings, setSettingsRaw] = useState<UnitSimulatorSettings>(loadSettings)
   const [isCalculating, setIsCalculating] = useState(false)
@@ -245,12 +246,11 @@ export function useUnitSimulator(
   /** 実行時入力を構築する（点数設定・凸数・回数調整を都度最新化する） */
   const buildRuntimeInput = useCallback(
     (nextSettings: UnitSimulatorSettings, customCardCount?: CardCountCustom) => {
-      const scoreSettings: ScoreSettings = loadScoreSettings()
       const cardUncaps = loadUncaps()
       const cardCountCustom = customCardCount ?? loadCardCountCustom()
       return { settings: nextSettings, scoreSettings, cardUncaps, cardCountCustom, allCards, cardByName }
     },
-    [allCards, cardByName],
+    [allCards, cardByName, scoreSettings],
   )
 
   /** 計算を実行する */

@@ -117,6 +117,20 @@ describe('calculateParameterBonusFromSchedule', () => {
     expect(result.dance).toBe(390)
     expect(result.visual).toBe(390)
   })
+
+  it('HIF では選抜試験3回分がパラボ対象値に加算される', () => {
+    const result = calculateParameterBonusFromSchedule({}, enums.ScenarioType.Hif, enums.DifficultyType.None)
+    expect(result).toEqual({ vocal: 365, dance: 365, visual: 370 })
+  })
+
+  it('HIF 選抜試験比率を指定するとパラボ対象値へ反映される', () => {
+    const result = calculateParameterBonusFromSchedule({}, enums.ScenarioType.Hif, enums.DifficultyType.None, false, [
+      { vocal: 1, dance: 0, visual: 0 },
+      { vocal: 0, dance: 1, visual: 0 },
+      { vocal: 0, dance: 0, visual: 1 },
+    ])
+    expect(result).toEqual({ vocal: 280, dance: 400, visual: 420 })
+  })
 })
 
 /** レッスンごとのパラメータ上昇値取得テスト */
@@ -151,6 +165,13 @@ describe('getPerLessonParameterValues', () => {
     const result = getPerLessonParameterValues(selections, scenario, difficulty)
     expect(result.visual[0]).toBeGreaterThan(result.vocal[0])
     expect(result.visual[0]).toBeGreaterThan(result.dance[0])
+  })
+
+  it('HIF では選抜試験3回分が末尾に追加される', () => {
+    const result = getPerLessonParameterValues({}, enums.ScenarioType.Hif, enums.DifficultyType.None)
+    expect(result.vocal).toEqual([46, 146, 173])
+    expect(result.dance).toEqual([46, 146, 173])
+    expect(result.visual).toEqual([48, 148, 174])
   })
 })
 

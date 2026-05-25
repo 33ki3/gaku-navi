@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import type { SupportCard, ScoreSettings } from '../types/card'
 import type { UncapType } from '../types/enums'
+import * as enums from '../types/enums'
 import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
 import { createEmptyResult } from '../utils/calculator/calculateCard'
 import { useUIState } from './useUIState'
@@ -39,11 +40,24 @@ export function useAppState() {
   const { setCardUncap } = uncaps
 
   // スコア設定（変更時に localStorage にも保存する）
-  const [scoreSettings, setScoreSettingsRaw] = useState(loadScoreSettings)
+  const [scoreSettings, setScoreSettingsRaw] = useState<ScoreSettings>(() => {
+    const loaded = loadScoreSettings()
+    const normalizedDifficulty =
+      loaded.scenario === enums.ScenarioType.Hif || loaded.scenario === enums.ScenarioType.Custom
+        ? enums.DifficultyType.None
+        : enums.DifficultyType.Legend
+    return { ...loaded, difficulty: normalizedDifficulty }
+  })
   const setScoreSettings = useCallback((settings: ScoreSettings) => {
+    const normalizedDifficulty =
+      settings.scenario === enums.ScenarioType.Hif || settings.scenario === enums.ScenarioType.Custom
+        ? enums.DifficultyType.None
+        : enums.DifficultyType.Legend
+
     // setState 後に外部参照が変更されても状態が汚染されないよう、保存前に値を複製する
     const safeSettings: ScoreSettings = {
       ...settings,
+      difficulty: normalizedDifficulty,
       parameterBonusBase: { ...settings.parameterBonusBase },
       actionCounts: { ...settings.actionCounts },
       scheduleSelections: { ...settings.scheduleSelections },

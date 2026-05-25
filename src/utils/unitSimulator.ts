@@ -26,7 +26,8 @@ import {
 } from './unitOptimizer/candidatePreparation'
 import { resolveParamCap } from '../data/score/paramCap'
 import { getSpLessonTotal } from '../data/score/lesson'
-import { getExamData } from '../data/score/exam'
+import { getExamTotalData, getHifExamTotalData } from '../data/score/exam'
+import { getClassParameterTotal } from '../data/score/class'
 import * as data from '../data'
 import * as constant from '../constant'
 
@@ -114,18 +115,22 @@ function resolveExhaustiveBatchSize(totalCombos: number): number {
  */
 function buildParameterContext(input: OptimizeInput): ParameterContext {
   const { settings, scoreSettings } = input
-  const { scenario, difficulty, scheduleSelections } = scoreSettings
+  const { scenario, scheduleSelections } = scoreSettings
 
   // SPレッスン上昇量
-  const spLesson = getSpLessonTotal(scenario, difficulty, scheduleSelections)
+  const spLesson = getSpLessonTotal(scenario, scoreSettings.difficulty, scheduleSelections)
 
-  // 試験上昇量（中間 + 最終）
-  const examData = scoreSettings.useCustomMode
-    ? {
-        mid: { vocal: 0, dance: 0, visual: 0 },
-        final: { vocal: 0, dance: 0, visual: 0 },
-      }
-    : getExamData(scenario, difficulty)
+  // 授業上昇量（通常モードのみ）
+  const classTotalGain = scoreSettings.useCustomMode
+    ? { vocal: 0, dance: 0, visual: 0 }
+    : getClassParameterTotal(scenario, scoreSettings.difficulty, scheduleSelections)
+
+  // 試験上昇量
+  const examTotalGain = scoreSettings.useCustomMode
+    ? { vocal: 0, dance: 0, visual: 0 }
+    : scoreSettings.scenario === enums.ScenarioType.Hif
+      ? getHifExamTotalData(scoreSettings.hifExamRatios)
+      : getExamTotalData(scoreSettings.scenario, scoreSettings.difficulty)
 
   const customTargetGain = scoreSettings.useCustomMode
     ? scoreSettings.parameterBonusBase
@@ -146,15 +151,15 @@ function buildParameterContext(input: OptimizeInput): ParameterContext {
     nonSupportParams[key] =
       settings.initialParams[key] +
       spLesson[key] +
+      classTotalGain[key] +
       customTargetGain[key] +
-      examData.mid[key] +
-      examData.final[key] +
+      examTotalGain[key] +
       customNonBonusGain[key]
   }
 
   return {
     nonSupportParams,
-    paramCap: resolveParamCap(scenario, difficulty, settings.paramCapOverride),
+    paramCap: resolveParamCap(scenario, scoreSettings.difficulty, settings.paramCapOverride),
   }
 }
 
@@ -188,7 +193,13 @@ function resolveSchedule(scoreSettings: ScoreSettings): ResolvedSchedule {
   const perLessonValues = scoreSettings.useCustomMode
     ? customRowsToPerLessonValues(scoreSettings.customParamBonusRows)
     : scoreSettings.useScheduleLimits
-      ? getPerLessonParameterValues(scoreSettings.scheduleSelections, scoreSettings.scenario, scoreSettings.difficulty)
+      ? getPerLessonParameterValues(
+          scoreSettings.scheduleSelections,
+          scoreSettings.scenario,
+          scoreSettings.difficulty,
+          scoreSettings.hifLessonSplitSub,
+          scoreSettings.hifExamRatios,
+        )
       : undefined
   return { effectiveCounts, perLessonValues }
 }

@@ -8,15 +8,15 @@ import { useTranslation } from 'react-i18next'
 import { useCallback, useMemo, useState } from 'react'
 
 import * as constant from '../../constant'
-import { PlusIcon, ChevronRightIcon } from '../ui/icons'
+import { PlusIcon } from '../ui/icons'
 import UnitCardItem from './UnitCardItem'
-import BreakdownRow from './BreakdownRow'
+import * as enums from '../../types/enums'
 import type { ActionIdType, ScenarioType, DifficultyType, ActivityIdType } from '../../types/enums'
-import { SelectableTypeEntries } from '../../data/card'
-import { getClassTotal, getExamData, getSpLessonTotal } from '../../data/score'
+import { getClassParameterTotal, getExamData, getHifSelectionExamData, getSpLessonTotal } from '../../data/score'
 import { resolveParamCap } from '../../data/score/paramCap'
 import type { CardCountCustom } from '../../hooks/useCardCountCustom'
 import type { UnitResult as UnitResultType, ParameterValues } from '../../types/unit'
+import { UnitResultBreakdown } from './UnitResultBreakdown'
 
 /** UnitResult に渡すプロパティ */
 interface UnitResultProps {
@@ -48,6 +48,8 @@ interface UnitResultProps {
   difficulty: DifficultyType
   /** スケジュール選択（SPレッスン計算に使用） */
   scheduleSelections: Record<number, ActivityIdType>
+  /** HIF選抜試験3回分のVo:Da:Vi配分比率（x:y:z） */
+  hifExamRatios?: ParameterValues[]
   /** カスタムモードか（true の場合は classTotal の代わりに customClassBonus を使う） */
   useCustomMode: boolean
   /** カスタムモードでの授業パラメータ上昇量 */
@@ -89,6 +91,7 @@ export default function UnitResult({
   scenario,
   difficulty,
   scheduleSelections,
+  hifExamRatios,
   useCustomMode,
   customClassBonus,
   customNonBonusGain,
@@ -175,22 +178,31 @@ export default function UnitResult({
     [useCustomMode, result.parameterBonusBase, spLesson],
   )
 
-  // 授業パラメータ上昇量（単一値）: カスタムモード時は非使用
-  const classTotal = useMemo(
-    () => (useCustomMode ? 0 : getClassTotal(scenario, difficulty, scheduleSelections)),
+  // 授業パラメータ上昇量（VoDaVi別）
+  const classParams = useMemo(
+    () =>
+      useCustomMode
+        ? { vocal: 0, dance: 0, visual: 0 }
+        : getClassParameterTotal(scenario, difficulty, scheduleSelections),
     [useCustomMode, scenario, difficulty, scheduleSelections],
   )
 
-  // 試験上昇量（中間・最終 別）
+  // 試験上昇量（中間・最終 別）。HIF は選抜試験（hifSelectionExams）で管理するため 0 固定
   const examData = useMemo(
     () =>
-      useCustomMode
+      useCustomMode || scenario === enums.ScenarioType.Hif
         ? {
             mid: { vocal: 0, dance: 0, visual: 0 },
             final: { vocal: 0, dance: 0, visual: 0 },
           }
         : getExamData(scenario, difficulty),
     [useCustomMode, scenario, difficulty],
+  )
+
+  // HIF選抜試験（3回分）は通常試験と別表示するため、専用配列で合算用に保持する。
+  const hifSelectionExams = useMemo(
+    () => (useCustomMode || scenario !== enums.ScenarioType.Hif ? [] : getHifSelectionExamData(hifExamRatios)),
+    [useCustomMode, scenario, hifExamRatios],
   )
 
   /** VoDaVi 3軸の合計を返す */
@@ -204,16 +216,20 @@ export default function UnitResult({
     return r
   }
 
-  // VoDaVi 合計（初期パラメータ + 対象上昇 + 試験 + サポート + パラボ）
+  // VoDaVi 合計（初期パラメータ + 対象上昇 + 授業 + 試験 + サポート + パラボ）
   const breakdownTotal = useMemo(() => {
-    const customNonBonusTotal = useCustomMode
-      ? pvSum(customClassBonus, customNonBonusGain)
-      : { vocal: 0, dance: 0, visual: 0 }
+    const customNonBonusTotal = useCustomMode ? pvSum(customClassBonus, customNonBonusGain) : classParams
+    const hifExamTotal =
+      !useCustomMode && scenario === enums.ScenarioType.Hif
+        ? pvSum({ vocal: 0, dance: 0, visual: 0 }, ...hifSelectionExams)
+        : { vocal: 0, dance: 0, visual: 0 }
+
     const breakdownTotal = pvSum(
       initialParams,
       targetGain,
       examData.mid,
       examData.final,
+      hifExamTotal,
       supportScore,
       outsideParamBonus,
       customNonBonusTotal,
@@ -228,6 +244,9 @@ export default function UnitResult({
     useCustomMode,
     customClassBonus,
     customNonBonusGain,
+    classParams,
+    scenario,
+    hifSelectionExams,
   ])
 
   // シナリオ×難易度に応じたパラメータ上限キャップ
@@ -244,84 +263,30 @@ export default function UnitResult({
     }
   }, [paramCap, breakdownTotal])
 
-  // 全合計（VoDaVi合計 + 授業）
-  const grandTotal = cappedTotal.vocal + cappedTotal.dance + cappedTotal.visual + classTotal
+  // 全合計（VoDaVi合計）
+  const grandTotal = cappedTotal.vocal + cappedTotal.dance + cappedTotal.visual
 
   return (
     <div className="space-y-3">
-      {/* 合計スコア */}
-      <div className="bg-slate-50 rounded-lg px-4 py-2.5 cursor-pointer" onClick={handleToggleBreakdown}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <ChevronRightIcon
-              className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showBreakdown ? 'rotate-90' : ''}`}
-            />
-            <span className="text-xs font-bold text-slate-500">
-              {t('unit.result.total_score')}
-              {!useCustomMode && classTotal > 0 && (
-                <span className="text-[10px] font-bold text-slate-500 ml-0.5">
-                  （{t('unit.result.breakdown_class')}
-                  {t('ui.symbol.plus')}
-                  {classTotal.toLocaleString()}）
-                </span>
-              )}
-            </span>
-          </div>
-          <span className="text-lg font-black text-slate-800">{grandTotal.toLocaleString()}</span>
-        </div>
-        {/* スコア内訳（VoDaVi別） */}
-        {showBreakdown && (
-          <div className="mt-2 border-t border-slate-200 pt-2">
-            {/* ヘッダー行 */}
-            <div className="grid grid-cols-4 gap-1 mb-1">
-              <span />
-              {SelectableTypeEntries.map((entry) => (
-                <span key={entry.parameterType} className={`text-[10px] font-bold text-center ${entry.text}`}>
-                  {t(entry.displayLabel)}
-                </span>
-              ))}
-            </div>
-            {/* 初期パラ */}
-            <BreakdownRow label={t('unit.result.breakdown_initial_params')} values={initialParams} />
-            {/* サポート外パラボ */}
-            <BreakdownRow label={t('unit.result.breakdown_param_bonus')} values={outsideParamBonus} />
-            {/* 対象上昇の内訳（カスタム: 手動入力、通常: SPレッスン由来） */}
-            <BreakdownRow
-              label={
-                useCustomMode ? t('unit.result.breakdown_custom_target_gain') : t('unit.result.breakdown_sp_lesson')
-              }
-              values={targetGain}
-            />
-            {/* 授業（カスタムモード時のみ表示） */}
-            {useCustomMode && <BreakdownRow label={t('unit.result.breakdown_class')} values={customClassBonus} />}
-            {/* 試験など（カスタムモード時のみ表示） */}
-            {useCustomMode && (
-              <BreakdownRow label={t('ui.settings.custom_non_bonus_other')} values={customNonBonusGain} />
-            )}
-            {/* 中間試験 */}
-            {!useCustomMode && <BreakdownRow label={t('unit.result.breakdown_mid_exam')} values={examData.mid} />}
-            {/* 最終試験 */}
-            {!useCustomMode && <BreakdownRow label={t('unit.result.breakdown_final_exam')} values={examData.final} />}
-            {/* サポート */}
-            <BreakdownRow label={t('unit.result.breakdown_support')} values={supportScore} />
-            {/* 合計行 */}
-            <div className="grid grid-cols-4 gap-1 border-t border-slate-200 pt-1 mt-1">
-              <span className="text-[10px] font-bold text-slate-600 shrink-0">{t('unit.result.breakdown_total')}</span>
-              {SelectableTypeEntries.map((entry) => {
-                const raw = breakdownTotal[entry.parameterType]
-                const capped = cappedTotal[entry.parameterType]
-                const overflow = raw - capped
-                return (
-                  <span key={entry.parameterType} className="text-[10px] font-black text-slate-800 text-center">
-                    {capped.toLocaleString()}
-                    {overflow > 0 && <span className="text-red-500 text-[9px]">（-{overflow.toLocaleString()}）</span>}
-                  </span>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* 合計スコア・内訳テーブル */}
+      <UnitResultBreakdown
+        useCustomMode={useCustomMode}
+        scenario={scenario}
+        grandTotal={grandTotal}
+        showBreakdown={showBreakdown}
+        onToggleBreakdown={handleToggleBreakdown}
+        initialParams={initialParams}
+        outsideParamBonus={outsideParamBonus}
+        targetGain={targetGain}
+        customClassBonus={customClassBonus}
+        classParams={classParams}
+        customNonBonusGain={customNonBonusGain}
+        hifSelectionExams={hifSelectionExams}
+        examData={examData}
+        supportScore={supportScore}
+        breakdownTotal={breakdownTotal}
+        cappedTotal={cappedTotal}
+      />
 
       {/* サポート一覧（スロット順） */}
       <div className="grid grid-cols-1 gap-1.5">

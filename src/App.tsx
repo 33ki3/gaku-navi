@@ -12,8 +12,10 @@ import AppHeader from './components/header/AppHeader'
 import CardList from './components/cardList/CardList'
 import SortControls from './components/filterBar/SortControls'
 import EmptyState from './components/cardList/EmptyState'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { useAppState } from './hooks'
 import { createEmptyResult } from './utils/calculator/calculateCard'
+import { resetScheduleSelectionsOnly } from './utils/scoreSettings'
 import { CardDataProvider, CardUIProvider } from './contexts/CardContext'
 import type { CardDataContextValue, CardUIContextValue } from './contexts/CardContext'
 import type { SupportCard } from './types/card'
@@ -34,6 +36,27 @@ const UserCardFormModal = lazy(() => import('./components/userCardForm/UserCardF
 function App() {
   const { t } = useTranslation()
   const state = useAppState()
+
+  /** モバイル判定（md未満） */
+  const isMobile = useCallback(() => !window.matchMedia('(min-width: 768px)').matches, [])
+
+  /** 点数設定パネルを開く（モバイルでは最適編成パネルを閉じて排他表示） */
+  const openScoreSettingsPanel = useCallback(() => {
+    if (isMobile()) {
+      state.ui.setSimulatorOpen(false)
+      state.ui.setSimulatorPinned(false)
+    }
+    state.ui.setScoreSettingsOpen(true)
+  }, [isMobile, state.ui])
+
+  /** 最適編成パネルを開く（モバイルでは点数設定パネルを閉じて排他表示） */
+  const openSimulatorPanel = useCallback(() => {
+    if (isMobile()) {
+      state.ui.setScoreSettingsOpen(false)
+      state.ui.setSettingsPinned(false)
+    }
+    state.ui.setSimulatorOpen(true)
+  }, [isMobile, state.ui])
 
   // サポート一覧選択モード: UnitSimulatorPanel が登録する addCard コールバック
   const addManualCardRef = useRef<((cardName: string) => void) | null>(null)
@@ -101,6 +124,11 @@ function App() {
     [state.userCards],
   )
 
+  // 点数設定パネルのエラーバウンダリー: スケジュール選択のみリセットして再試行
+  const handleScoreSettingsReset = useCallback(() => {
+    state.scores.setScoreSettings(resetScheduleSelectionsOnly(state.scores.scoreSettings))
+  }, [state.scores])
+
   // CardDataContext: 安定したアクション関数（凸数変更時のみ再生成）
   const cardDataCtx = useMemo<CardDataContextValue>(
     () => ({
@@ -138,10 +166,10 @@ function App() {
         >
           {/* ヘッダー（タイトル・アクションボタン） */}
           <AppHeader
-            onOpenScoreSettings={() => state.ui.setScoreSettingsOpen(true)}
+            onOpenScoreSettings={openScoreSettingsPanel}
             onPinScoreSettings={() => state.ui.setSettingsPinned(!state.ui.settingsPinned)}
             settingsPinned={state.ui.settingsPinned}
-            onOpenSimulator={() => state.ui.setSimulatorOpen(true)}
+            onOpenSimulator={openSimulatorPanel}
             onPinSimulator={() => state.ui.setSimulatorPinned(!state.ui.simulatorPinned)}
             simulatorPinned={state.ui.simulatorPinned}
             bothPanelsPinned={state.ui.bothPanelsPinned}
@@ -160,7 +188,7 @@ function App() {
                 if (window.matchMedia('(min-width: 768px)').matches) {
                   state.ui.setSettingsPinned(true)
                 } else {
-                  state.ui.setScoreSettingsOpen(true)
+                  openScoreSettingsPanel()
                 }
               }}
               scheduleConfigured={hasAllScheduleSelections(state.scores.scoreSettings)}
@@ -194,7 +222,7 @@ function App() {
                   state.ui.setUnitCardSelectMode(false)
                   // モバイルの場合はパネルを再度開く
                   if (!window.matchMedia('(min-width: 768px)').matches) {
-                    state.ui.setSimulatorOpen(true)
+                    openSimulatorPanel()
                   }
                 }}
                 className="px-3 py-1 rounded-lg text-xs font-bold bg-white text-blue-600 hover:bg-blue-50 transition-colors"
@@ -260,41 +288,59 @@ function App() {
           )}
           {/* 点数設定パネル（開いた時のみマウントしてチャンクの初期ロードを回避） */}
           {(state.ui.scoreSettingsOpen || state.ui.settingsPinned) && (
-            <Suspense fallback={null}>
-              <ScoreSettingsPanel
-                isOpen={state.ui.scoreSettingsOpen}
-                onClose={() => {
-                  state.ui.setScoreSettingsOpen(false)
-                  state.ui.setSettingsPinned(false)
-                }}
-                pinned={state.ui.settingsPinned}
-                settings={state.scores.scoreSettings}
-                onSettingsChange={state.scores.setScoreSettings}
-              />
-            </Suspense>
+            <ErrorBoundary
+              onReset={handleScoreSettingsReset}
+              resetDescription={t('ui.header.schedule')}
+              onCancel={() => {
+                state.ui.setScoreSettingsOpen(false)
+                state.ui.setSettingsPinned(false)
+              }}
+            >
+              <Suspense fallback={null}>
+                <ScoreSettingsPanel
+                  isOpen={state.ui.scoreSettingsOpen}
+                  onClose={() => {
+                    state.ui.setScoreSettingsOpen(false)
+                    state.ui.setSettingsPinned(false)
+                  }}
+                  pinned={state.ui.settingsPinned}
+                  settings={state.scores.scoreSettings}
+                  onSettingsChange={state.scores.setScoreSettings}
+                  onSwitchToSimulator={openSimulatorPanel}
+                />
+              </Suspense>
+            </ErrorBoundary>
           )}
           {/* 最適編成パネル（開いた時のみマウントしてチャンクの初期ロードを回避） */}
           {(state.ui.simulatorOpen || state.ui.simulatorPinned || state.ui.unitCardSelectMode) && (
-            <Suspense fallback={null}>
-              <UnitSimulatorPanel
-                isOpen={state.ui.simulatorOpen}
-                onClose={() => {
-                  state.ui.setSimulatorOpen(false)
-                  state.ui.setSimulatorPinned(false)
-                }}
-                pinned={state.ui.simulatorPinned}
-                secondPanel={state.ui.bothPanelsPinned}
-                registerAddManualCard={registerAddManualCard}
-                registerIsCardEligible={registerIsCardEligible}
-                unitCardSelectMode={state.ui.unitCardSelectMode}
-                setUnitCardSelectMode={state.ui.setUnitCardSelectMode}
-                countCustom={state.scores.countCustom}
-                scoreSettings={state.scores.scoreSettings}
-                allCards={state.userCards.allCards}
-                allCardByName={state.userCards.allCardByName}
-                cardUncaps={state.scores.cardUncaps}
-              />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={null}>
+                <UnitSimulatorPanel
+                  isOpen={state.ui.simulatorOpen}
+                  onClose={() => {
+                    state.ui.setSimulatorOpen(false)
+                    state.ui.setSimulatorPinned(false)
+                  }}
+                  pinned={state.ui.simulatorPinned}
+                  secondPanel={state.ui.bothPanelsPinned}
+                  registerAddManualCard={registerAddManualCard}
+                  registerIsCardEligible={registerIsCardEligible}
+                  unitCardSelectMode={state.ui.unitCardSelectMode}
+                  setUnitCardSelectMode={state.ui.setUnitCardSelectMode}
+                  countCustom={state.scores.countCustom}
+                  scoreSettings={state.scores.scoreSettings}
+                  allCards={state.userCards.allCards}
+                  allCardByName={state.userCards.allCardByName}
+                  cardUncaps={state.scores.cardUncaps}
+                  onSwitchToScoreSettings={openScoreSettingsPanel}
+                  onManualSelectionComplete={() => {
+                    if (!window.matchMedia('(min-width: 768px)').matches) {
+                      openSimulatorPanel()
+                    }
+                  }}
+                />
+              </Suspense>
+            </ErrorBoundary>
           )}
           {/* ユーザーカード登録・編集モーダル */}
           {state.ui.userCardFormOpen && (

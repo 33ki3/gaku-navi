@@ -179,16 +179,15 @@ describe('actionCategory', () => {
   })
 })
 
-const allCombinations: [enums.ScenarioType, enums.DifficultyType][] = [
-  [enums.ScenarioType.Hajime, enums.DifficultyType.Regular],
-  [enums.ScenarioType.Hajime, enums.DifficultyType.Pro],
-  [enums.ScenarioType.Hajime, enums.DifficultyType.Master],
-  [enums.ScenarioType.Hajime, enums.DifficultyType.Legend],
-  [enums.ScenarioType.Nia, enums.DifficultyType.Regular],
-  [enums.ScenarioType.Nia, enums.DifficultyType.Pro],
-  [enums.ScenarioType.Nia, enums.DifficultyType.Master],
-  [enums.ScenarioType.Nia, enums.DifficultyType.Legend],
-]
+// Custom は schedule/lesson マスタを持たないため除外する
+const allCombinations: [enums.ScenarioType, enums.DifficultyType][] = Object.values(enums.ScenarioType)
+  .filter((s) => s !== enums.ScenarioType.Custom)
+  .flatMap((scenario) =>
+    Object.values(enums.DifficultyType).map((difficulty): [enums.ScenarioType, enums.DifficultyType] => [
+      scenario,
+      difficulty,
+    ]),
+  )
 
 /** 全シナリオ×難易度の組み合わせでスケジュールデータが存在すること */
 describe('schedule', () => {

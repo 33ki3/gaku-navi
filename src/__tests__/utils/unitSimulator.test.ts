@@ -33,6 +33,12 @@ function makeScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSetting
     customParamBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
     customClassBonus: { vocal: 0, dance: 0, visual: 0 },
     customNonBonusGain: { vocal: 0, dance: 0, visual: 0 },
+    hifExamRatios: [
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+      { vocal: 0, dance: 0, visual: 0 },
+    ],
+    hifLessonSplitSub: true,
     ...overrides,
   }
 }
@@ -73,7 +79,7 @@ describe('最適編成', () => {
     })
 
     it('カスタムシナリオではoverride未設定時に3200を使う', () => {
-      expect(resolveParamCap(enums.ScenarioType.Custom, enums.DifficultyType.Regular, null)).toBe(3200)
+      expect(resolveParamCap(enums.ScenarioType.Custom, enums.DifficultyType.None, null)).toBe(3200)
     })
   })
 
@@ -102,6 +108,9 @@ describe('最適編成', () => {
       if (!result) return
 
       // サポート個別の計算
+      if (scoreSettings.difficulty === null) {
+        throw new Error('テスト前提エラー: difficulty が null です')
+      }
       const schedule = getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
       const effectiveCounts = mergeScheduleCounts(scoreSettings, schedule)
       const cardResult = calculateCardParameter(
@@ -203,6 +212,51 @@ describe('最適編成', () => {
       if (!baseResult || !customResult) return
 
       expect(customResult.totalScore - baseResult.totalScore).toBe(81)
+    })
+
+    it('通常モードでは授業上昇量がサポート外パラメータに加算される', () => {
+      const card = AllCards.find(
+        (c) =>
+          (c.plan === enums.PlanType.Anomaly || c.plan === enums.PlanType.Free) &&
+          !c.abilities.some((a) => a.is_parameter_bonus),
+      )
+      if (!card) return
+
+      const baseSettings = makeScoreSettings({
+        scenario: enums.ScenarioType.Hif,
+        difficulty: enums.DifficultyType.None,
+        useCustomMode: false,
+        scheduleSelections: {},
+        parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
+      })
+      const classVoSettings = makeScoreSettings({
+        scenario: enums.ScenarioType.Hif,
+        difficulty: enums.DifficultyType.None,
+        useCustomMode: false,
+        scheduleSelections: { 3: enums.ActivityIdType.ClassVo },
+        parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
+      })
+      const builderSettings = makeSimulatorSettings([card.name])
+
+      const baseResult = evaluateManualUnit({
+        settings: builderSettings,
+        scoreSettings: baseSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+      const classVoResult = evaluateManualUnit({
+        settings: builderSettings,
+        scoreSettings: classVoSettings,
+        cardUncaps: {},
+        allCards: AllCards,
+        cardByName: CardByName,
+      })
+
+      if (!baseResult || !classVoResult) return
+
+      // HIF 3週目の ClassVo は +120
+      expect(classVoResult.totalScore - baseResult.totalScore).toBe(120)
     })
   })
 

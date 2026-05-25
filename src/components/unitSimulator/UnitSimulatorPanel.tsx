@@ -16,10 +16,11 @@ import UnitResult from './UnitResult'
 import UnitSlotEditor from './UnitSlotEditor'
 import { useUnitSimulator } from '../../hooks/useUnitSimulator'
 import type { CardCountCustomState } from '../../hooks/useCardCountCustom'
-import { ButtonSizeType, CollapsibleVariantType, PlanType, UncapType } from '../../types/enums'
+import { ButtonSizeType, CollapsibleVariantType, DifficultyType, PlanType, UncapType } from '../../types/enums'
 import type { SupportCard, ScoreSettings } from '../../types/card'
 import * as constant from '../../constant'
 import { resolveParamCap } from '../../data/score/paramCap'
+import { hasAllScheduleSelections } from '../../utils/scoreSettings'
 
 /** UnitSimulatorPanel に渡すプロパティ */
 interface UnitSimulatorPanelProps {
@@ -49,6 +50,10 @@ interface UnitSimulatorPanelProps {
   allCardByName: Map<string, SupportCard>
   /** サポート凸数マップ（未所持判定に使用） */
   cardUncaps: Record<string, UncapType>
+  /** 手動編成で6枠埋まったときのコールバック */
+  onManualSelectionComplete?: () => void
+  /** モバイルで点数設定パネルへ切り替える関数 */
+  onSwitchToScoreSettings?: () => void
 }
 
 /**
@@ -70,6 +75,8 @@ export default function UnitSimulatorPanel({
   allCards,
   allCardByName,
   cardUncaps,
+  onManualSelectionComplete,
+  onSwitchToScoreSettings,
 }: UnitSimulatorPanelProps) {
   const { t } = useTranslation()
   const {
@@ -84,7 +91,7 @@ export default function UnitSimulatorPanel({
     hasCalculated,
     noCandidates,
     exhaustiveProgress,
-  } = useUnitSimulator(allCards, allCardByName)
+  } = useUnitSimulator(allCards, allCardByName, scoreSettings)
 
   // サポート一覧選択モード用: addCard コールバックを親に登録する（自動/手動両対応）
   const settingsRef = useRef(settings)
@@ -120,11 +127,15 @@ export default function UnitSimulatorPanel({
       // 末尾スロットが変わったら rentalCardName を更新する（manualRental に関わらず）
       const newRentalName = padded[constant.UNIT_SIZE - 1] !== null ? padded[constant.UNIT_SIZE - 1] : s.rentalCardName
       setSettingsRef.current({ ...s, manualCards: padded, rentalCardName: newRentalName })
-      if (padded.filter((n) => n !== null).length >= constant.UNIT_SIZE) setUnitCardSelectMode(false)
+      const filledAfterAdd = padded.filter((n) => n !== null).length
+      if (filledAfterAdd >= constant.UNIT_SIZE) {
+        setUnitCardSelectMode(false)
+        onManualSelectionComplete?.()
+      }
     }
     registerAddManualCard(addCard)
     return () => registerAddManualCard(null)
-  }, [registerAddManualCard, setUnitCardSelectMode])
+  }, [registerAddManualCard, setUnitCardSelectMode, onManualSelectionComplete])
 
   // cardUncaps を ref で保持して isEligible から参照できるようにする
   const cardUncapsRef = useRef(cardUncaps)
@@ -196,32 +207,33 @@ export default function UnitSimulatorPanel({
 
   // シナリオ既定値とユーザー上書きを解決した最終的なパラメータ上限値
   const resolvedParamCap = useMemo(
-    () => resolveParamCap(scoreSettings.scenario, scoreSettings.difficulty, settings.paramCapOverride),
+    () =>
+      resolveParamCap(
+        scoreSettings.scenario,
+        scoreSettings.difficulty ?? DifficultyType.None,
+        settings.paramCapOverride,
+      ),
     [scoreSettings.scenario, scoreSettings.difficulty, settings.paramCapOverride],
   )
+  const hasAllSchedules = useMemo(() => hasAllScheduleSelections(scoreSettings), [scoreSettings])
 
   // 育成プラン設定セクションの開閉状態
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
-
-  /** 一覧から選択モードの切り替え */
-  const handleToggleSelectMode = useCallback(() => {
-    const next = !unitCardSelectMode
-    // モード解除時はターゲットスロットをクリアする
-    if (!next) targetSlotIndexRef.current = null
-    setUnitCardSelectMode(next)
-    // モバイルの場合はパネルを閉じてサポート一覧から選べるようにする
-    if (next && !window.matchMedia('(min-width: 768px)').matches) {
-      onClose()
-    }
-  }, [unitCardSelectMode, setUnitCardSelectMode, onClose])
 
   /** 特定スロットを指定して選択モードを開始する */
   const handleSlotSelect = useCallback(
     (slotIndex: number) => {
       targetSlotIndexRef.current = slotIndex
-      handleToggleSelectMode()
+      // 既に選択モード中ならターゲットスロットのみ更新してモードを維持する
+      // （トグルすると解除されてしまうため、未選択時のみモードに入る）
+      if (!unitCardSelectMode) {
+        setUnitCardSelectMode(true)
+        if (!window.matchMedia('(min-width: 768px)').matches) {
+          onClose()
+        }
+      }
     },
-    [handleToggleSelectMode],
+    [unitCardSelectMode, setUnitCardSelectMode, onClose],
   )
 
   /** サポート固定トグル */
@@ -272,7 +284,18 @@ export default function UnitSimulatorPanel({
       {/* ヘッダー */}
       <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-5 py-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-black text-slate-900">{t('ui.settings.unit_simulator')}</h2>
+          <h2 className="hidden sm:block text-base font-black text-slate-900">{t('ui.settings.unit_simulator')}</h2>
+          <div className="sm:hidden flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 flex-1 mr-2">
+            <button
+              onClick={onSwitchToScoreSettings}
+              className="flex-1 py-1.5 rounded-lg text-xs font-bold text-slate-600"
+            >
+              {t('ui.settings.score_settings')}
+            </button>
+            <button className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white">
+              {t('ui.settings.unit_simulator')}
+            </button>
+          </div>
           <CloseButton onClick={onClose} size={ButtonSizeType.Lg} className="hover:bg-slate-100" />
         </div>
       </div>
@@ -291,12 +314,7 @@ export default function UnitSimulatorPanel({
             variant={CollapsibleVariantType.Panel}
           >
             <div className="mt-2">
-              <UnitSettings
-                settings={settings}
-                onChange={setSettings}
-                scenario={scoreSettings.scenario}
-                resolvedParamCap={resolvedParamCap}
-              />
+              <UnitSettings settings={settings} onChange={setSettings} resolvedParamCap={resolvedParamCap} />
             </div>
           </CollapsibleSection>
         </div>
@@ -343,6 +361,13 @@ export default function UnitSimulatorPanel({
               </button>
             </div>
 
+            {/* スケジュール未設定注意 */}
+            {!hasAllSchedules && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700 whitespace-pre-line">
+                {t('unit.schedule_incomplete_warning')}
+              </div>
+            )}
+
             {/* 候補なし警告 */}
             {noCandidates && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
@@ -380,8 +405,9 @@ export default function UnitSimulatorPanel({
                 onRemovePItemCount={countCustom.removePItemCount}
                 onClearCardCustom={countCustom.clearCardCustom}
                 scenario={scoreSettings.scenario}
-                difficulty={scoreSettings.difficulty}
+                difficulty={scoreSettings.difficulty ?? DifficultyType.None}
                 scheduleSelections={scoreSettings.scheduleSelections}
+                hifExamRatios={scoreSettings.hifExamRatios}
                 useCustomMode={scoreSettings.useCustomMode}
                 customClassBonus={scoreSettings.customClassBonus}
                 customNonBonusGain={scoreSettings.customNonBonusGain}

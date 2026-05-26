@@ -419,6 +419,7 @@ async function optimizeManualRental(
     voSpPool: categorizedPools.voSpPool,
     daSpPool: categorizedPools.daSpPool,
     viSpPool: categorizedPools.viSpPool,
+    allSpPool: categorizedPools.allSpPool,
     genVoCount: categorizedPools.genVoPool.length,
     genDaCount: categorizedPools.genDaPool.length,
     genViCount: categorizedPools.genViPool.length,
@@ -457,6 +458,7 @@ async function optimizeManualRental(
     voSpPool: categorizedPools.voSpPool,
     daSpPool: categorizedPools.daSpPool,
     viSpPool: categorizedPools.viSpPool,
+    allSpPool: categorizedPools.allSpPool,
     genVoPool: categorizedPools.genVoPool,
     genDaPool: categorizedPools.genDaPool,
     genViPool: categorizedPools.genViPool,
@@ -577,6 +579,7 @@ async function optimizeAutoRental(
       voSpPool: branch.pools.voSpPool,
       daSpPool: branch.pools.daSpPool,
       viSpPool: branch.pools.viSpPool,
+      allSpPool: branch.pools.allSpPool,
       genVoCount: branch.pools.genVoPool.length,
       genDaCount: branch.pools.genDaPool.length,
       genViCount: branch.pools.genViPool.length,
@@ -612,6 +615,7 @@ async function optimizeAutoRental(
       voSpPool: branch.pools.voSpPool,
       daSpPool: branch.pools.daSpPool,
       viSpPool: branch.pools.viSpPool,
+      allSpPool: branch.pools.allSpPool,
       genVoPool: branch.pools.genVoPool,
       genDaPool: branch.pools.genDaPool,
       genViPool: branch.pools.genViPool,
@@ -781,7 +785,7 @@ export async function exhaustiveOptimizeAsync(
   ]) {
     if (needed <= 0) continue
     const topSpCards = [...scoredFree]
-      .filter((c) => c.spCategory === spCat)
+      .filter((c) => c.spCategory === spCat || c.spCategory === enums.SpCategoryType.All)
       .sort((a, b) => b.baseScore - a.baseScore)
       .slice(0, needed + SP_POOL_MARGIN)
     for (const c of topSpCards) freePoolMap.set(c.card.name, c)
@@ -800,6 +804,11 @@ export async function exhaustiveOptimizeAsync(
     if (c.spCategory === enums.SpCategoryType.Vocal) fixedVoSp++
     else if (c.spCategory === enums.SpCategoryType.Dance) fixedDaSp++
     else if (c.spCategory === enums.SpCategoryType.Visual) fixedViSp++
+    else if (c.spCategory === enums.SpCategoryType.All) {
+      fixedVoSp++
+      fixedDaSp++
+      fixedViSp++
+    }
   }
 
   // 最適化の実行（手動レンタル指定の有無で分岐）

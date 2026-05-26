@@ -171,7 +171,7 @@ export default function UnitSettings({ settings, onChange, resolvedParamCap }: U
           <HelpTooltip text={t('unit.settings.type_filter_tip')} />
         </h3>
         <div className="flex gap-1.5">
-          {data.SelectableTypeEntries.map((entry) => (
+          {data.TypeDisplayEntries.map((entry) => (
             <ToggleButton
               key={entry.cardType}
               isActive={settings.allowedTypes.includes(entry.cardType)}

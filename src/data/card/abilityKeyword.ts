@@ -153,6 +153,13 @@ const entries: AbilityKeywordEntry[] = [
     triggers: [TriggerKeyType.ActivitySupplyGift],
   },
   {
+    id: AbilityKeywordType.ActivitySupplyGiftCount,
+    label: 'card.ability.supply_count',
+    badge: 'card.badge.supply_count',
+    isParamCategory: false,
+    triggers: [TriggerKeyType.ActivitySupplyGiftCount],
+  },
+  {
     id: AbilityKeywordType.Outing,
     label: 'card.ability.outing',
     badge: 'card.badge.outing',
@@ -172,6 +179,13 @@ const entries: AbilityKeywordEntry[] = [
     badge: 'card.badge.consult',
     isParamCategory: false,
     triggers: [TriggerKeyType.Consult],
+  },
+  {
+    id: AbilityKeywordType.ConsultCount,
+    label: 'card.ability.consult_count',
+    badge: 'card.badge.consult_count',
+    isParamCategory: false,
+    triggers: [TriggerKeyType.ConsultCount],
   },
   {
     id: AbilityKeywordType.PDrink,

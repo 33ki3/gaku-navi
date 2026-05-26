@@ -155,12 +155,16 @@ export const AbilityKeywordType = {
   Exam: 'exam',
   /** 差し入れ・活動支給 */
   ActivitySupplyGift: 'activity_supply_gift',
+  /** 差し入れ・活動支給（回数制限） */
+  ActivitySupplyGiftCount: 'activity_supply_gift_count',
   /** お出かけ */
   Outing: 'outing',
   /** お出かけ（回数制限） */
   OutingCount: 'outing_count',
   /** 相談 */
   Consult: 'consult',
+  /** 相談（回数制限） */
+  ConsultCount: 'consult_count',
   /** Pドリンク */
   PDrink: 'p_drink',
   /** 休む */
@@ -236,12 +240,16 @@ export const AbilityNameKeyType = {
   ExamEnd: 'exam_end',
   /** 差し入れ・活動支給 */
   ActivitySupplyGift: 'activity_supply_gift',
+  /** 差し入れ・活動支給（回数制限） */
+  ActivitySupplyGiftCount: 'activity_supply_gift_count',
   /** お出かけ */
   Outing: 'outing',
   /** お出かけ（回数制限） */
   OutingCount: 'outing_count',
   /** 相談 */
   Consult: 'consult',
+  /** 相談（回数制限） */
+  ConsultCount: 'consult_count',
   /** Pドリンク交換 */
   PDrinkExchange: 'p_drink_exchange',
   /** 休む */
@@ -264,6 +272,8 @@ export const AbilityNameKeyType = {
   SsrCardAcquire: 'ssr_card_acquire',
   /** 初期PP */
   InitialPp: 'initial_pp',
+  /** SPレッスン発生率（全体・上位） */
+  SpLessonRateAllHigh: 'sp_lesson_rate_all_high',
   /** Pアイテム獲得 */
   PItemAcquire: 'p_item_acquire',
   /** レッスンPPブースト */
@@ -565,6 +575,8 @@ export const SpCategoryType = {
   Dance: 'dance',
   /** ビジュアルSP */
   Visual: 'visual',
+  /** 全SP（Vo/Da/Viすべて） */
+  All: 'all',
   /** SP以外 */
   None: 'none',
 } as const
@@ -887,12 +899,16 @@ export const TriggerKeyType = {
   ExamEnd: 'exam_end',
   /** 差し入れ・活動支給 */
   ActivitySupplyGift: 'activity_supply_gift',
+  /** 差し入れ・活動支給（回数制限） */
+  ActivitySupplyGiftCount: 'activity_supply_gift_count',
   /** お出かけ */
   Outing: 'outing',
   /** お出かけ（回数制限） */
   OutingCount: 'outing_count',
   /** 相談 */
   Consult: 'consult',
+  /** 相談（回数制限） */
+  ConsultCount: 'consult_count',
   /** Pドリンク獲得 */
   PDrinkAcquire: 'p_drink_acquire',
   /** Pドリンク交換 */
@@ -1392,6 +1408,8 @@ export const EffectTemplateKeyType = {
   TurnGte: 'turn_gte',
   /** 前のアクティブカード条件 */
   PrevActiveCard: 'prev_active_card',
+  /** Pポイント以上条件 */
+  PpGte: 'pp_gte',
 
   /** 指針変更（全力・温存・強気の切り替え） */
   ChangePolicy: 'change_policy',

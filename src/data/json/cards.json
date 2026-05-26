@@ -2988,6 +2988,98 @@
     "skill_card": null
   },
   {
+    "name": "私たちも成長していくぞ！",
+    "rarity": "ssr",
+    "plan": "free",
+    "type": "assist",
+    "parameter_type": "vocal",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/05/26",
+    "abilities": [
+      {
+        "name_key": "sp_lesson_rate_all_high",
+        "trigger_key": "sp_lesson_rate_all",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "activity_supply_gift_count",
+        "trigger_key": "activity_supply_gift_count",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "consult_count",
+        "trigger_key": "consult_count",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "outing_count",
+        "trigger_key": "outing_count",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "event_pp_boost",
+        "trigger_key": "nothing",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "pp_gain",
+        "param_value": 40,
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "夢の手助け",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "special_training_start"
+        },
+        "condition": {
+          "key": "pp_gte",
+          "threshold": 200
+        },
+        "body": [
+          {
+            "key": "pp_gain",
+            "value": 70
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 1
+        }
+      }
+    },
+    "skill_card": null
+  },
+  {
     "name": "はじめてのお友達",
     "rarity": "sr",
     "plan": "free",

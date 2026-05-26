@@ -41,7 +41,7 @@ interface UseUnitSimulatorReturn {
 /** デフォルト設定 */
 const defaultSettings: UnitSimulatorSettings = {
   plan: PlanType.Sense,
-  allowedTypes: [CardType.Vocal, CardType.Dance, CardType.Visual],
+  allowedTypes: [CardType.Vocal, CardType.Dance, CardType.Visual, CardType.Assist],
   spConstraint: { vocal: 0, dance: 0, visual: 0 },
   typeCountMin: {
     [ParameterType.Vocal]: constant.TYPE_COUNT_MIN_DEFAULT,

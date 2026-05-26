@@ -12,7 +12,9 @@ export const SLOT_NONE = '' as const
 
 /** アビリティごとの固定 max_count（定義がないものは無制限） */
 export const ABILITY_MAX_COUNT: Partial<Record<AbilityNameKeyType, number>> = {
+  [AbilityNameKeyType.ActivitySupplyGiftCount]: 2,
   [AbilityNameKeyType.ASkillDelete]: 3,
+  [AbilityNameKeyType.ConsultCount]: 2,
   [AbilityNameKeyType.MSkillDelete]: 3,
   [AbilityNameKeyType.Change]: 3,
   [AbilityNameKeyType.Customize]: 6,

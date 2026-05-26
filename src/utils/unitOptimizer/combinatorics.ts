@@ -40,6 +40,7 @@ interface SpPools<T extends OptimizerCardLike> {
   voSpPool: T[]
   daSpPool: T[]
   viSpPool: T[]
+  allSpPool: T[]
 }
 
 /** SPなしカテゴリ別プール */
@@ -219,6 +220,7 @@ function buildSpTypeStates<T extends OptimizerCardLike>(pool: T[]): SpTypeState[
  * @param voSpPool - SP=Vocal カード配列
  * @param daSpPool - SP=Dance カード配列
  * @param viSpPool - SP=Visual カード配列
+ * @param allSpPool - SP=All（Vo/Da/Viすべて）カード配列
  * @param genVoCount - SP=None かつ type=Vocal の枚数
  * @param genDaCount - SP=None かつ type=Dance の枚数
  * @param genViCount - SP=None かつ type=Visual の枚数
@@ -240,6 +242,7 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
     voSpPool,
     daSpPool,
     viSpPool,
+    allSpPool,
     genVoCount,
     genDaCount,
     genViCount,
@@ -255,15 +258,15 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
     typeViMax,
     totalSlots,
   } = input
-  if (totalSlots < neededVo + neededDa + neededVi) return 0
-
   const voKey = buildPoolKey(voSpPool)
   const daKey = buildPoolKey(daSpPool)
   const viKey = buildPoolKey(viSpPool)
+  const allKey = buildPoolKey(allSpPool)
   const countCacheKey = [
     voKey,
     daKey,
     viKey,
+    allKey,
     genVoCount,
     genDaCount,
     genViCount,
@@ -286,57 +289,63 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
   const voStates = buildSpTypeStates(voSpPool)
   const daStates = buildSpTypeStates(daSpPool)
   const viStates = buildSpTypeStates(viSpPool)
+  const allStates = buildSpTypeStates(allSpPool)
 
   let total = 0
 
   for (const sVo of voStates) {
-    // まず VoSP 必須枚数と総枠超過を除外する。
-    if (sVo.k < neededVo || sVo.k > totalSlots) continue
+    // まず総枠超過を除外する。
+    if (sVo.k > totalSlots) continue
     for (const sDa of daStates) {
-      // 次に DaSP 必須枚数と総枠超過を除外する。
-      if (sDa.k < neededDa || sVo.k + sDa.k > totalSlots) continue
+      // 次に総枠超過を除外する。
+      if (sVo.k + sDa.k > totalSlots) continue
       for (const sVi of viStates) {
-        // 最後に ViSP 必須枚数を満たさない枝を除外する。
-        if (sVi.k < neededVi) continue
-        const spCount = sVo.k + sDa.k + sVi.k
-        // SPカードだけで総枠を超える枝は成立しないため除外する。
-        if (spCount > totalSlots) continue
+        for (const sAll of allStates) {
+          const spVoCount = sVo.k + sAll.k
+          const spDaCount = sDa.k + sAll.k
+          const spViCount = sVi.k + sAll.k
+          if (spVoCount < neededVo || spDaCount < neededDa || spViCount < neededVi) continue
 
-        // 残り枠を汎用カード群で埋めるため、必要な残枠数とSP側タイプ枚数を計算する。
-        const kGen = totalSlots - spCount
-        const spVo = sVo.vo + sDa.vo + sVi.vo
-        const spDa = sVo.da + sDa.da + sVi.da
-        const spVi = sVo.vi + sDa.vi + sVi.vi
-        // SP側だけでタイプ上限を超える枝は、この時点で打ち切る。
-        if (spVo > typeVoMax || spDa > typeDaMax || spVi > typeViMax) continue
+          const spCount = sVo.k + sDa.k + sVi.k + sAll.k
+          // SPカードだけで総枠を超える枝は成立しないため除外する。
+          if (spCount > totalSlots) continue
 
-        // 汎用カード側に必要なタイプ下限/上限を、SP側消化分を差し引いて求める。
-        const gvMin = Math.max(0, typeVoMin - spVo)
-        const gvMax = Math.min(genVoCount, typeVoMax - spVo, kGen)
-        const gdMin = Math.max(0, typeDaMin - spDa)
-        const gdMax = Math.min(genDaCount, typeDaMax - spDa, kGen)
-        const giMin = Math.max(0, typeViMin - spVi)
-        const giMax = Math.min(genViCount, typeViMax - spVi, kGen)
-        // 最小値が最大値を超えたら、その枝では制約充足が不可能。
-        if (gvMax < gvMin || gdMax < gdMin || giMax < giMin) continue
+          // 残り枠を汎用カード群で埋めるため、必要な残枠数とSP側タイプ枚数を計算する。
+          const kGen = totalSlots - spCount
+          const spVo = sVo.vo + sDa.vo + sVi.vo + sAll.vo
+          const spDa = sVo.da + sDa.da + sVi.da + sAll.da
+          const spVi = sVo.vi + sDa.vi + sVi.vi + sAll.vi
+          // SP側だけでタイプ上限を超える枝は、この時点で打ち切る。
+          if (spVo > typeVoMax || spDa > typeDaMax || spVi > typeViMax) continue
 
-        let genWays = 0
-        // 汎用枠のタイプ配分を全列挙し、各配分の組み合わせ数を合算する。
-        for (let kgv = gvMin; kgv <= gvMax; kgv++) {
-          for (let kgd = gdMin; kgd <= Math.min(gdMax, kGen - kgv); kgd++) {
-            for (let kgi = giMin; kgi <= Math.min(giMax, kGen - kgv - kgd); kgi++) {
-              const kga = kGen - kgv - kgd - kgi
-              if (kga < 0 || kga > genAsCount) continue
-              genWays +=
-                countCombinations(genVoCount, kgv) *
-                countCombinations(genDaCount, kgd) *
-                countCombinations(genViCount, kgi) *
-                countCombinations(genAsCount, kga)
+          // 汎用カード側に必要なタイプ下限/上限を、SP側消化分を差し引いて求める。
+          const gvMin = Math.max(0, typeVoMin - spVo)
+          const gvMax = Math.min(genVoCount, typeVoMax - spVo, kGen)
+          const gdMin = Math.max(0, typeDaMin - spDa)
+          const gdMax = Math.min(genDaCount, typeDaMax - spDa, kGen)
+          const giMin = Math.max(0, typeViMin - spVi)
+          const giMax = Math.min(genViCount, typeViMax - spVi, kGen)
+          // 最小値が最大値を超えたら、その枝では制約充足が不可能。
+          if (gvMax < gvMin || gdMax < gdMin || giMax < giMin) continue
+
+          let genWays = 0
+          // 汎用枠のタイプ配分を全列挙し、各配分の組み合わせ数を合算する。
+          for (let kgv = gvMin; kgv <= gvMax; kgv++) {
+            for (let kgd = gdMin; kgd <= Math.min(gdMax, kGen - kgv); kgd++) {
+              for (let kgi = giMin; kgi <= Math.min(giMax, kGen - kgv - kgd); kgi++) {
+                const kga = kGen - kgv - kgd - kgi
+                if (kga < 0 || kga > genAsCount) continue
+                genWays +=
+                  countCombinations(genVoCount, kgv) *
+                  countCombinations(genDaCount, kgd) *
+                  countCombinations(genViCount, kgi) *
+                  countCombinations(genAsCount, kga)
+              }
             }
           }
+          // SP側状態通数と汎用枠通数の積が、この枝の総通数になる。
+          total += sVo.ways * sDa.ways * sVi.ways * sAll.ways * genWays
         }
-        // SP側状態通数と汎用枠通数の積が、この枝の総通数になる。
-        total += sVo.ways * sDa.ways * sVi.ways * genWays
       }
     }
   }
@@ -353,6 +362,7 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
  * @param voSpPool - SP=Vocal カード配列
  * @param daSpPool - SP=Dance カード配列
  * @param viSpPool - SP=Visual カード配列
+ * @param allSpPool - SP=All（Vo/Da/Viすべて）カード配列
  * @param genVoPool - SP=None かつ type=Vocal カード配列
  * @param genDaPool - SP=None かつ type=Dance カード配列
  * @param genViPool - SP=None かつ type=Visual カード配列
@@ -374,6 +384,7 @@ export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpT
     voSpPool,
     daSpPool,
     viSpPool,
+    allSpPool,
     genVoPool,
     genDaPool,
     genViPool,
@@ -389,19 +400,16 @@ export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpT
     typeViMax,
     totalSlots,
   } = input
-  // 必須SP枚数の合計が総枠を超える場合は列挙不能。
-  if (totalSlots < neededVo + neededDa + neededVi) return
-
   // VoSP 枚数を外側ループに置き、制約で早期に枝刈りしながら列挙する。
   const voMax = Math.min(voSpPool.length, totalSlots)
-  for (let kVo = neededVo; kVo <= voMax; kVo++) {
+  for (let kVo = 0; kVo <= voMax; kVo++) {
     for (const voCombo of combinations(voSpPool, kVo)) {
       const voCounts = countTypesInCombo(voCombo)
       const slotsAfterVo = totalSlots - kVo
 
       // DaSP 枚数を決め、VoSP と合わせた残枠を更新する。
       const daMax = Math.min(daSpPool.length, slotsAfterVo)
-      for (let kDa = neededDa; kDa <= daMax; kDa++) {
+      for (let kDa = 0; kDa <= daMax; kDa++) {
         for (const daCombo of combinations(daSpPool, kDa)) {
           const daCounts = countTypesInCombo(daCombo)
           const voDaCounts: TypeCounter = {
@@ -411,41 +419,62 @@ export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpT
           }
           const slotsAfterDa = slotsAfterVo - kDa
 
-          // ViSP 枚数まで確定したら、残りは汎用枠でタイプ制約を満たす配分を探索する。
+          // ViSP 枚数まで確定したら、AllSP も含めて残りは汎用枠でタイプ制約を満たす配分を探索する。
           const viMax = Math.min(viSpPool.length, slotsAfterDa)
-          for (let kVi = neededVi; kVi <= viMax; kVi++) {
-            const kGen = slotsAfterDa - kVi
-            if (kGen < 0) continue
+          for (let kVi = 0; kVi <= viMax; kVi++) {
             for (const viCombo of combinations(viSpPool, kVi)) {
               const viCounts = countTypesInCombo(viCombo)
-              const spVo = voDaCounts.vo + viCounts.vo
-              const spDa = voDaCounts.da + viCounts.da
-              const spVi = voDaCounts.vi + viCounts.vi
-              // SP側だけでタイプ上限を超える枝を除外する。
-              if (spVo > typeVoMax || spDa > typeDaMax || spVi > typeViMax) continue
+              const slotsAfterVi = slotsAfterDa - kVi
+              if (slotsAfterVi < 0) continue
+              const allMax = Math.min(allSpPool.length, slotsAfterVi)
+              for (let kAll = 0; kAll <= allMax; kAll++) {
+                const kGen = slotsAfterVi - kAll
+                if (kGen < 0) continue
+                for (const allCombo of combinations(allSpPool, kAll)) {
+                  const allCounts = countTypesInCombo(allCombo)
+                  const spVo = voDaCounts.vo + viCounts.vo + allCounts.vo
+                  const spDa = voDaCounts.da + viCounts.da + allCounts.da
+                  const spVi = voDaCounts.vi + viCounts.vi + allCounts.vi
+                  const spVoCount = kVo + kAll
+                  const spDaCount = kDa + kAll
+                  const spViCount = kVi + kAll
+                  if (spVoCount < neededVo || spDaCount < neededDa || spViCount < neededVi) continue
+                  // SP側だけでタイプ上限を超える枝を除外する。
+                  if (spVo > typeVoMax || spDa > typeDaMax || spVi > typeViMax) continue
 
-              // 汎用枠で必要になるタイプ枚数レンジを計算する。
-              const gvMin = Math.max(0, typeVoMin - spVo)
-              const gvMax = Math.min(genVoPool.length, typeVoMax - spVo)
-              const gdMin = Math.max(0, typeDaMin - spDa)
-              const gdMax = Math.min(genDaPool.length, typeDaMax - spDa)
-              const giMin = Math.max(0, typeViMin - spVi)
-              const giMax = Math.min(genViPool.length, typeViMax - spVi)
-              // 到達不能なレンジはスキップする。
-              if (gvMax < gvMin || gdMax < gdMin || giMax < giMin) continue
+                  // 汎用枠で必要になるタイプ枚数レンジを計算する。
+                  const gvMin = Math.max(0, typeVoMin - spVo)
+                  const gvMax = Math.min(genVoPool.length, typeVoMax - spVo)
+                  const gdMin = Math.max(0, typeDaMin - spDa)
+                  const gdMax = Math.min(genDaPool.length, typeDaMax - spDa)
+                  const giMin = Math.max(0, typeViMin - spVi)
+                  const giMax = Math.min(genViPool.length, typeViMax - spVi)
+                  // 到達不能なレンジはスキップする。
+                  if (gvMax < gvMin || gdMax < gdMin || giMax < giMin) continue
 
-              // 汎用枠のタイプ配分（Vo/Da/Vi/Assist）を全列挙して最終コンボを生成する。
-              for (let kgv = gvMin; kgv <= Math.min(gvMax, kGen); kgv++) {
-                for (let kgd = gdMin; kgd <= Math.min(gdMax, kGen - kgv); kgd++) {
-                  for (let kgi = giMin; kgi <= Math.min(giMax, kGen - kgv - kgd); kgi++) {
-                    const kga = kGen - kgv - kgd - kgi
-                    if (kga < 0 || kga > genAsPool.length) continue
-                    // 各カテゴリの実カード組み合わせを展開し、制約を満たす1件をyieldする。
-                    for (const gvCombo of combinations(genVoPool, kgv)) {
-                      for (const gdCombo of combinations(genDaPool, kgd)) {
-                        for (const giCombo of combinations(genViPool, kgi)) {
-                          for (const gaCombo of combinations(genAsPool, kga)) {
-                            yield [...voCombo, ...daCombo, ...viCombo, ...gvCombo, ...gdCombo, ...giCombo, ...gaCombo]
+                  // 汎用枠のタイプ配分（Vo/Da/Vi/Assist）を全列挙して最終コンボを生成する。
+                  for (let kgv = gvMin; kgv <= Math.min(gvMax, kGen); kgv++) {
+                    for (let kgd = gdMin; kgd <= Math.min(gdMax, kGen - kgv); kgd++) {
+                      for (let kgi = giMin; kgi <= Math.min(giMax, kGen - kgv - kgd); kgi++) {
+                        const kga = kGen - kgv - kgd - kgi
+                        if (kga < 0 || kga > genAsPool.length) continue
+                        // 各カテゴリの実カード組み合わせを展開し、制約を満たす1件をyieldする。
+                        for (const gvCombo of combinations(genVoPool, kgv)) {
+                          for (const gdCombo of combinations(genDaPool, kgd)) {
+                            for (const giCombo of combinations(genViPool, kgi)) {
+                              for (const gaCombo of combinations(genAsPool, kga)) {
+                                yield [
+                                  ...voCombo,
+                                  ...daCombo,
+                                  ...viCombo,
+                                  ...allCombo,
+                                  ...gvCombo,
+                                  ...gdCombo,
+                                  ...giCombo,
+                                  ...gaCombo,
+                                ]
+                              }
+                            }
                           }
                         }
                       }

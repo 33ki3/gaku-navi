@@ -55,6 +55,7 @@ interface CategorizedCandidatePools {
   voSpPool: CandidateCard[]
   daSpPool: CandidateCard[]
   viSpPool: CandidateCard[]
+  allSpPool: CandidateCard[]
   genVoPool: CandidateCard[]
   genDaPool: CandidateCard[]
   genViPool: CandidateCard[]
@@ -116,8 +117,7 @@ const PARAMETER_TYPE_TO_INDEX: Record<string, number> = {
 /**
  * サポートのSP種別を判定する
  *
- * VoSP / DaSP / ViSP / 汎用SP / AllSP / なし を分類する。
- * 汎用SP (sp_lesson_rate) はいずれかのカテゴリに加算。AllSP は対象外。
+ * VoSP / DaSP / ViSP / AllSP / なし を分類する。
  *
  * @param card - 対象のサポート
  * @returns SP種別（vocal / dance / visual / none）
@@ -127,6 +127,7 @@ function getSpCategory(card: SupportCard): enums.SpCategoryType {
     if (ability.trigger_key === enums.TriggerKeyType.VoSpLessonRate) return enums.SpCategoryType.Vocal
     if (ability.trigger_key === enums.TriggerKeyType.DaSpLessonRate) return enums.SpCategoryType.Dance
     if (ability.trigger_key === enums.TriggerKeyType.ViSpLessonRate) return enums.SpCategoryType.Visual
+    if (ability.trigger_key === enums.TriggerKeyType.SpLessonRateAll) return enums.SpCategoryType.All
   }
   return enums.SpCategoryType.None
 }
@@ -326,6 +327,7 @@ function categorizeCandidatePools(pool: CandidateCard[], excludedName?: string):
     voSpPool: [],
     daSpPool: [],
     viSpPool: [],
+    allSpPool: [],
     genVoPool: [],
     genDaPool: [],
     genViPool: [],
@@ -344,6 +346,10 @@ function categorizeCandidatePools(pool: CandidateCard[], excludedName?: string):
     }
     if (candidate.spCategory === enums.SpCategoryType.Visual) {
       categorized.viSpPool.push(candidate)
+      continue
+    }
+    if (candidate.spCategory === enums.SpCategoryType.All) {
+      categorized.allSpPool.push(candidate)
       continue
     }
     if (candidate.card.type === enums.ParameterType.Vocal) {
@@ -502,9 +508,12 @@ function buildRentalBranchContexts(
       ),
     }
 
-    const rentalVoAdd = rental.spCategory === enums.SpCategoryType.Vocal ? 1 : 0
-    const rentalDaAdd = rental.spCategory === enums.SpCategoryType.Dance ? 1 : 0
-    const rentalViAdd = rental.spCategory === enums.SpCategoryType.Visual ? 1 : 0
+    const rentalVoAdd =
+      rental.spCategory === enums.SpCategoryType.Vocal || rental.spCategory === enums.SpCategoryType.All ? 1 : 0
+    const rentalDaAdd =
+      rental.spCategory === enums.SpCategoryType.Dance || rental.spCategory === enums.SpCategoryType.All ? 1 : 0
+    const rentalViAdd =
+      rental.spCategory === enums.SpCategoryType.Visual || rental.spCategory === enums.SpCategoryType.All ? 1 : 0
     const neededVo = Math.max(0, settings.spConstraint.vocal - fixedVoSp - rentalVoAdd)
     const neededDa = Math.max(0, settings.spConstraint.dance - fixedDaSp - rentalDaAdd)
     const neededVi = Math.max(0, settings.spConstraint.visual - fixedViSp - rentalViAdd)

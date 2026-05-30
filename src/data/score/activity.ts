@@ -142,6 +142,12 @@ const entries: ActivityEntry[] = [
     color: 'bg-slate-400 text-white',
     actions: [ActionIdType.Rest],
   },
+  {
+    id: ActivityIdType.Interval,
+    label: 'score.activity.interval',
+    color: 'bg-slate-400 text-white',
+    actions: [],
+  },
 ]
 
 /**

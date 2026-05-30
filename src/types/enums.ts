@@ -755,6 +755,8 @@ export const ActivityIdType = {
   FinalExam: 'final_exam',
   /** 休む */
   Rest: 'rest',
+  /** インターバル */
+  Interval: 'interval',
 } as const
 export type ActivityIdType = (typeof ActivityIdType)[keyof typeof ActivityIdType]
 

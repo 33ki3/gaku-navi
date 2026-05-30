@@ -226,8 +226,14 @@ export function calculateCountsFromSchedule(
   const counts: Partial<Record<enums.ActionIdType, number>> = {}
 
   for (const week of schedule) {
-    // その週でユーザーが選んだ活動を取得する
-    const selected = selections[week.week]
+    // その週でユーザーが選んだ活動を取得する。
+    // 固定かつお休みできない決定済みの週は、選択肢が1つしかなくUIでもトグルボタンが描画されないため、
+    // selections に登録がない場合でも自動的にその唯一の活動を選択されたものとして集計に含める。
+    let selected = selections[week.week]
+    if (!selected && week.fixed && !week.canRest && week.activities.length > 0) {
+      selected = week.activities[0].id
+    }
+
     if (!selected) continue
 
     // 活動に紐づくアクションID一覧を取得する

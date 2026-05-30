@@ -193,6 +193,41 @@ describe('calculateCountsFromSchedule', () => {
     const result = calculateCountsFromSchedule(selections, schedule)
     expect(Object.keys(result)).toHaveLength(0)
   })
+
+  it('HIFのように複数のMidExam/FinalExam試験が混在していても、ExamPItemAcquireは指定されたMidExamのみで発動（1回など）になる', () => {
+    const hifLikeSchedule: ScheduleWeekData[] = [
+      {
+        week: 7,
+        fixed: true,
+        canRest: false,
+        activities: [{ id: enums.ActivityIdType.FinalExam, label: '' as never }],
+        stage: enums.HifStage.Selection,
+      },
+      {
+        week: 13,
+        fixed: true,
+        canRest: false,
+        activities: [{ id: enums.ActivityIdType.FinalExam, label: '' as never }],
+        stage: enums.HifStage.Selection,
+      },
+      {
+        week: 20,
+        fixed: true,
+        canRest: false,
+        activities: [{ id: enums.ActivityIdType.MidExam, label: '' as never }],
+        stage: enums.HifStage.Selection,
+      },
+    ]
+    const selections = {
+      7: enums.ActivityIdType.FinalExam,
+      13: enums.ActivityIdType.FinalExam,
+      20: enums.ActivityIdType.MidExam,
+    }
+    const result = calculateCountsFromSchedule(selections, hifLikeSchedule)
+    // 通常は3回分入るが、MidExamが1つだけで他がFinalExamのため上限が1回になる
+    expect(result[enums.ActionIdType.ExamEnd]).toBe(3)
+    expect(result[enums.ActionIdType.ExamPItemAcquire]).toBe(1)
+  })
 })
 
 // --- mergeScheduleCounts ---
@@ -478,13 +513,13 @@ describe('loadScoreSettings / saveScoreSettings', () => {
   it('HIFのシナリオ別キーに無効活動が混ざる場合は無効分を読み込み時に除外する', () => {
     mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
       [enums.ScenarioType.Hif]: {
-        7: enums.ActivityIdType.MidExam,
+        20: enums.ActivityIdType.MidExam,
         8: enums.ActivityIdType.Class,
       },
     })
 
     const loadedSelections = loadScheduleSelections(enums.ScenarioType.Hif)
-    expect(loadedSelections).toEqual({ 7: enums.ActivityIdType.MidExam })
+    expect(loadedSelections).toEqual({ 20: enums.ActivityIdType.MidExam })
   })
 
   // 共有キー側に残っている値を誤ってHIFへ流用しないことを確認する。

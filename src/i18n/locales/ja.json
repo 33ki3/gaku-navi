@@ -508,7 +508,8 @@
       "special_training": "特別指導",
       "mid_exam": "中間試験",
       "final_exam": "最終試験",
-      "rest": "休む"
+      "rest": "休む",
+      "interval": "インターバル"
     },
     "action": {
       "lesson": "レッスン終了時",

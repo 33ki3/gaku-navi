@@ -40,6 +40,12 @@ export function SettingsOptionToggles({ settings, onSettingsChange }: SettingsOp
         onChange={(checked) => onSettingsChange({ ...settings, useFixedUncap: checked })}
         description={t('ui.option.fixed_uncap_desc')}
       />
+      <CheckboxField
+        label={t('ui.option.unify_rental_lock')}
+        checked={!!settings.unifyRentalLock}
+        onChange={(checked) => onSettingsChange({ ...settings, unifyRentalLock: checked })}
+        description={t('ui.option.unify_rental_lock_desc')}
+      />
     </div>
   )
 }

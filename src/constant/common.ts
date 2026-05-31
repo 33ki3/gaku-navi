@@ -74,8 +74,6 @@ export const SLOT_COUNT = 6
 export const SP_TOTAL_MAX = 6
 /** 総当たり最適化の候補枚数のデフォルト値 */
 export const EXHAUSTIVE_CANDIDATE_LIMIT = 30
-/** レンタル候補の最大試行枚数（マルチスタートおよびレンタル自動選出で試すカードの上限） */
-export const RENTAL_CANDIDATE_LIMIT = 20
 /** 総当たり進捗の目標更新回数（UI更新頻度の目安） */
 export const EXHAUSTIVE_PROGRESS_TARGET_UPDATES = 200
 /** 総当たり進捗バッチサイズの下限（更新しすぎ防止） */

@@ -225,10 +225,65 @@ export function useUnitSimulator(
       // レンタルサポートを末尾に配置する（スロット順表示で最下部に表示させるため）
       const ordered = toOrderedMemberNames(optimized.members)
       const latest = settingsRef.current
+
+      // unifyRentalLock が有効かつ元々レンタルをロックしていた場合、最適化後の配置に応じてロック状態を3パターンで更新する
+      // （1: レンタルそのまま / 2: 旧ロック → レンタルに昇格 / 3: 旧レンタル → 通常ロックに降格）
+      if (scoreSettings.unifyRentalLock) {
+        const originalRentalLocked = latest.manualRental && latest.rentalCardName !== null
+        if (originalRentalLocked) {
+          const origRental = latest.rentalCardName!
+          const origLocked = latest.lockedCards
+          // レンタルロック + 通常ロック全体の集合（lockedCards はレンタルを含まない通常ロックのみ）
+          const allLockedNames = new Set([origRental, ...origLocked])
+
+          if (rentalName === origRental) {
+            // 最適化後もレンタルが変わらなかった場合: 元のレンタル固定を維持する
+            setSettings({
+              ...latest,
+              manualCards: ordered,
+              rentalCardName: origRental,
+            })
+          } else if (rentalName !== null && allLockedNames.has(rentalName)) {
+            // 最適化後のレンタルが元のロック群に含まれている場合: 入れ替えて新レンタルに再固定する
+            const nextLocked = [...origLocked.filter((n) => n !== rentalName), origRental]
+            setSettings({
+              ...latest,
+              manualCards: ordered,
+              manualRental: true,
+              rentalCardName: rentalName,
+              lockedCards: nextLocked,
+            })
+          } else {
+            // 最適化後のレンタルが元のロック群外の場合: ロック一覧に旧メンバーを全追加して自動レンタルに切り替える
+            const nextLocked = Array.from(allLockedNames)
+            setSettings({
+              ...latest,
+              manualCards: ordered,
+              manualRental: false,
+              rentalCardName: rentalName,
+              lockedCards: nextLocked,
+            })
+          }
+          return
+        }
+
+        // レンタルロックなし・通常ロックあり: 通常ロックのカードがレンタルに昇格した場合はロック状態を更新する
+        if (rentalName !== null && latest.lockedCards.includes(rentalName)) {
+          setSettings({
+            ...latest,
+            manualCards: ordered,
+            manualRental: true,
+            rentalCardName: rentalName,
+            lockedCards: latest.lockedCards.filter((n) => n !== rentalName),
+          })
+          return
+        }
+      }
+
       // manualRental はユーザーの明示的な設定を維持する（上書きしない）
       setSettings({ ...latest, manualCards: ordered, rentalCardName: rentalName })
     },
-    [setSettings],
+    [setSettings, scoreSettings.unifyRentalLock],
   )
 
   /** 総当たり中の「現時点ベスト」をUIへ反映する */

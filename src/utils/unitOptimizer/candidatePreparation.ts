@@ -371,7 +371,7 @@ function categorizeCandidatePools(pool: CandidateCard[], excludedName?: string):
 }
 
 /**
- * 全サポートから 4凸レンタル候補を最大 RENTAL_CANDIDATE_LIMIT 枚取得する
+ * 全サポートから 4凸レンタル候補を最大 candidateLimit 枚取得する
  *
  * 実アクション回数でのスコア上位と、カウントゼロでのスコア上位の和集合を返す。
  * これにより、アクション回数依存型（m_skill_enhance 等）と非依存型のどちらも
@@ -380,21 +380,54 @@ function categorizeCandidatePools(pool: CandidateCard[], excludedName?: string):
  * @param input - 最適化入力
  * @param schedule - スケジュール解析結果
  * @param excludedNames - 除外するサポート名（固定カード等）
- * @returns 4凸レンタル候補配列（baseScore降順・最大 RENTAL_CANDIDATE_LIMIT 枚）
+ * @param candidateLimit - 候補上限枚数（exhaustiveCandidateLimit と統一）
+ * @returns 4凸レンタル候補配列（baseScore降順・最大 candidateLimit 枚）
  */
 function buildRentalPool(
   input: OptimizeInput,
   schedule: ResolvedScheduleLike,
   excludedNames: Set<string>,
+  candidateLimit: number,
 ): CandidateCard[] {
   const { scoreSettings } = input
   const { effectiveCounts, perLessonValues } = schedule
   const scoredCards: { candidate: CandidateCard; zeroCountScore: number }[] = []
 
+  // ロックされているカードのタイプ数を集計する
+  const lockedConfigCount: Record<enums.CardType, number> = {
+    vocal: 0,
+    dance: 0,
+    visual: 0,
+    assist: 0,
+  }
+
+  // ロック済みカードのタイプ別枚数を集計する（typeCountMax と比較して除外判定に使用）
+  for (const lockedName of input.settings.lockedCards) {
+    const card = input.cardByName.get(lockedName)
+    if (card) {
+      lockedConfigCount[card.type]++
+    }
+  }
+
+  // すでに特定タイプが最大編成枠に達している場合、そのタイプは追加できないためフラグを立てる
+  const isTypeFull = {
+    vocal: lockedConfigCount.vocal >= (input.settings.typeCountMax.vocal ?? 6),
+    dance: lockedConfigCount.dance >= (input.settings.typeCountMax.dance ?? 6),
+    visual: lockedConfigCount.visual >= (input.settings.typeCountMax.visual ?? 6),
+    assist: false,
+  }
+
   for (const card of input.allCards) {
     if (excludedNames.has(card.name)) continue
     if (card.plan !== input.settings.plan && card.plan !== enums.PlanType.Free) continue
     if (input.settings.allowedTypes.length > 0 && !input.settings.allowedTypes.includes(card.type)) continue
+
+    // typeCountMax に達したタイプは除外する（候補が偏っても typeCountMin 保険補充で必要タイプは確保される）
+    // 編成可能な枠に空きがないタイプは候補から除外する（ただし、ロック済みの現物カード自体は除く）
+    if (isTypeFull[card.type] && !input.settings.lockedCards.includes(card.name)) {
+      continue
+    }
+
     const customData = input.cardCountCustom?.[card.name]
 
     const actualResult = calculateCardParameter(
@@ -442,19 +475,58 @@ function buildRentalPool(
     })
   }
 
-  const halfLimit = Math.ceil(constant.RENTAL_CANDIDATE_LIMIT / 2)
+  // byActual/byZero を candidateLimit 枚ずつ取り Map で重複をマージする。
+  // 重複排除後、baseScore 降順の上位 candidateLimit 枚に丸める（SP/typeCountMin 補充カードは除外対象外）。
   const byActual = [...scoredCards].sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
   const byZero = [...scoredCards].sort((a, b) => b.zeroCountScore - a.zeroCountScore)
 
   const poolMap = new Map<string, CandidateCard>()
-  for (const { candidate } of byActual.slice(0, halfLimit)) {
+  for (const { candidate } of byActual.slice(0, candidateLimit)) {
     poolMap.set(candidate.card.name, candidate)
   }
-  for (const { candidate } of byZero.slice(0, halfLimit)) {
+  for (const { candidate } of byZero.slice(0, candidateLimit)) {
     poolMap.set(candidate.card.name, candidate)
   }
 
-  return [...poolMap.values()].sort((a, b) => b.baseScore - a.baseScore)
+  // SP制約を満たすために必要なSPカードをプールに補充する
+  // 自由枠とレンタル枠の計算は別関数で独立して行うため、このプールは自由枠専用（所持凸で評価済み）。
+  for (const [spCat, needed] of [
+    [enums.SpCategoryType.Vocal, input.settings.spConstraint.vocal] as const,
+    [enums.SpCategoryType.Dance, input.settings.spConstraint.dance] as const,
+    [enums.SpCategoryType.Visual, input.settings.spConstraint.visual] as const,
+  ]) {
+    if (needed <= 0) continue
+    const alreadySpCount = [...poolMap.values()].filter(
+      (c) => c.spCategory === spCat || c.spCategory === enums.SpCategoryType.All,
+    ).length
+    if (alreadySpCount >= Math.max(5, needed)) continue
+    const satisfying = scoredCards
+      .filter((item) => item.candidate.spCategory === spCat || item.candidate.spCategory === enums.SpCategoryType.All)
+      .sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
+      .slice(0, Math.max(5, needed))
+
+    for (const item of satisfying) {
+      poolMap.set(item.candidate.card.name, item.candidate)
+    }
+  }
+
+  // 各タイプ最小数制約を満たすために必要な枚数（minNeeded）分だけタイプ別カードを補充する。
+  for (const paramType of [enums.ParameterType.Vocal, enums.ParameterType.Dance, enums.ParameterType.Visual]) {
+    const minNeeded = input.settings.typeCountMin[paramType]
+    if (minNeeded <= 0) continue
+    const alreadyTypeCount = [...poolMap.values()].filter((c) => c.card.type === paramType).length
+    if (alreadyTypeCount >= Math.max(3, minNeeded)) continue
+    const satisfying = scoredCards
+      .filter((item) => item.candidate.card.type === paramType)
+      .sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
+      .slice(0, Math.max(3, minNeeded))
+
+    for (const item of satisfying) {
+      poolMap.set(item.candidate.card.name, item.candidate)
+    }
+  }
+
+  return [...poolMap.values()].sort((a, b) => b.baseScore - a.baseScore).slice(0, candidateLimit)
 }
 
 /**
@@ -629,14 +701,16 @@ export function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedu
  * @param input - 最適化入力
  * @param schedule - スケジュール解析結果
  * @param excludedNames - 除外するサポート名
+ * @param candidateLimit - 候補上限枚数（exhaustiveCandidateLimit と統一）
  * @returns レンタル候補配列
  */
 export function createRentalPool(
   input: OptimizeInput,
   schedule: ResolvedScheduleLike,
   excludedNames: Set<string>,
+  candidateLimit: number,
 ): CandidateCard[] {
-  return buildRentalPool(input, schedule, excludedNames)
+  return buildRentalPool(input, schedule, excludedNames, candidateLimit)
 }
 
 /**

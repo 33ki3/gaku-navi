@@ -53,6 +53,7 @@ export function createDefaultSettings(scenario: enums.ScenarioType = constant.DE
       { vocal: 0, dance: 0, visual: 0 },
     ],
     hifLessonSplitSub: true,
+    unifyRentalLock: false,
   }
 }
 

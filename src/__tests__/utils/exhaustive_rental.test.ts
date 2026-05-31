@@ -338,4 +338,150 @@ describe('総当たり最適化', () => {
     if (!result) return
     expect(result.totalScore).toBeGreaterThanOrEqual(manualScore)
   })
+
+  it(
+    'unifyRentalLockが有効な場合、レンタル枠でロックした所持サポカを通常枠に入れたパターンも含めて最大スコアを探索する',
+    { timeout: 120000 },
+    async () => {
+      const settings: UnitSimulatorSettings = {
+        plan: enums.PlanType.Logic,
+        allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
+        spConstraint: { vocal: 2, dance: 2, visual: 0 },
+        typeCountMin: {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        },
+        typeCountMax: {
+          [enums.ParameterType.Vocal]: 3,
+          [enums.ParameterType.Dance]: 3,
+          [enums.ParameterType.Visual]: 3,
+        },
+        paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
+        manualRental: true,
+        rentalCardName: 'いつまでも続けばいいのに',
+        lockedCards: [],
+        manualCards: [],
+        initialParams: { vocal: 125, dance: 169, visual: 210 },
+        exhaustiveCandidateLimit: 30, // 探索範囲を狭めてテストを軽量化
+      }
+
+      const scoreSettingsWithUnify = {
+        ...makeUserScoreSettings(12),
+        unifyRentalLock: true,
+      }
+
+      let progressCalls = 0
+      let lastProgressDone = 0
+      let lastProgressTotal = 0
+
+      const result = await exhaustiveOptimizeAsync(
+        {
+          settings,
+          scoreSettings: scoreSettingsWithUnify,
+          cardUncaps: fullCardUncaps,
+          allCards: AllCards,
+          cardByName: CardByName,
+        },
+        (done, total) => {
+          progressCalls++
+          lastProgressDone = done
+          lastProgressTotal = total
+        },
+        () => false,
+      )
+
+      expect(result).not.toBeNull()
+      if (!result) return
+
+      // 通常ロックとレンタルロックを区別せず、双方のルートを探索したはず
+      expect(progressCalls).toBeGreaterThan(0)
+      expect(lastProgressDone).toBe(lastProgressTotal)
+
+      // 結果として、「いつまでも続けばいいのに」自身が結果に含まれていること
+      const names = result.members.map((m) => m.card.name)
+      expect(names).toContain('いつまでも続けばいいのに')
+    },
+  )
+
+  it('スケジュールが1タイプに極端に偏り通常枠をそのタイプで固めた際、別タイプのレンタル候補が補充保険により補われて最適編成が算出されること', async () => {
+    // 1. スケジュールを極端に DaLesson（Dance）のみに偏らせる
+    const skewedScoreSettings: ScoreSettings = {
+      ...makeUserScoreSettings(10),
+      scheduleSelections: {
+        1: enums.ActivityIdType.DaLesson,
+        2: enums.ActivityIdType.DaLesson,
+        3: enums.ActivityIdType.DaLesson,
+        4: enums.ActivityIdType.DaLesson,
+        5: enums.ActivityIdType.DaLesson,
+        6: enums.ActivityIdType.DaLesson,
+        7: enums.ActivityIdType.DaLesson,
+        8: enums.ActivityIdType.DaLesson,
+        9: enums.ActivityIdType.DaLesson,
+        10: enums.ActivityIdType.DaLesson,
+        11: enums.ActivityIdType.DaLesson,
+        12: enums.ActivityIdType.DaLesson,
+        13: enums.ActivityIdType.DaLesson,
+        14: enums.ActivityIdType.DaLesson,
+        15: enums.ActivityIdType.DaLesson,
+        16: enums.ActivityIdType.DaLesson,
+        17: enums.ActivityIdType.DaLesson,
+        18: enums.ActivityIdType.FinalExam,
+      },
+    }
+
+    // 2. 自前でロックするカード5枚（うち Dance 4枚、Visual 1枚。これらはすべて VocalSP = 0）
+    const lockedCards = [
+      'ぜったいに取るんだ！',
+      'ふわふわでワクワク',
+      'おいしい顔、いただき～！',
+      '新生活のはじまりだね',
+      '晴れたね',
+    ]
+
+    const settings: UnitSimulatorSettings = {
+      plan: enums.PlanType.Logic,
+      allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
+      // VocalSP: 1 以上、かつ DanceSP: 2 以上を必須にする
+      // 自前ロックした5枚は VocalSP を持たないため、レンタル枠の1枚は必ず VocalSP（＝Vocalタイプ）でなければ制約（vocal: 1）が満たせない
+      spConstraint: { vocal: 1, dance: 2, visual: 0 },
+      typeCountMin: {
+        [enums.ParameterType.Vocal]: 0,
+        [enums.ParameterType.Dance]: 0,
+        [enums.ParameterType.Visual]: 0,
+      },
+      typeCountMax: {
+        [enums.ParameterType.Vocal]: 3,
+        [enums.ParameterType.Dance]: 4,
+        [enums.ParameterType.Visual]: 3,
+      },
+      paramBonusPercent: { vocal: 20, dance: 20, visual: 20 },
+      manualRental: false, // レンタルカードを全自動探索
+      rentalCardName: null,
+      lockedCards,
+      manualCards: [],
+      initialParams: { vocal: 150, dance: 150, visual: 150 },
+    }
+
+    // 最適化を実行（元々のロジックではボーカルが1枚もレンタル候補に残らず null を返していた状況）
+    const result = await exhaustiveOptimizeAsync(
+      {
+        settings,
+        scoreSettings: skewedScoreSettings,
+        cardUncaps: fullCardUncaps,
+        allCards: AllCards,
+        cardByName: CardByName,
+      },
+      () => {},
+      () => false,
+    )
+
+    // タイプ別補充保険のおかげで、候補プールが空っぽにならずに最適解を算出できること
+    expect(result).not.toBeNull()
+    if (!result) return
+
+    // レンタルカードが含まれていること
+    const rentalMember = result.members.find((m) => m.isRental)
+    expect(rentalMember).toBeDefined()
+  })
 })

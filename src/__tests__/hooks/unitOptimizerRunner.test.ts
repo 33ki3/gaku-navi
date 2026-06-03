@@ -82,6 +82,18 @@ class MockWorker {
   }
 }
 
+/**
+ * new Worker(...) で呼び出せる constructor モックを作る
+ *
+ * @param workerInstance - new 時に返す Worker インスタンス
+ * @returns Worker constructor として使える関数
+ */
+function createWorkerConstructor(workerInstance: MockWorker): typeof Worker {
+  return function WorkerConstructor() {
+    return workerInstance
+  } as unknown as typeof Worker
+}
+
 describe('runOptimizerAsync', () => {
   const mockedExhaustive = vi.mocked(exhaustiveOptimizeAsync)
   let originalWorker: typeof Worker | undefined
@@ -145,8 +157,7 @@ describe('runOptimizerAsync', () => {
   it('Worker メッセージに応じて progress/better/done を通知する', () => {
     // Worker をモック差し替えし、受信イベントを手動で流し込む。
     const workerInstance = new MockWorker()
-    const workerConstructor = vi.fn(() => workerInstance) as unknown as typeof Worker
-    vi.stubGlobal('Worker', workerConstructor)
+    vi.stubGlobal('Worker', createWorkerConstructor(workerInstance))
 
     const onProgress = vi.fn()
     const onBetter = vi.fn()
@@ -198,8 +209,7 @@ describe('runOptimizerAsync', () => {
   it('Worker が Error を返した場合は main thread へフォールバックする', async () => {
     // Worker 側失敗時に main thread 実行へ切り替わることを確認する。
     const workerInstance = new MockWorker()
-    const workerConstructor = vi.fn(() => workerInstance) as unknown as typeof Worker
-    vi.stubGlobal('Worker', workerConstructor)
+    vi.stubGlobal('Worker', createWorkerConstructor(workerInstance))
 
     mockedExhaustive.mockResolvedValueOnce(null)
 

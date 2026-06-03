@@ -363,12 +363,8 @@ describe('総当たり最適化', () => {
         lockedCards: [],
         manualCards: [],
         initialParams: { vocal: 125, dance: 169, visual: 210 },
-        exhaustiveCandidateLimit: 30, // 探索範囲を狭めてテストを軽量化
-      }
-
-      const scoreSettingsWithUnify = {
-        ...makeUserScoreSettings(12),
         unifyRentalLock: true,
+        exhaustiveCandidateLimit: 30, // 探索範囲を狭めてテストを軽量化
       }
 
       let progressCalls = 0
@@ -378,7 +374,7 @@ describe('総当たり最適化', () => {
       const result = await exhaustiveOptimizeAsync(
         {
           settings,
-          scoreSettings: scoreSettingsWithUnify,
+          scoreSettings: makeUserScoreSettings(12),
           cardUncaps: fullCardUncaps,
           allCards: AllCards,
           cardByName: CardByName,

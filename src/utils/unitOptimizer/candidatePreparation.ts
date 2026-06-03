@@ -79,6 +79,27 @@ interface RentalBranchContext {
   typeViMax: number
 }
 
+/**
+ * コンテスト編成で避けたい獲得物を持つサポートか判定する
+ *
+ * @param card - 判定するサポート
+ * @returns スキルカード獲得またはメモリ化Pアイテム獲得を持つ場合 true
+ */
+function hasContestBlockedReward(card: SupportCard): boolean {
+  return card.skill_card !== null || card.p_item?.memory === enums.PItemMemoryType.Memorizable
+}
+
+/**
+ * コンテスト用除外設定により候補から外すべきサポートか判定する
+ *
+ * @param settings - 現在のユニット設定
+ * @param card - 判定するサポート
+ * @returns 除外対象なら true
+ */
+function shouldExcludeForContest(settings: UnitSimulatorSettings, card: SupportCard): boolean {
+  return !!settings.excludeContestBlockedCards && hasContestBlockedReward(card)
+}
+
 /** evaluateUnit 高速化用のアビリティシナジー情報 */
 interface SynergyAbilityInfo {
   /** アクションインデックス（ACTION_ID_TO_IDX でのインデックス） */
@@ -419,6 +440,7 @@ function buildRentalPool(
 
   for (const card of input.allCards) {
     if (excludedNames.has(card.name)) continue
+    if (shouldExcludeForContest(input.settings, card)) continue
     if (card.plan !== input.settings.plan && card.plan !== enums.PlanType.Free) continue
     if (input.settings.allowedTypes.length > 0 && !input.settings.allowedTypes.includes(card.type)) continue
 
@@ -651,6 +673,7 @@ export function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedu
     const effectiveLocked = isLocked && (card.plan === settings.plan || card.plan === enums.PlanType.Free)
     if (!effectiveLocked && card.plan !== settings.plan && card.plan !== enums.PlanType.Free) continue
     if (!effectiveLocked && settings.allowedTypes.length > 0 && !settings.allowedTypes.includes(card.type)) continue
+    if (!effectiveLocked && shouldExcludeForContest(settings, card)) continue
 
     let uncap = scoreSettings.useFixedUncap ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
     if (effectiveLocked && uncap === enums.UncapType.NotOwned) {

@@ -920,7 +920,7 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
   const configs: OptimizeInput[] = [
     {
       ...input,
-      scoreSettings: { ...scoreSettings, unifyRentalLock: false },
+      settings: { ...settings, unifyRentalLock: false },
     },
   ]
 
@@ -941,8 +941,8 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
         manualRental: true,
         rentalCardName: lockedName,
         lockedCards,
+        unifyRentalLock: false,
       },
-      scoreSettings: { ...scoreSettings, unifyRentalLock: false },
     })
   }
 
@@ -954,8 +954,8 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
         manualRental: false,
         rentalCardName: null,
         lockedCards: [...settings.lockedCards, origRental],
+        unifyRentalLock: false,
       },
-      scoreSettings: { ...scoreSettings, unifyRentalLock: false },
     })
   }
 
@@ -1017,7 +1017,7 @@ export async function exhaustiveOptimizeAsync(
       (input.cardUncaps[n] !== undefined && input.cardUncaps[n] !== enums.UncapType.NotOwned),
   )
   // どちらかの条件を満たす場合に限り、複数パスの比較探索を行う
-  const shouldTryUnifyPaths = !!scoreSettings.unifyRentalLock && (isRentalLockOwned || hasOwnedLockedCard)
+  const shouldTryUnifyPaths = !!settings.unifyRentalLock && (isRentalLockOwned || hasOwnedLockedCard)
 
   if (shouldTryUnifyPaths) {
     // 現状維持・昇格・降格などの各パスを構築する

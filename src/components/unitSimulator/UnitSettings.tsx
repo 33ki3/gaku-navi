@@ -10,6 +10,7 @@ import { useCallback } from 'react'
 import { ToggleButton } from '../ui/ToggleButton'
 import { SpinnerInput } from '../ui/SpinnerInput'
 import { HelpTooltip } from '../ui/HelpTooltip'
+import { CheckboxField } from '../ui/CheckboxField'
 import * as constant from '../../constant'
 import { PlanType, CardType, ButtonSizeType, ParameterType } from '../../types/enums'
 import * as data from '../../data'
@@ -136,6 +137,22 @@ export default function UnitSettings({ settings, onChange, resolvedParamCap }: U
   const handleParamCapChange = useCallback(
     (value: number) => {
       onChange({ ...settings, paramCapOverride: value })
+    },
+    [settings, onChange],
+  )
+
+  /** コンテスト用除外設定変更 */
+  const handleContestExcludeChange = useCallback(
+    (checked: boolean) => {
+      onChange({ ...settings, excludeContestBlockedCards: checked })
+    },
+    [settings, onChange],
+  )
+
+  /** レンタル枠と通常枠のロック区別設定変更 */
+  const handleUnifyRentalLockChange = useCallback(
+    (checked: boolean) => {
+      onChange({ ...settings, unifyRentalLock: checked })
     },
     [settings, onChange],
   )
@@ -315,6 +332,18 @@ export default function UnitSettings({ settings, onChange, resolvedParamCap }: U
 
       {/* 総当たり最適化オプション */}
       <section className="space-y-2">
+        <CheckboxField
+          label={t('unit.settings.unify_rental_lock')}
+          checked={!!settings.unifyRentalLock}
+          onChange={handleUnifyRentalLockChange}
+          description={t('unit.settings.unify_rental_lock_tip')}
+        />
+        <CheckboxField
+          label={t('unit.settings.exclude_contest_blocked_cards')}
+          checked={!!settings.excludeContestBlockedCards}
+          onChange={handleContestExcludeChange}
+          description={t('unit.settings.exclude_contest_blocked_cards_tip')}
+        />
         <div className="flex items-center justify-between gap-2">
           <span className={constant.SECTION_HEADING_SM_PX}>
             {t('unit.settings.param_cap')}

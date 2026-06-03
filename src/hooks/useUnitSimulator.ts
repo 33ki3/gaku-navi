@@ -60,8 +60,11 @@ const defaultSettings: UnitSimulatorSettings = {
   manualCards: [],
   initialParams: { vocal: 0, dance: 0, visual: 0 },
   paramCapOverride: null,
+  unifyRentalLock: false,
+  excludeContestBlockedCards: false,
   exhaustiveCandidateLimit: constant.EXHAUSTIVE_CANDIDATE_LIMIT,
 }
+
 /** localStorage から設定を読み込む */
 function loadSettings(): UnitSimulatorSettings {
   try {
@@ -228,7 +231,7 @@ export function useUnitSimulator(
 
       // unifyRentalLock が有効かつ元々レンタルをロックしていた場合、最適化後の配置に応じてロック状態を3パターンで更新する
       // （1: レンタルそのまま / 2: 旧ロック → レンタルに昇格 / 3: 旧レンタル → 通常ロックに降格）
-      if (scoreSettings.unifyRentalLock) {
+      if (latest.unifyRentalLock) {
         const originalRentalLocked = latest.manualRental && latest.rentalCardName !== null
         if (originalRentalLocked) {
           const origRental = latest.rentalCardName!
@@ -283,7 +286,7 @@ export function useUnitSimulator(
       // manualRental はユーザーの明示的な設定を維持する（上書きしない）
       setSettings({ ...latest, manualCards: ordered, rentalCardName: rentalName })
     },
-    [setSettings, scoreSettings.unifyRentalLock],
+    [setSettings],
   )
 
   /** 総当たり中の「現時点ベスト」をUIへ反映する */

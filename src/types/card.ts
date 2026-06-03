@@ -445,6 +445,4 @@ export interface ScoreSettings {
   hifExamRatios: ParameterValues[]
   /** HIFレッスンのサブ値を残り2属性に半分ずつ割り振るか */
   hifLessonSplitSub: boolean
-  /** レンタル枠のロックとそれ以外の枠のロックを区別しないか */
-  unifyRentalLock?: boolean
 }

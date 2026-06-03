@@ -45,8 +45,8 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
   const cardByName = new Map<string, SupportCard>(mockCards.map((c) => [c.name, c]))
 
-  /** レンタル・通常ロック区別撤廃オプション(unifyRentalLock)が有効な設定 */
-  const enabledScoreSettings: ScoreSettings = {
+  /** 最適編成テスト共通の点数設定 */
+  const baseScoreSettings: ScoreSettings = {
     name: 'test',
     scenario: enums.ScenarioType.Hajime,
     difficulty: enums.DifficultyType.Regular,
@@ -63,13 +63,6 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
     includePItem: true,
     parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
     actionCounts: {},
-    unifyRentalLock: true, // ロック自動入れ替え機能をON
-  }
-
-  /** ロック区別撤廃オプションが【無効(デフォルト)】の設定 */
-  const disabledScoreSettings: ScoreSettings = {
-    ...enabledScoreSettings,
-    unifyRentalLock: false, // ロック自動入れ替え機能をOFF
   }
 
   beforeEach(() => {
@@ -105,6 +98,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       lockedCards: ['CardB'], // CardBを通常枠でロック
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
+      unifyRentalLock: true, // ロック自動入れ替え機能をON
     }
     localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(initialSettings))
 
@@ -127,7 +121,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, enabledScoreSettings))
+    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
 
     await act(async () => {
       result.current.optimizeRemaining()
@@ -167,6 +161,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       lockedCards: [], // 通常ロックなし
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
+      unifyRentalLock: true, // ロック自動入れ替え機能をON
     }
     localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(initialSettings))
 
@@ -188,7 +183,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, enabledScoreSettings))
+    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
 
     await act(async () => {
       result.current.optimizeRemaining()
@@ -224,6 +219,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       lockedCards: ['CardB'],
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
+      unifyRentalLock: false, // ロック自動入れ替え機能をOFF
     }
     localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(initialSettings))
 
@@ -245,7 +241,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, disabledScoreSettings))
+    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
 
     await act(async () => {
       result.current.optimizeRemaining()
@@ -280,6 +276,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       lockedCards: ['CardB'], // CardBのみ通常ロック
       manualCards: ['CardB', 'CardC', null, null, null, null],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
+      unifyRentalLock: true, // ロック自動入れ替え機能をON
     }
     localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(initialSettings))
 
@@ -301,7 +298,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, enabledScoreSettings))
+    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
 
     await act(async () => {
       result.current.optimizeRemaining()

@@ -52,6 +52,10 @@ export interface UnitSimulatorSettings {
   initialParams: ParameterValues
   /** パラメータ上限値の上書き設定（null の場合はシナリオ既定値） */
   paramCapOverride?: number | null
+  /** レンタル枠のロックとそれ以外の枠のロックを区別しないか */
+  unifyRentalLock?: boolean
+  /** コンテスト用にスキルカード獲得・メモリ化Pアイテム獲得サポートを候補から除外するか */
+  excludeContestBlockedCards?: boolean
   /** 総当たり最適化の候補上位枚数（未設定時は既定値） */
   exhaustiveCandidateLimit?: number
 }

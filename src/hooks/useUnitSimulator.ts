@@ -61,7 +61,8 @@ const defaultSettings: UnitSimulatorSettings = {
   initialParams: { vocal: 0, dance: 0, visual: 0 },
   paramCapOverride: null,
   unifyRentalLock: false,
-  excludeContestBlockedCards: false,
+  excludeContestSkillCards: false,
+  excludeContestPItems: false,
   exhaustiveCandidateLimit: constant.EXHAUSTIVE_CANDIDATE_LIMIT,
 }
 

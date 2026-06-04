@@ -54,8 +54,10 @@ export interface UnitSimulatorSettings {
   paramCapOverride?: number | null
   /** レンタル枠のロックとそれ以外の枠のロックを区別しないか */
   unifyRentalLock?: boolean
-  /** コンテスト用にスキルカード獲得・メモリ化Pアイテム獲得サポートを候補から除外するか */
-  excludeContestBlockedCards?: boolean
+  /** コンテスト用にスキルカード獲得サポートを候補から除外するか */
+  excludeContestSkillCards?: boolean
+  /** コンテスト用にメモリ化Pアイテム獲得サポートを候補から除外するか */
+  excludeContestPItems?: boolean
   /** 総当たり最適化の候補上位枚数（未設定時は既定値） */
   exhaustiveCandidateLimit?: number
 }

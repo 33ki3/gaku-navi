@@ -82,22 +82,19 @@ interface RentalBranchContext {
 /**
  * コンテスト編成で避けたい獲得物を持つサポートか判定する
  *
- * @param card - 判定するサポート
- * @returns スキルカード獲得またはメモリ化Pアイテム獲得を持つ場合 true
- */
-function hasContestBlockedReward(card: SupportCard): boolean {
-  return card.skill_card !== null || card.p_item?.memory === enums.PItemMemoryType.Memorizable
-}
-
-/**
- * コンテスト用除外設定により候補から外すべきサポートか判定する
+ * スキルカードとメモリ化Pアイテムは個別に除外できる。
  *
  * @param settings - 現在のユニット設定
  * @param card - 判定するサポート
- * @returns 除外対象なら true
+ * @returns 設定に応じた除外対象なら true
  */
 function shouldExcludeForContest(settings: UnitSimulatorSettings, card: SupportCard): boolean {
-  return !!settings.excludeContestBlockedCards && hasContestBlockedReward(card)
+  const excludeSkillCards = !!settings.excludeContestSkillCards
+  const excludePItems = !!settings.excludeContestPItems
+  return (
+    (excludeSkillCards && card.skill_card !== null) ||
+    (excludePItems && card.p_item?.memory === enums.PItemMemoryType.Memorizable)
+  )
 }
 
 /** evaluateUnit 高速化用のアビリティシナジー情報 */

@@ -141,10 +141,18 @@ export default function UnitSettings({ settings, onChange, resolvedParamCap }: U
     [settings, onChange],
   )
 
-  /** コンテスト用除外設定変更 */
-  const handleContestExcludeChange = useCallback(
+  /** コンテスト用スキルカード除外設定変更 */
+  const handleContestSkillExcludeChange = useCallback(
     (checked: boolean) => {
-      onChange({ ...settings, excludeContestBlockedCards: checked })
+      onChange({ ...settings, excludeContestSkillCards: checked })
+    },
+    [settings, onChange],
+  )
+
+  /** コンテスト用Pアイテム除外設定変更 */
+  const handleContestPItemExcludeChange = useCallback(
+    (checked: boolean) => {
+      onChange({ ...settings, excludeContestPItems: checked })
     },
     [settings, onChange],
   )
@@ -339,10 +347,16 @@ export default function UnitSettings({ settings, onChange, resolvedParamCap }: U
           description={t('unit.settings.unify_rental_lock_tip')}
         />
         <CheckboxField
-          label={t('unit.settings.exclude_contest_blocked_cards')}
-          checked={!!settings.excludeContestBlockedCards}
-          onChange={handleContestExcludeChange}
-          description={t('unit.settings.exclude_contest_blocked_cards_tip')}
+          label={t('unit.settings.exclude_contest_skill_cards')}
+          checked={!!settings.excludeContestSkillCards}
+          onChange={handleContestSkillExcludeChange}
+          description={t('unit.settings.exclude_contest_skill_cards_tip')}
+        />
+        <CheckboxField
+          label={t('unit.settings.exclude_contest_p_items')}
+          checked={!!settings.excludeContestPItems}
+          onChange={handleContestPItemExcludeChange}
+          description={t('unit.settings.exclude_contest_p_items_tip')}
         />
         <div className="flex items-center justify-between gap-2">
           <span className={constant.SECTION_HEADING_SM_PX}>

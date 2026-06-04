@@ -836,8 +836,10 @@
       "param_cap_tip": "パラメータ上限値を設定します",
       "unify_rental_lock": "レンタル枠と通常枠のロックを区別しない",
       "unify_rental_lock_tip": "有効時、ロックしたカードをレンタル枠・通常枠の区別なく扱い、どの配置が最適かも含めて探索します",
-      "exclude_contest_blocked_cards": "スキルカード・メモリ化Pアイテム持ちを除外",
-      "exclude_contest_blocked_cards_tip": "スキルカードを獲得する、メモリーに入るPアイテムを獲得するサポートを最適化候補から除外します",
+      "exclude_contest_skill_cards": "スキルカード持ちを除外",
+      "exclude_contest_skill_cards_tip": "スキルカードを獲得するサポートを最適化候補から除外します",
+      "exclude_contest_p_items": "メモリ化Pアイテム持ちを除外",
+      "exclude_contest_p_items_tip": "メモリーに入るPアイテムを獲得するサポートを最適化候補から除外します",
       "candidate_limit": "全サポート 上位枚数",
       "candidate_limit_tip": "全サポートの点数上位何枚で最適化を実施するか設定します。枚数が多いほど精度が上がりますが計算時間が長くなります"
     },

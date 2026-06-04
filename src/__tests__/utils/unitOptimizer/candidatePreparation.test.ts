@@ -70,45 +70,87 @@ function makeSettings(overrides: Partial<UnitSimulatorSettings> = {}): UnitSimul
     lockedCards: [],
     manualCards: [],
     initialParams: { vocal: 0, dance: 0, visual: 0 },
-    excludeContestBlockedCards: true,
+    excludeContestSkillCards: true,
+    excludeContestPItems: true,
     ...overrides,
   }
 }
 
 describe('候補準備のコンテスト用除外', () => {
-  it('スキルカード持ちとメモリ化Pアイテム持ちを通常候補とレンタル候補から除外する', () => {
-    const normal = makeCard('通常サポート')
-    const skillCard = makeCard('スキルカード持ち', { skill_card: testSkillCard })
-    const memorizablePItem = makeCard('メモリ化Pアイテム持ち', {
-      p_item: {
-        name: 'メモリ化アイテム',
-        rarity: enums.PItemRarityType.SR,
-        memory: enums.PItemMemoryType.Memorizable,
-      },
-    })
-    const nonMemorizablePItem = makeCard('メモリ化不可Pアイテム持ち', {
-      p_item: {
-        name: 'メモリ化不可アイテム',
-        rarity: enums.PItemRarityType.SR,
-        memory: enums.PItemMemoryType.NonMemorizable,
-      },
-    })
-    const allCards = [normal, skillCard, memorizablePItem, nonMemorizablePItem]
-    const input = {
-      settings: makeSettings(),
+  const normal = makeCard('通常サポート')
+  const skillCard = makeCard('スキルカード持ち', { skill_card: testSkillCard })
+  const memorizablePItem = makeCard('メモリ化Pアイテム持ち', {
+    p_item: {
+      name: 'メモリ化アイテム',
+      rarity: enums.PItemRarityType.SR,
+      memory: enums.PItemMemoryType.Memorizable,
+    },
+  })
+  const nonMemorizablePItem = makeCard('メモリ化不可Pアイテム持ち', {
+    p_item: {
+      name: 'メモリ化不可アイテム',
+      rarity: enums.PItemRarityType.SR,
+      memory: enums.PItemMemoryType.NonMemorizable,
+    },
+  })
+  const allCards = [normal, skillCard, memorizablePItem, nonMemorizablePItem]
+  const schedule = { effectiveCounts: {}, perLessonValues: undefined }
+
+  function makeInput(settings: UnitSimulatorSettings) {
+    return {
+      settings,
       scoreSettings: createDefaultSettings(),
       cardUncaps: {},
       cardCountCustom: {},
       allCards,
       cardByName: new Map(allCards.map((card) => [card.name, card])),
     }
-    const schedule = { effectiveCounts: {}, perLessonValues: undefined }
+  }
+
+  it('スキルカード持ちとメモリ化Pアイテム持ちを通常候補とレンタル候補から除外する', () => {
+    const input = makeInput(makeSettings())
 
     const candidates = prepareCandidates(input, schedule)
     const rentalPool = createRentalPool(input, schedule, new Set(), 10)
 
     expect(candidates.map((candidate) => candidate.card.name)).toEqual(['通常サポート', 'メモリ化不可Pアイテム持ち'])
     expect(rentalPool.map((candidate) => candidate.card.name)).toEqual(['通常サポート', 'メモリ化不可Pアイテム持ち'])
+  })
+
+  it('スキルカード除外だけ有効ならメモリ化Pアイテム持ちは候補に残す', () => {
+    const input = makeInput(makeSettings({ excludeContestSkillCards: true, excludeContestPItems: false }))
+
+    const candidates = prepareCandidates(input, schedule)
+    const rentalPool = createRentalPool(input, schedule, new Set(), 10)
+
+    expect(candidates.map((candidate) => candidate.card.name)).toEqual([
+      '通常サポート',
+      'メモリ化Pアイテム持ち',
+      'メモリ化不可Pアイテム持ち',
+    ])
+    expect(rentalPool.map((candidate) => candidate.card.name)).toEqual([
+      '通常サポート',
+      'メモリ化Pアイテム持ち',
+      'メモリ化不可Pアイテム持ち',
+    ])
+  })
+
+  it('メモリ化Pアイテム除外だけ有効ならスキルカード持ちは候補に残す', () => {
+    const input = makeInput(makeSettings({ excludeContestSkillCards: false, excludeContestPItems: true }))
+
+    const candidates = prepareCandidates(input, schedule)
+    const rentalPool = createRentalPool(input, schedule, new Set(), 10)
+
+    expect(candidates.map((candidate) => candidate.card.name)).toEqual([
+      '通常サポート',
+      'スキルカード持ち',
+      'メモリ化不可Pアイテム持ち',
+    ])
+    expect(rentalPool.map((candidate) => candidate.card.name)).toEqual([
+      '通常サポート',
+      'スキルカード持ち',
+      'メモリ化不可Pアイテム持ち',
+    ])
   })
 
   it('通常ロックされたサポートはコンテスト用除外対象でも固定候補として残す', () => {

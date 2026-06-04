@@ -1,4 +1,6 @@
 /** Vite 環境変数の型定義。.env ファイルで設定する値を定義する。 */
+/// <reference types="vite-plugin-pwa/client" />
+
 interface ImportMetaEnv {
   /** Google Analytics トラッキングID */
   readonly VITE_GA_ID: string

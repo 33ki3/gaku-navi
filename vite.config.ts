@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
         manifest: false,
         scope: basePath,
         registerType: 'autoUpdate',
-        injectRegister: 'script-defer',
+        injectRegister: null,
         workbox: {
           skipWaiting: true,
           clientsClaim: true,

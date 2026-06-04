@@ -58,10 +58,17 @@ export function normalizeHifLessonActivityForPairMode(activityId: enums.Activity
  * スケジュールデータから HIF選抜試験の週番号一覧を抽出する。
  *
  * @param scheduleData - スケジュールデータ全件
- * @returns 中間試験が含まれる週番号の配列
+ * @returns HIF選抜試験1〜3の週番号の配列
  */
 export function getHifExamWeeks(scheduleData: ScheduleWeekData[]): number[] {
-  return scheduleData.filter((w) => w.activities.some((a) => a.id === enums.ActivityIdType.MidExam)).map((w) => w.week)
+  return scheduleData
+    .filter(
+      (w) =>
+        w.stage === enums.HifStage.Selection &&
+        w.fixed &&
+        w.activities.some((a) => a.id === enums.ActivityIdType.MidExam || a.id === enums.ActivityIdType.FinalExam),
+    )
+    .map((w) => w.week)
 }
 
 /**

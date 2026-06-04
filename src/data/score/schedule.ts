@@ -312,8 +312,8 @@ export const HIF_EXAM_LABEL_KEYS: readonly TranslationKey[] = (data[ScenarioType
     (entry) =>
       entry.stage === HifStage.Selection &&
       entry.fixed &&
-      entry.activities.includes(ActivityIdType.MidExam) &&
-      entry.week_label !== undefined,
+      entry.week_label !== undefined &&
+      entry.activities.some((id) => id === ActivityIdType.MidExam || id === ActivityIdType.FinalExam),
   )
   .map((entry) => entry.week_label as TranslationKey)
 

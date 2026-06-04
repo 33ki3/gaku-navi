@@ -13,6 +13,7 @@ import {
   getParameterBonusBreakdown,
 } from '../../../utils/calculator/parameterBonus'
 import * as enums from '../../../types/enums'
+import { HIF_EXAM_LABEL_KEYS } from '../../../data'
 
 // テストデータは実際のシナリオ/難易度を使用（data/score/lesson.ts に依存）
 
@@ -199,5 +200,20 @@ describe('getParameterBonusBreakdown', () => {
     expect(result).toHaveLength(2)
     expect(result[0].attribute).toBe(enums.ParameterType.Vocal)
     expect(result[1].attribute).toBe(enums.ParameterType.Dance)
+  })
+
+  it('HIF 選抜試験1〜3の内訳行を週7/13/20に追加する', () => {
+    const result = getParameterBonusBreakdown({}, enums.ScenarioType.Hif, enums.DifficultyType.None)
+    const examRows = result.filter((row) => row.rowKind?.kind === enums.BreakdownRowKindType.Exam)
+
+    expect(HIF_EXAM_LABEL_KEYS).toEqual([
+      'ui.settings.hif_exam_ratio_exam1',
+      'ui.settings.hif_exam_ratio_exam2',
+      'ui.settings.hif_exam_ratio_exam3',
+    ])
+    expect(examRows.map((row) => row.week)).toEqual([7, 13, 20])
+    expect(
+      examRows.map((row) => (row.rowKind !== undefined && 'examIndex' in row.rowKind ? row.rowKind.examIndex : -1)),
+    ).toEqual([0, 1, 2])
   })
 })

@@ -22436,5 +22436,122 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "私を楽しませろ",
+    "rarity": "ssr",
+    "plan": "logic",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/06/05",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "da_parameter_bonus",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "da_sp_lesson_rate",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "activity_supply_gift_count",
+        "trigger_key": "activity_supply_gift_count",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "m_skill_enhance",
+        "trigger_key": "m_skill_enhance",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "お手並み拝見",
+      "rarity": "ssr",
+      "type": "mental",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 6,
+          "effect": {
+            "groups": [
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 4,
+                  "keyword": "motivation"
+                }
+              },
+              {
+                "action": {
+                  "key": "replace_all_hand"
+                }
+              },
+              {
+                "action": {
+                  "key": "draw_card"
+                }
+              },
+              {
+                "action": {
+                  "key": "extra_card_use",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": []
+    }
   }
 ]

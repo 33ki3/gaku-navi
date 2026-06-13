@@ -31,12 +31,24 @@ interface CardDetailSectionsProps {
   uncap: UncapType
   /** 凸数が変わったときに呼ばれる関数 */
   onUncapChange: (uncap: UncapType) => void
+  /** 凸数が保存済みの値から変わっているか */
+  isUncapChanged?: boolean
+  /** 現在の凸数を保存する関数 */
+  onSaveUncap?: () => void
   /** スコア計算結果 */
   scoreResult: CardCalculationResult
 }
 
 /** サポート詳細のボディセクション */
-export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreResult }: CardDetailSectionsProps) {
+export function CardDetailSections({
+  card,
+  colors,
+  uncap,
+  onUncapChange,
+  isUncapChanged = false,
+  onSaveUncap,
+  scoreResult,
+}: CardDetailSectionsProps) {
   const { t } = useTranslation()
   // 各セクションの開閉状態
   const [uncapOpen, setUncapOpen] = useState(true)
@@ -56,14 +68,26 @@ export function CardDetailSections({ card, colors, uncap, onUncapChange, scoreRe
         isOpen={uncapOpen}
         onToggle={() => setUncapOpen(!uncapOpen)}
       >
-        <UncapSelector
-          value={uncap}
-          onChange={onUncapChange}
-          variant={UncapSelectorVariantType.Detail}
-          showNotOwned={false}
-          activeClass={`${colors.badge} shadow-md`}
-          inactiveClass={constant.BTN_TOGGLE_INACTIVE}
-        />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+          <UncapSelector
+            value={uncap}
+            onChange={onUncapChange}
+            variant={UncapSelectorVariantType.Detail}
+            showNotOwned={false}
+            activeClass={`${colors.badge} shadow-md`}
+            inactiveClass={constant.BTN_TOGGLE_INACTIVE}
+            className="w-full sm:w-auto"
+          />
+          {onSaveUncap && isUncapChanged && (
+            <button
+              type="button"
+              onClick={onSaveUncap}
+              className={`ml-auto shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap text-white ${colors.badge} hover:opacity-90 transition-opacity`}
+            >
+              {t('card.uncap_save')}
+            </button>
+          )}
+        </div>
       </CollapsibleSection>
 
       {/* サポートイベント一覧 */}

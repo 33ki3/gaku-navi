@@ -254,6 +254,7 @@ function App() {
                 }
                 calculateForCard={state.scores.calculateForCard}
                 onClose={() => state.ui.setSelectedCard(null)}
+                onUncapChange={handleUncapChange}
                 onEditUserCard={handleEditUserCard}
                 onDeleteUserCard={handleDeleteUserCard}
               />

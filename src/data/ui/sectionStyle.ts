@@ -33,7 +33,8 @@ const uncapSelectorStyle: Record<UncapSelectorVariantType, UncapSelectorStyle> =
   },
   [UncapSelectorVariantType.Detail]: {
     gap: 'gap-1 sm:gap-2 flex-nowrap',
-    button: 'flex-1 min-w-0 px-2 py-1.5 sm:flex-none sm:px-4 rounded-lg text-sm font-bold whitespace-nowrap text-center',
+    button:
+      'flex-1 min-w-0 px-2 py-1.5 sm:flex-none sm:px-4 rounded-lg text-sm font-bold whitespace-nowrap text-center',
   },
 }
 

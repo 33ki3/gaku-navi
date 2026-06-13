@@ -32,8 +32,8 @@ const uncapSelectorStyle: Record<UncapSelectorVariantType, UncapSelectorStyle> =
       'flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5 rounded text-[10px] font-bold whitespace-nowrap text-center',
   },
   [UncapSelectorVariantType.Detail]: {
-    gap: 'gap-2 flex-nowrap',
-    button: 'px-4 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap',
+    gap: 'gap-1 sm:gap-2 flex-nowrap',
+    button: 'flex-1 min-w-0 px-2 py-1.5 sm:flex-none sm:px-4 rounded-lg text-sm font-bold whitespace-nowrap text-center',
   },
 }
 

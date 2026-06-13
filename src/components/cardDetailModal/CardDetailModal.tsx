@@ -28,6 +28,8 @@ interface CardDetailModalProps {
   calculateForCard: (card: SupportCard, uncap: UncapType) => CardCalculationResult | undefined
   /** モーダルを閉じる関数 */
   onClose: () => void
+  /** 凸数変更時の永続化コールバック */
+  onUncapChange?: (cardName: string, uncap: UncapType) => void
   /** ユーザー定義カード編集コールバック */
   onEditUserCard?: (card: SupportCard) => void
   /** ユーザー定義カード削除コールバック */
@@ -41,6 +43,7 @@ export default function CardDetailModal({
   scoreResult: initialScoreResult,
   calculateForCard,
   onClose,
+  onUncapChange,
   onEditUserCard,
   onDeleteUserCard,
 }: CardDetailModalProps) {
@@ -50,6 +53,7 @@ export default function CardDetailModal({
   const [uncap, setUncap] = useState<UncapType>(
     initialUncap === UncapType.NotOwned ? constant.DEFAULT_UNCAP : initialUncap,
   )
+  const savedUncap = initialUncap === UncapType.NotOwned ? constant.DEFAULT_UNCAP : initialUncap
   const typeEntry = data.getTypeEntry(card.type)
   const rarityEntry = data.getRarityEntry(card.rarity)
   const planEntry = data.getPlanBadge(card.plan)
@@ -107,6 +111,8 @@ export default function CardDetailModal({
         colors={typeEntry}
         uncap={uncap}
         onUncapChange={setUncap}
+        isUncapChanged={uncap !== savedUncap}
+        onSaveUncap={onUncapChange ? () => onUncapChange(card.name, uncap) : undefined}
         scoreResult={scoreResult}
       />
 

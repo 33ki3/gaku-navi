@@ -89,6 +89,7 @@ const stageData = {
     [AbilityNameKeyType.SpLessonRateAll]: ['10.5%', '14%'],
     [AbilityNameKeyType.SpLessonRateAllHigh]: ['21%', '28%'],
     [AbilityNameKeyType.SsrCardAcquire]: ['5', '6'],
+    [AbilityNameKeyType.SpecialTraining]: ['18', '25'],
     [AbilityNameKeyType.ActivitySupplyGift]: ['12', '17'],
     [AbilityNameKeyType.ActivitySupplyGiftCount]: ['28', '38'],
     [AbilityNameKeyType.SupportRate]: ['66.1%', '74.6%', '83.1%', '91.5%', '100%'],
@@ -160,6 +161,7 @@ const stageData = {
     [AbilityNameKeyType.SpecialTraining]: ['9', '18'],
     [AbilityNameKeyType.SsrCardAcquire]: ['3', '5'],
     [AbilityNameKeyType.ActivitySupplyGift]: ['6', '11'],
+    [AbilityNameKeyType.ActivitySupplyGiftCount]: ['13', '26'],
     [AbilityNameKeyType.SupportRate]: ['59.2%', '69.4%', '79.6%', '89.8%', '100%'],
   },
   [RarityTierType.R]: {

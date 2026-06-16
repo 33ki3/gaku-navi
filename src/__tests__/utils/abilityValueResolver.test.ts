@@ -19,7 +19,13 @@ import {
 } from '../../types/enums'
 import { getAvailableAbilities, getStages, getSchedule } from '../../data/score/abilityValue'
 import { resolveAbilityValues } from '../../utils/abilityValueResolver'
-import { ABILITY_MAX_COUNT, SLOT1_OPTIONS, SLOT3_OPTIONS, SLOT6_OPTIONS, isFixedSlot } from '../../data/card/abilitySlot'
+import {
+  ABILITY_MAX_COUNT,
+  SLOT1_OPTIONS,
+  SLOT3_OPTIONS,
+  SLOT6_OPTIONS,
+  isFixedSlot,
+} from '../../data/card/abilitySlot'
 import type { SupportCard, Ability } from '../../types/card'
 
 /** テスト用のダミーサポートを生成する */

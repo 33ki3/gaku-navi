@@ -1299,6 +1299,8 @@ export const EffectTemplateKeyType = {
   MoveIdolHand: 'move_idol_hand',
   /** SSRスキルカード移動 */
   KeywordUpMoveSsr: 'keyword_up_move_ssr',
+  /** キーワード上昇+指定効果スキルカード移動 */
+  KeywordUpMoveKeyword: 'keyword_up_move_keyword',
 
   /** コスト減少 */
   CostReduce: 'cost_reduce',

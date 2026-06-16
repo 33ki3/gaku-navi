@@ -319,6 +319,7 @@
       "keyword_up": "{{keyword}}+{{value}}",
       "keyword_up_3": "{{keyword}}+{{value}}{{keyword2}}+{{count}}{{keyword3}}+{{turns}}",
       "keyword_up_move_ssr": "{{keyword}}+{{value}}ランダムな山札か捨札にあるスキルカード（SSR）を手札に移動",
+      "keyword_up_move_keyword": "{{keyword}}+{{value}}ランダムな山札か捨札の{{keyword2}}効果のスキルカードを手札に移動",
       "keyword_up_parameter": "{{keyword}}+{{value}}パラメータ+{{count}}",
       "keyword_up_hp_cost": "{{keyword}}+{{value}}体力消費{{count}}",
       "keyword_up_hp_recovery": "{{keyword}}+{{value}}体力回復{{count}}",

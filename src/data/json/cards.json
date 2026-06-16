@@ -22553,5 +22553,208 @@
       "custom_cap": 1,
       "custom_slot": []
     }
+  },
+  {
+    "name": "どーなっちゃうの～？",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "unit_limited",
+    "release_date": "2026/06/15",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "special_training",
+        "trigger_key": "special_training",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 3
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "activity_supply_gift_count",
+        "trigger_key": "activity_supply_gift_count",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "恋心のゆくえ"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "恋心のゆくえ",
+      "rarity": "ssr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "visual"
+        },
+        "trigger": {
+          "key": "turn_start_after"
+        },
+        "condition": {
+          "key": "keyword_state",
+          "keyword": "reserve"
+        },
+        "body": [
+          {
+            "key": "keyword_up_move_keyword",
+            "keyword": "vitality",
+            "keyword2": "aggressive",
+            "value": 3
+          }
+        ],
+        "limit": {
+          "key": "per_lesson",
+          "count": 3
+        }
+      }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "ゆずれないもの",
+    "rarity": "sr",
+    "plan": "sense",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "unit_limited",
+    "release_date": "2026/06/15",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vo_initial_stat",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "activity_supply_gift_count",
+        "trigger_key": "activity_supply_gift_count",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "懐かしパーティー論争"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "懐かしパーティー論争",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "activity_supply_gift_selection"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "vocal",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "param_up_select_copy",
+            "param": "vocal",
+            "value": 20
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 1
+        }
+      },
+      "boost": {
+        "trigger_key": "activity_supply_gift",
+        "parameter_type": "vocal",
+        "value": 20,
+        "max_count": 1
+      }
+    },
+    "skill_card": null
   }
 ]

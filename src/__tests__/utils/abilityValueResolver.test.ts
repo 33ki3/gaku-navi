@@ -19,7 +19,7 @@ import {
 } from '../../types/enums'
 import { getAvailableAbilities, getStages, getSchedule } from '../../data/score/abilityValue'
 import { resolveAbilityValues } from '../../utils/abilityValueResolver'
-import { SLOT1_OPTIONS, SLOT3_OPTIONS, SLOT6_OPTIONS, isFixedSlot } from '../../data/card/abilitySlot'
+import { ABILITY_MAX_COUNT, SLOT1_OPTIONS, SLOT3_OPTIONS, SLOT6_OPTIONS, isFixedSlot } from '../../data/card/abilitySlot'
 import type { SupportCard, Ability } from '../../types/card'
 
 /** テスト用のダミーサポートを生成する */
@@ -185,5 +185,13 @@ describe('固定スロット', () => {
     for (const nameKey of SLOT6_OPTIONS[tier]) {
       expect(available, `${tier} に ${nameKey} がない`).toContain(nameKey)
     }
+  })
+
+  it('サポート追加フォーム用の回数付きアビリティが選択可能で既定回数を持つ', () => {
+    expect(getAvailableAbilities(RarityTierType.SSR)).toContain(AbilityNameKeyType.SpecialTraining)
+    expect(ABILITY_MAX_COUNT[AbilityNameKeyType.SpecialTraining]).toBe(3)
+
+    expect(getAvailableAbilities(RarityTierType.SR)).toContain(AbilityNameKeyType.ActivitySupplyGiftCount)
+    expect(ABILITY_MAX_COUNT[AbilityNameKeyType.ActivitySupplyGiftCount]).toBe(2)
   })
 })

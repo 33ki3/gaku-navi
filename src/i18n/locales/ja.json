@@ -300,6 +300,7 @@
       "pp_gain": "Pポイント+{{value}}",
       "parameter_up": "パラメータ+{{value}}",
       "random_enhance": "ランダムなスキルカードを強化",
+      "random_skill_card_r_acquire": "ランダムなスキルカード（R）を獲得",
       "random_pdrink_sr": "ランダムなPドリンク（SR以上）を獲得",
       "random_pdrink": "ランダムなPドリンクを獲得",
       "random_pdrink_count": "ランダムなPドリンクを{{count}}つ獲得",
@@ -389,6 +390,7 @@
         "delay": "{{turns}}ターン後、",
         "ongoing": "以降の{{turns}}ターンの間、",
         "every_n_card_use": "以降、スキルカードを{{count}}回使用するごとに、",
+        "up_to_n_times": "以降{{count}}回まで、",
         "up_to_n_card_use": "以降{{count}}回まで、{{skill_type}}スキルカード使用時、"
       },
       "trigger": {
@@ -399,6 +401,7 @@
       "action": {
         "param_up": "パラメータ+{{value}}",
         "param_up_multi": "パラメータ+{{value}}（{{count}}回）",
+        "param_up_cumulative_keyword_pct_boost": "パラメータ+{{value}}（累積{{keyword}}の{{pct}}%分、パラメータ上昇量増加）",
         "param_up_keyword_multiply": "パラメータ+{{value}}({{keyword}}効果を{{rate}}倍適用)",
         "keyword_pct_param_up": "{{keyword}}の{{pct}}%分パラメータ上昇",
         "param_boost": "パラメータ上昇量増加{{pct}}％（{{turns}}ターン）",

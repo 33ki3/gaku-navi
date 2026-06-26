@@ -1246,6 +1246,8 @@ export const EffectTemplateKeyType = {
   ParamUpKeywordMultiply: 'param_up_keyword_multiply',
   /** パラメータ上昇（複数） */
   ParamUpMulti: 'param_up_multi',
+  /** パラメータ上昇+累積キーワード依存の上昇量増加 */
+  ParamUpCumulativeKeywordPctBoost: 'param_up_cumulative_keyword_pct_boost',
 
   /** スキルカード強化 */
   CardEnhance: 'card_enhance',
@@ -1271,6 +1273,8 @@ export const EffectTemplateKeyType = {
   RandomEnhanceHp: 'random_enhance_hp',
   /** ランダム強化+Pポイント */
   RandomEnhancePp: 'random_enhance_pp',
+  /** ランダムRスキルカード獲得 */
+  RandomSkillCardRAcquire: 'random_skill_card_r_acquire',
   /** 手札全入れ替え */
   ReplaceAllHand: 'replace_all_hand',
   /** スキルカード選択強化 */
@@ -1445,6 +1449,8 @@ export const EffectTemplateKeyType = {
   Delta: 'delta',
   /** N回カード使用ごと */
   EveryNCardUse: 'every_n_card_use',
+  /** N回まで */
+  UpToNTimes: 'up_to_n_times',
   /** N回まで使用 */
   UpToNCardUse: 'up_to_n_card_use',
   /** 次のターン */

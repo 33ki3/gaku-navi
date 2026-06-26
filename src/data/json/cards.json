@@ -22756,5 +22756,229 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "おでん、通りま～すッ！",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "live_tour_limited",
+    "release_date": "2026/06/26",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "ssr_card_acquire",
+        "trigger_key": "ssr_card_acquire",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "outing_count",
+        "trigger_key": "outing_count",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "あつあつはふはふ",
+      "rarity": "ssr",
+      "type": "active",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 6,
+          "effect": {
+            "groups": [
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 1,
+                  "keyword": "full_power_value"
+                }
+              },
+              {
+                "condition": {
+                  "key": "keyword_state",
+                  "keyword": "full_power"
+                },
+                "temporal": {
+                  "key": "up_to_n_times",
+                  "count": 4
+                },
+                "trigger": {
+                  "key": "turn_end"
+                },
+                "action": {
+                  "key": "param_up_cumulative_keyword_pct_boost",
+                  "value": 3,
+                  "keyword": "full_power_value",
+                  "pct": 150
+                },
+                "temporal_first": true
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": []
+    }
+  },
+  {
+    "name": "ゆるるんあくび顔",
+    "rarity": "sr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "live_tour_limited",
+    "release_date": "2026/06/26",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "activity_supply_gift_count",
+        "trigger_key": "activity_supply_gift_count",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "reserve_card_acquire",
+        "trigger_key": "reserve_card_acquire",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "居眠り注意！",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "consult_selection"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 400
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "visual",
+            "value": 10
+          },
+          {
+            "key": "random_skill_card_r_acquire"
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      },
+      "boost": {
+        "trigger_key": "consult",
+        "parameter_type": "visual",
+        "value": 10,
+        "max_count": 2
+      },
+      "provided_action_ids": {
+        "skill_acquire": 1
+      }
+    },
+    "skill_card": null
   }
 ]

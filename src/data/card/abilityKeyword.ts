@@ -124,6 +124,7 @@ const entries: AbilityKeywordEntry[] = [
       TriggerKeyType.ConcentrationCardAcquire,
       TriggerKeyType.MotivationCardAcquire,
       TriggerKeyType.GoodImpressionCardAcquire,
+      TriggerKeyType.GoodImpressionCardAcquire8,
       TriggerKeyType.AggressiveCardAcquire,
       TriggerKeyType.FullPowerCardAcquire,
       TriggerKeyType.ReserveCardAcquire,

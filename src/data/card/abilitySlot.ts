@@ -15,6 +15,8 @@ export const ABILITY_MAX_COUNT: Partial<Record<AbilityNameKeyType, number>> = {
   [AbilityNameKeyType.ActivitySupplyGiftCount]: 2,
   [AbilityNameKeyType.ASkillDelete]: 3,
   [AbilityNameKeyType.ConsultCount]: 2,
+  [AbilityNameKeyType.DeleteCount]: 4,
+  [AbilityNameKeyType.GoodImpressionCardAcquire8]: 4,
   [AbilityNameKeyType.MSkillDelete]: 3,
   [AbilityNameKeyType.Change]: 3,
   [AbilityNameKeyType.Customize]: 6,

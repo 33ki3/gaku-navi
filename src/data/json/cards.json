@@ -22980,5 +22980,214 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "次の曲は～ッあの曲だ！！",
+    "rarity": "ssr",
+    "plan": "logic",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "live_tour_limited",
+    "release_date": "2026/07/08",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "delete_count",
+        "trigger_key": "delete",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "good_impression_card_acquire_8",
+        "trigger_key": "good_impression_card_acquire_8",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "全力おうえんうちわ",
+      "rarity": "ssr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "vocal"
+        },
+        "trigger": {
+          "key": "active_card_use"
+        },
+        "condition": {
+          "key": "keyword_lte",
+          "keyword": "vitality",
+          "threshold": 30
+        },
+        "body": [
+          {
+            "key": "keyword_up",
+            "keyword": "good_impression",
+            "value": 3
+          },
+          {
+            "key": "param_up_boost",
+            "value": 10,
+            "turns": 5
+          }
+        ],
+        "limit": {
+          "key": "per_lesson",
+          "count": 1
+        }
+      }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "ずっしりスイカでりしゃす",
+    "rarity": "sr",
+    "plan": "logic",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "live_tour_limited",
+    "release_date": "2026/07/08",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "da_parameter_bonus",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "good_impression_card_acquire",
+        "trigger_key": "good_impression_card_acquire",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_20",
+        "trigger_key": "sp_lesson_20",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "skill_acquire",
+        "trigger_key": "skill_acquire",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "ドキドキ目隠し",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "param_sp_lesson_end",
+          "param": "dance"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "dance",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "param_up_hp",
+            "param": "dance",
+            "value": 20,
+            "count": 2
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 3
+        }
+      },
+      "boost": {
+        "trigger_key": "da_sp_lesson_end",
+        "parameter_type": "dance",
+        "value": 20,
+        "max_count": 3
+      }
+    },
+    "skill_card": null
   }
 ]

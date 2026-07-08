@@ -148,6 +148,43 @@ describe('calculateCardParameter', () => {
     expect(result.totalIncrease).toBe(15)
   })
 
+  it('好印象8枚以上時発動は専用回数を使い4回で制限される', () => {
+    const card = makeCard({
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.GoodImpressionCardAcquire8,
+          trigger_key: enums.TriggerKeyType.GoodImpressionCardAcquire8,
+          parameter_type: enums.ParameterType.Vocal,
+          values: { '0': '16', '4': '22' },
+          max_count: 4,
+        },
+      ],
+    })
+
+    const twice = calculateCardParameter(
+      card,
+      enums.UncapType.Four,
+      {
+        [enums.ActionIdType.GoodImpressionCardAcquire]: 8,
+        [enums.ActionIdType.GoodImpressionCardAcquire8]: 2,
+      },
+      emptyExtra,
+      zeroBonusBase,
+    )
+    const capped = calculateCardParameter(
+      card,
+      enums.UncapType.Four,
+      { [enums.ActionIdType.GoodImpressionCardAcquire8]: 8 },
+      emptyExtra,
+      zeroBonusBase,
+    )
+
+    expect(twice.abilityBoosts[0].count).toBe(2)
+    expect(twice.totalIncrease).toBe(44)
+    expect(capped.abilityBoosts[0].count).toBe(4)
+    expect(capped.totalIncrease).toBe(88)
+  })
+
   it('初期値上昇は固定 1回分（トリガー不要）', () => {
     const card = makeCard({
       abilities: [

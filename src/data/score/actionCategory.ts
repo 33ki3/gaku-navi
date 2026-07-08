@@ -63,6 +63,7 @@ const data: ActionGroupEntry[] = [
       { id: ActionIdType.GoodConditionCardAcquire, label: 'score.action.good_condition_acquire' },
       { id: ActionIdType.ConcentrationCardAcquire, label: 'score.action.concentration_acquire' },
       { id: ActionIdType.GoodImpressionCardAcquire, label: 'score.action.good_impression_acquire' },
+      { id: ActionIdType.GoodImpressionCardAcquire8, label: 'score.action.good_impression_acquire_8' },
       { id: ActionIdType.MotivationCardAcquire, label: 'score.action.motivation_acquire' },
       { id: ActionIdType.AggressiveCardAcquire, label: 'score.action.aggressive_acquire' },
       { id: ActionIdType.ReserveCardAcquire, label: 'score.action.reserve_acquire' },

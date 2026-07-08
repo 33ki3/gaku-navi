@@ -30,6 +30,7 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.GoodConditionCardAcquire]: ActionIdType.GoodConditionCardAcquire,
   [TriggerKeyType.ConcentrationCardAcquire]: ActionIdType.ConcentrationCardAcquire,
   [TriggerKeyType.GoodImpressionCardAcquire]: ActionIdType.GoodImpressionCardAcquire,
+  [TriggerKeyType.GoodImpressionCardAcquire8]: ActionIdType.GoodImpressionCardAcquire8,
   [TriggerKeyType.MotivationCardAcquire]: ActionIdType.MotivationCardAcquire,
   [TriggerKeyType.ReserveCardAcquire]: ActionIdType.ReserveCardAcquire,
   [TriggerKeyType.AggressiveCardAcquire]: ActionIdType.AggressiveCardAcquire,

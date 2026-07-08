@@ -206,6 +206,8 @@ export const AbilityNameKeyType = {
   ASkillEnhance: 'a_skill_enhance',
   /** スキルカード削除 */
   Delete: 'delete',
+  /** スキルカード削除（回数制限） */
+  DeleteCount: 'delete_count',
   /** メンタルスキル削除 */
   MSkillDelete: 'm_skill_delete',
   /** アクティブスキル削除 */
@@ -226,6 +228,8 @@ export const AbilityNameKeyType = {
   ConcentrationCardAcquire: 'concentration_card_acquire',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
+  /** 好印象系カード8枚以上でスキルカード獲得 */
+  GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
   /** 温存系カード獲得 */
@@ -656,6 +660,8 @@ export const ActionIdType = {
   ConcentrationCardAcquire: 'concentration_card_acquire',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
+  /** 好印象系カード8枚以上でスキルカード獲得 */
+  GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
   /** 温存系カード獲得 */
@@ -883,6 +889,8 @@ export const TriggerKeyType = {
   ConcentrationCardAcquire: 'concentration_card_acquire',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
+  /** 好印象系カード8枚以上でスキルカード獲得 */
+  GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
   /** 温存系カード獲得 */
@@ -1355,6 +1363,8 @@ export const EffectTemplateKeyType = {
   KeywordEq: 'keyword_eq',
   /** キーワード以上条件 */
   KeywordGte: 'keyword_gte',
+  /** キーワード以下条件 */
+  KeywordLte: 'keyword_lte',
   /** キーワード増加量ブースト */
   KeywordIncreaseBoost: 'keyword_increase_boost',
   /** キーワード%パラメータ追加 */

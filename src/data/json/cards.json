@@ -23189,5 +23189,108 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "インタビューお願いします",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/07/21",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vi_sp_lesson_rate",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "reserve_card_acquire_8",
+        "trigger_key": "reserve_card_acquire_8",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "注目インタビュー！",
+      "rarity": "ssr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "visual"
+        },
+        "trigger": {
+          "key": "turn_start"
+        },
+        "condition": {
+          "key": "keyword_count_gte",
+          "keyword": "reserve",
+          "threshold": 4
+        },
+        "body": [
+          {
+            "key": "active_card_param_boost",
+            "value": 22
+          }
+        ],
+        "limit": {
+          "key": "per_lesson",
+          "count": 1
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

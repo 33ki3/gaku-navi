@@ -222,22 +222,36 @@ export const AbilityNameKeyType = {
   ASkillAcquire: 'a_skill_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
+  /** 元気系カード8枚以上でスキルカード獲得 */
+  VitalityCardAcquire8: 'vitality_card_acquire_8',
   /** 好調系カード獲得 */
   GoodConditionCardAcquire: 'good_condition_card_acquire',
+  /** 好調系カード8枚以上でスキルカード獲得 */
+  GoodConditionCardAcquire8: 'good_condition_card_acquire_8',
   /** 集中系カード獲得 */
   ConcentrationCardAcquire: 'concentration_card_acquire',
+  /** 集中系カード8枚以上でスキルカード獲得 */
+  ConcentrationCardAcquire8: 'concentration_card_acquire_8',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
   /** 好印象系カード8枚以上でスキルカード獲得 */
   GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
+  /** やる気系カード8枚以上でスキルカード獲得 */
+  MotivationCardAcquire8: 'motivation_card_acquire_8',
   /** 温存系カード獲得 */
   ReserveCardAcquire: 'reserve_card_acquire',
+  /** 温存系カード8枚以上でスキルカード獲得 */
+  ReserveCardAcquire8: 'reserve_card_acquire_8',
   /** 強気系カード獲得 */
   AggressiveCardAcquire: 'aggressive_card_acquire',
+  /** 強気系カード8枚以上でスキルカード獲得 */
+  AggressiveCardAcquire8: 'aggressive_card_acquire_8',
   /** 全力系カード獲得 */
   FullPowerCardAcquire: 'full_power_card_acquire',
+  /** 全力系カード8枚以上でスキルカード獲得 */
+  FullPowerCardAcquire8: 'full_power_card_acquire_8',
   /** 授業・営業終了時 */
   ClassWorkEnd: 'class_work_end',
   /** 試験終了時 */
@@ -654,22 +668,36 @@ export const ActionIdType = {
   ASkillAcquire: 'a_skill_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
+  /** 元気系カード8枚以上でスキルカード獲得 */
+  VitalityCardAcquire8: 'vitality_card_acquire_8',
   /** 好調系カード獲得 */
   GoodConditionCardAcquire: 'good_condition_card_acquire',
+  /** 好調系カード8枚以上でスキルカード獲得 */
+  GoodConditionCardAcquire8: 'good_condition_card_acquire_8',
   /** 集中系カード獲得 */
   ConcentrationCardAcquire: 'concentration_card_acquire',
+  /** 集中系カード8枚以上でスキルカード獲得 */
+  ConcentrationCardAcquire8: 'concentration_card_acquire_8',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
   /** 好印象系カード8枚以上でスキルカード獲得 */
   GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
+  /** やる気系カード8枚以上でスキルカード獲得 */
+  MotivationCardAcquire8: 'motivation_card_acquire_8',
   /** 温存系カード獲得 */
   ReserveCardAcquire: 'reserve_card_acquire',
+  /** 温存系カード8枚以上でスキルカード獲得 */
+  ReserveCardAcquire8: 'reserve_card_acquire_8',
   /** 強気系カード獲得 */
   AggressiveCardAcquire: 'aggressive_card_acquire',
+  /** 強気系カード8枚以上でスキルカード獲得 */
+  AggressiveCardAcquire8: 'aggressive_card_acquire_8',
   /** 全力系カード獲得 */
   FullPowerCardAcquire: 'full_power_card_acquire',
+  /** 全力系カード8枚以上でスキルカード獲得 */
+  FullPowerCardAcquire8: 'full_power_card_acquire_8',
   /** SSRカード獲得 */
   SsrCardAcquire: 'ssr_card_acquire',
   /** 眠気カード獲得 */
@@ -883,22 +911,36 @@ export const TriggerKeyType = {
   ASkillAcquire: 'a_skill_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
+  /** 元気系カード8枚以上でスキルカード獲得 */
+  VitalityCardAcquire8: 'vitality_card_acquire_8',
   /** 好調系カード獲得 */
   GoodConditionCardAcquire: 'good_condition_card_acquire',
+  /** 好調系カード8枚以上でスキルカード獲得 */
+  GoodConditionCardAcquire8: 'good_condition_card_acquire_8',
   /** 集中系カード獲得 */
   ConcentrationCardAcquire: 'concentration_card_acquire',
+  /** 集中系カード8枚以上でスキルカード獲得 */
+  ConcentrationCardAcquire8: 'concentration_card_acquire_8',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
   /** 好印象系カード8枚以上でスキルカード獲得 */
   GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
+  /** やる気系カード8枚以上でスキルカード獲得 */
+  MotivationCardAcquire8: 'motivation_card_acquire_8',
   /** 温存系カード獲得 */
   ReserveCardAcquire: 'reserve_card_acquire',
+  /** 温存系カード8枚以上でスキルカード獲得 */
+  ReserveCardAcquire8: 'reserve_card_acquire_8',
   /** 強気系カード獲得 */
   AggressiveCardAcquire: 'aggressive_card_acquire',
+  /** 強気系カード8枚以上でスキルカード獲得 */
+  AggressiveCardAcquire8: 'aggressive_card_acquire_8',
   /** 全力系カード獲得 */
   FullPowerCardAcquire: 'full_power_card_acquire',
+  /** 全力系カード8枚以上でスキルカード獲得 */
+  FullPowerCardAcquire8: 'full_power_card_acquire_8',
   /** SSRカード獲得 */
   SsrCardAcquire: 'ssr_card_acquire',
   /** 眠気カード獲得 */
@@ -1220,6 +1262,8 @@ export const EffectTemplateKeyType = {
 
   /** 全カードパラメータ上昇量ブースト */
   AllCardParamBoost: 'all_card_param_boost',
+  /** アクティブスキルカードのパラメータ値増加 */
+  ActiveCardParamBoost: 'active_card_param_boost',
   /** パラメータ追加 */
   ParameterAdd: 'parameter_add',
   /** パラメータ加算 */

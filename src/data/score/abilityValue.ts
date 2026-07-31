@@ -55,6 +55,7 @@ const stageData = {
     [AbilityNameKeyType.ConcentrationCardAcquire8]: ['16', '22'],
     [AbilityNameKeyType.Consult]: ['14', '18'],
     [AbilityNameKeyType.ConsultCount]: ['28', '38'],
+    [AbilityNameKeyType.ConsultSkillCardAcquire]: ['18', '21'],
     [AbilityNameKeyType.Customize]: ['8', '11'],
     [AbilityNameKeyType.Delete]: ['8', '11'],
     [AbilityNameKeyType.DeleteCount]: ['15', '20'],

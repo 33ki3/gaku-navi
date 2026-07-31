@@ -26,6 +26,7 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.SkillAcquire]: ActionIdType.SkillAcquire,
   [TriggerKeyType.MSkillAcquire]: ActionIdType.MSkillAcquire,
   [TriggerKeyType.ASkillAcquire]: ActionIdType.ASkillAcquire,
+  [TriggerKeyType.ConsultSkillCardAcquire]: ActionIdType.ConsultSkillCardAcquire,
   [TriggerKeyType.VitalityCardAcquire]: ActionIdType.VitalityCardAcquire,
   [TriggerKeyType.VitalityCardAcquire8]: ActionIdType.VitalityCardAcquire8,
   [TriggerKeyType.GoodConditionCardAcquire]: ActionIdType.GoodConditionCardAcquire,

@@ -220,6 +220,8 @@ export const AbilityNameKeyType = {
   MSkillAcquire: 'm_skill_acquire',
   /** アクティブスキル獲得 */
   ASkillAcquire: 'a_skill_acquire',
+  /** 相談でスキルカード獲得 */
+  ConsultSkillCardAcquire: 'consult_skill_card_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
   /** 元気系カード8枚以上でスキルカード獲得 */
@@ -666,6 +668,8 @@ export const ActionIdType = {
   MSkillAcquire: 'm_skill_acquire',
   /** アクティブスキル獲得 */
   ASkillAcquire: 'a_skill_acquire',
+  /** 相談でスキルカード獲得 */
+  ConsultSkillCardAcquire: 'consult_skill_card_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
   /** 元気系カード8枚以上でスキルカード獲得 */
@@ -909,6 +913,8 @@ export const TriggerKeyType = {
   MSkillAcquire: 'm_skill_acquire',
   /** アクティブスキル獲得 */
   ASkillAcquire: 'a_skill_acquire',
+  /** 相談でスキルカード獲得 */
+  ConsultSkillCardAcquire: 'consult_skill_card_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
   /** 元気系カード8枚以上でスキルカード獲得 */
@@ -1300,6 +1306,8 @@ export const EffectTemplateKeyType = {
   ParamUpMulti: 'param_up_multi',
   /** パラメータ上昇+累積キーワード依存の上昇量増加 */
   ParamUpCumulativeKeywordPctBoost: 'param_up_cumulative_keyword_pct_boost',
+  /** 指針変更回数に応じた成長パラメータ増加 */
+  GrowthPolicyChangeParamBoost: 'growth_policy_change_param_boost',
 
   /** スキルカード強化 */
   CardEnhance: 'card_enhance',

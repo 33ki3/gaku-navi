@@ -75,6 +75,7 @@ const data: ActionGroupEntry[] = [
       { id: ActionIdType.ReserveCardAcquire8, label: 'score.action.reserve_acquire_8' },
       { id: ActionIdType.FullPowerCardAcquire, label: 'score.action.full_power_acquire' },
       { id: ActionIdType.FullPowerCardAcquire8, label: 'score.action.full_power_acquire_8' },
+      { id: ActionIdType.ConsultSkillCardAcquire, label: 'score.action.consult_skill_card_acquire' },
     ],
   },
   {

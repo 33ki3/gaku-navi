@@ -186,7 +186,7 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.consult',
     badge: 'card.badge.consult',
     isParamCategory: false,
-    triggers: [TriggerKeyType.Consult],
+    triggers: [TriggerKeyType.Consult, TriggerKeyType.ConsultSkillCardAcquire],
   },
   {
     id: AbilityKeywordType.ConsultCount,

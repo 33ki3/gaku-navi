@@ -9,10 +9,10 @@
  * 計算ロジックの正確性が最重要。
  */
 import { describe, expect, it } from 'vitest'
-import { calculateCardParameter } from '../../../utils/calculator/calculateCard'
 import type { SupportCard } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
+import { calculateCardParameter } from '../../../utils/calculator/calculateCard'
 
 /** 最小限のサポートを作るファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {

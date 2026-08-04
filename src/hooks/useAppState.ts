@@ -5,17 +5,16 @@
  * UI状態、サポート凸数、スコア計算、フィルターなど
  * 他のフックを組み合わせて、App.tsx に返す。
  */
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import type { SupportCard, ScoreSettings } from '../types/card'
-import type { UncapType } from '../types/enums'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ScoreSettings, SupportCard } from '../types/card'
 import * as enums from '../types/enums'
-import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
 import { createEmptyResult } from '../utils/calculator/calculateCard'
-import { useUIState } from './useUIState'
-import { useCardUncaps } from './useCardUncaps'
+import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
 import { useCardCountCustom } from './useCardCountCustom'
-import { useFilteredCards } from './useFilteredCards'
 import { useCardScores } from './useCardScores'
+import { useCardUncaps } from './useCardUncaps'
+import { useFilteredCards } from './useFilteredCards'
+import { useUIState } from './useUIState'
 import { useUserCards } from './useUserCards'
 
 /**
@@ -119,7 +118,7 @@ export function useAppState() {
 
   /** 凸数が変更されたとき → 保存する */
   const handleUncapChange = useCallback(
-    (cardName: string, u: UncapType) => {
+    (cardName: string, u: enums.UncapType) => {
       setCardUncap(cardName, u)
     },
     [setCardUncap],
@@ -162,3 +161,6 @@ export function useAppState() {
     },
   }
 }
+
+/** useAppState が返す、アプリ全体の統合状態。戻り値の変更を自動で型へ反映する。 */
+export type AppState = ReturnType<typeof useAppState>

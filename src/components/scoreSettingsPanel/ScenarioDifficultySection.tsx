@@ -5,14 +5,14 @@
  * トグルボタンで選ぶ。非対応のオプションは無効化される。
  */
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings } from '../../types/card'
-import { ToggleButton } from '../ui/ToggleButton'
-import { ButtonSizeType } from '../../types/enums'
-import * as enums from '../../types/enums'
 import * as constant from '../../constant'
 import * as data from '../../data'
+import type { ScoreSettings } from '../../types/card'
+import * as enums from '../../types/enums'
+import { ButtonSizeType } from '../../types/enums'
 import { calculateParameterBonusFromSchedule } from '../../utils/calculator/parameterBonus'
 import { loadScheduleSelections, loadScoreSettings, sumCustomParamBonusRows } from '../../utils/scoreSettings'
+import { ToggleButton } from '../ui/ToggleButton'
 
 /** ScenarioDifficultySection コンポーネントに渡すプロパティ */
 interface ScenarioDifficultySectionProps {

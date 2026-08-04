@@ -3,10 +3,10 @@
  *
  * 活動候補と休む（許可時）をトグルとして表示する。
  */
-import type { ScheduleWeekData } from '../../../data'
-import * as enums from '../../../types/enums'
-import * as data from '../../../data'
 import { useTranslation } from 'react-i18next'
+import type { ScheduleWeekData } from '../../../data'
+import * as data from '../../../data'
+import * as enums from '../../../types/enums'
 import { NormalWeekSelector } from './NormalWeekSelector'
 
 /** HifNormalWeekRow コンポーネントに渡すプロパティ */

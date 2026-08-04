@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_FEEDBACK_URL: string
   /** GitHub リポジトリの URL */
   readonly VITE_GITHUB_URL: string
+  /** X（旧Twitter）の公式アカウント URL */
+  readonly VITE_X_URL: string
   /** アプリのベースパス */
   readonly VITE_BASE_PATH: string
   /** サイトの公開URL（末尾スラッシュ付き、OGPメタタグ用） */

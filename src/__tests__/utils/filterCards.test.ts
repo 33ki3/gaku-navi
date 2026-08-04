@@ -11,9 +11,9 @@
  * 同カテゴリ内は OR、カテゴリ間は AND で結合される。
  */
 import { describe, expect, it } from 'vitest'
-import { filterAndSortCards } from '../../utils/filterCards'
 import type { SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
+import { filterAndSortCards } from '../../utils/filterCards'
 
 /** 最小限のサポートファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {

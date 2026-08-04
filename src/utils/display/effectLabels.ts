@@ -4,27 +4,27 @@
  * カード詳細画面で表示する「イベント効果」「Pアイテム効果」「スキルカード効果」
  * 「カスタムスロット効果」のテキストを、構造化データ + i18n翻訳から組み立てる。
  */
-import type {
-  SupportEvent,
-  PItemEffect,
-  PItemEffectPart,
-  SkillCardEffectStructured,
-  SkillCardEffectAction,
-  CustomSlotEffectStructured,
-  CustomSlotNameStructured,
-} from '../../types/card'
-import type {
-  UncapType,
-  EffectKeywordType,
-  ParameterType,
-  EffectTemplateKeyType,
-  AbilityNameKeyType,
-  TriggerKeyType,
-} from '../../types/enums'
-import { EventEffectType, EffectSectionType } from '../../types/enums'
-import type { TranslationKey } from '../../i18n'
 import type { TFunction } from 'i18next'
 import * as data from '../../data'
+import type { TranslationKey } from '../../i18n'
+import type {
+  CustomSlotEffectStructured,
+  CustomSlotNameStructured,
+  PItemEffect,
+  PItemEffectPart,
+  SkillCardEffectAction,
+  SkillCardEffectStructured,
+  SupportEvent,
+} from '../../types/card'
+import type {
+  AbilityNameKeyType,
+  EffectKeywordType,
+  EffectTemplateKeyType,
+  ParameterType,
+  TriggerKeyType,
+  UncapType,
+} from '../../types/enums'
+import { EffectSectionType, EventEffectType } from '../../types/enums'
 
 /**
  * エフェクトテンプレートの i18n ラベルキーを返す。

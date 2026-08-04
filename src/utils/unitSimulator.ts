@@ -4,47 +4,35 @@
  * 総当たり探索（Exhaustive）でSP/タイプ制約を満たす全組み合わせを評価し、
  * 最もスコアの高い6枚編成を求める。
  */
-import type { SupportCard, ScoreSettings, ParameterValues, PerLessonParameterValues } from '../types/card'
-import type { UncapType } from '../types/enums'
+import * as constant from '../constant'
+import * as data from '../data'
+import { getClassParameterTotal } from '../data/score/class'
+import { getExamTotalData, getHifExamTotalData } from '../data/score/exam'
+import { getSpLessonTotal } from '../data/score/lesson'
+import { resolveParamCap } from '../data/score/paramCap'
+import type { ParameterValues, PerLessonParameterValues, ScoreSettings } from '../types/card'
 import * as enums from '../types/enums'
-import type { UnitSimulatorSettings, UnitMember, UnitResult, TypeCountValues } from '../types/unit'
-import type { CardCountCustom } from '../hooks/useCardCountCustom'
-import { mergeScheduleCounts } from './scoreSettings'
-import { getPerLessonParameterValues } from './calculator/parameterBonus'
-import { customRowsToPerLessonValues } from './scoreSettings'
-import { computeUnitSupportSynergy } from './supportSynergy'
-import { countSpTypeConstrainedCombos, spTypeConstrainedCombos } from './unitOptimizer/combinatorics'
-import { createEvaluatorSeed, evaluateUnitScoreWithSeed } from './unitOptimizer/evaluator'
+import type { OptimizeInput } from '../types/unitOptimizer'
+import type { SupportSynergyDetail, TypeCountValues, UnitMember, UnitResult } from '../types/unit'
 import { parseAbility } from './calculator/helpers'
+import { getPerLessonParameterValues } from './calculator/parameterBonus'
+import { customRowsToPerLessonValues, mergeScheduleCounts } from './scoreSettings'
+import { computeUnitSupportSynergy } from './supportSynergy'
 import type { CandidateCard } from './unitOptimizer/candidatePreparation'
 import {
-  createCategorizedCandidatePools,
   createCandidateCard,
+  createCategorizedCandidatePools,
   createRentalBranchContexts,
   createRentalPool,
   prepareCandidates,
 } from './unitOptimizer/candidatePreparation'
-import { resolveParamCap } from '../data/score/paramCap'
-import { getSpLessonTotal } from '../data/score/lesson'
-import { getExamTotalData, getHifExamTotalData } from '../data/score/exam'
-import { getClassParameterTotal } from '../data/score/class'
-import * as data from '../data'
-import * as constant from '../constant'
+import { countSpTypeConstrainedCombos, spTypeConstrainedCombos } from './unitOptimizer/combinatorics'
+import { createEvaluatorSeed, evaluateUnitScoreWithSeed } from './unitOptimizer/evaluator'
 
 /** ParameterType の値配列（ホットパスで Object.values() の再生成を避ける） */
 const PARAMETER_TYPES = Object.values(enums.ParameterType)
 
-/** 最適化の入力パラメータ */
-export interface OptimizeInput {
-  settings: UnitSimulatorSettings
-  scoreSettings: ScoreSettings
-  cardUncaps: Record<string, UncapType>
-  cardCountCustom?: CardCountCustom
-  /** 全サポート一覧（ユーザー追加カード含む） */
-  allCards: SupportCard[]
-  /** サポート名→サポートのマップ（ユーザー追加カード含む） */
-  cardByName: Map<string, SupportCard>
-}
+export type { OptimizeInput } from '../types/unitOptimizer'
 
 /** 総当たり最適化オプション */
 interface ExhaustiveOptimizeOptions {
@@ -97,10 +85,11 @@ interface OptimizeBranchResult {
  * @returns バッチサイズ
  */
 function resolveExhaustiveBatchSize(totalCombos: number): number {
-  const estimated = Math.floor(totalCombos / constant.EXHAUSTIVE_PROGRESS_TARGET_UPDATES)
+  // 切り上げることで、少ない組み合わせでも目標回数を超えない範囲で進捗を細かく通知する
+  const estimated = Math.ceil(totalCombos / constant.EXHAUSTIVE_PROGRESS_TARGET_UPDATES)
   return Math.max(
     constant.EXHAUSTIVE_PROGRESS_MIN_BATCH_SIZE,
-    Math.min(constant.EXHAUSTIVE_PROGRESS_MAX_BATCH_SIZE, estimated || constant.EXHAUSTIVE_PROGRESS_MIN_BATCH_SIZE),
+    Math.min(constant.EXHAUSTIVE_PROGRESS_MAX_BATCH_SIZE, estimated),
   )
 }
 
@@ -260,16 +249,16 @@ function buildResult(
   const unitMembers: UnitMember[] = members.map((m) => {
     const synergyExtra = synergyMap.get(m.card.name) ?? {}
     let supportSynergy = 0
-    const supportSynergyDetail: Record<string, number> = {}
+    const supportSynergyDetail: SupportSynergyDetail = {}
 
     // baseResult から各アクションIDの使用済み回数を取得する（max_count 制限をサポート間連携にも適用するため）
-    const usedCounts = new Map<string, number>()
+    const usedCounts = new Map<enums.TriggerKeyType, number>()
     for (const detail of m.baseResult.allAbilityDetails) {
       if (detail.nameKey) {
         // trigger_key → actionId の対応を探す
         const ability = m.card.abilities.find((a) => a.name_key === detail.nameKey && a.trigger_key)
         if (ability?.trigger_key) {
-          usedCounts.set(`${ability.trigger_key}`, detail.count)
+          usedCounts.set(ability.trigger_key, detail.count)
         }
       }
     }
@@ -742,7 +731,7 @@ function calculateTotalCombos(
   // 自由枠の候補プールを構築する（所持カードのみ・固定カード除く）
   const fixedNames = new Set(fixedCandidates.map((c) => c.card.name))
   const scoredFree: CandidateCard[] = []
-  // 候補上限は最低10枚を保証する。EXHAUSTIVE_CANDIDATE_LIMIT はユーザー設定がない場合のデフォルト値。
+  // 候補上限は最低10枚を保証する。EXHAUSTIVE_CANDIDATE_LIMIT はユーザー設定がない場合のデフォルト値
   const candidateLimit = Math.max(10, settings.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT)
   for (const c of allCandidates) {
     if (fixedNames.has(c.card.name)) continue
@@ -916,7 +905,7 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
   if (!origRental && settings.lockedCards.length === 0) return []
 
   // unifyRentalLock 有効時は「現状維持」「通常ロックカードをレンタルに昇格（所有済みのみ）」
-  // 「完全自動レンタル（origRental がある場合のみ）」の各パターンを並列で比較して最高スコアを選ぶ。
+  // 「完全自動レンタル（origRental がある場合のみ）」の各パターンを並列で比較して最高スコアを選ぶ
   const configs: OptimizeInput[] = [
     {
       ...input,
@@ -999,11 +988,9 @@ export async function exhaustiveOptimizeAsync(
   // 全候補を prepareCandidates で取得する（ロックカード含む）
   const allCandidates = prepareCandidates(input, schedule)
 
-  // unifyRentalLock オプション対応:
-  // レンタルロックまたは通常ロックがあり、unifyRentalLock が有効な場合は
-  // 現在の条件と代替パスを比較して最大スコアの編成を選ぶ
+  // unifyRentalLockが有効でレンタルロックまたは通常ロックがある場合は、現在の条件と代替パスを比較して最大スコアの編成を選ぶ
 
-  // レンタルロックが「所持済みカード」かどうかを確認する（未所持・NotOwned は昇格対象外）
+  // レンタルロックが「所持済みカード」かどうかを確認する（未所持・NotOwnedは昇格対象外）
   const isRentalLockOwned =
     settings.manualRental &&
     settings.rentalCardName !== null &&
@@ -1198,7 +1185,7 @@ export async function exhaustiveOptimizeAsync(
   const freeSlots = constant.UNIT_SIZE - fixedCandidates.length
   if (freeSlots < 0) return null
 
-  // fixedCandidates（ロックカード+手動レンタル）が提供する SP 枚数を計算する（両パスで使用）
+  // fixedCandidates（ロックカード+手動レンタル）が提供するSP枚数を計算する（両パスで使用）
   let fixedVoSp = 0
   let fixedDaSp = 0
   let fixedViSp = 0
@@ -1306,7 +1293,7 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
     const card = input.cardByName.get(cardName)
     if (!card) continue
 
-    // 凸数: 4凸固定モード or 末尾スロット（レンタル枠）なら4凸、それ以外は設定された凸数
+    // 凸数: 4凸固定モードまたは末尾スロット（レンタル枠）なら4凸、それ以外は設定された凸数
     const isRentalSlot = derivedRentalName === cardName
     const uncap =
       scoreSettings.useFixedUncap || isRentalSlot

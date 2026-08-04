@@ -5,15 +5,15 @@
  * 全サポートの「パラメータ上昇量」を計算する。
  * 計算結果はサポート一覧の並び替えや、スコア内訳モーダルの表示に使われる。
  */
-import { useMemo, useCallback } from 'react'
-import type { SupportCard, ScoreSettings, CardCalculationResult } from '../types/card'
+import { useCallback, useMemo } from 'react'
+import * as constant from '../constant'
+import * as data from '../data'
+import type { CardCalculationResult, ScoreSettings, SupportCard } from '../types/card'
 import type { UncapType } from '../types/enums'
-import { mergeScheduleCounts, customRowsToPerLessonValues } from '../utils/scoreSettings'
+import * as enums from '../types/enums'
 import { calculateCardParameter } from '../utils/calculator/calculateCard'
 import { getPerLessonParameterValues } from '../utils/calculator/parameterBonus'
-import * as data from '../data'
-import * as constant from '../constant'
-import * as enums from '../types/enums'
+import { customRowsToPerLessonValues, mergeScheduleCounts } from '../utils/scoreSettings'
 import type { CardCountCustom, CardCustomData } from './useCardCountCustom'
 
 /** useCardScores の戻り値 */
@@ -92,8 +92,8 @@ export function useCardScores(
     return { effectiveCounts, hasAnyAction, hasAnyBonus, perLessonValues }
   }, [scoreSettings])
 
-  // ベース計算: 全サポートをデフォルト凸（4凸）で計算する。
-  // scoreSettings が変わったときだけ再計算し、凸数変更では再計算しない。
+  // ベース計算: 全サポートをデフォルト凸（4凸）で計算する
+  // scoreSettings が変わったときだけ再計算し、凸数変更では再計算しない
   const baseResults = useMemo(() => {
     if (!calcContext.hasAnyAction && !calcContext.hasAnyBonus) {
       return new Map<string, CardCalculationResult>()
@@ -118,7 +118,7 @@ export function useCardScores(
     return results
   }, [allCards, calcContext, scoreSettings])
 
-  // 凸数・回数調整: デフォルト凸以外のサポートや回数調整があるサポートだけ再計算して上書きする。
+  // 凸数・回数調整: デフォルト凸以外のサポートや回数調整があるサポートだけ再計算して上書きする
   const cardResults = useMemo(() => {
     if (baseResults.size === 0) return baseResults
 

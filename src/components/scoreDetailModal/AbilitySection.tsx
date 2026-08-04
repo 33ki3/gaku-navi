@@ -5,8 +5,8 @@
  * パラメータボーナス行 + 各アビリティ行を縦に並べる。
  */
 import { useTranslation } from 'react-i18next'
-import type { CardCalculationResult } from '../../types/card'
 import * as constant from '../../constant'
+import type { CardCalculationResult } from '../../types/card'
 import { getScoreStyles } from '../../utils/display/scoreStyles'
 import { AbilityRow } from './AbilityRow'
 

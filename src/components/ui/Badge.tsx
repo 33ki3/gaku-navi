@@ -6,9 +6,9 @@
  * サイズ・色・フォントウェイトをpropsで切り替えられる。
  */
 import type { ReactNode } from 'react'
+import { getBadgeSizeStyle, getBadgeWeightClass } from '../../data/ui'
 import type { BadgeSizeType, BadgeWeightType } from '../../types/enums'
 import { BadgeSizeType as BadgeSizeEnum, BadgeWeightType as BadgeWeightEnum } from '../../types/enums'
-import { getBadgeSizeStyle, getBadgeWeightClass } from '../../data/ui'
 
 /** Badge コンポーネントに渡すプロパティ */
 interface BadgeProps {

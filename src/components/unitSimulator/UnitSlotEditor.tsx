@@ -7,13 +7,16 @@
 import { memo } from 'react'
 
 import * as constant from '../../constant'
-import { FilledSlot } from './FilledSlot'
+import type { SupportCard } from '../../types/card'
 import { EmptySlot } from './EmptySlot'
+import { FilledSlot } from './FilledSlot'
 
 /** UnitSlotEditor に渡すプロパティ */
 interface UnitSlotEditorProps {
   /** 選択済みサポート名リスト（null はスロット空き） */
   cards: (string | null)[]
+  /** ユーザー追加分を含むサポート名マップ */
+  cardByName: ReadonlyMap<string, SupportCard>
   /** サポートを削除するコールバック */
   onRemoveCard: (name: string) => void
   /** 一覧選択モードを開始するコールバック（クリックされたスロットのインデックスを渡す） */
@@ -32,6 +35,7 @@ interface UnitSlotEditorProps {
  */
 export default memo(function UnitSlotEditor({
   cards,
+  cardByName,
   onRemoveCard,
   onStartSelect,
   selectMode,
@@ -51,6 +55,7 @@ export default memo(function UnitSlotEditor({
           <FilledSlot
             key={cardName}
             cardName={cardName}
+            card={cardByName.get(cardName)}
             isRental={cardName === rentalCard}
             onRemove={() => onRemoveCard(cardName)}
           />

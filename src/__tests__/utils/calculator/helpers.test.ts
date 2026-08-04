@@ -7,9 +7,9 @@
  * 各パターン（凸数フォールバック・%除去・+記号・フラグ系）を網羅する。
  */
 import { describe, expect, it } from 'vitest'
-import { parseAbility } from '../../../utils/calculator/helpers'
 import type { Ability } from '../../../types/card'
 import * as enums from '../../../types/enums'
+import { parseAbility } from '../../../utils/calculator/helpers'
 
 // --- parseAbility ---
 

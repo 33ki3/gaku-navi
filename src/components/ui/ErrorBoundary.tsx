@@ -4,9 +4,11 @@
  * 子コンポーネントで発生した予期しないエラーをキャッチし、
  * 画面が真っ白になるのを防ぐ。
  */
-import { Component, type ReactNode } from 'react'
+import { Component, type ReactNode, Suspense, lazy } from 'react'
 
-import { ErrorFallback } from './ErrorFallback'
+const ErrorFallback = lazy(() =>
+  import('./ErrorFallback').then(({ ErrorFallback: Component }) => ({ default: Component })),
+)
 
 /** ErrorBoundary に渡すプロパティ */
 interface ErrorBoundaryProps {
@@ -14,12 +16,8 @@ interface ErrorBoundaryProps {
   children: ReactNode
   /** エラー時に表示するフォールバック UI（省略時はデフォルト UI） */
   fallback?: ReactNode
-  /** 「リセットして再試行」ボタン押下時に呼ばれる追加コールバック（状態リセット等） */
-  onReset?: () => void
   /** 「キャンセル」ボタン押下時のコールバック（省略時はキャンセルボタン非表示） */
   onCancel?: () => void
-  /** リセット対象の説明テキスト（例: 「スケジュール設定」） */
-  resetDescription?: string
 }
 
 /** ErrorBoundary の状態 */
@@ -51,19 +49,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error }
   }
 
-  /** エラー状態を解除して、必要なら外部リセット処理を実行する。 */
-  handleReset = () => {
-    this.props.onReset?.()
-    this.setState({ hasError: false, error: null })
-  }
-
-  /** エラー表示のみを閉じ、必要なら外部キャンセル処理を実行する。 */
+  /** エラー表示のみを閉じ、必要なら外部キャンセル処理を実行する */
   handleCancel = () => {
     this.setState({ hasError: false, error: null })
     this.props.onCancel?.()
   }
 
-  /** エラー有無に応じて children またはフォールバックUIを描画する。 */
+  /** エラー有無に応じて children またはフォールバックUIを描画する */
   render() {
     if (!this.state.hasError) {
       return this.props.children
@@ -76,13 +68,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     // デフォルトのフォールバック UI
     return (
-      <ErrorFallback
-        error={this.state.error}
-        onReset={this.handleReset}
-        hasExternalReset={!!this.props.onReset}
-        onCancel={this.props.onCancel ? this.handleCancel : undefined}
-        resetDescription={this.props.resetDescription}
-      />
+      <Suspense fallback={null}>
+        <ErrorFallback error={this.state.error} onCancel={this.props.onCancel ? this.handleCancel : undefined} />
+      </Suspense>
     )
   }
 }

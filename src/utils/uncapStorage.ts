@@ -3,9 +3,9 @@
  *
  * localStorage を使ったサポート凸数データの読み込み・保存を行う。
  */
+import * as constant from '../constant'
 import type { UncapType } from '../types/enums'
 import * as enums from '../types/enums'
-import * as constant from '../constant'
 
 const VALID_UNCAPS = new Set(Object.values(enums.UncapType))
 

@@ -6,19 +6,19 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SkillCardInfo } from '../../types/card'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
+import type { SkillCardInfo } from '../../types/card'
 import * as enums from '../../types/enums'
+import { parseSkillCardNotes } from '../../utils/cardQuery'
+import {
+  getCustomSlotEffectLabel,
+  getCustomSlotNameLabel,
+  getCustomSlotStageLabel,
+  getSkillCardEffectLabel,
+} from '../../utils/display/effectLabels'
 import { Badge } from '../ui/Badge'
 import { ToggleButton } from '../ui/ToggleButton'
-import {
-  getSkillCardEffectLabel,
-  getCustomSlotNameLabel,
-  getCustomSlotEffectLabel,
-  getCustomSlotStageLabel,
-} from '../../utils/display/effectLabels'
-import { parseSkillCardNotes } from '../../utils/cardQuery'
 
 /** SkillCardDetail コンポーネントに渡すプロパティ */
 interface SkillCardDetailProps {
@@ -83,7 +83,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
         ))}
       </div>
 
-      {/* 未強化または強化モード選択時: コスト+効果テキストを表示 */}
+      {/* 未強化・強化モードのコストと効果テキスト */}
       {activeEffect && (
         <div className="mt-2">
           <div className="flex items-start gap-2 text-xs">
@@ -101,7 +101,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
         </div>
       )}
 
-      {/* カスタムモード選択時: カスタムスロット一覧を表示（スロットが存在する場合のみ） */}
+      {/* カスタムモードのスロット一覧（存在時のみ） */}
       {viewMode === enums.SkillCardViewModeType.Custom && skillCard.custom_slot && skillCard.custom_slot.length > 0 && (
         <div className="mt-2 space-y-2">
           {/* カスタム枠上限の表示（0 より大きい場合のみ） */}
@@ -110,7 +110,7 @@ export function SkillCardDetail({ skillCard, colors }: SkillCardDetailProps) {
               {t('card.custom_cap')} {skillCard.custom_cap}
             </p>
           )}
-          {/* 各カスタムスロット: スロット名と段階別の効果（コスト・ポイント・効果テキスト）を表示 */}
+          {/* 各カスタムスロット（スロット名・段階別の効果） */}
           {skillCard.custom_slot.map((slot, i) => (
             <div key={i} className="bg-white/40 rounded-lg p-2">
               <p className="text-[11px] font-bold text-slate-700 mb-1">{getCustomSlotNameLabel(slot.name, t)}</p>

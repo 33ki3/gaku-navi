@@ -5,17 +5,17 @@
  * テンプレート補間後に未解決の {{}} プレースホルダーが残っていないことを検証する。
  * また、存在しない i18n キーが参照された場合はテスト失敗として検出する。
  */
-import { describe, expect, it, beforeEach } from 'vitest'
 import i18n from 'i18next'
-import ja from '../../i18n/locales/ja.json'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { AllCards } from '../../data'
+import ja from '../../i18n/locales/ja.json'
 import {
+  getCustomSlotEffectLabel,
+  getCustomSlotNameLabel,
+  getCustomSlotStageLabel,
   getEventEffectLabel,
   getPItemEffectLabel,
   getSkillCardEffectLabel,
-  getCustomSlotNameLabel,
-  getCustomSlotEffectLabel,
-  getCustomSlotStageLabel,
 } from '../../utils/display/effectLabels'
 
 // 各テストで検出された欠落キーを蓄積する配列

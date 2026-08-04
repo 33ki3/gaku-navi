@@ -7,6 +7,7 @@
  * フック側のコードを最小化する。
  */
 import type { UnitResult } from '../types/unit'
+import type { OptimizeInput } from '../types/unitOptimizer'
 import type {
   UnitOptimizerWorkerInput,
   UnitOptimizerWorkerRequestMessage,
@@ -14,7 +15,6 @@ import type {
 } from '../types/unitOptimizerWorker'
 import { UnitOptimizerWorkerMessageType } from '../types/unitOptimizerWorker'
 import { exhaustiveOptimizeAsync } from '../utils/unitSimulator'
-import type { OptimizeInput } from '../utils/unitSimulator'
 
 /** runOptimizerAsync に渡す実行オプション */
 interface RunOptimizerOptions {

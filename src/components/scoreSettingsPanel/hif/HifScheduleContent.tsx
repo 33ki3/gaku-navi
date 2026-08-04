@@ -5,18 +5,18 @@
  * HIF週選択UI・サマリーを表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings } from '../../../types/card'
-import { CheckboxField } from '../../ui/CheckboxField'
-import * as enums from '../../../types/enums'
 import type { ScheduleWeekData } from '../../../data/score'
+import type { ScoreSettings } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
+import * as enums from '../../../types/enums'
 import {
   calculateParameterBonusFromSchedule,
   getParameterBonusBreakdown,
 } from '../../../utils/calculator/parameterBonus'
-import { HifScheduleWeekSelector } from './HifScheduleWeekSelector'
-import { ScheduleSummary } from '../ScheduleSummary'
 import { normalizeHifLessonActivityForPairMode } from '../../../utils/hifScheduleHelpers'
+import { CheckboxField } from '../../ui/CheckboxField'
+import { ScheduleSummary } from '../ScheduleSummary'
+import { HifScheduleWeekSelector } from './HifScheduleWeekSelector'
 
 /** HifScheduleContent コンポーネントに渡すプロパティ */
 interface HifScheduleContentProps {

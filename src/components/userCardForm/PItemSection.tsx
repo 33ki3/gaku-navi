@@ -5,11 +5,12 @@
  * 発動時効果は複数設定可能で、各効果に個別の回数を指定できる。
  */
 import { useTranslation } from 'react-i18next'
-import type { UserCardFormState, PItemEffectRow } from '../../hooks/formHelpers'
+import * as constant from '../../constant'
+import * as data from '../../data'
+import type { PItemEffectRow, UserCardFormState } from '../../hooks/formHelpers'
 import type { FormValidation } from '../../hooks/useUserCardForm'
 import * as enums from '../../types/enums'
-import * as data from '../../data'
-import * as constant from '../../constant'
+import { isEnumValue } from '../../utils/valueValidation'
 
 /** PItemSection コンポーネントに渡すプロパティ */
 interface PItemSectionProps {
@@ -55,7 +56,10 @@ export default function PItemSection({ form, updateField, validation }: PItemSec
           <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.pitem_trigger')}</label>
           <select
             value={form.pItemTrigger}
-            onChange={(e) => updateField('pItemTrigger', e.target.value as enums.TriggerKeyType)}
+            onChange={(e) => {
+              const value = e.target.value
+              updateField('pItemTrigger', isEnumValue(value, enums.TriggerKeyType) ? value : enums.TriggerKeyType.None)
+            }}
             className={`${constant.USER_FORM_SELECT} ${validation.pItemTriggerError ? 'border-red-400 focus:ring-red-500' : ''}`}
           >
             {data.PITEM_TRIGGER_OPTIONS.map((opt) => (
@@ -144,7 +148,10 @@ export default function PItemSection({ form, updateField, validation }: PItemSec
                       <label className="text-[10px] text-slate-400">{t('userSupport.pitem_effect_type')}</label>
                       <select
                         value={effect.action}
-                        onChange={(e) => updateEffect(i, { ...effect, action: e.target.value as enums.ActionIdType })}
+                        onChange={(e) => {
+                          const action = e.target.value
+                          if (isEnumValue(action, enums.ActionIdType)) updateEffect(i, { ...effect, action })
+                        }}
                         className={`${constant.USER_FORM_SELECT} pr-6`}
                       >
                         {data.PITEM_EFFECT_OPTIONS.map((opt) => (

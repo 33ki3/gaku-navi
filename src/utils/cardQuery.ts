@@ -5,11 +5,11 @@
  * 特定のキーワードに対応するアビリティを持つか、
  * イベントサマリのラベルを取得するなど、サポートデータの問い合わせ関数。
  */
-import type { SupportCard, SkillCardInfo } from '../types/card'
-import type { TranslationKey } from '../i18n'
 import type { TFunction } from 'i18next'
-import * as enums from '../types/enums'
 import * as data from '../data'
+import type { TranslationKey } from '../i18n'
+import type { SkillCardInfo, SupportCard } from '../types/card'
+import * as enums from '../types/enums'
 
 /**
  * サポートのイベント一覧から、コンパクト表示用のラベル（i18nキー）を配列で返す

@@ -4,9 +4,9 @@
  * フックとWorker間の通信フォーマットを1箇所に集約し、
  * 型の重複とインライン定義の複雑化を防ぐ。
  */
-import type { SupportCard, ScoreSettings } from './card'
-import type { UncapType } from './enums'
 import type { CardCountCustom } from '../hooks/useCardCountCustom'
+import type { ScoreSettings, SupportCard } from './card'
+import type { UncapType } from './enums'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from './unit'
 
 /** Workerへ渡す最適化入力（Mapは構造化複製しやすい配列へ変換する） */

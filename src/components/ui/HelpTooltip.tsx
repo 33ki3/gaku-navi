@@ -5,7 +5,7 @@
  * 説明テキストをポップアップ表示する汎用コンポーネント。
  * フィルターバーや設定パネルの横に配置して、機能のヒントを提供する。
  */
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -81,7 +81,7 @@ export function HelpTooltip({ text, className = '' }: HelpTooltipProps) {
           {t('ui.symbol.help')}
         </span>
       </button>
-      {/* ツールチップ本体（portal で body 直下にレンダリングし、パネルのスタッキングコンテキストの影響を受けないようにする） */}
+      {/* ツールチップ本体（portalでbody直下、スタッキングコンテキスト回避） */}
       {open &&
         createPortal(
           <div

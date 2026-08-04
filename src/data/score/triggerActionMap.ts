@@ -4,7 +4,7 @@
  * アビリティの trigger_key（例: 'lesson_end'）を
  * スケジュール上のアクション回数キー（例: 'lesson'）に変換するためのデータ。
  */
-import { TriggerKeyType, ActionIdType, EffectTemplateKeyType, ParameterType } from '../../types/enums'
+import { ActionIdType, EffectTemplateKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
 
 /** trigger_key → アクション回数キーのマッピング */
 export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {

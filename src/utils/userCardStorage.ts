@@ -3,8 +3,8 @@
  *
  * localStorage にユーザーが手動登録したサポートデータを保存・読み込みする。
  */
-import type { SupportCard } from '../types/card'
 import * as constant from '../constant'
+import type { SupportCard } from '../types/card'
 
 /**
  * localStorage からユーザー定義サポートを読み込む

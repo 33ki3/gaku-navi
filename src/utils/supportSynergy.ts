@@ -5,12 +5,13 @@
  * +1 する効果を計算する。既存の getSelfAcquisitionBonus と同じルールを
  * 「他サポート → 自サポート」に拡張したもの。
  */
-import type { SupportCard, SupportEvent, PItemEffect } from '../types/card'
-import type { ActionIdType } from '../types/enums'
-import type { SynergyProviderDetail } from '../types/unit'
+import { LinkedActionGroups, PItemTriggerActionMap, TriggerActionMap } from '../data/score'
 import type { CardCountCustom } from '../hooks/useCardCountCustom'
+import type { PItemEffect, SupportCard, SupportEvent } from '../types/card'
+import type { ActionIdType } from '../types/enums'
 import * as enums from '../types/enums'
-import { TriggerActionMap, LinkedActionGroups, PItemTriggerActionMap } from '../data/score'
+import type { SynergyProviderDetail } from '../types/unit'
+import { isActionId } from './domainValueValidation'
 
 /** getProvidedActions のオプション */
 interface ProvidedActionsOptions {
@@ -67,7 +68,8 @@ export function getProvidedActions(
       fireCount = 1
     }
     for (const [actionId, count] of Object.entries(card.p_item.provided_action_ids)) {
-      provided[actionId as ActionIdType] = (provided[actionId as ActionIdType] ?? 0) + (count ?? 0) * fireCount
+      if (!isActionId(actionId)) continue
+      provided[actionId] = (provided[actionId] ?? 0) + (count ?? 0) * fireCount
     }
 
     // 子→親アクションのロールアップ（MSkillEnhance → SkillEnhance 等）
@@ -201,7 +203,7 @@ export function getProvidedActions(
     [enhanceEvent, enhancePItem, enums.ActionIdType.SkillEnhance],
     [enhanceEvent, enhancePItem, enums.ActionIdType.MSkillEnhance],
     [enhanceEvent, enhancePItem, enums.ActionIdType.ASkillEnhance],
-    // トラブル削除もスキルカード削除としてカウント（メンタル/アクティブ個別削除には寄与しない）
+    // トラブル削除もスキルカード削除としてカウントする（メンタル/アクティブ個別削除には寄与しない）
     [deleteEvent, deletePItem || troubleDeletePItem, enums.ActionIdType.Delete],
     [deleteEvent, deletePItem, enums.ActionIdType.MSkillDelete],
     [deleteEvent, deletePItem, enums.ActionIdType.ASkillDelete],
@@ -280,7 +282,8 @@ export function computeUnitSupportSynergy(
       const customs = cardCountCustom[card.name].selfTrigger!
       // 回数調整値は提供回数そのものを表す（ベースラインは getProvidedActions の値）
       for (const [actionId, customCount] of Object.entries(customs)) {
-        const aid = actionId as ActionIdType
+        if (!isActionId(actionId)) continue
+        const aid = actionId
         const autoCount = provided[aid] ?? 0
         const diff = customCount - autoCount
         if (diff !== 0) {
@@ -314,9 +317,9 @@ export function computeUnitSupportSynergy(
     for (const { card: provider, provided } of providerActionMap) {
       if (provider.name === receiver.name) continue
       for (const [actionId, count] of Object.entries(provided)) {
-        if (required.has(actionId as ActionIdType)) {
-          combined[actionId as ActionIdType] = (combined[actionId as ActionIdType] ?? 0) + (count ?? 0)
-          providers.push({ providerName: provider.name, actionId: actionId as ActionIdType, count: count ?? 0 })
+        if (isActionId(actionId) && required.has(actionId)) {
+          combined[actionId] = (combined[actionId] ?? 0) + (count ?? 0)
+          providers.push({ providerName: provider.name, actionId, count: count ?? 0 })
         }
       }
     }

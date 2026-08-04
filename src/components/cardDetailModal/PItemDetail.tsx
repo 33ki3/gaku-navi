@@ -5,11 +5,11 @@
  * コンテスト情報・効果を表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { SupportCard } from '../../types/card'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
-import { Badge } from '../ui/Badge'
+import type { SupportCard } from '../../types/card'
 import { getPItemEffectLabel } from '../../utils/display/effectLabels'
+import { Badge } from '../ui/Badge'
 
 /** PItemDetail コンポーネントに渡すプロパティ */
 interface PItemDetailProps {

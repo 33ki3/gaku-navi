@@ -3,13 +3,12 @@
  *
  * 各サポートの自動回数（自身イベント効果の自動加算）と
  * Pアイテム発動回数の回数調整を管理する。
- * 未設定のアクションは自動計算値を使い、
- * 設定済みのアクションはサポート別の値を優先する。
+ * 未設定のアクションは自動計算値を使い、設定済みのアクションはサポート別の値を優先する。
  * 変更は localStorage に自動保存される。
  */
-import { useState, useCallback, useEffect } from 'react'
-import type { ActionIdType } from '../types/enums'
+import { useCallback, useEffect, useState } from 'react'
 import * as constant from '../constant'
+import type { ActionIdType } from '../types/enums'
 
 /** サポート1枚分の回数調整データ */
 export interface CardCustomData {

@@ -6,20 +6,19 @@
  * ロック状態が正しく引き継がれ、ローカルストレージへ保存される挙動を検証します。
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as constant from '../../constant'
+import { runOptimizerAsync } from '../../hooks/unitOptimizerRunner'
+import { useUnitSimulator } from '../../hooks/useUnitSimulator'
+import type { CardCalculationResult, ScoreSettings, SupportCard } from '../../types/card'
+import * as enums from '../../types/enums'
+import type { UnitMember, UnitResult } from '../../types/unit'
 
 // 計算負荷を回避し決定的挙動を検査するため、非同期オプティマイザー実行関数をモック化
 vi.mock('../../hooks/unitOptimizerRunner', () => ({
   runOptimizerAsync: vi.fn(),
 }))
-
-import { useUnitSimulator } from '../../hooks/useUnitSimulator'
-import * as constant from '../../constant'
-import * as enums from '../../types/enums'
-import type { SupportCard, ScoreSettings, CardCalculationResult } from '../../types/card'
-import type { UnitMember, UnitResult } from '../../types/unit'
-import { runOptimizerAsync } from '../../hooks/unitOptimizerRunner'
 
 /** テスト用の最小フィールドを持つダミー UnitMember を作成する */
 function makeMember(card: SupportCard, isRental: boolean): UnitMember {
@@ -251,7 +250,8 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
     // 無効時は引継ぎが発動せず、当初指定した manualRental / lockedCards 配列は完全に変化しないこと
     expect(saved.manualRental).toBe(true)
-    expect(saved.rentalCardName).toBe('CardB') // レンタルサポート名自体は編成スロットに合わせてBに更新されるが、
+    // レンタルサポート名は編成スロットに合わせてBへ更新されるが、ロック状態は引き継ぎ処理の対象外であることを確認する
+    expect(saved.rentalCardName).toBe('CardB')
     expect(saved.lockedCards).toEqual(['CardB']) // 通常ロック配列は上書き・反転されない
   })
 

@@ -5,7 +5,7 @@
  * UI スタイルに該当しない汎用定数をまとめたファイル。
  */
 
-import { UncapType, ScenarioType, DifficultyType } from '../types/enums'
+import { DifficultyType, ScenarioType, UncapType } from '../types/enums'
 
 /** デフォルト凸数（4凸）。新しいサポートを表示するときの初期凸数。 */
 export const DEFAULT_UNCAP = UncapType.Four
@@ -32,11 +32,37 @@ export const UNIT_SIMULATOR_STORAGE_KEY = 'gaku-navi-unit-builder'
 export const UNIT_RESULT_STORAGE_KEY = 'gaku-navi-unit-result'
 /** ユーザー定義サポートの保存キー。SupportCard[] を JSON で保存する。 */
 export const USER_SUPPORTS_STORAGE_KEY = 'gaku-navi-user-supports'
-/** フィルター保存のデバウンス待機時間（ms）。連続でフィルターが変更されたときに保存回数を減らす。 */
+/** アプリ全体の表示設定の保存キー */
+export const APP_PREFERENCES_STORAGE_KEY = 'gaku-navi-app-preferences'
+/** 最適編成設定が同じ画面内で変更されたことを通知するイベント名 */
+export const UNIT_SIMULATOR_SETTINGS_CHANGED_EVENT = 'gaku-navi:unit-simulator-settings-changed'
+/** フィルター保存のデバウンス待機時間（ms）。連続でフィルターが変更されたときに保存回数を減らす */
 export const FILTER_SAVE_DEBOUNCE_MS = 300
 
-/** エクスポートファイル名プレフィクス。タイムスタンプが後ろに付く（例: "gaku-navi-backup-20240101T120000"）。 */
+/** PCレイアウトへ切り替わるメディアクエリ */
+export const DESKTOP_MEDIA_QUERY = '(min-width: 768px)'
+/** スマホレイアウトに限定するメディアクエリ */
+export const MOBILE_MEDIA_QUERY = '(max-width: 767px)'
+/** 下部メニューを隠し始めるページ上端からの距離（px） */
+export const MOBILE_NAV_HIDE_SCROLL_TOP = 80
+/** 下部メニューを必ず表示するページ上端付近の距離（px） */
+export const MOBILE_NAV_VISIBLE_SCROLL_TOP = 24
+/** 下部メニューの表示を切り替える最小スクロール差分（px） */
+export const MOBILE_NAV_SCROLL_DELTA = 6
+/** 件数バッジにそのまま表示する最大値 */
+export const COUNT_BADGE_MAX = 99
+
+/** 点数設定パネルのスクロール位置保存キー */
+export const SCORE_SETTINGS_PANEL_SCROLL_KEY = 'score-settings-panel'
+/** 最適編成パネルのスクロール位置保存キー */
+export const UNIT_SIMULATOR_PANEL_SCROLL_KEY = 'unit-simulator-panel'
+
+/** エクスポートファイル名プレフィクス。タイムスタンプが後ろに付く（例: "gaku-navi-backup-20240101T120000"）*/
 export const EXPORT_FILE_PREFIX = 'gaku-navi-backup-'
+/** エクスポート日時を表示するタイムゾーン（日本標準時） */
+export const EXPORT_TIME_ZONE = 'Asia/Tokyo'
+/** エクスポート日時へ付ける日本標準時のUTCオフセット */
+export const EXPORT_TIME_ZONE_OFFSET = '+09:00'
 /** エクスポートファイルの拡張子。JSON 形式でダウンロードされる。 */
 export const EXPORT_FILE_EXT = '.json'
 /** エクスポートデータのMIMEタイプ。ブラウザのダウンロードダイアログで使う。 */
@@ -55,13 +81,12 @@ export const DEFAULT_SCENARIO = ScenarioType.Hajime
 /** スコア設定のデフォルト難易度 */
 export const DEFAULT_DIFFICULTY = DifficultyType.Legend
 
-/** インポート成功後のリロード遅延（ms）。ユーザーに「完了」を見せてからリロードする。 */
-export const IMPORT_RELOAD_DELAY = 1500
-
 /** マシュマロ（匿名フィードバック）の URL */
 export const MARSHMALLOW_URL = import.meta.env.VITE_FEEDBACK_URL
 /** GitHub リポジトリの URL */
 export const GITHUB_URL = import.meta.env.VITE_GITHUB_URL
+/** X（旧Twitter）のアカウント URL */
+export const X_URL = import.meta.env.VITE_X_URL
 
 /** パーセント→倍率変換の除数。100% → 1.0 に変換するときに使う。 */
 export const PERCENT_DIVISOR = 100
@@ -76,8 +101,8 @@ export const SP_TOTAL_MAX = 6
 export const EXHAUSTIVE_CANDIDATE_LIMIT = 30
 /** 総当たり進捗の目標更新回数（UI更新頻度の目安） */
 export const EXHAUSTIVE_PROGRESS_TARGET_UPDATES = 200
-/** 総当たり進捗バッチサイズの下限（更新しすぎ防止） */
-export const EXHAUSTIVE_PROGRESS_MIN_BATCH_SIZE = 1000
+/** 総当たり進捗バッチサイズの下限（小規模探索でも中間進捗を通知する） */
+export const EXHAUSTIVE_PROGRESS_MIN_BATCH_SIZE = 1
 /** 総当たり進捗バッチサイズの上限（更新遅延防止） */
 export const EXHAUSTIVE_PROGRESS_MAX_BATCH_SIZE = 20000
 /** SPタイプ内訳キャッシュの最大件数（組み合わせ数計算のメモリ上限） */
@@ -89,3 +114,16 @@ export const SP_TYPE_COUNT_CACHE_MAX = 500
 export const TYPE_COUNT_MIN_DEFAULT = 0
 /** タイプ別編成枚数のデフォルト最大値 */
 export const TYPE_COUNT_MAX_DEFAULT = 4
+
+/** 初期パラメータ入力で許可する最大値。極端な入力による計算負荷を抑えるために設ける */
+export const INITIAL_PARAMETER_MAX = 9999
+/** 最適編成のパラメータボーナス入力で許可する最大値（%） */
+export const PARAMETER_BONUS_PERCENT_MAX = 200
+/** 最適編成のパラメータボーナス入力単位（%） */
+export const PARAMETER_BONUS_PERCENT_STEP = 0.1
+/** 最適編成のパラメータ上限入力で許可する最小値 */
+export const PARAM_CAP_MIN = 0
+/** 最適編成の候補枚数入力で許可する最小値 */
+export const CANDIDATE_LIMIT_MIN = 10
+/** 最適編成の候補枚数入力で許可する最大値 */
+export const CANDIDATE_LIMIT_MAX = 100

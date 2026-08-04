@@ -4,15 +4,18 @@
  * フォーム状態の初期化・復元・正規化を担当する。
  * useUserCardForm フックから分離した純粋関数群。
  */
-import type { SupportCard } from '../types/card'
-import * as enums from '../types/enums'
 import * as constant from '../constant'
 import * as data from '../data'
+import type { SupportCard } from '../types/card'
+import * as enums from '../types/enums'
+import { isActionId } from '../utils/domainValueValidation'
 
-/** アビリティ入力行の状態 */
+/** アビリティ入力行の状態。未選択だけは保存対象外のフォーム専用値を許可する。 */
+export type AbilityFormNameKey = enums.AbilityNameKeyType | enums.AbilityFormValueType
+
 export interface AbilityFormRow {
   /** アビリティ種別 */
-  nameKey: enums.AbilityNameKeyType
+  nameKey: AbilityFormNameKey
   /** パラメータ種別（パラメータ特化型の場合） */
   parameterType?: enums.ParameterType
   /** 最大回数（空文字 = 無制限） */
@@ -90,7 +93,8 @@ export function emptyEventRow(): EventFormRow {
 /** emptyAbilityRow は空のアビリティ行を生成する */
 function emptyAbilityRow(): AbilityFormRow {
   return {
-    nameKey: '' as enums.AbilityNameKeyType,
+    // 未選択値はドメインのenumへ混ぜず、フォームから保存前に除外する
+    nameKey: enums.AbilityFormValueType.None,
     maxCount: '',
   }
 }
@@ -250,10 +254,12 @@ export function cardToFormState(card: SupportCard): UserCardFormState {
     pItemEffects: (() => {
       // provided_action_ids がある場合（ユーザー定義）はそのまま復元する
       if (card.p_item?.provided_action_ids) {
-        return Object.entries(card.p_item.provided_action_ids).map(([actionId, count]) => ({
-          action: actionId as enums.ActionIdType,
-          count: count != null && count > 0 ? String(count) : '',
-        }))
+        return Object.entries(card.p_item.provided_action_ids)
+          .filter((entry): entry is [enums.ActionIdType, number] => isActionId(entry[0]))
+          .map(([actionId, count]) => ({
+            action: actionId,
+            count: count != null && count > 0 ? String(count) : '',
+          }))
       }
       // マスタデータの場合は PItemActionType → ActionIdType に変換する
       const actions = normalizePItemActions(card.p_item?.actions ?? [])

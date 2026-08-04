@@ -4,9 +4,9 @@
  * 試験週の Vo/Da/Vi ごとのパラメータ比率を入力する行を表示する。
  */
 import { useTranslation } from 'react-i18next'
+import * as data from '../../../data'
 import type { ParameterValues } from '../../../types/card'
 import { ParameterType } from '../../../types/enums'
-import * as data from '../../../data'
 import { SpinnerInput } from '../../ui/SpinnerInput'
 
 /** HifExamRatioRows コンポーネントに渡すプロパティ */

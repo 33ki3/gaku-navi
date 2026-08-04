@@ -19,7 +19,12 @@ interface HelpSectionProps {
   children: React.ReactNode
 }
 
-/** ヘルプモーダル用の折りたたみセクション */
+/**
+ * ヘルプモーダル用の折りたたみセクションを表示する。
+ *
+ * @param props - タイトル、開閉状態、開閉操作とセクション内容
+ * @returns ヘルプモーダル用の折りたたみセクション
+ */
 export function HelpSection({ title, isOpen, onToggle, children }: HelpSectionProps) {
   return (
     <div className="border border-slate-200 rounded-lg overflow-hidden">

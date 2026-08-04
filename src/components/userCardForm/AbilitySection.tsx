@@ -7,12 +7,12 @@
  * 値はレアリティ・スロット位置から自動導出されるため、手動入力は不要。
  */
 import { useTranslation } from 'react-i18next'
-import type { UserCardFormState, AbilityFormRow } from '../../hooks/formHelpers'
-import { getRarityTier, cleanAbilityLabel, getSlotOptions } from '../../hooks/formHelpers'
-import * as enums from '../../types/enums'
-import type { TranslationKey } from '../../i18n'
-import * as data from '../../data'
 import * as constant from '../../constant'
+import * as data from '../../data'
+import type { AbilityFormNameKey, AbilityFormRow, UserCardFormState } from '../../hooks/formHelpers'
+import { cleanAbilityLabel, getRarityTier, getSlotOptions } from '../../hooks/formHelpers'
+import type { TranslationKey } from '../../i18n'
+import * as enums from '../../types/enums'
 
 /** AbilitySection コンポーネントに渡すプロパティ */
 interface AbilitySectionProps {
@@ -33,13 +33,13 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
 
   // name_key から能力固有のパラメータ種別を推定する（vo_/da_/vi_ の接頭辞を優先）
   const inferParamType = (nameKey: enums.AbilityNameKeyType): enums.ParameterType | undefined => {
-    if (nameKey.startsWith('vo_')) return enums.ParameterType.Vocal
-    if (nameKey.startsWith('da_')) return enums.ParameterType.Dance
-    if (nameKey.startsWith('vi_')) return enums.ParameterType.Visual
+    if (nameKey.startsWith(data.ABILITY_PARAMETER_PREFIX[enums.ParameterType.Vocal])) return enums.ParameterType.Vocal
+    if (nameKey.startsWith(data.ABILITY_PARAMETER_PREFIX[enums.ParameterType.Dance])) return enums.ParameterType.Dance
+    if (nameKey.startsWith(data.ABILITY_PARAMETER_PREFIX[enums.ParameterType.Visual])) return enums.ParameterType.Visual
     return undefined
   }
 
-  // 選択肢ラベルは count / param を実データで補間して、同名に見える項目を区別しやすくする
+  // 選択肢ラベルはcount / paramを実データで補間して、同名に見える項目を区別しやすくする
   const getOptionLabel = (nameKey: enums.AbilityNameKeyType): string => {
     const inferredParamType = inferParamType(nameKey)
     const paramType = inferredParamType ?? form.parameterType
@@ -69,7 +69,7 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
     <div className="flex flex-col gap-2">
       {Array.from({ length: constant.SLOT_COUNT }, (_, slotIdx) => {
         const currentRow = form.abilities[slotIdx]
-        const currentNameKey = currentRow?.nameKey ?? data.SLOT_NONE
+        const currentNameKey = currentRow?.nameKey ?? enums.AbilityFormValueType.None
         // スロット3（idx 2）と6（idx 5）は固定・選択不可
         const isFixed = slotIdx === 2 || slotIdx === 5
 
@@ -81,10 +81,11 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
               value={currentNameKey}
               disabled={isFixed}
               onChange={(e) => {
-                const nameKey = e.target.value as enums.AbilityNameKeyType | ''
-                if (nameKey === data.SLOT_NONE) {
+                const nameKey = e.target.value as AbilityFormNameKey
+                if (nameKey === enums.AbilityFormValueType.None) {
                   updateAbility(slotIdx, {
-                    nameKey: '' as enums.AbilityNameKeyType,
+                    // 未選択行は保存対象外なので、回数上限も空欄へ戻す
+                    nameKey: enums.AbilityFormValueType.None,
                     maxCount: '',
                   })
                 } else {
@@ -98,7 +99,7 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
               }}
               className={`${constant.USER_FORM_SELECT} flex-1${isFixed ? ' bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
             >
-              <option value={data.SLOT_NONE}>-</option>
+              <option value={enums.AbilityFormValueType.None}>-</option>
               {getSlotOptions(slotIdx, rarityTier, freeSlotAbilities).map((nameKey) => (
                 <option key={nameKey} value={nameKey}>
                   {getOptionLabel(nameKey)}

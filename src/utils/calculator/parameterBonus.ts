@@ -5,11 +5,11 @@
  * パラメータボーナスの対象となる値（Vo/Da/Vi）を推定する。
  */
 
-import type { ParameterValues, PerLessonParameterValues } from '../../types/card'
 import * as data from '../../data'
-import * as enums from '../../types/enums'
 import { getHifSelectionExamData } from '../../data/score/exam'
 import { LESSON_MAIN_PARAM_MAP, LESSON_SUB_PARAM_MAP } from '../../data/score/hifScheduleMaster'
+import type { ParameterValues, PerLessonParameterValues } from '../../types/card'
+import * as enums from '../../types/enums'
 import { getHifExamWeeks, normalizeHifLessonActivityForPairMode } from '../hifScheduleHelpers'
 
 /**

@@ -3,8 +3,8 @@
  *
  * SP制約とタイプ枚数制約を同時に満たす組み合わせの通数計算・列挙を担当する。
  */
-import * as enums from '../../types/enums'
 import * as constant from '../../constant'
+import * as enums from '../../types/enums'
 
 /** 組み合わせ計算で扱う最小カード情報 */
 interface OptimizerCardLike {
@@ -99,7 +99,7 @@ function countCombinations(n: number, k: number): number {
   if (k === 0 || k === n) return 1
   const r = Math.min(k, n - k)
   let result = 1
-  // 桁あふれを抑えるため、分子・分母を逐次掛け割りして計算する。
+  // 桁あふれを抑えるため、分子・分母を逐次掛け割りして計算する
   for (let i = 0; i < r; i++) {
     result = (result * (n - i)) / (i + 1)
   }
@@ -121,10 +121,10 @@ function* combinations<T>(arr: T[], k: number): Generator<T[]> {
   if (k > n) return
   const indices = Array.from({ length: k }, (_, i) => i)
   while (true) {
-    // 現在のインデックス組み合わせを要素配列へ写像して返す。
+    // 現在のインデックス組み合わせを要素配列へ写像して返す
     yield indices.map((i) => arr[i])
     let i = k - 1
-    // 右端から更新可能な位置を探し、辞書順で次の組み合わせへ進める。
+    // 右端から更新可能な位置を探し、辞書順で次の組み合わせへ進める
     while (i >= 0 && indices[i] === n - k + i) i--
     if (i < 0) return
     indices[i]++
@@ -166,19 +166,19 @@ function countTypesInCombo<T extends OptimizerCardLike>(combo: T[]): TypeCounter
  * @returns 内訳状態配列
  */
 function buildSpTypeStates<T extends OptimizerCardLike>(pool: T[]): SpTypeState[] {
-  // 同一プールを繰り返し評価するため、まずキャッシュヒットを確認する。
+  // 同一プールを繰り返し評価するため、まずキャッシュヒットを確認する
   const cacheKey = buildPoolKey(pool)
   const cached = spTypeStatesCache.get(cacheKey)
   if (cached) return cached
 
-  // dp は「選択枚数|vo枚数|da枚数|vi枚数」をキーに、その状態へ到達する通数を持つ。
-  // 初期状態は 0 枚選択・タイプ枚数 0・通数 1 通り。
+  // dp は「選択枚数|vo枚数|da枚数|vi枚数」をキーに、その状態へ到達する通数を持つ
+  // 初期状態は 0 枚選択・タイプ枚数 0・通数 1 通り
   const dp = new Map<string, number>()
   dp.set('0|0|0|0', 1)
 
-  // 各カードについて「選ばない/選ぶ」の遷移を積み上げ、状態ごとの通数を更新する。
+  // 各カードについて「選ばない/選ぶ」の遷移を積み上げ、状態ごとの通数を更新する
   for (const c of pool) {
-    // 現カード未選択の通数を保持したまま、選択した場合の通数を next へ加算する。
+    // 現カード未選択の通数を保持したまま、選択した場合の通数を next へ加算する
     const next = new Map(dp)
     const addVo = c.card.type === enums.ParameterType.Vocal ? 1 : 0
     const addDa = c.card.type === enums.ParameterType.Dance ? 1 : 0
@@ -196,19 +196,19 @@ function buildSpTypeStates<T extends OptimizerCardLike>(pool: T[]): SpTypeState[
       const nkey = `${nk}|${nvo}|${nda}|${nvi}`
       next.set(nkey, (next.get(nkey) ?? 0) + ways)
     }
-    // 次のカード処理のため、更新済み状態を dp へ反映する。
+    // 次のカード処理のため、更新済み状態を dp へ反映する
     dp.clear()
     for (const [k, v] of next.entries()) dp.set(k, v)
   }
 
-  // 文字列キーを構造化データへ戻して返却する。
+  // 文字列キーを構造化データへ戻して返却する
   const result: SpTypeState[] = []
   for (const [key, ways] of dp.entries()) {
     const [kStr, voStr, daStr, viStr] = key.split('|')
     result.push({ k: Number(kStr), vo: Number(voStr), da: Number(daStr), vi: Number(viStr), ways })
   }
 
-  // キャッシュは上限超過時に全クリアし、メモリ使用量を一定に保つ。
+  // キャッシュは上限超過時に全クリアし、メモリ使用量を一定に保つ
   if (spTypeStatesCache.size >= constant.SP_TYPE_STATES_CACHE_MAX) spTypeStatesCache.clear()
   spTypeStatesCache.set(cacheKey, result)
   return result
@@ -285,7 +285,7 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
   const countCached = spTypeCountCache.get(countCacheKey)
   if (countCached !== undefined) return countCached
 
-  // SPプール側の「選択枚数 × タイプ内訳」状態を事前計算で取得する。
+  // SPプール側の「選択枚数 × タイプ内訳」状態を事前計算で取得する
   const voStates = buildSpTypeStates(voSpPool)
   const daStates = buildSpTypeStates(daSpPool)
   const viStates = buildSpTypeStates(viSpPool)
@@ -294,10 +294,10 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
   let total = 0
 
   for (const sVo of voStates) {
-    // まず総枠超過を除外する。
+    // まず総枠超過を除外する
     if (sVo.k > totalSlots) continue
     for (const sDa of daStates) {
-      // 次に総枠超過を除外する。
+      // 次に総枠超過を除外する
       if (sVo.k + sDa.k > totalSlots) continue
       for (const sVi of viStates) {
         for (const sAll of allStates) {
@@ -307,29 +307,29 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
           if (spVoCount < neededVo || spDaCount < neededDa || spViCount < neededVi) continue
 
           const spCount = sVo.k + sDa.k + sVi.k + sAll.k
-          // SPカードだけで総枠を超える枝は成立しないため除外する。
+          // SPカードだけで総枠を超える枝は成立しないため除外する
           if (spCount > totalSlots) continue
 
-          // 残り枠を汎用カード群で埋めるため、必要な残枠数とSP側タイプ枚数を計算する。
+          // 残り枠を汎用カード群で埋めるため、必要な残枠数とSP側タイプ枚数を計算する
           const kGen = totalSlots - spCount
           const spVo = sVo.vo + sDa.vo + sVi.vo + sAll.vo
           const spDa = sVo.da + sDa.da + sVi.da + sAll.da
           const spVi = sVo.vi + sDa.vi + sVi.vi + sAll.vi
-          // SP側だけでタイプ上限を超える枝は、この時点で打ち切る。
+          // SP側だけでタイプ上限を超える枝は、この時点で打ち切る
           if (spVo > typeVoMax || spDa > typeDaMax || spVi > typeViMax) continue
 
-          // 汎用カード側に必要なタイプ下限/上限を、SP側消化分を差し引いて求める。
+          // 汎用カード側に必要なタイプ下限/上限を、SP側消化分を差し引いて求める
           const gvMin = Math.max(0, typeVoMin - spVo)
           const gvMax = Math.min(genVoCount, typeVoMax - spVo, kGen)
           const gdMin = Math.max(0, typeDaMin - spDa)
           const gdMax = Math.min(genDaCount, typeDaMax - spDa, kGen)
           const giMin = Math.max(0, typeViMin - spVi)
           const giMax = Math.min(genViCount, typeViMax - spVi, kGen)
-          // 最小値が最大値を超えたら、その枝では制約充足が不可能。
+          // 最小値が最大値を超えたら、その枝では制約充足が不可能
           if (gvMax < gvMin || gdMax < gdMin || giMax < giMin) continue
 
           let genWays = 0
-          // 汎用枠のタイプ配分を全列挙し、各配分の組み合わせ数を合算する。
+          // 汎用枠のタイプ配分を全列挙し、各配分の組み合わせ数を合算する
           for (let kgv = gvMin; kgv <= gvMax; kgv++) {
             for (let kgd = gdMin; kgd <= Math.min(gdMax, kGen - kgv); kgd++) {
               for (let kgi = giMin; kgi <= Math.min(giMax, kGen - kgv - kgd); kgi++) {
@@ -343,14 +343,14 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
               }
             }
           }
-          // SP側状態通数と汎用枠通数の積が、この枝の総通数になる。
+          // SP側状態通数と汎用枠通数の積が、この枝の総通数になる
           total += sVo.ways * sDa.ways * sVi.ways * sAll.ways * genWays
         }
       }
     }
   }
 
-  // キャッシュは上限超過時に全クリアしてメモリを抑制する。
+  // キャッシュは上限超過時に全クリアしてメモリを抑制する
   if (spTypeCountCache.size >= constant.SP_TYPE_COUNT_CACHE_MAX) spTypeCountCache.clear()
   spTypeCountCache.set(countCacheKey, total)
   return total
@@ -379,7 +379,7 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
  * @param totalSlots - 選択する総枚数
  */
 export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpTypeEnumerateInput<T>): Generator<T[]> {
-  // まず入力制約を展開し、列挙ループ内でのプロパティ参照コストを下げる。
+  // まず入力制約を展開し、列挙ループ内でのプロパティ参照コストを下げる
   const {
     voSpPool,
     daSpPool,
@@ -400,14 +400,14 @@ export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpT
     typeViMax,
     totalSlots,
   } = input
-  // VoSP 枚数を外側ループに置き、制約で早期に枝刈りしながら列挙する。
+  // VoSP 枚数を外側ループに置き、制約で早期に枝刈りしながら列挙する
   const voMax = Math.min(voSpPool.length, totalSlots)
   for (let kVo = 0; kVo <= voMax; kVo++) {
     for (const voCombo of combinations(voSpPool, kVo)) {
       const voCounts = countTypesInCombo(voCombo)
       const slotsAfterVo = totalSlots - kVo
 
-      // DaSP 枚数を決め、VoSP と合わせた残枠を更新する。
+      // DaSP 枚数を決め、VoSP と合わせた残枠を更新する
       const daMax = Math.min(daSpPool.length, slotsAfterVo)
       for (let kDa = 0; kDa <= daMax; kDa++) {
         for (const daCombo of combinations(daSpPool, kDa)) {
@@ -419,7 +419,7 @@ export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpT
           }
           const slotsAfterDa = slotsAfterVo - kDa
 
-          // ViSP 枚数まで確定したら、AllSP も含めて残りは汎用枠でタイプ制約を満たす配分を探索する。
+          // ViSP 枚数まで確定したら、AllSP も含めて残りは汎用枠でタイプ制約を満たす配分を探索する
           const viMax = Math.min(viSpPool.length, slotsAfterDa)
           for (let kVi = 0; kVi <= viMax; kVi++) {
             for (const viCombo of combinations(viSpPool, kVi)) {
@@ -439,26 +439,26 @@ export function* spTypeConstrainedCombos<T extends OptimizerCardLike>(input: SpT
                   const spDaCount = kDa + kAll
                   const spViCount = kVi + kAll
                   if (spVoCount < neededVo || spDaCount < neededDa || spViCount < neededVi) continue
-                  // SP側だけでタイプ上限を超える枝を除外する。
+                  // SP側だけでタイプ上限を超える枝を除外する
                   if (spVo > typeVoMax || spDa > typeDaMax || spVi > typeViMax) continue
 
-                  // 汎用枠で必要になるタイプ枚数レンジを計算する。
+                  // 汎用枠で必要になるタイプ枚数レンジを計算する
                   const gvMin = Math.max(0, typeVoMin - spVo)
                   const gvMax = Math.min(genVoPool.length, typeVoMax - spVo)
                   const gdMin = Math.max(0, typeDaMin - spDa)
                   const gdMax = Math.min(genDaPool.length, typeDaMax - spDa)
                   const giMin = Math.max(0, typeViMin - spVi)
                   const giMax = Math.min(genViPool.length, typeViMax - spVi)
-                  // 到達不能なレンジはスキップする。
+                  // 到達不能なレンジはスキップする
                   if (gvMax < gvMin || gdMax < gdMin || giMax < giMin) continue
 
-                  // 汎用枠のタイプ配分（Vo/Da/Vi/Assist）を全列挙して最終コンボを生成する。
+                  // 汎用枠のタイプ配分（Vo/Da/Vi/Assist）を全列挙して最終コンボを生成する
                   for (let kgv = gvMin; kgv <= Math.min(gvMax, kGen); kgv++) {
                     for (let kgd = gdMin; kgd <= Math.min(gdMax, kGen - kgv); kgd++) {
                       for (let kgi = giMin; kgi <= Math.min(giMax, kGen - kgv - kgd); kgi++) {
                         const kga = kGen - kgv - kgd - kgi
                         if (kga < 0 || kga > genAsPool.length) continue
-                        // 各カテゴリの実カード組み合わせを展開し、制約を満たす1件をyieldする。
+                        // 各カテゴリの実カード組み合わせを展開し、制約を満たす1件をyieldする
                         for (const gvCombo of combinations(genVoPool, kgv)) {
                           for (const gdCombo of combinations(genDaPool, kgd)) {
                             for (const giCombo of combinations(genViPool, kgi)) {

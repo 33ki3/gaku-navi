@@ -4,8 +4,8 @@
  * [-] ボタン・数値入力欄・[+] ボタンを横に並べた数値入力UI。
  * アクション回数の設定などで使われる。
  */
-import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import * as constant from '../../constant'
 
@@ -23,12 +23,29 @@ interface SpinnerInputProps {
   max?: number
   /** 増減ステップ（デフォルトは1） */
   step?: number
+  /** 狭いグリッド内で入力欄だけを可変幅にする */
+  fluid?: boolean
 }
 
-/** +/- ボタン付き数値入力フィールド */
-export function SpinnerInput({ value, onChange, disabled = false, min = 0, max, step = 1 }: SpinnerInputProps) {
+/**
+ * 範囲制限付きの数値入力と増減ボタンを表示する。
+ *
+ * @param props - 現在値、更新操作、入力範囲、増減単位
+ * @returns 数値入力と増減ボタンの組
+ */
+export function SpinnerInput({
+  value,
+  onChange,
+  disabled = false,
+  min = 0,
+  max,
+  step = 1,
+  fluid = false,
+}: SpinnerInputProps) {
   const { t } = useTranslation()
-  const btnClass = `${constant.SPINNER_BTN} ${disabled ? constant.BTN_DISABLED : constant.BTN_TOGGLE_INACTIVE}`
+  const btnClass = `${fluid ? 'flex h-6 w-5 shrink-0 items-center justify-center rounded text-xs font-bold' : constant.SPINNER_BTN} ${
+    disabled ? constant.BTN_DISABLED : constant.BTN_TOGGLE_INACTIVE
+  }`
 
   // stepから小数桁数を導出する（浮動小数点誤差回避用）
   // 例: step=0.1 → log10(0.1)=-1 → decimals=1, step=0.01 → decimals=2
@@ -94,7 +111,7 @@ export function SpinnerInput({ value, onChange, disabled = false, min = 0, max, 
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={fluid ? 'flex w-full min-w-0 items-center gap-0.5' : 'flex items-center gap-2'}>
       {/* マイナスボタン（値を step 分減らす。最小値で止まる） */}
       <button onClick={handleDecrement} disabled={disabled} className={btnClass}>
         {t('ui.symbol.minus')}
@@ -107,7 +124,11 @@ export function SpinnerInput({ value, onChange, disabled = false, min = 0, max, 
         onChange={(e) => handleChange(e.target.value)}
         onBlur={handleBlur}
         disabled={disabled}
-        className={`${constant.SPINNER_INPUT} ${disabled ? constant.INPUT_LOCKED : 'border-slate-200'}`}
+        className={`${constant.SPINNER_INPUT} ${
+          fluid
+            ? 'min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+            : ''
+        } ${disabled ? constant.INPUT_LOCKED : 'border-slate-200'}`}
       />
       {/* プラスボタン（値を step 分増やす） */}
       <button onClick={handleIncrement} disabled={disabled || (max !== undefined && value >= max)} className={btnClass}>

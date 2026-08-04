@@ -4,11 +4,11 @@
  * 週番号・種別セル・Vo/Da/Vi 上昇値を1行で表示する。
  * 種別セルは呼び出し側で注入して HIF/初編の差分を吸収する。
  */
-import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import * as enums from '../../types/enums'
 import { getParameterTextColor } from '../../data/ui'
+import * as enums from '../../types/enums'
 import type { ParameterBonusBreakdownRow } from '../../utils/calculator/parameterBonus'
 
 /** ParamBonusBreakdownRow コンポーネントに渡すプロパティ */

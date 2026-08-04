@@ -6,6 +6,7 @@
  * レイアウトなどすべての設定はここを通す。
  */
 
+export * from '../styles'
 export * from './common'
-export * from './styles'
 export * from './layout'
+export * from './settings'

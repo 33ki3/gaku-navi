@@ -6,7 +6,7 @@
  * そのままページコンポーネントに組み込める設計。
  */
 import { useTranslation } from 'react-i18next'
-import { MARSHMALLOW_URL, GITHUB_URL } from '../../constant'
+import { GITHUB_URL, MARSHMALLOW_URL, X_URL } from '../../constant'
 
 /** アプリの概要・免責事項を表示するコンテンツ */
 export default function AboutContent() {
@@ -36,7 +36,7 @@ export default function AboutContent() {
       <section>
         <h3 className="text-xs font-black text-slate-800 mb-1.5">{t('ui.about.feedback_title')}</h3>
         <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{t('ui.about.feedback_desc')}</p>
-        <div className="mt-2 flex gap-3">
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
           <a
             href={MARSHMALLOW_URL}
             target="_blank"
@@ -52,6 +52,14 @@ export default function AboutContent() {
             className="text-xs text-orange-600 hover:text-orange-700 underline"
           >
             {t('ui.about.link_github')}
+          </a>
+          <a
+            href={X_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-orange-600 underline hover:text-orange-700"
+          >
+            {t('ui.about.link_x')}
           </a>
         </div>
       </section>

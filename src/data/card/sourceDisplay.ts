@@ -4,8 +4,8 @@
  * ガチャ・コインガチャ・限定・フェス・イベント・ショップ等の
  * バッジ色・ラベルを定義する。フィルターとバッジの両方で使用する。
  */
-import { SourceType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { SourceType } from '../../types/enums'
 
 /** 入手方法エントリの型 */
 interface SourceDisplayEntry {

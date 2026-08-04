@@ -5,14 +5,15 @@
  * 縦幅が足りない画面でもスクロール可能なモーダル内で操作できるようにする。
  */
 import { memo } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CardFiltersReturn } from '../../hooks'
-import { ButtonSizeType, FilterSortTab } from '../../types/enums'
-import { getSortModeLabel, SortModeOrder, getFilterSortTabLabel, FilterSortTabOrder, getTabStyle } from '../../data/ui'
 import * as constant from '../../constant'
-import ModalOverlay from '../ui/ModalOverlay'
+import type { CardFiltersReturn } from '../../hooks'
+import * as enums from '../../types/enums'
+import { getActiveFilterCount } from '../../utils/filterCount'
 import CloseButton from '../ui/CloseButton'
+import ModalOverlay from '../ui/ModalOverlay'
 import FilterBar from './FilterBar'
+import { FilterSortTabs } from './FilterSortTabs'
+import { SortContent } from './SortContent'
 
 /** FilterSortModal コンポーネントに渡すプロパティ */
 interface FilterSortModalProps {
@@ -23,12 +24,17 @@ interface FilterSortModalProps {
   /** パネルの幅分だけ右を空けるためのCSSクラス */
   panelRightOffset: string
   /** 現在のタブ */
-  activeTab: FilterSortTab
+  activeTab: enums.FilterSortTab
   /** タブを切り替える関数 */
-  onTabChange: (tab: FilterSortTab) => void
+  onTabChange: (tab: enums.FilterSortTab) => void
 }
 
-/** フィルタ・ソートモーダル */
+/**
+ * ソートとフィルターをタブで切り替えるモーダルを表示する。
+ *
+ * @param props - フィルター状態、選択中タブ、モーダル操作
+ * @returns PCとスマホに対応したフィルタ・ソートモーダル
+ */
 export default memo(function FilterSortModal({
   onClose,
   filters,
@@ -36,49 +42,43 @@ export default memo(function FilterSortModal({
   activeTab,
   onTabChange,
 }: FilterSortModalProps) {
-  const { t } = useTranslation()
+  const activeFilterCount = getActiveFilterCount(filters)
 
   return (
     <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_FILTER} className={panelRightOffset}>
-      {/* ヘッダー：タブ + 閉じるボタン */}
-      <div className="sticky top-0 bg-white z-10 border-b border-slate-200 px-5 pt-3">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-5">
-            {FilterSortTabOrder.map((tab) => (
-              <button key={tab} className={getTabStyle(activeTab === tab)} onClick={() => onTabChange(tab)}>
-                {t(getFilterSortTabLabel(tab))}
-              </button>
-            ))}
-          </div>
-          <CloseButton onClick={onClose} size={ButtonSizeType.Sm} />
-        </div>
+      {/* PC用フィルター・ソート操作ヘッダー */}
+      <div className="z-10 hidden items-center gap-2 border-b border-slate-200/80 bg-white/95 px-5 py-3 backdrop-blur-xl md:flex">
+        {/* PC用フィルター・ソートタブ */}
+        <FilterSortTabs
+          filters={filters}
+          activeTab={activeTab}
+          activeFilterCount={activeFilterCount}
+          onTabChange={onTabChange}
+        />
+        {/* PC用フィルター・ソートモーダルを閉じるボタン */}
+        <CloseButton onClick={onClose} size={enums.ButtonSizeType.Sm} />
+      </div>
+      {/* スマホ用フィルター・ソートモーダルを閉じるボタン */}
+      <CloseButton
+        onClick={onClose}
+        size={enums.ButtonSizeType.Lg}
+        className="absolute right-2 top-2 z-20 h-11 w-11 md:hidden"
+      />
+
+      {/* 選択中タブのフィルター・ソート内容 */}
+      <div className="flex-1 overflow-y-auto px-4 pb-4 pt-14 sm:px-5 md:py-4">
+        {activeTab === enums.FilterSortTab.Sort ? <SortContent filters={filters} /> : <FilterBar filters={filters} />}
       </div>
 
-      {/* コンテンツ（パネルが固定高さなので flex-1 で残りを埋める） */}
-      <div className="px-5 py-4 overflow-y-auto flex-1">
-        {activeTab === FilterSortTab.Sort ? <SortContent filters={filters} /> : <FilterBar filters={filters} />}
+      {/* スマホ用フィルター・ソートタブ */}
+      <div className="z-10 border-t border-slate-200/80 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl md:hidden">
+        <FilterSortTabs
+          filters={filters}
+          activeTab={activeTab}
+          activeFilterCount={activeFilterCount}
+          onTabChange={onTabChange}
+        />
       </div>
     </ModalOverlay>
   )
 })
-
-/** ソートタブの内容 */
-function SortContent({ filters }: { filters: CardFiltersReturn }) {
-  const { t } = useTranslation()
-
-  return (
-    <div className="flex flex-col gap-2">
-      {SortModeOrder.map((mode) => (
-        <button
-          key={mode}
-          onClick={() => filters.setSortMode(mode)}
-          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-            filters.sortMode === mode ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          {t(getSortModeLabel(mode))}
-        </button>
-      ))}
-    </div>
-  )
-}

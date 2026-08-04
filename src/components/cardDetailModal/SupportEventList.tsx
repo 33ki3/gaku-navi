@@ -5,9 +5,9 @@
  * 各イベントの効果・タイトル・スキルカード情報をまとめて表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { SupportCard } from '../../types/card'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
+import type { SupportCard } from '../../types/card'
 import { EventEffectType } from '../../types/enums'
 import { getEventEffectLabel } from '../../utils/display/effectLabels'
 

@@ -6,8 +6,8 @@
  */
 import { useTranslation } from 'react-i18next'
 
-import BreakdownRow from './BreakdownRow'
 import type { ParameterValues } from '../../types/unit'
+import BreakdownRow from './BreakdownRow'
 
 /** StandardBreakdownRows コンポーネントに渡すプロパティ */
 interface StandardBreakdownRowsProps {

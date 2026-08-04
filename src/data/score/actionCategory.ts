@@ -4,8 +4,8 @@
  * 点数計算の「アクション回数設定」セクションに表示する
  * 全アクションの一覧・グループ分類・グループラベルを統合的に定義する。
  */
-import { ActionIdType, ActionGroupType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { ActionGroupType, ActionIdType } from '../../types/enums'
 
 /** アクション回数カテゴリの型 */
 interface ActionCountCategory {

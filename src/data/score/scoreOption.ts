@@ -3,8 +3,8 @@
  *
  * プロデュースの難易度・シナリオのラベルと選択肢を管理する。
  */
-import { DifficultyType, ScenarioType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { DifficultyType, ScenarioType } from '../../types/enums'
 import { hasScheduleDifficulty } from './schedule'
 
 /** スコアオプションマスタの1行分 */
@@ -33,7 +33,7 @@ export const getDifficultyOptionList = (scenario: ScenarioType): readonly ScoreO
   return DIFFICULTY_OPTION_BASE.filter((option) => hasScheduleDifficulty(scenario, option.value))
 }
 
-/** シナリオラベルのベース定義。 */
+/** シナリオラベルのベース定義 */
 const SCENARIO_OPTION_BASE: readonly ScoreOptionEntry<ScenarioType>[] = [
   { value: ScenarioType.Custom, label: 'score.scenario.custom' },
   { value: ScenarioType.Hajime, label: 'score.scenario.hajime' },

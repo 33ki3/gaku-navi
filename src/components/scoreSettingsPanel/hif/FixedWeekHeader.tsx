@@ -6,8 +6,8 @@
 import { useTranslation } from 'react-i18next'
 
 import type { ScheduleWeekData } from '../../../data'
-import { HelpTooltip } from '../../ui/HelpTooltip'
 import { getHifFixedLabel } from '../../../utils/hifScheduleHelpers'
+import { HelpTooltip } from '../../ui/HelpTooltip'
 
 /** FixedWeekHeader コンポーネントに渡すプロパティ */
 interface FixedWeekHeaderProps {

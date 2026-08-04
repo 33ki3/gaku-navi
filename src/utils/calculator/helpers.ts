@@ -7,10 +7,10 @@
  * - イベントの種類を判定する
  */
 
-import type { Ability } from '../../types/card'
-import * as enums from '../../types/enums'
-import type { UncapType } from '../../types/enums'
 import { PERCENT_SIGN, PLUS_SIGN } from '../../constant/common'
+import type { Ability } from '../../types/card'
+import type { UncapType } from '../../types/enums'
+import * as enums from '../../types/enums'
 
 /**
  * アビリティの値文字列（例: "+8.5%"）を数値に変換する

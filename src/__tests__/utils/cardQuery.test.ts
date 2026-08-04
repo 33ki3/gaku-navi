@@ -7,9 +7,9 @@
  * アビリティキーワードマッチ（キーワードフィルター）の正確な動作を確認する。
  */
 import { describe, expect, it } from 'vitest'
-import { getEventSummaryParts, hasSPAbility, hasAbilityKeyword } from '../../utils/cardQuery'
 import type { SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
+import { getEventSummaryParts, hasAbilityKeyword, hasSPAbility } from '../../utils/cardQuery'
 
 /** 最小限のサポートファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {

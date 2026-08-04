@@ -2,10 +2,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
-import './i18n'
-import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ui/ErrorBoundary.tsx'
+import './i18n'
+import './index.css'
 
 registerSW({
   immediate: true,

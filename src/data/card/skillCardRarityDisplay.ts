@@ -4,9 +4,9 @@
  * スキルカード固有の SSR / SR / R バッジ色を定義する。
  * サポートカード用の rarityDisplay とは独立して管理する。
  */
-import { SkillCardRarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
-import { RARITY_COLOR_SSR, RARITY_COLOR_SR, RARITY_COLOR_R } from '../../constant/styles'
+import { RARITY_COLOR_R, RARITY_COLOR_SR, RARITY_COLOR_SSR } from '../../styles'
+import { SkillCardRarityType } from '../../types/enums'
 
 /** スキルカードレアリティの表示情報 */
 interface SkillCardRarityEntry {

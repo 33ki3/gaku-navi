@@ -5,7 +5,7 @@
  * プロパティアクセスで引けるようにする。
  */
 
-import { RarityTierType, AbilityNameKeyType } from '../../types/enums'
+import { AbilityNameKeyType, RarityTierType } from '../../types/enums'
 
 // スケジュールデータ（凸数→段階番号マッピング）
 const scheduleData = {

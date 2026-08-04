@@ -4,8 +4,8 @@
  * 呼び出し元から固定週・公開レッスン週・通常週の各行コンポーネントを
  * 直接使えるよう、週種別判定と行レンダリングをこのコンポーネントに集約する。
  */
-import type { ParameterValues } from '../../../types/card'
 import type { ScheduleWeekData } from '../../../data'
+import type { ParameterValues } from '../../../types/card'
 import * as enums from '../../../types/enums'
 import { ParameterType } from '../../../types/enums'
 import { resolveHifLessonPair } from '../../../utils/hifScheduleHelpers'

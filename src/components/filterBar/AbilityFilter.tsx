@@ -5,10 +5,10 @@
  * キーワードは2カテゴリ（パラメータ系・効果系）に分かれている。
  */
 import { useTranslation } from 'react-i18next'
-import type { CardFiltersReturn } from '../../hooks'
-import * as data from '../../data'
 import * as constant from '../../constant'
+import * as data from '../../data'
 import { getFilterButtonStyle } from '../../data/ui'
+import type { CardFiltersReturn } from '../../hooks'
 import { ButtonSizeType, FilterButtonCategory } from '../../types/enums'
 import { ToggleButton } from '../ui/ToggleButton'
 
@@ -32,7 +32,7 @@ export function AbilityFilter({ spOnly, toggleSP, selectedAbilityKeywords, toggl
     <div>
       <p className={constant.FILTER_SECTION_LABEL}>{t('ui.filter.ability')}</p>
       <div className="flex flex-wrap items-center gap-2">
-        {/* SPアビリティ持ちだけ表示するボタン */}
+        {/* SPアビリティのみの表示ボタン */}
         <ToggleButton
           isActive={spOnly}
           onClick={toggleSP}

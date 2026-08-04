@@ -3,8 +3,8 @@
  *
  * 最適編成計算で使用する設定・結果の型を定義する。
  */
-import type { PlanType, CardType, ParameterType, UncapType, ActionIdType } from './enums'
-import type { SupportCard, CardCalculationResult } from './card'
+import type { CardCalculationResult, SupportCard } from './card'
+import type { ActionIdType, CardType, ParameterType, PlanType, TriggerKeyType, UncapType } from './enums'
 
 /** SP発生率の枚数設定（Vo/Da/Vi それぞれの必要枚数） */
 export interface SpRateConstraint {
@@ -62,11 +62,10 @@ export interface UnitSimulatorSettings {
   exhaustiveCandidateLimit?: number
 }
 
-/** アビリティごとのサポート間連携追加回数 */
-export interface SupportSynergyDetail {
-  /** trigger_key → 追加回数 */
-  [triggerKey: string]: number
-}
+/**
+ * アビリティごとのサポート間連携追加回数（保存データに存在するキーだけを保持）
+ */
+export type SupportSynergyDetail = Partial<Record<TriggerKeyType, number>>
 
 /** サポート間連携の提供元詳細（どのサポートが何を何回提供しているか） */
 export interface SynergyProviderDetail {

@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { type Plugin, defineConfig, loadEnv } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // GA4 gtagスニペットを<head>に挿入するプラグイン
@@ -103,7 +103,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
-      include: ['src/__tests__/**/*.test.ts'],
+      include: ['src/__tests__/**/*.test.{ts,tsx}'],
     },
   }
 })

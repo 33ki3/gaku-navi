@@ -3,20 +3,19 @@
  *
  * カード効果テンプレートで使う i18n キーを一元管理する。
  * パラメータタイプ・カードゾーン・スキル種別・イベント効果・
- * イベント解放条件・コスト種別のラベルと、
- * エフェクトテンプレートセクションのプレフィックスを提供する。
+ * イベント解放条件・コスト種別のラベルと、エフェクトテンプレートセクションのプレフィックスを提供する。
  */
-import { TypeDisplayEntries } from './typeDisplay'
 import type { TranslationKey } from '../../i18n'
+import type { ParameterType } from '../../types/enums'
 import {
   CardZoneType,
-  SkillCardType,
-  EventEffectType,
-  ReleaseConditionType,
   CostType,
   EffectSectionType,
+  EventEffectType,
+  ReleaseConditionType,
+  SkillCardType,
 } from '../../types/enums'
-import type { ParameterType } from '../../types/enums'
+import { TypeDisplayEntries } from './typeDisplay'
 
 const PARAM_LABEL_MAP = new Map(TypeDisplayEntries.map((e) => [e.cardType, e.displayLabel]))
 

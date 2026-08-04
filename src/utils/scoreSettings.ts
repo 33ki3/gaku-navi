@@ -6,13 +6,15 @@
  * スケジュール選択からのアクション回数集計を行う。
  */
 
-import type { ScoreSettings, PerLessonParameterValues, ParameterValues } from '../types/card'
-import type { TranslationKey } from '../i18n'
-import * as data from '../data'
-import type { ScheduleWeekData } from '../data'
 import * as constant from '../constant'
+import type { ScheduleWeekData } from '../data'
+import * as data from '../data'
+import type { TranslationKey } from '../i18n'
+import type { ParameterValues, PerLessonParameterValues, ScoreSettings } from '../types/card'
 import * as enums from '../types/enums'
 import { resolveHifLessonPair } from './hifScheduleHelpers'
+import { isScoreSettings, isScoreSettingsBase } from './scoreSettingsValidation'
+import { isRecord } from './valueValidation'
 
 /**
  * デフォルトのスコア設定を作る
@@ -57,6 +59,47 @@ export function createDefaultSettings(scenario: enums.ScenarioType = constant.DE
 }
 
 /**
+ * 保存済みスコア設定へ、コード側の既定値を補完する。
+ *
+ * 保存文字列そのものは変更せず、画面や計算処理で利用する一時的なオブジェクトだけを補完する。
+ * 保存データに含まれる既知の設定値は保持する。
+ *
+ * @param value - 保存データから読み込んだ値
+ * @returns 補完済み設定。基礎部分が壊れている場合は null
+ */
+export function normalizeScoreSettings(value: unknown): ScoreSettings | null {
+  if (!isScoreSettingsBase(value)) return null
+
+  const scenario = Object.values(enums.ScenarioType).find((candidate) => candidate === value.scenario)
+  if (!scenario) return null
+
+  const defaults = createDefaultSettings(scenario)
+  const storedActionCounts = isRecord(value.actionCounts) ? value.actionCounts : {}
+  const actionCounts = { ...defaults.actionCounts, ...storedActionCounts }
+
+  const normalized: Record<string, unknown> = {
+    ...defaults,
+    ...value,
+    actionCounts,
+  }
+  return isScoreSettings(normalized) ? normalized : null
+}
+
+/**
+ * 保存データにフロント側の既定値で補完する項目があるか判定する。
+ *
+ * @param value - 保存データから読み込んだ値
+ * @returns 欠落した既定値項目があれば true
+ */
+export function hasMissingScoreSettingsDefaults(value: unknown): boolean {
+  if (!isRecord(value)) return false
+  const scenario = Object.values(enums.ScenarioType).find((candidate) => candidate === value.scenario)
+  if (!scenario) return false
+
+  return Object.keys(createDefaultSettings(scenario)).some((key) => !(key in value))
+}
+
+/**
  * 現在のスコア設定からスケジュール選択のみを初期化した設定を返す。
  *
  * @param settings - 現在のスコア設定
@@ -70,30 +113,17 @@ export function resetScheduleSelectionsOnly(settings: ScoreSettings): ScoreSetti
   }
 }
 
-/** localStorage の生データを安全にパースして ScoreSettings に変換する。 */
+/** localStorage の生データを安全にパースして ScoreSettings に変換する */
 function parseStoredScoreSettings(raw: string | null): ScoreSettings | null {
   if (!raw) return null
   try {
-    const parsed = JSON.parse(raw) as ScoreSettings
-    const validScenarios = new Set(Object.values(enums.ScenarioType))
-    const validDifficulties = new Set(Object.values(enums.DifficultyType))
-
-    if (
-      !parsed.scenario ||
-      !parsed.actionCounts ||
-      !validScenarios.has(parsed.scenario) ||
-      parsed.difficulty === undefined ||
-      !validDifficulties.has(parsed.difficulty)
-    ) {
-      return null
-    }
-    return parsed
+    return normalizeScoreSettings(JSON.parse(raw))
   } catch {
     return null
   }
 }
 
-/** シナリオ別スケジュール選択の保存形式。 */
+/** シナリオ別スケジュール選択の保存形式 */
 type ScenarioScheduleSelections = Partial<Record<enums.ScenarioType, Record<number, enums.ActivityIdType>>>
 
 /**
@@ -394,8 +424,8 @@ export function saveScoreSettings(settings: ScoreSettings): void {
       // Hajime は scheduleSelections を含めて共有キーに保存する
       localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
     } else {
-      // Hajime 以外は scheduleSelections を除いた設定を共有キーに保存する。
-      // 共有キーの scheduleSelections は Hajime 用として保持する。
+      // Hajime 以外は scheduleSelections を除いた設定を共有キーに保存する
+      // 共有キーの scheduleSelections は Hajime 用として保持する
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { scheduleSelections: _omit, ...settingsWithoutSchedule } = settings
       const previousShared = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))

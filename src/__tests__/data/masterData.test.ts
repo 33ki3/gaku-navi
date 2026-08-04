@@ -5,11 +5,11 @@
  * フォールバック削除の安全を保証するためのテスト群。
  */
 import { describe, expect, it } from 'vitest'
-import * as enums from '../../types/enums'
 import * as data from '../../data'
-import { getSchedule } from '../../data/score/abilityValue'
-import { AbilityExceptionMap } from '../../data/score/abilityException'
 import { TriggerActionMap } from '../../data/score'
+import { AbilityExceptionMap } from '../../data/score/abilityException'
+import { getSchedule } from '../../data/score/abilityValue'
+import * as enums from '../../types/enums'
 
 /** レアリティ×凸数の全組み合わせで最大レベルが正しく定義されていること */
 describe('maxLevel', () => {

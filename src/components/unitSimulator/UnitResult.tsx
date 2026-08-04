@@ -1,21 +1,20 @@
 /**
  * 最適編成計算結果の表示コンポーネント
  *
- * 最適編成の合計スコア、6枚のサポート一覧、
- * パラメータボーナス内訳を表示する。
+ * 最適編成の合計スコア、6枚のサポート一覧、パラメータボーナス内訳を表示する。
  */
-import { useTranslation } from 'react-i18next'
 import { useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import * as constant from '../../constant'
-import { PlusIcon } from '../ui/icons'
-import UnitCardItem from './UnitCardItem'
-import * as enums from '../../types/enums'
-import type { ActionIdType, ScenarioType, DifficultyType, ActivityIdType } from '../../types/enums'
 import { getClassParameterTotal, getExamData, getHifSelectionExamData, getSpLessonTotal } from '../../data/score'
 import { resolveParamCap } from '../../data/score/paramCap'
 import type { CardCountCustom } from '../../hooks/useCardCountCustom'
-import type { UnitResult as UnitResultType, ParameterValues } from '../../types/unit'
+import type { ActionIdType, ActivityIdType, DifficultyType, ScenarioType } from '../../types/enums'
+import * as enums from '../../types/enums'
+import type { ParameterValues, UnitResult as UnitResultType } from '../../types/unit'
+import { PlusIcon } from '../ui/icons'
+import UnitCardItem from './UnitCardItem'
 import { UnitResultBreakdown } from './UnitResultBreakdown'
 
 /** UnitResult に渡すプロパティ */
@@ -199,7 +198,7 @@ export default function UnitResult({
     [useCustomMode, scenario, difficulty],
   )
 
-  // HIF選抜試験（3回分）は通常試験と別表示するため、専用配列で合算用に保持する。
+  // HIF選抜試験（3回分）は通常試験と別表示するため、専用配列で合算用に保持する
   const hifSelectionExams = useMemo(
     () => (useCustomMode || scenario !== enums.ScenarioType.Hif ? [] : getHifSelectionExamData(hifExamRatios)),
     [useCustomMode, scenario, hifExamRatios],
@@ -268,7 +267,7 @@ export default function UnitResult({
 
   return (
     <div className="space-y-3">
-      {/* 合計スコア・内訳テーブル */}
+      {/* 合計スコアとパラメータ内訳 */}
       <UnitResultBreakdown
         useCustomMode={useCustomMode}
         scenario={scenario}
@@ -288,7 +287,7 @@ export default function UnitResult({
         cappedTotal={cappedTotal}
       />
 
-      {/* サポート一覧（スロット順） */}
+      {/* スロット順のサポート一覧 */}
       <div className="grid grid-cols-1 gap-1.5">
         {displayItems.map((member, i) =>
           member ? (

@@ -4,16 +4,23 @@
  * 単一テーブルと合計フッターを表示する。
  */
 import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
+import { BreakdownFooter } from '../BreakdownFooter'
 import { BreakdownTableHeader } from '../BreakdownTableHeader'
 import { ParamBonusBreakdownRow } from '../ParamBonusBreakdownRow'
-import { BreakdownFooter } from '../BreakdownFooter'
 import { HajimeKindCell } from './HajimeKindCell'
 
 /** 初編内訳（単一テーブル + 合計フッター） */
 interface HajimeParamBonusBreakdownProps {
+  /** 初編の週別パラメータボーナス行 */
   breakdown: ParameterBonusBreakdownRow[]
 }
 
+/**
+ * 初編のパラメータボーナス内訳と合計を表示する。
+ *
+ * @param props - 初編の週別内訳行
+ * @returns 内訳テーブルと合計フッター
+ */
 export function HajimeParamBonusBreakdown({ breakdown }: HajimeParamBonusBreakdownProps) {
   return (
     <>

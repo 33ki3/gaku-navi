@@ -4,17 +4,17 @@
  * パラメータボーナスの二重計算防止、サポート間連携計算、最適性検証を行う。
  */
 import { describe, expect, it } from 'vitest'
-import { evaluateManualUnit, exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
-import { calculateCardParameter } from '../../utils/calculator/calculateCard'
-import { computeUnitSupportSynergy, getProvidedActions } from '../../utils/supportSynergy'
-import { getSelfAcquisitionBonus } from '../../utils/calculator/events'
-import { AllCards, CardByName, getScheduleData, TriggerActionMap } from '../../data'
+import * as constant from '../../constant'
+import { AllCards, CardByName, TriggerActionMap, getScheduleData } from '../../data'
 import { resolveParamCap } from '../../data/score/paramCap'
-import { mergeScheduleCounts } from '../../utils/scoreSettings'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
-import * as constant from '../../constant'
+import { calculateCardParameter } from '../../utils/calculator/calculateCard'
+import { getSelfAcquisitionBonus } from '../../utils/calculator/events'
+import { mergeScheduleCounts } from '../../utils/scoreSettings'
+import { computeUnitSupportSynergy, getProvidedActions } from '../../utils/supportSynergy'
+import { evaluateManualUnit, exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
 
 /** デフォルトのスコア設定を作る */
 function makeScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSettings {
@@ -423,7 +423,7 @@ describe('最適編成', () => {
     })
 
     it('selfTrigger 回数調整が連動グループ内の関連アクションにも伝播する', () => {
-      // Pアイテムの削除アクションを持つサポートを探す（delete/m_skill_delete/a_skill_delete を同時提供）
+      // Pアイテムの削除アクション（delete/m_skill_delete/a_skill_delete）を同時に持つサポートを探す
       const deleteProviderCard = AllCards.find((c) => {
         const actions = c.p_item?.actions ?? []
         return actions.includes(enums.PItemActionType.Delete as never)
@@ -446,7 +446,7 @@ describe('最適編成', () => {
       // delete が提供されていることを確認
       if (!provided[enums.ActionIdType.Delete]) return
 
-      // 具体的な selfBonus キーを探す（a_skill_delete など、サポートのアビリティが持つもの）
+      // サポートのアビリティが持つ具体的なselfBonusキー（a_skill_deleteなど）を探す
       const selfBonusDeleteKey = (
         [
           enums.ActionIdType.ASkillDelete,
@@ -474,7 +474,7 @@ describe('最適編成', () => {
     })
 
     it('サポート間連携の extraCount が max_count を超えない', () => {
-      // max_count 付きアビリティを持つサポートと、そのトリガーを提供するサポートを探す
+      // max_count付きアビリティを持つサポートと、そのトリガーを提供するサポートを探す
       const receiverCard = AllCards.find((c) =>
         c.abilities.some(
           (a) =>
@@ -584,6 +584,48 @@ describe('最適編成', () => {
   })
 
   describe('Exhaustive stats', () => {
+    it('少ない組み合わせでも中間進捗を通知する', async () => {
+      // レンタル1枚と残り6枚から5枚を選ぶ、6通りだけの小規模探索を作る
+      const testCards = AllCards.filter((c) => c.plan === enums.PlanType.Sense || c.plan === enums.PlanType.Free).slice(
+        0,
+        7,
+      )
+      if (testCards.length < 7) return
+
+      const progressValues: number[] = []
+      const input = {
+        settings: makeSimulatorSettings([], {
+          plan: enums.PlanType.Sense,
+          manualRental: true,
+          rentalCardName: testCards[0].name,
+          typeCountMax: {
+            [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
+            [enums.ParameterType.Dance]: constant.UNIT_SIZE,
+            [enums.ParameterType.Visual]: constant.UNIT_SIZE,
+          },
+        }),
+        scoreSettings: makeScoreSettings(),
+        cardUncaps: {},
+        allCards: testCards,
+        cardByName: new Map(testCards.map((c) => [c.name, c])),
+      }
+
+      await exhaustiveOptimizeAsync(
+        input,
+        (done, total) => {
+          // UIへ渡す進捗の履歴を保存し、開始と完了の間の通知があることを確認する
+          progressValues.push(done)
+          expect(total).toBe(6)
+        },
+        () => false,
+      )
+
+      // 0%と100%だけでなく、途中の評価数も通知されることを確認する
+      expect(progressValues).toContain(0)
+      expect(progressValues).toContain(6)
+      expect(progressValues.some((done) => done > 0 && done < 6)).toBe(true)
+    })
+
     it('onStats で探索統計を受け取れる', async () => {
       const testCards = AllCards.filter((c) => c.plan === enums.PlanType.Sense || c.plan === enums.PlanType.Free).slice(
         0,

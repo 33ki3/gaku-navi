@@ -3,10 +3,10 @@
  *
  * 試験週ヘッダーと比率入力行をまとめて表示する。
  */
+import { useTranslation } from 'react-i18next'
+import type { ScheduleWeekData } from '../../../data'
 import type { ParameterValues } from '../../../types/card'
 import { ParameterType } from '../../../types/enums'
-import type { ScheduleWeekData } from '../../../data'
-import { useTranslation } from 'react-i18next'
 import { FixedWeekHeader } from './FixedWeekHeader'
 import { HifExamRatioRows } from './HifExamRatioRows'
 

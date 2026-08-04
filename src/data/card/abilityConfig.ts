@@ -4,7 +4,7 @@
  * ユーザー定義カードのフォームで、アビリティ種別を選択すると
  * trigger_key やフラグ（is_percentage 等）を自動でセットするための設定。
  */
-import { AbilityNameKeyType, TriggerKeyType, ParameterType } from '../../types/enums'
+import { AbilityNameKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
 
 /** アビリティの自動導出設定 */
 interface AbilityAutoConfig {

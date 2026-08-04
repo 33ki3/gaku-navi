@@ -3,8 +3,8 @@
  *
  * フォーム各コンポーネントで使用する選択肢の定義をまとめたファイル。
  */
-import { RarityType, CardType, PlanType, SkillCardType, SkillCardRarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { CardType, PlanType, RarityType, SkillCardRarityType, SkillCardType } from '../../types/enums'
 
 /** レアリティ選択肢 */
 export const RARITY_SELECT_OPTIONS: { value: RarityType; labelKey: TranslationKey }[] = [

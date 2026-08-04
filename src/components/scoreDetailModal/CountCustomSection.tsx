@@ -8,9 +8,10 @@
  */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LinkedActionGroups, TriggerActionMap, getActionCategory } from '../../data/score'
 import type { SupportCard } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
-import { TriggerActionMap, getActionCategory, LinkedActionGroups } from '../../data/score'
+import { isActionId } from '../../utils/domainValueValidation'
 import { getProvidedActions } from '../../utils/supportSynergy'
 import { SpinnerInput } from '../ui/SpinnerInput'
 
@@ -65,10 +66,13 @@ export function CountCustomSection({
   // autoCounts にスケジュール由来のアクション回数が含まれるため、actionCounts として渡す
   const providedEntries = useMemo(() => {
     const provided = getProvidedActions(card, { actionCounts: autoCounts })
-    return Object.entries(provided).map(([actionId, autoCount]) => ({
-      actionId: actionId as ActionIdType,
-      autoCount: autoCount ?? 0,
-    }))
+    // 保存データ由来の未知IDをUIへ渡さず、既知のアクションだけ回数調整対象にする
+    return Object.entries(provided)
+      .filter((entry): entry is [ActionIdType, number] => isActionId(entry[0]))
+      .map(([actionId, autoCount]) => ({
+        actionId,
+        autoCount: autoCount ?? 0,
+      }))
   }, [card, autoCounts])
 
   // 汎用アクションの提供回数を、特化アクションの上限として引き継ぐ

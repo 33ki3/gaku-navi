@@ -1,16 +1,17 @@
 /**
  * ユーザーサポートフォーム：サポートイベントセクション
  *
- * レアリティ別イベント構成:
+ * レアリティ別イベント構成。
  *   R:   パラメータ上昇(自動) + Pポイント獲得(自動)
  *   SR:  初回イベント(PItem/SkillCard) + パラメータ上昇(自動)
  *   SSR: 初回イベント(PItem/SkillCard) + パラメータ上昇(自動) + 追加イベント
  * パラメータ種別はカードタイプから自動決定する。
  */
 import { useTranslation } from 'react-i18next'
-import type { UserCardFormState, EventFormRow } from '../../hooks/formHelpers'
-import * as enums from '../../types/enums'
 import * as data from '../../data'
+import type { EventFormRow, UserCardFormState } from '../../hooks/formHelpers'
+import * as enums from '../../types/enums'
+import { isEnumValue } from '../../utils/valueValidation'
 
 import * as constant from '../../constant'
 
@@ -32,7 +33,7 @@ export default function EventSection({ form, updateEvent, onFirstEventChange }: 
 
   /** 初回イベント変更 */
   const handleFirstChange = (value: string) => {
-    const effectType = value as enums.EventEffectType
+    const effectType = isEnumValue(value, enums.EventEffectType) ? value : enums.EventEffectType.ParamBoost
     updateEvent(0, {
       effectType,
       paramType,
@@ -53,7 +54,7 @@ export default function EventSection({ form, updateEvent, onFirstEventChange }: 
       })
     } else {
       updateEvent(2, {
-        effectType: value as enums.EventEffectType,
+        effectType: isEnumValue(value, enums.EventEffectType) ? value : enums.EventEffectType.ParamBoost,
         paramType,
         paramValue: '',
         title: '',

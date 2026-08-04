@@ -5,7 +5,8 @@
  * レアリティ、タイプ、プランなどのフィルター状態を保持し、
  * 変更があると 300ms 後に localStorage へ自動保存する。
  */
-import { useReducer, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useReducer } from 'react'
+import * as constant from '../constant'
 import type {
   AbilityKeywordType,
   CardType,
@@ -15,10 +16,9 @@ import type {
   SourceType,
   UncapType,
 } from '../types/enums'
-import * as constant from '../constant'
 import * as enums from '../types/enums'
-import { loadFilterState, saveFilterState } from '../utils/filterStorage'
 import type { PersistedFilterState } from '../utils/filterStorage'
+import { loadFilterState, saveFilterState } from '../utils/filterStorage'
 
 /**
  * Set の中にある要素を追加/削除するヘルパー

@@ -6,9 +6,9 @@
  * サポート一覧・サポート詳細モーダルの両方で使われる。
  */
 import { useTranslation } from 'react-i18next'
+import { getUncapSelectorVariantStyle } from '../../data/ui'
 import type { UncapSelectorVariantType, UncapType } from '../../types/enums'
 import * as enums from '../../types/enums'
-import { getUncapSelectorVariantStyle } from '../../data/ui'
 
 /** UncapSelector コンポーネントに渡すプロパティ */
 interface UncapSelectorProps {

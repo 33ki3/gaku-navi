@@ -1,150 +1,103 @@
 /**
- * モバイルメニューコンポーネント
+ * スマホヘッダーと下部ナビゲーションの状態をまとめるコンテナ。
  *
- * スマホ画面（sm未満）でのみ表示されるハンバーガーメニュー。
- * ≡アイコンを押すとドロップダウンが開き、
- * 凸数設定・スコア設定・データ管理の操作ができる。
+ * 個々の表示は専用コンポーネントへ分け、このファイルでは
+ * メニュー間で共有する開閉状態と自動非表示だけを管理する。
  */
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useCallback, useEffect, useState } from 'react'
 import { useCardUIContext } from '../../contexts/CardContext'
-import DataManagementPanel from './DataManagementPanel'
-import { CalculatorIcon, InfoIcon, MenuIcon, PlusIcon, QuestionIcon, ScoreSettingsIcon, StarIcon } from '../ui/icons'
+import { useEscapeClose } from '../../hooks/useEscapeClose'
+import { useMobileNavigationVisibility } from '../../hooks/useMobileNavigationVisibility'
+import { MobileBottomNavigation } from './MobileBottomNavigation'
+import { MobileHeaderMenu } from './MobileHeaderMenu'
+import { MobileMoreMenu } from './MobileMoreMenu'
+import type {
+  MobileBottomNavigationPreferences,
+  MobileFilterNavigation,
+  MobilePanelNavigation,
+  MoreMenuActions,
+} from './navigationTypes'
 
-/** MobileMenu コンポーネントに渡すプロパティ */
 interface MobileMenuProps {
-  /** スコア設定モーダルを開く関数（両パネルピン時はピン留め切替） */
-  onOpenScoreSettings: () => void
-  /** 最適編成パネルを開く関数（両パネルピン時はピン留め切替） */
-  onOpenSimulator: () => void
-  /** スコア設定がピン留めされているか */
-  settingsPinned: boolean
-  /** 最適編成がピン留めされているか */
-  simulatorPinned: boolean
-  /** 両パネルがピン留めされているか（PC幅でもメニューを表示） */
-  bothPanelsPinned: boolean
-  /** ヘルプモーダルを開く関数 */
-  onOpenHelp: () => void
-  /** Aboutモーダルを開く関数 */
-  onOpenAbout: () => void
-  /** サポート追加モーダルを開く関数 */
-  onOpenUserCardForm: () => void
+  /** 点数設定・最適編成パネルの状態と操作 */
+  panels: MobilePanelNavigation
+  /** 凸数編集を切り替える */
+  onToggleUncapEdit: () => void
+  /** 絞り込み・並び替えの状態と操作 */
+  filter: MobileFilterNavigation
+  /** 「その他」内の操作 */
+  moreMenuActions: MoreMenuActions
+  /** 下部ナビゲーションの表示設定 */
+  bottomNavigation: MobileBottomNavigationPreferences
+  /** 外部操作から下部ナビを表示し直す関数を登録する */
+  registerMobileNavigationShow?: (handler: (() => void) | null) => void
 }
 
-/** モバイル用ハンバーガーメニュー */
+/**
+ * スマホ向けの右上メニューと下部ナビゲーションを連携させる。
+ *
+ * @param props - パネル、絞り込み、「その他」、下部ナビゲーションの設定
+ * @returns スマホ向けヘッダーメニューと下部ナビゲーション
+ */
 export function MobileMenu({
-  onOpenScoreSettings,
-  onOpenSimulator,
-  settingsPinned,
-  simulatorPinned,
-  bothPanelsPinned,
-  onOpenHelp,
-  onOpenAbout,
-  onOpenUserCardForm,
+  panels,
+  onToggleUncapEdit,
+  filter,
+  moreMenuActions,
+  bottomNavigation,
+  registerMobileNavigationShow,
 }: MobileMenuProps) {
-  const { t } = useTranslation()
-  const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { uncapEditMode } = useCardUIContext()
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
+  const anyMenuOpen = headerMenuOpen || moreMenuOpen
+
+  const closeMenus = useCallback(() => {
+    setHeaderMenuOpen(false)
+    setMoreMenuOpen(false)
+  }, [])
+
+  useEscapeClose(anyMenuOpen, closeMenus)
+
+  const mobileNavigation = useMobileNavigationVisibility({
+    keepFixed: bottomNavigation.keepFixed,
+    preventHiding: anyMenuOpen,
+  })
+
+  useEffect(() => {
+    // 選択完了など、メニュー外の操作からも同じ表示復元処理を呼べるようにする
+    registerMobileNavigationShow?.(mobileNavigation.show)
+    return () => registerMobileNavigationShow?.(null)
+  }, [mobileNavigation.show, registerMobileNavigationShow])
 
   return (
-    // sm未満のみ表示（両パネルピン時はPC幅でもハンバーガーメニューを表示）
-    <div className={`relative ${bothPanelsPinned ? '' : 'sm:hidden'}`}>
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
-        aria-label={t('ui.accessibility.menu')}
-      >
-        <MenuIcon className="w-5 h-5" isOpen={menuOpen} />
-      </button>
-      {/* menuOpen が true のときドロップダウンを表示 */}
-      {menuOpen && (
-        <>
-          {/* 透明オーバーレイ: メニュー外のどこかをタップすると閉じる */}
-          <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-200 py-2 w-48 z-30">
-            {/* 凸数設定ボタン: アクティブ時はハイライト表示 */}
-            <button
-              onClick={() => {
-                onToggleUncapEdit()
-                setMenuOpen(false)
-              }}
-              className={`w-full flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors ${
-                uncapEditMode ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <StarIcon className="w-4 h-4" />
-              {uncapEditMode ? t('ui.settings.uncap_settings_active') : t('ui.settings.uncap_settings')}
-            </button>
-            {/* スコア設定ボタン: モバイルはモーダル、両パネルピン時はピン切替 */}
-            <button
-              onClick={() => {
-                onOpenScoreSettings()
-                setMenuOpen(false)
-              }}
-              className={`w-full flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors ${
-                bothPanelsPinned && settingsPinned ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <ScoreSettingsIcon className="w-4 h-4" />
-              {t('ui.settings.score_settings')}
-            </button>
-            {/* 最適編成ボタン: モバイルはモーダル、両パネルピン時はピン切替 */}
-            <button
-              onClick={() => {
-                onOpenSimulator()
-                setMenuOpen(false)
-              }}
-              className={`w-full flex items-center gap-2 px-4 py-2 text-xs font-bold transition-colors ${
-                bothPanelsPinned && simulatorPinned ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <CalculatorIcon className="w-4 h-4" />
-              {t('ui.settings.unit_simulator')}
-            </button>
-            {/* 区切り線 */}
-            <div className="border-t border-slate-100 my-1" />
-            {/* サポート追加ボタン */}
-            <button
-              onClick={() => {
-                onOpenUserCardForm()
-                setMenuOpen(false)
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <PlusIcon className="w-4 h-4" />
-              {t('userSupport.add_button')}
-            </button>
-            {/* データ管理パネル（インポート/エクスポート） */}
-            <div className="px-4 py-2">
-              <DataManagementPanel />
-            </div>
-            {/* 区切り線 */}
-            <div className="border-t border-slate-100 my-1" />
-            {/* ヘルプボタン */}
-            <button
-              onClick={() => {
-                onOpenHelp()
-                setMenuOpen(false)
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <QuestionIcon className="w-4 h-4" />
-              {t('ui.help.title')}
-            </button>
-            {/* Aboutボタン */}
-            <button
-              onClick={() => {
-                onOpenAbout()
-                setMenuOpen(false)
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <InfoIcon className="w-4 h-4" />
-              {t('ui.about.title')}
-            </button>
-          </div>
-        </>
+    <>
+      {/* 右上ヘッダーメニュー */}
+      <MobileHeaderMenu
+        open={headerMenuOpen}
+        uncapEditMode={uncapEditMode}
+        panels={panels}
+        onToggleUncapEdit={onToggleUncapEdit}
+        moreMenuActions={moreMenuActions}
+        onOpenChange={setHeaderMenuOpen}
+        onShowBottomNavigation={mobileNavigation.show}
+      />
+      {/* 下部ナビ */}
+      {bottomNavigation.show && (
+        <MobileBottomNavigation
+          hidden={mobileNavigation.hidden}
+          uncapEditMode={uncapEditMode}
+          panels={panels}
+          filter={filter}
+          moreMenuOpen={moreMenuOpen}
+          onToggleUncapEdit={onToggleUncapEdit}
+          onOpenMoreMenu={() => setMoreMenuOpen(true)}
+          onShow={mobileNavigation.show}
+        />
       )}
-    </div>
+
+      {/* その他の操作ボトムシート */}
+      <MobileMoreMenu open={moreMenuOpen} actions={moreMenuActions} onClose={() => setMoreMenuOpen(false)} />
+    </>
   )
 }

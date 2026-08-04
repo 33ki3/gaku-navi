@@ -6,10 +6,10 @@
  */
 import { useTranslation } from 'react-i18next'
 import type { ScheduleWeekData } from '../../data'
-import { ToggleButton } from '../ui/ToggleButton'
+import * as data from '../../data'
 import * as enums from '../../types/enums'
 import { ButtonSizeType } from '../../types/enums'
-import * as data from '../../data'
+import { ToggleButton } from '../ui/ToggleButton'
 
 /** ScheduleWeekSelector コンポーネントに渡すプロパティ */
 interface ScheduleWeekSelectorProps {

@@ -4,10 +4,11 @@
  * スキルカードの種別（メンタル/アクティブ）とレアリティを入力する。
  */
 import { useTranslation } from 'react-i18next'
+import * as data from '../../data'
 import type { UserCardFormState } from '../../hooks/formHelpers'
 import * as enums from '../../types/enums'
+import { isEnumValue } from '../../utils/valueValidation'
 import { ToggleButton } from '../ui/ToggleButton'
-import * as data from '../../data'
 
 import * as constant from '../../constant'
 
@@ -52,7 +53,8 @@ export default function SkillCardSection({ form, updateField }: SkillCardSection
           <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.skillcard_rarity')}</label>
           <div className="flex gap-2">
             {data.SKILL_CARD_RARITY_OPTIONS.map((opt) => {
-              const entry = data.getRarityEntry(opt.value as enums.RarityType)
+              const rarity = isEnumValue(opt.value, enums.RarityType) ? opt.value : enums.RarityType.SSR
+              const entry = data.getRarityEntry(rarity)
               return (
                 <ToggleButton
                   key={opt.value}

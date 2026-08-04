@@ -1,72 +1,16 @@
 /**
- * データ転送ユーティリティ
+ * ユーザーデータのエクスポート／インポート窓口。
  *
- * ユーザーの設定データ（凸数・スコア設定・プリセット・フィルター状態・
- * ピン固定・最適編成設定）を JSON ファイルとしてエクスポート/
- * インポートする機能。端末間のデータ移行やバックアップに使う。
+ * JSONの詳細検証とストレージ更新は専用モジュールへ委譲し、
+ * このファイルでは処理の順序と公開APIだけを管理する。
  */
 import * as constant from '../constant'
+import { EXPORT_KEYS } from '../data/ui'
 import i18n from '../i18n'
-
-/** エクスポート対象の localStorage キー一覧 */
-const EXPORT_KEYS = [
-  constant.UNCAP_STORAGE_KEY,
-  constant.SETTINGS_PINNED_KEY,
-  constant.SCORE_SETTINGS_STORAGE_KEY,
-  constant.SCHEDULE_SELECTIONS_STORAGE_KEY,
-  constant.SCORE_PRESETS_STORAGE_KEY,
-  constant.FILTER_STORAGE_KEY,
-  constant.CARD_COUNT_CUSTOM_KEY,
-  constant.UNIT_SIMULATOR_STORAGE_KEY,
-  constant.USER_SUPPORTS_STORAGE_KEY,
-] as const
-
-/** エクスポートされる JSON の構造 */
-interface ExportData {
-  /** データ形式のバージョン番号 */
-  version: number
-  /** エクスポートした日時（ISO 8601 形式） */
-  exportedAt: string
-  /** localStorage から取り出したキーと値のペア */
-  data: Record<string, string>
-}
-
-/**
- * ユーザーデータを JSON ファイルとしてダウンロードする
- *
- * localStorage から対象キーの値を集めて JSON にし、
- * ブラウザのダウンロード機能でファイルとして保存する。
- */
-export function exportUserData(): void {
-  // localStorage から対象キーの値を集める
-  const data: Record<string, string> = {}
-  for (const key of EXPORT_KEYS) {
-    const value = localStorage.getItem(key)
-    if (value !== null) {
-      data[key] = value
-    }
-  }
-
-  // エクスポート用の JSON 構造を作る
-  const exportData: ExportData = {
-    version: constant.EXPORT_VERSION,
-    exportedAt: new Date().toISOString(),
-    data,
-  }
-
-  // JSON をファイルとしてダウンロードさせる
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: constant.EXPORT_MIME_TYPE })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${constant.EXPORT_FILE_PREFIX}${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}${constant.EXPORT_FILE_EXT}`
-  document.body.appendChild(a)
-  a.click()
-
-  // 使い終わったら後片付けする
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
+import { formatExportFileTimestamp, formatExportedAt } from './exportTimestamp'
+import type { ExportData, ValidatedStorageEntry } from './importDataValidation'
+import { parseImportText } from './importTextParser'
+import { applyStorageEntries, createStorageSnapshot } from './storageTransaction'
 
 /** インポート処理の結果 */
 interface ImportResult {
@@ -76,49 +20,162 @@ interface ImportResult {
   message: string
   /** 復元したキーの数 */
   importedKeys?: number
+  /** 補完・スキップした項目の警告 */
+  warnings?: string[]
+}
+
+/** 保存前に検証だけ行ったインポートデータ */
+export interface ImportPreview {
+  /** 検証を通過した保存エントリ。全件不正・構文エラー時は null */
+  entries: ValidatedStorageEntry[] | null
+  /** 確認画面とデータ管理欄に表示するメッセージ */
+  message: string
+  /** 補完・除外した項目の警告 */
+  warnings: string[]
+  /** 保存可能なエントリ数 */
+  importedKeys: number
+  /** 1件以上保存可能なデータがあるか */
+  canImport: boolean
 }
 
 /**
- * JSON ファイルからユーザーデータを読み込んで localStorage に復元する
+ * 現在のユーザーデータを整形済みJSON文字列にする。
  *
- * ファイルの中身を読み取り、バージョンとキーを検証した上で、
- * 許可されたキーのみ localStorage に書き戻す。
- *
- * @param file - ユーザーが選択した JSON ファイル
- * @returns インポートの成否とメッセージ
+ * @param date JSONへ記録する日時。省略時は現在時刻
+ * @returns バージョンと保存日時を含むJSON文字列
  */
-export async function importUserData(file: File): Promise<ImportResult> {
-  try {
-    // ファイルの内容をテキストとして読む
-    const text = await file.text()
-    const parsed = JSON.parse(text) as ExportData
-
-    // 形式が正しいかチェックする
-    if (!parsed.version || !parsed.data) {
-      return { success: false, message: i18n.t('ui.message.import_invalid_format') }
+export function getUserDataJson(date = new Date()): string {
+  // 保存対象を定義順に走査し、存在するキーだけを一時データへ集める
+  const rawData: Record<string, unknown> = {}
+  for (const key of EXPORT_KEYS) {
+    const value = localStorage.getItem(key)
+    if (value !== null) {
+      rawData[key] = value
     }
-
-    // 許可されたキーだけを localStorage に復元する（不正なキーは無視する）
-    const validKeys = new Set<string>(EXPORT_KEYS)
-    let importedCount = 0
-    for (const [key, value] of Object.entries(parsed.data)) {
-      if (validKeys.has(key) && typeof value === 'string') {
-        localStorage.setItem(key, value)
-        importedCount++
-      }
-    }
-
-    // 1件も復元できなかった場合
-    if (importedCount === 0) {
-      return { success: false, message: i18n.t('ui.message.import_no_data') }
-    }
-
-    return {
-      success: true,
-      message: i18n.t('ui.message.import_success', { count: importedCount }),
-      importedKeys: importedCount,
-    }
-  } catch {
-    return { success: false, message: i18n.t('ui.message.import_read_error') }
   }
+
+  // インポート時と同じ検証を通し、壊れたキーをバックアップへ持ち出さない
+  const exportedAt = formatExportedAt(date)
+  const validated = parseImportText(JSON.stringify({ version: constant.EXPORT_VERSION, exportedAt, data: rawData }))
+  const data: Record<string, string> = {}
+  for (const [key, value] of validated.entries ?? []) {
+    data[key] = value
+  }
+
+  const exportData: ExportData = {
+    version: constant.EXPORT_VERSION,
+    exportedAt,
+    data,
+  }
+  return JSON.stringify(exportData, null, 2)
+}
+
+/**
+ * ユーザーデータをJSONファイルとしてダウンロードする。
+ *
+ * @returns 戻り値なし
+ */
+export function exportUserData(): void {
+  const date = new Date()
+  const blob = new Blob([getUserDataJson(date)], { type: constant.EXPORT_MIME_TYPE })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `${constant.EXPORT_FILE_PREFIX}${formatExportFileTimestamp(date)}${constant.EXPORT_FILE_EXT}`
+
+  try {
+    document.body.appendChild(anchor)
+    anchor.click()
+  } finally {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
+}
+
+/** 解析結果から確認画面用のインポートプレビューを作る */
+function createImportPreview(parsed: ReturnType<typeof parseImportText>): ImportPreview {
+  if (parsed.entries === null) {
+    const message = createImportMessage(parsed.error ?? i18n.t('ui.message.import_invalid_format'), parsed.warnings)
+    return {
+      entries: null,
+      message,
+      warnings: parsed.warnings,
+      importedKeys: 0,
+      canImport: false,
+    }
+  }
+  const readyMessage = i18n.t('ui.message.import_ready', { count: parsed.entries.length })
+  const message = createImportMessage(readyMessage, parsed.warnings)
+  return {
+    entries: parsed.entries,
+    message,
+    warnings: parsed.warnings,
+    importedKeys: parsed.entries.length,
+    canImport: parsed.entries.length > 0,
+  }
+}
+
+/** インポート結果の主文と警告を翻訳テンプレートで結合する */
+function createImportMessage(message: string, warnings: string[]): string {
+  if (warnings.length === 0) return message
+  return i18n.t('ui.message.import_message_with_warnings', {
+    message,
+    warnings: warnings.join('\n'),
+  })
+}
+
+/** JSON文字列を検証し、保存前のプレビューを作る */
+export function prepareImportText(text: string): ImportPreview {
+  return createImportPreview(parseImportText(text))
+}
+
+/** JSONファイルを読み込み、保存前のプレビューを作る */
+export async function prepareImportFile(file: File): Promise<ImportPreview> {
+  try {
+    return prepareImportText(await file.text())
+  } catch {
+    return {
+      entries: null,
+      message: i18n.t('ui.message.import_read_error'),
+      warnings: [],
+      importedKeys: 0,
+      canImport: false,
+    }
+  }
+}
+
+/** 検証済みのプレビューをlocalStorageへ反映する */
+export function applyImportPreview(preview: ImportPreview): ImportResult {
+  if (!preview.canImport || preview.entries === null) {
+    return {
+      success: false,
+      message: preview.message,
+      importedKeys: 0,
+      warnings: preview.warnings,
+    }
+  }
+
+  const snapshot = createStorageSnapshot(preview.entries)
+  if (snapshot === null) {
+    return { success: false, message: i18n.t('ui.message.import_snapshot_error'), warnings: preview.warnings }
+  }
+
+  if (!applyStorageEntries(preview.entries, snapshot)) {
+    return { success: false, message: i18n.t('ui.message.import_write_error'), warnings: preview.warnings }
+  }
+
+  return {
+    success: true,
+    message:
+      preview.warnings.length > 0
+        ? `${i18n.t('ui.message.import_success', { count: preview.entries.length })}\n${preview.warnings.join('\n')}`
+        : i18n.t('ui.message.import_success', { count: preview.entries.length }),
+    importedKeys: preview.entries.length,
+    warnings: preview.warnings,
+  }
+}
+
+/** JSON文字列を検証・反映する既存の一括API */
+export function importUserDataText(text: string): ImportResult {
+  return applyImportPreview(prepareImportText(text))
 }

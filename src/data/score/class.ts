@@ -3,7 +3,7 @@
  *
  * シナリオ×難易度×週番号ごとの授業パラメータ上昇量を定義する。
  */
-import { ScenarioType, DifficultyType, ActivityIdType, ParameterType } from '../../types/enums'
+import { ActivityIdType, DifficultyType, ParameterType, ScenarioType } from '../../types/enums'
 import type { ParameterValues } from '../../types/unit'
 
 /** 週番号 → パラメータ上昇量 */

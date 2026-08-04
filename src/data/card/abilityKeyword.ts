@@ -6,8 +6,8 @@
  * フィルター UI、サポート一覧バッジ、キーワード検索に使用。
  */
 
-import { AbilityKeywordType, TriggerKeyType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { AbilityKeywordType, TriggerKeyType } from '../../types/enums'
 
 /** アビリティキーワードマスタの1行分 */
 interface AbilityKeywordEntry {

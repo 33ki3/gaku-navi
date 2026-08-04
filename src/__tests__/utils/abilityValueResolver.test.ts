@@ -7,26 +7,26 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  RarityTierType,
-  RarityType,
-  AbilityNameKeyType,
-  UncapType,
-  SourceType,
-  CardType,
-  PlanType,
-  ParameterType,
-  TriggerKeyType,
-} from '../../types/enums'
-import { getAvailableAbilities, getStages, getSchedule } from '../../data/score/abilityValue'
-import { resolveAbilityValues } from '../../utils/abilityValueResolver'
-import {
   ABILITY_MAX_COUNT,
   SLOT1_OPTIONS,
   SLOT3_OPTIONS,
   SLOT6_OPTIONS,
   isFixedSlot,
 } from '../../data/card/abilitySlot'
-import type { SupportCard, Ability } from '../../types/card'
+import { getAvailableAbilities, getSchedule, getStages } from '../../data/score/abilityValue'
+import type { Ability, SupportCard } from '../../types/card'
+import {
+  AbilityNameKeyType,
+  CardType,
+  ParameterType,
+  PlanType,
+  RarityTierType,
+  RarityType,
+  SourceType,
+  TriggerKeyType,
+  UncapType,
+} from '../../types/enums'
+import { resolveAbilityValues } from '../../utils/abilityValueResolver'
 
 /** テスト用のダミーサポートを生成する */
 function dummyCard(overrides: Partial<SupportCard> = {}): SupportCard {

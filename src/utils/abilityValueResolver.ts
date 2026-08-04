@@ -6,12 +6,12 @@
  * 例外サポートだけはサポート名ベースの例外マップで上書きする。
  */
 
-import type { Ability, SupportCard } from '../types/card'
-import { RarityType, RarityTierType, UncapType } from '../types/enums'
-import { getStages, getSchedule } from '../data/score/abilityValue'
 import { AbilityExceptionMap } from '../data/score/abilityException'
+import { getSchedule, getStages } from '../data/score/abilityValue'
+import type { Ability, SupportCard } from '../types/card'
+import { RarityTierType, RarityType, UncapType } from '../types/enums'
 
-/** values の辞書型。 */
+/** values の辞書型 */
 type AbilityValues = Record<string, string>
 
 /** getRarityTier はレアリティとイベントSSRフラグからレアリティ階層を導出する */

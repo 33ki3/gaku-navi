@@ -7,19 +7,19 @@
 import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '../ui/Badge'
-import { CountCustomSection } from '../scoreDetailModal/CountCustomSection'
-import { EventBoostSection } from '../scoreDetailModal/EventBoostSection'
-import { AbilityRow } from '../scoreDetailModal/AbilityRow'
-import { AdjustedIcon, ChevronDownIcon, CloseIcon, LockIcon } from '../ui/icons'
-import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
-import type { ActionIdType } from '../../types/enums'
-import type { CardCustomData } from '../../hooks/useCardCountCustom'
-import type { UnitMember } from '../../types/unit'
-import * as data from '../../data'
 import * as constant from '../../constant'
+import * as data from '../../data'
+import type { CardCustomData } from '../../hooks/useCardCountCustom'
+import type { ActionIdType } from '../../types/enums'
+import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
+import type { UnitMember } from '../../types/unit'
 import { hasSPAbility } from '../../utils/cardQuery'
 import { getScoreStyles } from '../../utils/display/scoreStyles'
+import { AbilityRow } from '../scoreDetailModal/AbilityRow'
+import { CountCustomSection } from '../scoreDetailModal/CountCustomSection'
+import { EventBoostSection } from '../scoreDetailModal/EventBoostSection'
+import { Badge } from '../ui/Badge'
+import { AdjustedIcon, ChevronDownIcon, CloseIcon, LockIcon } from '../ui/icons'
 
 /** UnitCardItem に渡すプロパティ */
 interface UnitCardItemProps {
@@ -118,10 +118,10 @@ export default memo(function UnitCardItem({
   // 提供元をサポート名ごとにグループ化する
   const providerGroups = useMemo(() => {
     if (synergyProviders.length === 0) return []
-    const grouped = new Map<string, { actionId: string; label: string; count: number }[]>()
+    const grouped = new Map<string, { actionId: ActionIdType; label: string; count: number }[]>()
     for (const p of synergyProviders) {
       if (!grouped.has(p.providerName)) grouped.set(p.providerName, [])
-      const category = data.getActionCategory(p.actionId as ActionIdType)
+      const category = data.getActionCategory(p.actionId)
       const label = category ? t(category.label) : p.actionId
       grouped.get(p.providerName)!.push({ actionId: p.actionId, label, count: p.count })
     }

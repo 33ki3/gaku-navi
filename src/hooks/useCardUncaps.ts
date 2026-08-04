@@ -5,10 +5,10 @@
  * 0凸〜4凸まであり、凸数に応じてアビリティの効果量が変わる。
  * 変更は localStorage に自動保存される。
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import * as constant from '../constant'
 import type { UncapType } from '../types/enums'
 import { loadCardUncaps, saveCardUncaps } from '../utils/uncapStorage'
-import * as constant from '../constant'
 
 /** useCardUncaps の返却型 */
 interface CardUncapsState {

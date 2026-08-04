@@ -4,8 +4,8 @@
  * コンテスト・スキルカード種別・プランの3カテゴリの
  * バッジ色・ラベルを統合的に定義する。
  */
-import { PItemMemoryType, SkillCardType, PlanType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { PItemMemoryType, PlanType, SkillCardType } from '../../types/enums'
 
 /** メモリ化バッジエントリの型 */
 interface MemoryBadgeEntry {

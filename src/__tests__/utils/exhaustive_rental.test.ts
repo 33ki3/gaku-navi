@@ -3,11 +3,11 @@
  * ドリンク設定変更時の局所解問題を再現し、exhaustiveOptimizeAsync で解決されることを検証する。
  */
 import { describe, expect, it } from 'vitest'
-import { exhaustiveOptimizeAsync, evaluateManualUnit } from '../../utils/unitSimulator'
-import * as enums from '../../types/enums'
 import { AllCards, CardByName } from '../../data/index'
 import type { ScoreSettings } from '../../types/card'
+import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
+import { evaluateManualUnit, exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
 
 /** ユーザーの実際の設定（p_drink_acquire 可変） */
 function makeUserScoreSettings(pDrinkAcquire = 10): ScoreSettings {

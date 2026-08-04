@@ -5,8 +5,10 @@
  * localStorage に保存・読み込み・削除する。
  */
 
-import type { ScoreSettings } from '../types/card'
 import * as constant from '../constant'
+import type { ScoreSettings } from '../types/card'
+import { normalizeScoreSettings } from './scoreSettings'
+import { isRecord } from './valueValidation'
 
 /** プリセット1件のデータ。保存名と設定値を持つ。 */
 export interface ScorePreset {
@@ -27,16 +29,12 @@ export function loadPresets(): ScorePreset[] {
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown[]
     if (!Array.isArray(parsed)) return []
-    return parsed
-      .filter(
-        (item): item is ScorePreset =>
-          typeof item === 'object' &&
-          item !== null &&
-          typeof (item as ScorePreset).name === 'string' &&
-          typeof (item as ScorePreset).settings === 'object' &&
-          (item as ScorePreset).settings !== null,
-      )
-      .map((preset) => ({ ...preset }))
+    // 配列でない値・名前のない項目・設定が壊れた項目は除外し、読めるプリセットだけを残す
+    return parsed.flatMap((item): ScorePreset[] => {
+      if (!isRecord(item) || typeof item.name !== 'string') return []
+      const settings = normalizeScoreSettings(item.settings)
+      return settings ? [{ name: item.name, settings }] : []
+    })
   } catch {
     return []
   }

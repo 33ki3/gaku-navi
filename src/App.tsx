@@ -1,368 +1,85 @@
 /**
- * サポート一覧ページ（メインページ）
+ * サポート一覧ページのルートコンポーネント。
  *
- * アプリのルートコンポーネント。
- * ヘッダー・フィルター・サポートグリッド・モーダル・点数設定パネルを
- * 組み合わせて表示する。useAppState で全体の状態を管理する。
+ * 状態管理と各表示領域の組み合わせだけを担当し、ページ本体・モーダル・設定パネル・複雑な操作は専用ファイルへ委譲する。
  */
-import { useTranslation } from 'react-i18next'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useRef } from 'react'
 
-import AppHeader from './components/header/AppHeader'
-import CardList from './components/cardList/CardList'
-import SortControls from './components/filterBar/SortControls'
-import EmptyState from './components/cardList/EmptyState'
-import { ErrorBoundary } from './components/ui/ErrorBoundary'
-import { useAppState } from './hooks'
-import { createEmptyResult } from './utils/calculator/calculateCard'
-import { resetScheduleSelectionsOnly } from './utils/scoreSettings'
+import { AppModals } from './components/app/AppModals'
+import { AppPageContent } from './components/app/AppPageContent'
+import { AppSettingsPanels } from './components/app/AppSettingsPanels'
+import * as constant from './constant'
 import { CardDataProvider, CardUIProvider } from './contexts/CardContext'
-import type { CardDataContextValue, CardUIContextValue } from './contexts/CardContext'
-import type { SupportCard } from './types/card'
-import { hasAllScheduleSelections } from './utils/scoreSettings'
-
-const CardDetailModal = lazy(() => import('./components/cardDetailModal/CardDetailModal'))
-const ScoreDetailModal = lazy(() => import('./components/scoreDetailModal/ScoreDetailModal'))
-const ScoreSettingsPanel = lazy(() => import('./components/scoreSettingsPanel/ScoreSettingsPanel'))
-const FilterSortModal = lazy(() => import('./components/filterBar/FilterSortModal'))
-const UnitSimulatorPanel = lazy(() => import('./components/unitSimulator/UnitSimulatorPanel'))
-const UserCardFormModal = lazy(() => import('./components/userCardForm/UserCardFormModal'))
+import { useAppState } from './hooks'
+import { useAppOptions } from './hooks/useAppOptions'
+import { useCardInteractions } from './hooks/useCardInteractions'
+import { usePanelNavigation } from './hooks/usePanelNavigation'
+import { useUnitCardSelectionBridge } from './hooks/useUnitCardSelectionBridge'
 
 /**
- * メインアプリケーションコンポーネント
+ * アプリ全体の状態と責務別コンポーネントを接続する。
  *
- * @returns アプリ全体の要素
+ * @returns サポート一覧、モーダル、設定パネルを含むアプリ全体
  */
 function App() {
-  const { t } = useTranslation()
   const state = useAppState()
-
-  /** モバイル判定（md未満） */
-  const isMobile = useCallback(() => !window.matchMedia('(min-width: 768px)').matches, [])
-
-  /** 点数設定パネルを開く（モバイルでは最適編成パネルを閉じて排他表示） */
-  const openScoreSettingsPanel = useCallback(() => {
-    if (isMobile()) {
-      state.ui.setSimulatorOpen(false)
-      state.ui.setSimulatorPinned(false)
-    }
-    state.ui.setScoreSettingsOpen(true)
-  }, [isMobile, state.ui])
-
-  /** 最適編成パネルを開く（モバイルでは点数設定パネルを閉じて排他表示） */
-  const openSimulatorPanel = useCallback(() => {
-    if (isMobile()) {
-      state.ui.setScoreSettingsOpen(false)
-      state.ui.setSettingsPinned(false)
-    }
-    state.ui.setSimulatorOpen(true)
-  }, [isMobile, state.ui])
-
-  // サポート一覧選択モード: UnitSimulatorPanel が登録する addCard コールバック
-  const addManualCardRef = useRef<((cardName: string) => void) | null>(null)
-  const registerAddManualCard = useCallback((fn: ((cardName: string) => void) | null) => {
-    addManualCardRef.current = fn
+  const options = useAppOptions()
+  const mobileNavigationShowRef = useRef<() => void>(() => {})
+  const registerMobileNavigationShow = useCallback((handler: (() => void) | null) => {
+    // 下部ナビを所有するヘッダーと、選択完了を処理する一覧をrefで接続する
+    mobileNavigationShowRef.current = handler ?? (() => {})
   }, [])
-
-  // サポート一覧選択モード: サポート選択可否判定関数
-  const isCardEligibleRef = useRef<((card: SupportCard) => boolean) | null>(null)
-  // isCardEligible の更新を CardListItem に伝えるためのバージョンカウンター
-  const [eligibilityVersion, setEligibilityVersion] = useState(0)
-  const registerIsCardEligible = useCallback((fn: ((card: SupportCard) => boolean) | null) => {
-    isCardEligibleRef.current = fn
-    if (fn !== null) setEligibilityVersion((v) => v + 1)
+  const requestMobileNavigationShow = useCallback(() => {
+    // 一覧から最適編成へ戻る遷移でも、下部ナビを表示状態へ戻す
+    mobileNavigationShowRef.current()
   }, [])
+  const navigation = usePanelNavigation({
+    ui: state.ui,
+    toggleUncapEdit: state.handlers.handleToggleUncapEdit,
+  })
+  const selection = useUnitCardSelectionBridge({
+    selectionMode: state.ui.unitCardSelectMode,
+    setSelectionMode: state.ui.setUnitCardSelectMode,
+    openCardDetail: state.handlers.handleCardClick,
+    openScoreDetail: state.handlers.handleScoreClick,
+    isMobileViewport: navigation.isMobileViewport,
+    openUnitSimulator: navigation.openUnitSimulator,
+    requestMobileNavigationShow,
+  })
+  const cardInteractions = useCardInteractions({ state, selection })
 
-  // unitCardSelectMode を ref で保持して onCardClick / isCardEligible を安定化する
-  const unitCardSelectModeRef = useRef(state.ui.unitCardSelectMode)
-  useEffect(() => {
-    unitCardSelectModeRef.current = state.ui.unitCardSelectMode
-  }, [state.ui.unitCardSelectMode])
-
-  // handlers を個別に取り出し、useMemo の依存配列を正確に指定する
-  const { handleCardClick, handleScoreClick, handleUncapChange, handleToggleUncapEdit } = state.handlers
-
-  // サポート選択モード対応のクリックハンドラ（ref で安定化）
-  const onCardClick = useCallback(
-    (card: SupportCard) => {
-      if (unitCardSelectModeRef.current && addManualCardRef.current) {
-        addManualCardRef.current(card.name)
-        return
-      }
-      handleCardClick(card)
-    },
-    [handleCardClick],
-  )
-
-  // 選択モード中はスコアモーダルを開かない（ref で安定化）
-  const onScoreClick = useCallback(
-    (card: SupportCard, e: MouseEvent) => {
-      if (unitCardSelectModeRef.current) return
-      handleScoreClick(card, e)
-    },
-    [handleScoreClick],
-  )
-
-  // サポート選択可否判定（ref で安定化）
-  // unitCardSelectMode の判定は CardListItem 側で行うため、ここでは eligibility のみ評価する
-  const isCardEligible = useCallback((card: SupportCard) => {
-    return isCardEligibleRef.current ? isCardEligibleRef.current(card) : true
-  }, [])
-
-  // ユーザー定義カードの編集・削除ハンドラ
-  const handleEditUserCard = useCallback(
-    (card: SupportCard) => {
-      state.ui.setEditingUserCard(card)
-      state.ui.setUserCardFormOpen(true)
-    },
-    [state.ui],
-  )
-  const handleDeleteUserCard = useCallback(
-    (cardName: string) => {
-      state.userCards.deleteUserCard(cardName)
-    },
-    [state.userCards],
-  )
-
-  // 点数設定パネルのエラーバウンダリー: スケジュール選択のみリセットして再試行
-  const handleScoreSettingsReset = useCallback(() => {
-    state.scores.setScoreSettings(resetScheduleSelectionsOnly(state.scores.scoreSettings))
-  }, [state.scores])
-
-  // CardDataContext: 安定したアクション関数（凸数変更時のみ再生成）
-  const cardDataCtx = useMemo<CardDataContextValue>(
-    () => ({
-      getCardUncap: state.scores.getCardUncap,
-      onCardClick,
-      onScoreClick,
-      onUncapChange: handleUncapChange,
-      onEditUserCard: handleEditUserCard,
-      onDeleteUserCard: handleDeleteUserCard,
-    }),
-    [state.scores.getCardUncap, onCardClick, onScoreClick, handleUncapChange, handleEditUserCard, handleDeleteUserCard],
-  )
-
-  // CardUIContext: 変化する UI 状態（編集モード・選択モード切替時のみ再生成）
-  const cardUICtx = useMemo<CardUIContextValue>(
-    () => ({
-      uncapEditMode: state.ui.uncapEditMode,
-      onToggleUncapEdit: handleToggleUncapEdit,
-      unitCardSelectMode: state.ui.unitCardSelectMode,
-      isCardEligible,
-      eligibilityVersion,
-    }),
-    [state.ui.uncapEditMode, handleToggleUncapEdit, state.ui.unitCardSelectMode, isCardEligible, eligibilityVersion],
-  )
-
-  // パネル表示に応じてモーダルの右オフセットクラスを計算する
-  const panelRightOffset = state.ui.bothPanelsPinned ? 'md:right-[48rem]' : state.ui.anyPanelPinned ? 'md:right-96' : ''
+  const panelRightOffset = state.ui.bothPanelsPinned
+    ? constant.MODAL_TWO_PANEL_OFFSET
+    : state.ui.anyPanelPinned
+      ? constant.MODAL_ONE_PANEL_OFFSET
+      : ''
+  const mobileNavPadding = options.preferences.showMobileBottomNav
+    ? constant.PAGE_WITH_MOBILE_NAV
+    : constant.PAGE_WITHOUT_MOBILE_NAV
 
   return (
-    // サポート操作コンテキストをアプリ全体に提供（データ層 + UI層の2分割）
-    <CardDataProvider value={cardDataCtx}>
-      <CardUIProvider value={cardUICtx}>
-        <div
-          className={`min-h-screen bg-[#f8fafc] text-slate-900 font-sans transition-[padding] duration-300 ${state.ui.bothPanelsPinned ? 'md:pr-[48rem]' : state.ui.anyPanelPinned ? 'md:pr-96' : ''}`}
-        >
-          {/* ヘッダー（タイトル・アクションボタン） */}
-          <AppHeader
-            onOpenScoreSettings={openScoreSettingsPanel}
-            onPinScoreSettings={() => state.ui.setSettingsPinned(!state.ui.settingsPinned)}
-            settingsPinned={state.ui.settingsPinned}
-            onOpenSimulator={openSimulatorPanel}
-            onPinSimulator={() => state.ui.setSimulatorPinned(!state.ui.simulatorPinned)}
-            simulatorPinned={state.ui.simulatorPinned}
-            bothPanelsPinned={state.ui.bothPanelsPinned}
-            panelRightOffset={panelRightOffset}
-            onOpenUserCardForm={() => state.ui.setUserCardFormOpen(true)}
+    <CardDataProvider value={cardInteractions.dataContext}>
+      <CardUIProvider value={cardInteractions.uiContext}>
+        <div className={`${constant.PAGE_ROOT} ${mobileNavPadding}`}>
+          <AppPageContent
+            state={state}
+            navigation={navigation}
+            options={options}
+            selection={selection}
+            registerMobileNavigationShow={registerMobileNavigationShow}
           />
-
-          <main className={`mx-auto px-4 py-5 sm:px-6 lg:px-8 ${state.ui.anyPanelPinned ? '' : 'max-w-7xl'}`}>
-            {/* 件数表示 + フィルタ・ソートボタン */}
-            <SortControls
-              count={state.filters.filteredCards.length}
-              filters={state.filters}
-              onOpenFilterSort={() => state.ui.setFilterSortOpen(true)}
-              onOpenScoreSettings={() => {
-                // PC（md以上）はピン留めモード、モバイルはオーバーレイモード
-                if (window.matchMedia('(min-width: 768px)').matches) {
-                  state.ui.setSettingsPinned(true)
-                } else {
-                  openScoreSettingsPanel()
-                }
-              }}
-              scheduleConfigured={hasAllScheduleSelections(state.scores.scoreSettings)}
-              scoreSettingsVisible={state.ui.scoreSettingsOpen || state.ui.settingsPinned}
-            />
-
-            {/* サポートグリッド（仮想スクロール対応） */}
-            <CardList
-              filteredCards={state.filters.filteredCards}
-              cardScores={state.scores.cardScores}
-              abilityBadgeMap={state.filters.abilityBadgeMap}
-              cardCountCustom={state.scores.countCustom.cardCountCustom}
-              settingsPinned={state.ui.anyPanelPinned}
-              bothPanelsPinned={state.ui.bothPanelsPinned}
-            />
-            {/* フィルタ結果が空のときの案内表示 */}
-            {state.filters.filteredCards.length === 0 && <EmptyState onClearFilters={state.filters.clearFilters} />}
-          </main>
-          {/* フッター（アプリ名・クレジット表示） */}
-          <footer
-            className={`mx-auto px-4 py-6 sm:px-6 lg:px-8 text-center ${state.ui.anyPanelPinned ? '' : 'max-w-7xl'}`}
-          >
-            <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">{t('ui.footer')}</p>
-          </footer>
-          {/* サポート一覧選択モード: フローティングバー */}
-          {state.ui.unitCardSelectMode && (
-            <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-blue-600 text-white px-5 py-3 rounded-2xl shadow-lg">
-              <span className="text-xs font-bold">{t('unit.manual_select_bar')}</span>
-              <button
-                onClick={() => {
-                  state.ui.setUnitCardSelectMode(false)
-                  // モバイルの場合はパネルを再度開く
-                  if (!window.matchMedia('(min-width: 768px)').matches) {
-                    openSimulatorPanel()
-                  }
-                }}
-                className="px-3 py-1 rounded-lg text-xs font-bold bg-white text-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                {t('unit.manual_select_done')}
-              </button>
-            </div>
-          )}
-          {/* フィルタ・ソートモーダル */}
-          {state.ui.filterSortOpen && (
-            <Suspense fallback={null}>
-              <FilterSortModal
-                onClose={() => state.ui.setFilterSortOpen(false)}
-                filters={state.filters}
-                panelRightOffset={panelRightOffset}
-                activeTab={state.ui.filterSortTab}
-                onTabChange={state.ui.setFilterSortTab}
-              />
-            </Suspense>
-          )}
-          {/* サポート詳細モーダル（サポート選択時のみ表示） */}
-          {state.ui.selectedCard && (
-            <Suspense fallback={null}>
-              <CardDetailModal
-                card={state.ui.selectedCard}
-                uncap={state.scores.getCardUncap(state.ui.selectedCard.name)}
-                scoreResult={
-                  state.scores.cardResults.get(state.ui.selectedCard.name) ?? createEmptyResult(state.ui.selectedCard)
-                }
-                calculateForCard={state.scores.calculateForCard}
-                onClose={() => state.ui.setSelectedCard(null)}
-                onUncapChange={handleUncapChange}
-                onEditUserCard={handleEditUserCard}
-                onDeleteUserCard={handleDeleteUserCard}
-              />
-            </Suspense>
-          )}
-          {/* スコア内訳モーダル（スコアクリック時のみ表示） */}
-          {state.ui.scoreBreakdown && (
-            <Suspense fallback={null}>
-              <ScoreDetailModal
-                card={state.ui.scoreBreakdown.card}
-                result={
-                  state.scores.cardResults.get(state.ui.scoreBreakdown.card.name) ??
-                  createEmptyResult(state.ui.scoreBreakdown.card)
-                }
-                countCustom={state.scores.countCustom.cardCountCustom[state.ui.scoreBreakdown.card.name] ?? {}}
-                onSelfTriggerChange={(actionId, count) =>
-                  state.scores.countCustom.setSelfTrigger(state.ui.scoreBreakdown!.card.name, actionId, count)
-                }
-                onRemoveSelfTrigger={(actionId) =>
-                  state.scores.countCustom.removeSelfTrigger(state.ui.scoreBreakdown!.card.name, actionId)
-                }
-                onPItemCountChange={(actionId, count) =>
-                  state.scores.countCustom.setPItemCount(state.ui.scoreBreakdown!.card.name, actionId, count)
-                }
-                onRemovePItemCount={(actionId) =>
-                  state.scores.countCustom.removePItemCount(state.ui.scoreBreakdown!.card.name, actionId)
-                }
-                onClearCardCustom={() => state.scores.countCustom.clearCardCustom(state.ui.scoreBreakdown!.card.name)}
-                onClose={() => state.ui.setScoreBreakdown(null)}
-              />
-            </Suspense>
-          )}
-          {/* 点数設定パネル（開いた時のみマウントしてチャンクの初期ロードを回避） */}
-          {(state.ui.scoreSettingsOpen || state.ui.settingsPinned) && (
-            <ErrorBoundary
-              onReset={handleScoreSettingsReset}
-              resetDescription={t('ui.header.schedule')}
-              onCancel={() => {
-                state.ui.setScoreSettingsOpen(false)
-                state.ui.setSettingsPinned(false)
-              }}
-            >
-              <Suspense fallback={null}>
-                <ScoreSettingsPanel
-                  isOpen={state.ui.scoreSettingsOpen}
-                  onClose={() => {
-                    state.ui.setScoreSettingsOpen(false)
-                    state.ui.setSettingsPinned(false)
-                  }}
-                  pinned={state.ui.settingsPinned}
-                  settings={state.scores.scoreSettings}
-                  onSettingsChange={state.scores.setScoreSettings}
-                  onSwitchToSimulator={openSimulatorPanel}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          )}
-          {/* 最適編成パネル（開いた時のみマウントしてチャンクの初期ロードを回避） */}
-          {(state.ui.simulatorOpen || state.ui.simulatorPinned || state.ui.unitCardSelectMode) && (
-            <ErrorBoundary>
-              <Suspense fallback={null}>
-                <UnitSimulatorPanel
-                  isOpen={state.ui.simulatorOpen}
-                  onClose={() => {
-                    state.ui.setSimulatorOpen(false)
-                    state.ui.setSimulatorPinned(false)
-                  }}
-                  pinned={state.ui.simulatorPinned}
-                  secondPanel={state.ui.bothPanelsPinned}
-                  registerAddManualCard={registerAddManualCard}
-                  registerIsCardEligible={registerIsCardEligible}
-                  unitCardSelectMode={state.ui.unitCardSelectMode}
-                  setUnitCardSelectMode={state.ui.setUnitCardSelectMode}
-                  countCustom={state.scores.countCustom}
-                  scoreSettings={state.scores.scoreSettings}
-                  allCards={state.userCards.allCards}
-                  allCardByName={state.userCards.allCardByName}
-                  cardUncaps={state.scores.cardUncaps}
-                  onSwitchToScoreSettings={openScoreSettingsPanel}
-                  onManualSelectionComplete={() => {
-                    if (!window.matchMedia('(min-width: 768px)').matches) {
-                      openSimulatorPanel()
-                    }
-                  }}
-                />
-              </Suspense>
-            </ErrorBoundary>
-          )}
-          {/* ユーザーカード登録・編集モーダル */}
-          {state.ui.userCardFormOpen && (
-            <Suspense fallback={null}>
-              <UserCardFormModal
-                onClose={() => {
-                  state.ui.setUserCardFormOpen(false)
-                  state.ui.setEditingUserCard(null)
-                }}
-                onSave={(card) => {
-                  if (state.ui.editingUserCard) {
-                    state.userCards.updateUserCard(state.ui.editingUserCard.name, card)
-                  } else {
-                    state.userCards.addUserCard(card)
-                  }
-                }}
-                editingCard={state.ui.editingUserCard ?? undefined}
-                existingNames={state.userCards.userCardNames}
-              />
-            </Suspense>
-          )}
+          <AppModals
+            state={state}
+            cardInteractions={cardInteractions}
+            options={options}
+            panelRightOffset={panelRightOffset}
+          />
+          <AppSettingsPanels
+            state={state}
+            navigation={navigation}
+            selection={selection}
+            reserveMobileNavSpace={options.preferences.showMobileBottomNav}
+          />
         </div>
       </CardUIProvider>
     </CardDataProvider>

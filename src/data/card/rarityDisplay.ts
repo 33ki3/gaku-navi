@@ -4,9 +4,9 @@
  * SSR / SR / R それぞれのソート順、グラデーションバッジ色、
  * シンプルバッジ色を定義する。
  */
-import { RarityType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
-import { RARITY_COLOR_SSR, RARITY_COLOR_SR, RARITY_COLOR_R } from '../../constant/styles'
+import { RARITY_COLOR_R, RARITY_COLOR_SR, RARITY_COLOR_SSR } from '../../styles'
+import { RarityType } from '../../types/enums'
 
 interface RarityEntry {
   rarity: RarityType

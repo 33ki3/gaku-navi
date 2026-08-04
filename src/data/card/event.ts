@@ -6,8 +6,8 @@
  * サマリ: イベント効果タイプからサポート一覧に表示するラベルを取得する。
  */
 
-import { EventFilterType, EventFilterCategoryType, EventEffectType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { EventEffectType, EventFilterCategoryType, EventFilterType } from '../../types/enums'
 
 const filterEntries: {
   value: EventFilterType

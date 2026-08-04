@@ -9,16 +9,16 @@
  */
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CardFiltersReturn } from '../../hooks'
 import * as constant from '../../constant'
-import { ButtonSizeType, CountCustomFilter } from '../../types/enums'
+import type { CardFiltersReturn } from '../../hooks'
+import * as enums from '../../types/enums'
+import { ToggleButton } from '../ui/ToggleButton'
+import { AbilityFilter } from './AbilityFilter'
+import { EventTypeFilter } from './EventTypeFilter'
 import { FilterSearchInput } from './FilterSearchInput'
 import { RarityTypePlanFilter } from './RarityTypePlanFilter'
-import { AbilityFilter } from './AbilityFilter'
-import { UncapFilter } from './UncapFilter'
-import { EventTypeFilter } from './EventTypeFilter'
 import { SourceFilter } from './SourceFilter'
-import { ToggleButton } from '../ui/ToggleButton'
+import { UncapFilter } from './UncapFilter'
 
 /** FilterBar コンポーネントに渡すプロパティ */
 interface FilterBarProps {
@@ -26,6 +26,12 @@ interface FilterBarProps {
   filters: CardFiltersReturn
 }
 
+/**
+ * 利用可能な絞り込み条件とクリア操作をまとめて表示する。
+ *
+ * @param props - 現在のフィルター状態と更新操作
+ * @returns サポート一覧の絞り込みフォーム
+ */
 export default memo(function FilterBar({ filters }: FilterBarProps) {
   const { t } = useTranslation()
 
@@ -45,7 +51,10 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
   return (
     <div className="mt-3 flex flex-col gap-3">
       {/* テキスト検索 */}
-      <FilterSearchInput value={filters.searchTerm} onChange={filters.setSearchTerm} />
+      <div>
+        <p className={constant.FILTER_SECTION_LABEL}>{t('ui.filter.search_label')}</p>
+        <FilterSearchInput value={filters.searchTerm} onChange={filters.setSearchTerm} fullWidth />
+      </div>
 
       {/* レアリティ・タイプ・プランの切り替え */}
       <RarityTypePlanFilter
@@ -82,18 +91,18 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
         <p className={constant.FILTER_SECTION_LABEL}>{t('ui.header.count_custom')}</p>
         <div className="flex flex-wrap items-center gap-2">
           <ToggleButton
-            isActive={filters.selectedCountCustom.has(CountCustomFilter.Unadjusted)}
-            onClick={() => filters.toggleCountCustom(CountCustomFilter.Unadjusted)}
+            isActive={filters.selectedCountCustom.has(enums.CountCustomFilter.Unadjusted)}
+            onClick={() => filters.toggleCountCustom(enums.CountCustomFilter.Unadjusted)}
             activeClass="bg-violet-500 text-white shadow border border-transparent"
-            size={ButtonSizeType.Sm}
+            size={enums.ButtonSizeType.Sm}
           >
             {t('ui.filter.count_unadjusted')}
           </ToggleButton>
           <ToggleButton
-            isActive={filters.selectedCountCustom.has(CountCustomFilter.Adjusted)}
-            onClick={() => filters.toggleCountCustom(CountCustomFilter.Adjusted)}
+            isActive={filters.selectedCountCustom.has(enums.CountCustomFilter.Adjusted)}
+            onClick={() => filters.toggleCountCustom(enums.CountCustomFilter.Adjusted)}
             activeClass="bg-violet-500 text-white shadow border border-transparent"
-            size={ButtonSizeType.Sm}
+            size={enums.ButtonSizeType.Sm}
           >
             {t('ui.filter.count_adjusted')}
           </ToggleButton>

@@ -4,7 +4,7 @@
  * シナリオ×難易度ごとの VoDaVi 各軸パラメータ上限を定義する。
  * null の場合は上限なし。
  */
-import { ScenarioType, DifficultyType } from '../../types/enums'
+import { DifficultyType, ScenarioType } from '../../types/enums'
 
 /** 難易度→上限（null = 上限なし） */
 type DifficultyMap = Partial<Record<DifficultyType, number | null>>

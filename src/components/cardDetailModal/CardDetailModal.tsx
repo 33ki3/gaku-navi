@@ -5,11 +5,11 @@
  * ヘッダーにサポート名・レアリティ・タイプ・プラン・入手先を、
  * ボディにイベント・アビリティ・Pアイテム・スキルカードを表示する。
  */
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SupportCard, CardCalculationResult } from '../../types/card'
-import * as data from '../../data'
 import * as constant from '../../constant'
+import * as data from '../../data'
+import type { CardCalculationResult, SupportCard } from '../../types/card'
 import { BadgeSizeType, BadgeWeightType, ButtonSizeType, SourceType, UncapType } from '../../types/enums'
 import { Badge } from '../ui/Badge'
 import CloseButton from '../ui/CloseButton'
@@ -67,7 +67,7 @@ export default function CardDetailModal({
 
   return (
     <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL}>
-      {/* ヘッダー: サポート名とバッジ類 */}
+      {/* サポート名と分類バッジのモーダルヘッダー */}
       <div className={`sticky top-0 z-10 ${typeEntry.bg} border-b ${typeEntry.border} rounded-t-2xl px-6 py-4`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -100,12 +100,12 @@ export default function CardDetailModal({
               </div>
             )}
           </div>
-          {/* 閉じるボタン */}
+          {/* サポート詳細モーダルを閉じるボタン */}
           <CloseButton onClick={onClose} size={ButtonSizeType.Lg} className="shrink-0 transition-colors" />
         </div>
       </div>
 
-      {/* ボディ: 各セクション（イベント・アビリティ・Pアイテム・スキルカード・点数内訳） */}
+      {/* イベント・アビリティ・Pアイテム・スキルカード・点数内訳 */}
       <CardDetailSections
         card={card}
         colors={typeEntry}
@@ -116,7 +116,7 @@ export default function CardDetailModal({
         scoreResult={scoreResult}
       />
 
-      {/* ユーザー定義カードの編集・削除ボタン */}
+      {/* ユーザー定義カードの編集・削除操作 */}
       {card.source === SourceType.User && (onEditUserCard || onDeleteUserCard) && (
         <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur px-6 py-3 flex items-center gap-3 rounded-b-2xl">
           {/* 左側: 通常時は編集ボタン、削除確認時は確認テキスト+確定ボタン */}

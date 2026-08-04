@@ -4,30 +4,31 @@
  * 候補の事前計算、SP/タイプ別分類、レンタル枝の前計算をまとめる。
  * 最適化本体から候補準備の責務を分離し、探索ロジックを読みやすくする。
  */
+import * as constant from '../../constant'
+import * as data from '../../data'
+import type { CardCustomData } from '../../hooks/useCardCountCustom'
 import type {
-  SupportCard,
-  ScoreSettings,
   CardCalculationResult,
   ParameterValues,
   PerLessonParameterValues,
+  ScoreSettings,
+  SupportCard,
 } from '../../types/card'
 import type { UncapType } from '../../types/enums'
-import type { UnitSimulatorSettings, TypeCountValues } from '../../types/unit'
-import type { CardCustomData } from '../../hooks/useCardCountCustom'
 import * as enums from '../../types/enums'
-import * as constant from '../../constant'
-import * as data from '../../data'
+import type { TypeCountValues, UnitSimulatorSettings } from '../../types/unit'
 import { calculateCardParameter } from '../calculator/calculateCard'
 import { parseAbility } from '../calculator/helpers'
+import { isActionId } from '../domainValueValidation'
 import { getProvidedActions } from '../supportSynergy'
-import type { OptimizeInput } from '../unitSimulator'
+import type { OptimizeInput } from '../../types/unitOptimizer'
 
 /** ActionIdType の全値（インデックス参照用） */
 const ACTION_ID_VALUES = Object.values(enums.ActionIdType) as enums.ActionIdType[]
 /** ActionIdType のエントリ数 */
 const ACTION_ID_COUNT = ACTION_ID_VALUES.length
-/** ActionIdType 文字列 → インデックスのマップ */
-const ACTION_ID_TO_IDX: Record<string, number> = {}
+/** ActionIdType → インデックスのマップ */
+const ACTION_ID_TO_IDX: Partial<Record<enums.ActionIdType, number>> = {}
 for (let i = 0; i < ACTION_ID_COUNT; i++) {
   ACTION_ID_TO_IDX[ACTION_ID_VALUES[i]] = i
 }
@@ -126,7 +127,7 @@ interface CandidateCardInput {
 }
 
 /** 評価用インデックスの対応表 */
-const PARAMETER_TYPE_TO_INDEX: Record<string, number> = {
+const PARAMETER_TYPE_TO_INDEX: Record<enums.ParameterType, number> = {
   [enums.ParameterType.Vocal]: 0,
   [enums.ParameterType.Dance]: 1,
   [enums.ParameterType.Visual]: 2,
@@ -177,8 +178,8 @@ function getParamBonusPercent(card: SupportCard, uncap: UncapType): ParameterVal
  * @param parameterType - サポートの parameter_type
  * @returns vocal=0, dance=1, visual=2, 対象外=-1
  */
-function toParamIndex(parameterType: string): number {
-  return PARAMETER_TYPE_TO_INDEX[parameterType] ?? -1
+function toParamIndex(parameterType: enums.ParameterType): number {
+  return PARAMETER_TYPE_TO_INDEX[parameterType]
 }
 
 /**
@@ -197,19 +198,20 @@ function buildProvidedActionsVec(
   card: SupportCard,
   scoreSettings: ScoreSettings,
   effectiveCounts: Partial<Record<enums.ActionIdType, number>>,
-  customSelfTrigger?: Record<string, number>,
+  customSelfTrigger?: Partial<Record<enums.ActionIdType, number>>,
 ): Float64Array {
-  // まずカード単体の提供アクション回数を算出する。
+  // まずカード単体の提供アクション回数を算出する
   const provided = getProvidedActions(card, {
     includeSelfTrigger: scoreSettings.includeSelfTrigger,
     includePItem: scoreSettings.includePItem,
     actionCounts: effectiveCounts,
   })
 
-  // ユーザー調整値があれば、同一連動グループの兄弟アクションへ差分を反映する。
+  // ユーザー調整値があれば、同一連動グループの兄弟アクションへ差分を反映する
   if (customSelfTrigger) {
     for (const [actionId, customCount] of Object.entries(customSelfTrigger)) {
-      const aid = actionId as enums.ActionIdType
+      if (!isActionId(actionId)) continue
+      const aid = actionId
       const autoCount = provided[aid] ?? 0
       const diff = customCount - autoCount
       if (diff !== 0) {
@@ -226,9 +228,10 @@ function buildProvidedActionsVec(
     }
   }
 
-  // 最後に疎なマップ形式を固定長ベクトルへ詰め直して評価処理を高速化する。
+  // 最後に疎なマップ形式を固定長ベクトルへ詰め直して評価処理を高速化する
   const vec = new Float64Array(ACTION_ID_COUNT)
   for (const [actionId, count] of Object.entries(provided)) {
+    if (!isActionId(actionId)) continue
     const idx = ACTION_ID_TO_IDX[actionId]
     if (idx !== undefined && count) vec[idx] = count
   }
@@ -242,7 +245,7 @@ function buildProvidedActionsVec(
  * @returns 非ゼロの提供アクション一覧
  */
 function buildProvidedActionEntries(providedActionsVec: Float64Array): { actionIdx: number; count: number }[] {
-  // ベクトルをそのまま全走査するより、非ゼロ成分だけを持つ配列を作って以降のループを軽くする。
+  // ベクトルをそのまま全走査するより、非ゼロ成分だけを持つ配列を作って以降のループを軽くする
   const entries: { actionIdx: number; count: number }[] = []
   for (let i = 0; i < providedActionsVec.length; i++) {
     const count = providedActionsVec[i]
@@ -264,10 +267,10 @@ function buildSynergyAbilities(
   uncap: UncapType,
   baseResult: CardCalculationResult,
 ): SynergyAbilityInfo[] {
-  // スコア加算に関与するトリガー付きアビリティのみ抽出し、必要値を事前計算する。
+  // スコア加算に関与するトリガー付きアビリティのみ抽出し、必要値を事前計算する
   const synergyAbilities: SynergyAbilityInfo[] = []
   for (const ability of card.abilities) {
-    // 連携対象外の能力はこの段階で除外して、評価時の分岐を減らす。
+    // 連携対象外の能力はこの段階で除外して、評価時の分岐を減らす
     if (
       ability.skip_calculation ||
       ability.is_percentage ||
@@ -281,7 +284,7 @@ function buildSynergyAbilities(
     if (!synActionId || synActionId === enums.ActionIdType.Nothing) continue
     const actionIdx = ACTION_ID_TO_IDX[synActionId]
     if (actionIdx === undefined) continue
-    // 発動値・max_count・使用済み回数をまとめ、評価時に再計算しないようにする。
+    // 発動値・max_count・使用済み回数をまとめ、評価時に再計算しないようにする
     const parsed = parseAbility(ability, uncap)
     const usedDetail = baseResult.allAbilityDetails.find((d) => d.nameKey === ability.name_key)
     synergyAbilities.push({
@@ -302,7 +305,7 @@ function buildSynergyAbilities(
  */
 export function createCandidateCard(input: CandidateCardInput): CandidateCard {
   const { card, uncap, scoreSettings, effectiveCounts, perLessonValues, customData } = input
-  // カード固有スコアと詳細を先に確定し、候補生成後の重複計算を避ける。
+  // カード固有スコアと詳細を先に確定し、候補生成後の重複計算を避ける
   const baseResult = calculateCardParameter(
     card,
     uncap,
@@ -315,7 +318,7 @@ export function createCandidateCard(input: CandidateCardInput): CandidateCard {
     customData?.selfTrigger,
     customData?.pItemCount,
   )
-  // 提供アクションはベクトル化して、組み合わせ評価を線形走査で済ませる。
+  // 提供アクションはベクトル化して、組み合わせ評価を線形走査で済ませる
   const providedActionsVec = buildProvidedActionsVec(card, scoreSettings, effectiveCounts, customData?.selfTrigger)
 
   return {
@@ -494,8 +497,8 @@ function buildRentalPool(
     })
   }
 
-  // byActual/byZero を candidateLimit 枚ずつ取り Map で重複をマージする。
-  // 重複排除後、baseScore 降順の上位 candidateLimit 枚に丸める（SP/typeCountMin 補充カードは除外対象外）。
+  // byActual/byZero を candidateLimit 枚ずつ取り Map で重複をマージする
+  // 重複排除後、baseScore 降順の上位 candidateLimit 枚に丸める（SP/typeCountMin 補充カードは除外対象外）
   const byActual = [...scoredCards].sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
   const byZero = [...scoredCards].sort((a, b) => b.zeroCountScore - a.zeroCountScore)
 
@@ -508,7 +511,7 @@ function buildRentalPool(
   }
 
   // SP制約を満たすために必要なSPカードをプールに補充する
-  // 自由枠とレンタル枠の計算は別関数で独立して行うため、このプールは自由枠専用（所持凸で評価済み）。
+  // 自由枠とレンタル枠の計算は別関数で独立して行うため、このプールは自由枠専用（所持凸で評価済み）
   for (const [spCat, needed] of [
     [enums.SpCategoryType.Vocal, input.settings.spConstraint.vocal] as const,
     [enums.SpCategoryType.Dance, input.settings.spConstraint.dance] as const,
@@ -529,7 +532,7 @@ function buildRentalPool(
     }
   }
 
-  // 各タイプ最小数制約を満たすために必要な枚数（minNeeded）分だけタイプ別カードを補充する。
+  // 各タイプ最小数制約を満たすために必要な枚数（minNeeded）分だけタイプ別カードを補充する
   for (const paramType of [enums.ParameterType.Vocal, enums.ParameterType.Dance, enums.ParameterType.Visual]) {
     const minNeeded = input.settings.typeCountMin[paramType]
     if (minNeeded <= 0) continue

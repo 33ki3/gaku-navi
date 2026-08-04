@@ -15,13 +15,18 @@ interface SettingsOptionTogglesProps {
   onSettingsChange: (s: ScoreSettings) => void
 }
 
-/** 設定オプションのトグル一覧 */
+/**
+ * 点数計算に影響する真偽値オプションを表示する。
+ *
+ * @param props - 現在の点数設定と更新操作
+ * @returns 点数設定オプションのチェックボックス一覧
+ */
 export function SettingsOptionToggles({ settings, onSettingsChange }: SettingsOptionTogglesProps) {
   const { t } = useTranslation()
 
-  // 点数計算に影響するオプション（自己トリガー含むか、Pアイテム含むか、4凸固定か）のチェックボックス
+  // 点数計算に影響するオプション（自己トリガー・Pアイテム・4凸固定）のチェックボックス
   return (
-    <div className="mt-2 space-y-2">
+    <div className="space-y-3">
       <CheckboxField
         label={t('ui.option.self_trigger')}
         checked={settings.includeSelfTrigger}

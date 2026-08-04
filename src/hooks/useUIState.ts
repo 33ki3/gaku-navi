@@ -4,10 +4,10 @@
  * アプリ全体の「見た目に関する状態」をまとめて管理する。
  * モーダルの開閉・パネルの表示/非表示・編集モードの切り替えなど。
  */
-import { useState, useEffect, useCallback } from 'react'
-import type { SupportCard, CardCalculationResult } from '../types/card'
-import { FilterSortTab } from '../types/enums'
+import { useCallback, useEffect, useState } from 'react'
 import * as constant from '../constant'
+import type { CardCalculationResult, SupportCard } from '../types/card'
+import { FilterSortTab } from '../types/enums'
 
 /** useUIState の返却型 */
 interface UIState {
@@ -103,7 +103,7 @@ export function useUIState(): UIState {
 
   // モバイル幅（md未満）になったらピン留めを自動解除する
   useEffect(() => {
-    const mql = window.matchMedia('(min-width: 768px)')
+    const mql = window.matchMedia(constant.DESKTOP_MEDIA_QUERY)
     const handler = (e: MediaQueryListEvent) => {
       if (!e.matches) {
         if (settingsPinned) setSettingsPinnedRaw(false)

@@ -3,8 +3,8 @@
  *
  * サポート詳細モーダルでスキルカードの効果表示を切り替えるモードのラベルを定義する。
  */
-import { SkillCardViewModeType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { SkillCardViewModeType } from '../../types/enums'
 
 const entries: { id: SkillCardViewModeType; label: TranslationKey }[] = [
   { id: SkillCardViewModeType.Unenhanced, label: 'card.view_mode.unenhanced' },

@@ -4,10 +4,10 @@
  * splitSub=false のときにレッスン週の下に表示される Main/Sub 選択ボタン群。
  */
 import { useTranslation } from 'react-i18next'
-import * as enums from '../../../types/enums'
-import { ButtonSizeType } from '../../../types/enums'
 import * as data from '../../../data'
 import { HIF_LESSON_BASE_OPTIONS, HIF_LESSON_OPTION_LABELS } from '../../../data/score/hifScheduleMaster'
+import * as enums from '../../../types/enums'
+import { ButtonSizeType } from '../../../types/enums'
 import { ToggleButton } from '../../ui/ToggleButton'
 
 /** HifLessonPartRows コンポーネントに渡すプロパティ */

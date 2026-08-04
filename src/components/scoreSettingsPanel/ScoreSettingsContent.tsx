@@ -7,21 +7,20 @@
  */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings } from '../../types/card'
-import CollapsibleSection from '../ui/CollapsibleSection'
 import * as constant from '../../constant'
-import * as enums from '../../types/enums'
-import { CollapsibleVariantType } from '../../types/enums'
 import * as data from '../../data'
-import { calculateCountsFromSchedule } from '../../utils/scoreSettings'
 import { useAccordionState } from '../../hooks'
-import { ScenarioDifficultySection } from './ScenarioDifficultySection'
+import type { ScoreSettings } from '../../types/card'
+import * as enums from '../../types/enums'
+import { calculateCountsFromSchedule } from '../../utils/scoreSettings'
+import CollapsibleSection from '../ui/CollapsibleSection'
+import { HelpTooltip } from '../ui/HelpTooltip'
 import { ActionCountsSection } from './ActionCountsSection'
 import { ParameterBonusInputs } from './ParameterBonusInputs'
-import { SettingsOptionToggles } from './SettingsOptionToggles'
 import { PresetSection } from './PresetSection'
-import { HelpTooltip } from '../ui/HelpTooltip'
+import { ScenarioDifficultySection } from './ScenarioDifficultySection'
 import { ScheduleSection } from './ScheduleSection'
+import { SettingsOptionToggles } from './SettingsOptionToggles'
 
 /** ScoreSettingsContent コンポーネントに渡すプロパティ */
 interface ScoreSettingsContentProps {
@@ -31,7 +30,12 @@ interface ScoreSettingsContentProps {
   onSettingsChange: (settings: ScoreSettings) => void
 }
 
-/** 点数設定の中身（レイアウトラッパーなし） */
+/**
+ * 点数設定を責務別の折りたたみセクションとして表示する。
+ *
+ * @param props - 現在の点数設定と更新操作
+ * @returns レイアウトラッパーを含まない点数設定フォーム
+ */
 export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettingsContentProps) {
   const { t } = useTranslation()
 
@@ -62,9 +66,10 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
   }, [scheduleData, settings.scheduleSelections, settings.useScheduleLimits, settings.useCustomMode])
 
   return (
-    <div className="p-5 space-y-5">
+    <div className="space-y-5 px-5 pb-5 pt-0">
       {/* プリセットセクション */}
-      <div className={constant.SECTION_DIVIDER}>
+      <div className="pt-3">
+        {/* プリセット設定セクション */}
         <CollapsibleSection
           title={
             <>
@@ -73,9 +78,10 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
           }
           isOpen={sections[enums.ScoreSettingsSectionKey.Preset]}
           onToggle={() => toggle(enums.ScoreSettingsSectionKey.Preset)}
-          variant={CollapsibleVariantType.Panel}
+          variant={enums.CollapsibleVariantType.Panel}
         >
           <div className="mt-2">
+            {/* 点数設定のプリセット */}
             <PresetSection settings={settings} onSettingsChange={onSettingsChange} />
           </div>
         </CollapsibleSection>
@@ -83,6 +89,7 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
 
       {/* シナリオ/難易度セクション */}
       <div className={constant.SECTION_DIVIDER}>
+        {/* シナリオと難易度の設定セクション */}
         <CollapsibleSection
           title={
             <>
@@ -91,14 +98,16 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
           }
           isOpen={sections[enums.ScoreSettingsSectionKey.Scenario]}
           onToggle={() => toggle(enums.ScoreSettingsSectionKey.Scenario)}
-          variant={CollapsibleVariantType.Panel}
+          variant={enums.CollapsibleVariantType.Panel}
         >
+          {/* シナリオと難易度の入力欄 */}
           <ScenarioDifficultySection settings={settings} onSettingsChange={onSettingsChange} />
         </CollapsibleSection>
       </div>
 
       {/* スケジュールセクション（カスタム/HIF/初編を ScheduleSection 内で出し分け） */}
       <div className={constant.SECTION_DIVIDER}>
+        {/* スケジュール設定セクション */}
         <ScheduleSection
           settings={settings}
           onSettingsChange={onSettingsChange}
@@ -113,6 +122,7 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
       {/* パラメータボーナス入力（カスタムモード時は非表示、スケジュール有効時は自動ロック） */}
       {!settings.useCustomMode && (
         <div className={constant.SECTION_DIVIDER}>
+          {/* パラメータボーナス設定セクション */}
           <CollapsibleSection
             title={
               <span className="inline-flex items-center gap-1">
@@ -123,9 +133,10 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
             }
             isOpen={sections[enums.ScoreSettingsSectionKey.ParamBonus]}
             onToggle={() => toggle(enums.ScoreSettingsSectionKey.ParamBonus)}
-            variant={CollapsibleVariantType.Panel}
+            variant={enums.CollapsibleVariantType.Panel}
           >
             <div className="mt-2">
+              {/* パラメータボーナスの入力欄 */}
               <ParameterBonusInputs
                 settings={settings}
                 onSettingsChange={onSettingsChange}
@@ -138,6 +149,7 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
 
       {/* アクション回数セクション */}
       <div className={constant.SECTION_DIVIDER}>
+        {/* アクション回数設定セクション */}
         <CollapsibleSection
           title={
             <>
@@ -146,8 +158,9 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
           }
           isOpen={sections[enums.ScoreSettingsSectionKey.Actions]}
           onToggle={() => toggle(enums.ScoreSettingsSectionKey.Actions)}
-          variant={CollapsibleVariantType.Panel}
+          variant={enums.CollapsibleVariantType.Panel}
         >
+          {/* アクション回数の入力欄 */}
           <ActionCountsSection
             settings={settings}
             onSettingsChange={onSettingsChange}
@@ -157,8 +170,9 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
         </CollapsibleSection>
       </div>
 
-      {/* オプション（自己発動・Pアイテム） */}
+      {/* 点数計算オプション（オプションモーダルと同じ設定値を共有） */}
       <div className={constant.SECTION_DIVIDER}>
+        {/* 点数計算オプションセクション */}
         <CollapsibleSection
           title={
             <>
@@ -167,8 +181,9 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
           }
           isOpen={sections[enums.ScoreSettingsSectionKey.Options]}
           onToggle={() => toggle(enums.ScoreSettingsSectionKey.Options)}
-          variant={CollapsibleVariantType.Panel}
+          variant={enums.CollapsibleVariantType.Panel}
         >
+          {/* 点数計算オプションのチェック項目 */}
           <SettingsOptionToggles settings={settings} onSettingsChange={onSettingsChange} />
         </CollapsibleSection>
       </div>

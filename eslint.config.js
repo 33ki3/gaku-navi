@@ -20,6 +20,18 @@ export default defineConfig([
       ecmaVersion: 2022,
       globals: globals.browser,
     },
+    rules: {
+      // ESLintコアの並び順ルールで、importの構文種別と名前の順序を統一する
+      'sort-imports': [
+        'error',
+        {
+          allowSeparatedGroups: true,
+          // import宣言の並びはTypeScriptのSort Importsへ任せ、宣言内の名前順だけをESLintで検査する
+          ignoreDeclarationSort: true,
+          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        },
+      ],
+    },
   },
   eslintConfigPrettier,
 ])

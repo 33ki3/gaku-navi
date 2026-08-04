@@ -5,11 +5,11 @@
  * アビリティ名に {v} がある場合、凸数に対応する値を埋め込む。
  */
 import { useTranslation } from 'react-i18next'
-import type { SupportCard } from '../../types/card'
-import type { UncapType } from '../../types/enums'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
-import { resolveAbilityValue, getAbilityNameLabelKey } from '../../utils/display/effectLabels'
+import type { SupportCard } from '../../types/card'
+import type { UncapType } from '../../types/enums'
+import { getAbilityNameLabelKey, resolveAbilityValue } from '../../utils/display/effectLabels'
 
 /** SupportAbilityList コンポーネントに渡すプロパティ */
 interface SupportAbilityListProps {

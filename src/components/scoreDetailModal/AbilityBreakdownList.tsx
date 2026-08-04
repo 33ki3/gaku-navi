@@ -6,8 +6,8 @@
  * 何も内訳がない場合は何も描画しない。
  */
 import type { CardCalculationResult } from '../../types/card'
-import { EventBoostSection } from './EventBoostSection'
 import { AbilitySection } from './AbilitySection'
+import { EventBoostSection } from './EventBoostSection'
 import { PItemSection } from './PItemSection'
 
 /** AbilityBreakdownList コンポーネントに渡すプロパティ */

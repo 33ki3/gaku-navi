@@ -1,0 +1,33 @@
+/**
+ * エクスポートとインポートで共有する保存キーのマスタ。
+ * 保存キーの順序と対象範囲をデータ層で一元管理し、入出力処理から分離する。
+ */
+import {
+  APP_PREFERENCES_STORAGE_KEY,
+  CARD_COUNT_CUSTOM_KEY,
+  FILTER_STORAGE_KEY,
+  SCHEDULE_SELECTIONS_STORAGE_KEY,
+  SCORE_PRESETS_STORAGE_KEY,
+  SCORE_SETTINGS_STORAGE_KEY,
+  SETTINGS_PINNED_KEY,
+  UNCAP_STORAGE_KEY,
+  UNIT_SIMULATOR_STORAGE_KEY,
+  USER_SUPPORTS_STORAGE_KEY,
+} from '../../constant/common'
+
+/** エクスポートとインポートの対象にするlocalStorageキー一覧 */
+export const EXPORT_KEYS = [
+  UNCAP_STORAGE_KEY,
+  SETTINGS_PINNED_KEY,
+  SCORE_SETTINGS_STORAGE_KEY,
+  SCHEDULE_SELECTIONS_STORAGE_KEY,
+  SCORE_PRESETS_STORAGE_KEY,
+  FILTER_STORAGE_KEY,
+  CARD_COUNT_CUSTOM_KEY,
+  UNIT_SIMULATOR_STORAGE_KEY,
+  USER_SUPPORTS_STORAGE_KEY,
+  APP_PREFERENCES_STORAGE_KEY,
+] as const
+
+/** エクスポート対象として許可するlocalStorageキーの型 */
+export type ExportKey = (typeof EXPORT_KEYS)[number]

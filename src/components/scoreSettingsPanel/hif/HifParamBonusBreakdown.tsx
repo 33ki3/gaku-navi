@@ -4,8 +4,8 @@
  * 選抜・本選の2ステージテーブルと合計フッターを表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
 import * as enums from '../../../types/enums'
+import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
 import { filterByStage } from '../../../utils/hifScheduleHelpers'
 import { BreakdownFooter } from '../BreakdownFooter'
 import { HifStageTable } from './HifStageTable'

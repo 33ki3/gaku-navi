@@ -8,21 +8,19 @@
  */
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SupportCard, CardCalculationResult } from '../../types/card'
-import type { ActionIdType } from '../../types/enums'
-import * as enums from '../../types/enums'
-import type { CardCustomData } from '../../hooks/useCardCountCustom'
-import * as data from '../../data'
 import * as constant from '../../constant'
-import { TriggerActionMap } from '../../data/score'
+import * as data from '../../data'
+import { useAccordionState } from '../../hooks'
+import type { CardCustomData } from '../../hooks/useCardCountCustom'
+import type { CardCalculationResult, SupportCard } from '../../types/card'
+import * as enums from '../../types/enums'
 import { getProvidedActions } from '../../utils/supportSynergy'
-import CollapsibleSection from '../ui/CollapsibleSection'
 import CloseButton from '../ui/CloseButton'
-import ModalOverlay from '../ui/ModalOverlay'
+import CollapsibleSection from '../ui/CollapsibleSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
+import ModalOverlay from '../ui/ModalOverlay'
 import { AbilityBreakdownList } from './AbilityBreakdownList'
 import { CountCustomSection } from './CountCustomSection'
-import { useAccordionState } from '../../hooks'
 
 /** ScoreDetailModal コンポーネントに渡すプロパティ */
 interface ScoreDetailModalProps {
@@ -33,20 +31,25 @@ interface ScoreDetailModalProps {
   /** このサポートの回数調整データ */
   countCustom: CardCustomData
   /** 自動カウントの回数調整を変更する関数 */
-  onSelfTriggerChange: (actionId: ActionIdType, count: number) => void
+  onSelfTriggerChange: (actionId: enums.ActionIdType, count: number) => void
   /** 自動カウントの回数調整を個別に削除する関数 */
-  onRemoveSelfTrigger: (actionId: ActionIdType) => void
+  onRemoveSelfTrigger: (actionId: enums.ActionIdType) => void
   /** Pアイテム発動回数の回数調整を変更する関数 */
-  onPItemCountChange: (actionId: ActionIdType, count: number) => void
+  onPItemCountChange: (actionId: enums.ActionIdType, count: number) => void
   /** Pアイテム発動回数の回数調整を個別に削除する関数 */
-  onRemovePItemCount: (actionId: ActionIdType) => void
+  onRemovePItemCount: (actionId: enums.ActionIdType) => void
   /** このサポートの全回数調整をリセットする関数 */
   onClearCardCustom: () => void
   /** モーダルを閉じる関数 */
   onClose: () => void
 }
 
-/** スコア内訳モーダル */
+/**
+ * サポートの点数内訳と回数調整を表示する。
+ *
+ * @param props - 対象サポート、計算結果、回数調整操作
+ * @returns スコア内訳モーダル
+ */
 export default function ScoreDetailModal({
   card,
   result,
@@ -61,7 +64,7 @@ export default function ScoreDetailModal({
   const { t } = useTranslation()
   const typeEntry = data.getTypeEntry(card.type)
   const { state: sections, toggle } = useAccordionState({
-    [enums.ScoreDetailSectionKey.CountCustom]: false,
+    [enums.ScoreDetailSectionKey.CountCustom]: true,
   })
 
   // 回数調整があるかどうか
@@ -71,13 +74,13 @@ export default function ScoreDetailModal({
   // 回数調整の対象項目があるかどうか（なければセクション自体を非表示）
   const hasCountItems = useMemo(() => {
     if (Object.keys(getProvidedActions(card)).length > 0) return true
-    if (card.p_item?.boost && TriggerActionMap[card.p_item.boost.trigger_key]) return true
+    if (card.p_item?.boost && data.TriggerActionMap[card.p_item.boost.trigger_key]) return true
     return false
   }, [card])
 
   /** 自動カウント変更ハンドラ */
   const handleSelfTriggerChange = useCallback(
-    (actionId: ActionIdType, count: number) => {
+    (actionId: enums.ActionIdType, count: number) => {
       onSelfTriggerChange(actionId, count)
     },
     [onSelfTriggerChange],
@@ -85,7 +88,7 @@ export default function ScoreDetailModal({
 
   /** Pアイテム発動回数変更ハンドラ */
   const handlePItemCountChange = useCallback(
-    (actionId: ActionIdType, count: number) => {
+    (actionId: enums.ActionIdType, count: number) => {
       onPItemCountChange(actionId, count)
     },
     [onPItemCountChange],
@@ -93,13 +96,14 @@ export default function ScoreDetailModal({
 
   return (
     <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_SCORE}>
-      {/* ヘッダー: サポート名 + 閉じるボタン */}
+      {/* サポート名と点数内訳モーダルの操作ヘッダー */}
       <div className={`${typeEntry.bg} border-b ${typeEntry.border} rounded-t-2xl px-5 py-3`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <h3 className="text-sm font-black text-slate-900">{card.name}</h3>
             <HelpTooltip text={t('ui.help.tooltip_score_detail')} />
           </div>
+          {/* 点数内訳モーダルを閉じるボタン */}
           <CloseButton onClick={onClose} />
         </div>
       </div>
@@ -107,6 +111,7 @@ export default function ScoreDetailModal({
       <div className="flex flex-col sm:flex-row flex-1 min-h-0">
         {/* 左: カテゴリ別内訳リスト + カウント設定 */}
         <div className="flex-1 overflow-y-auto p-4">
+          {/* カテゴリ別の点数内訳 */}
           <AbilityBreakdownList result={result} />
 
           {/* サポート別カウント設定（対象項目がある場合のみ表示） */}
@@ -135,6 +140,7 @@ export default function ScoreDetailModal({
                 onToggle={() => toggle(enums.ScoreDetailSectionKey.CountCustom)}
               >
                 <div className="pt-2 pb-1 px-1">
+                  {/* サポート別の回数調整欄 */}
                   <CountCustomSection
                     card={card}
                     selfTriggerCustom={countCustom.selfTrigger ?? {}}
@@ -151,7 +157,7 @@ export default function ScoreDetailModal({
           )}
         </div>
 
-        {/* 右: 合計スコア表示 */}
+        {/* 合計スコア */}
         <div
           className={`flex flex-row sm:flex-col items-center justify-center px-4 py-2 sm:py-0 border-t sm:border-t-0 sm:border-l ${typeEntry.border} ${typeEntry.bg}`}
         >

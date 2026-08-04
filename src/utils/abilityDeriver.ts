@@ -4,8 +4,8 @@
  * アビリティ種別とパラメータ型からトリガーキーとフラグを導出する。
  * データ定義（ABILITY_CONFIG / PARAM_TRIGGER_MAP）は data/card/abilityConfig.ts に置く。
  */
-import { AbilityNameKeyType, TriggerKeyType, ParameterType } from '../types/enums'
 import { ABILITY_CONFIG, PARAM_TRIGGER_MAP } from '../data/card/abilityConfig'
+import { AbilityNameKeyType, ParameterType, TriggerKeyType } from '../types/enums'
 
 /** deriveAbilityConfig の戻り値型 */
 interface DeriveAbilityResult {

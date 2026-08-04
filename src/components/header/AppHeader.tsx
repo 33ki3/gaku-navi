@@ -5,18 +5,16 @@
  * アプリタイトル、凸数設定/スコア設定/最適編成ボタン、
  * データ管理パネル、モバイルメニューを含む。
  */
+import { Suspense, lazy, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useState, lazy, Suspense } from 'react'
 import { useCardUIContext } from '../../contexts/CardContext'
-import * as constant from '../../constant'
-import { getFilterButtonStyle } from '../../data/ui'
-import { FilterButtonCategory } from '../../types/enums'
-import DataManagementPanel from './DataManagementPanel'
+import { useHeaderHeightCssVariable } from '../../hooks/useHeaderHeightCssVariable'
+import { DesktopHeaderNavigation } from './DesktopHeaderNavigation'
 import { MobileMenu } from './MobileMenu'
-import { InfoIcon, PlusIcon } from '../ui/icons'
 
 const HelpModal = lazy(() => import('../helpModal/HelpModal'))
 const AboutModal = lazy(() => import('../aboutModal/AboutModal'))
+const DataManagementModal = lazy(() => import('./dataManagement/DataManagementModal'))
 
 /** AppHeader コンポーネントに渡すプロパティ */
 interface AppHeaderProps {
@@ -26,126 +24,152 @@ interface AppHeaderProps {
   onPinScoreSettings: () => void
   /** スコア設定がピン留めされているか */
   settingsPinned: boolean
+  /** スコア設定が表示されているか */
+  scoreSettingsActive: boolean
   /** 最適編成パネルを開く関数（モバイル用） */
   onOpenSimulator: () => void
   /** 最適編成パネルのピン留めを切り替える関数（PC用） */
   onPinSimulator: () => void
   /** 最適編成がピン留めされているか */
   simulatorPinned: boolean
-  /** 両パネルがピン留めされているか */
-  bothPanelsPinned: boolean
-  /** パネルの幅分だけ右を空けるためのCSSクラス */
-  panelRightOffset: string
+  /** 最適編成が表示されているか */
+  simulatorActive: boolean
+  /** モバイルの凸数編集モードを切り替える */
+  onToggleMobileUncap: () => void
+  /** モバイルのフィルタを開く */
+  onOpenMobileFilter: () => void
+  /** モバイル下部メニューに表示する現在の並び順 */
+  mobileFilterLabel: string
+  /** モバイル下部メニューに表示する適用中の絞り込み件数 */
+  mobileFilterCount: number
+  /** 現在の並び順が昇順か */
+  sortReverse: boolean
   /** サポート追加モーダルを開く関数 */
   onOpenUserCardForm: () => void
+  /** オプションモーダルを開く関数 */
+  onOpenOptions: () => void
+  /** スマホ下部メニューを表示するか */
+  showMobileBottomNav: boolean
+  /** スマホ下部メニューをスクロール時も固定するか */
+  keepMobileBottomNavFixed: boolean
+  /** 外部操作から下部ナビを表示し直す関数を登録する */
+  registerMobileNavigationShow?: (handler: (() => void) | null) => void
 }
 
-/** アプリケーションヘッダー */
+/**
+ * アプリケーションのタイトル、主要操作、補助モーダルをまとめて表示する。
+ *
+ * @param props - 各パネルとモバイルナビゲーションの状態・操作
+ * @returns 画面上部へ固定するアプリケーションヘッダー
+ */
 export default function AppHeader({
   onOpenScoreSettings,
   onPinScoreSettings,
   settingsPinned,
+  scoreSettingsActive,
   onOpenSimulator,
   onPinSimulator,
   simulatorPinned,
-  bothPanelsPinned,
-  panelRightOffset,
+  simulatorActive,
+  onToggleMobileUncap,
+  onOpenMobileFilter,
+  mobileFilterLabel,
+  mobileFilterCount,
+  sortReverse,
   onOpenUserCardForm,
+  onOpenOptions,
+  showMobileBottomNav,
+  keepMobileBottomNavFixed,
+  registerMobileNavigationShow,
 }: AppHeaderProps) {
   const { t } = useTranslation()
   const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [dataManagementOpen, setDataManagementOpen] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
+  useHeaderHeightCssVariable(headerRef)
 
-  // ヘッダーボタンのスタイル
-  const activeStyle = getFilterButtonStyle(FilterButtonCategory.Active)
-  const inactiveStyle = getFilterButtonStyle(FilterButtonCategory.Inactive)
+  const moreMenuActions = {
+    openUserCardForm: onOpenUserCardForm,
+    openDataManagement: () => setDataManagementOpen(true),
+    openOptions: onOpenOptions,
+    openHelp: () => setHelpOpen(true),
+    openAbout: () => setAboutOpen(true),
+  }
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-      <div className="mx-auto px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-2">
-          {/* アプリタイトル */}
-          <h1
-            className="text-lg font-black tracking-tight text-slate-900 sm:text-2xl cursor-pointer select-none shrink-0"
-            onClick={() => {
-              window.location.href = import.meta.env.BASE_URL
-            }}
-          >
-            {t('ui.app_title')}
-          </h1>
-          {/* PC用ヘッダーボタン群（sm以上で表示、両パネルピン時は非表示） */}
-          <div className={`${bothPanelsPinned ? 'hidden' : 'hidden sm:flex'} items-center gap-1.5 shrink-0`}>
-            {/* 凸数設定: アクティブ時は白文字・暗背景 */}
+    <>
+      <header ref={headerRef} className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm md:z-50">
+        <div className="mx-auto px-4 py-3 sm:px-6 md:py-1.5 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap">
+            {/* アプリタイトル */}
             <button
-              onClick={onToggleUncapEdit}
-              className={`${constant.BTN_HEADER_ACTION} ${uncapEditMode ? activeStyle : inactiveStyle}`}
+              className="text-left cursor-pointer select-none shrink-0"
+              onClick={() => {
+                window.location.href = import.meta.env.BASE_URL
+              }}
             >
-              {t('ui.settings.uncap_settings')}
+              <span className="text-lg font-black tracking-tight text-slate-900 sm:text-2xl md:text-base lg:text-2xl">
+                {t('ui.app_title')}
+              </span>
             </button>
-            {/* スコア設定: ピン留め時は白文字・暗背景 */}
-            <button
-              onClick={onPinScoreSettings}
-              className={`${constant.BTN_HEADER_ACTION} ${settingsPinned ? activeStyle : inactiveStyle}`}
-            >
-              {t('ui.settings.score_settings')}
-            </button>
-            {/* 最適編成: ピン留め時は白文字・暗背景 */}
-            <button
-              onClick={onPinSimulator}
-              className={`${constant.BTN_HEADER_ACTION} ${simulatorPinned ? activeStyle : inactiveStyle}`}
-            >
-              {t('ui.settings.unit_simulator')}
-            </button>
-            {/* サポート追加ボタン */}
-            <button onClick={onOpenUserCardForm} className={`${constant.BTN_HEADER_ACTION} ${inactiveStyle}`}>
-              <PlusIcon className="w-3.5 h-3.5" />
-              {t('userSupport.add_button')}
-            </button>
-            {/* データ管理パネル（インポート/エクスポート） */}
-            <DataManagementPanel />
-            {/* ヘルプボタン */}
-            <button
-              onClick={() => setHelpOpen(true)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${inactiveStyle}`}
-              aria-label={t('ui.help.title')}
-            >
-              ?
-            </button>
-            {/* Aboutボタン */}
-            <button
-              onClick={() => setAboutOpen(true)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${inactiveStyle}`}
-              aria-label={t('ui.about.title')}
-            >
-              <InfoIcon className="w-4 h-4" />
-            </button>
+            {/* PC・タブレット用タイル型ナビゲーション */}
+            <DesktopHeaderNavigation
+              uncap={{ active: uncapEditMode, select: onToggleUncapEdit }}
+              simulator={{ active: simulatorPinned, select: onPinSimulator }}
+              scoreSettings={{ active: settingsPinned, select: onPinScoreSettings }}
+              moreMenuActions={moreMenuActions}
+            />
+            {/* モバイル用ヘッダーメニューと下部ナビ */}
+            <MobileMenu
+              panels={{
+                scoreSettings: {
+                  active: scoreSettingsActive,
+                  pinned: settingsPinned,
+                  open: onOpenScoreSettings,
+                },
+                simulator: {
+                  active: simulatorActive,
+                  pinned: simulatorPinned,
+                  open: onOpenSimulator,
+                },
+              }}
+              onToggleUncapEdit={onToggleMobileUncap}
+              filter={{
+                label: mobileFilterLabel,
+                count: mobileFilterCount,
+                sortReverse,
+                open: onOpenMobileFilter,
+              }}
+              moreMenuActions={moreMenuActions}
+              bottomNavigation={{
+                show: showMobileBottomNav,
+                keepFixed: keepMobileBottomNavFixed,
+              }}
+              registerMobileNavigationShow={registerMobileNavigationShow}
+            />
           </div>
-          {/* モバイル用ハンバーガーメニュー（sm未満で表示、両パネルピン時はPC幅でも表示） */}
-          <MobileMenu
-            onOpenScoreSettings={bothPanelsPinned ? onPinScoreSettings : onOpenScoreSettings}
-            onOpenSimulator={bothPanelsPinned ? onPinSimulator : onOpenSimulator}
-            settingsPinned={settingsPinned}
-            simulatorPinned={simulatorPinned}
-            bothPanelsPinned={bothPanelsPinned}
-            onOpenHelp={() => setHelpOpen(true)}
-            onOpenAbout={() => setAboutOpen(true)}
-            onOpenUserCardForm={onOpenUserCardForm}
-          />
         </div>
-      </div>
-      {/* ヘルプモーダル */}
-      {helpOpen && (
-        <Suspense fallback={null}>
-          <HelpModal onClose={() => setHelpOpen(false)} panelRightOffset={panelRightOffset} />
-        </Suspense>
-      )}
-      {/* Aboutモーダル */}
-      {aboutOpen && (
-        <Suspense fallback={null}>
-          <AboutModal onClose={() => setAboutOpen(false)} panelRightOffset={panelRightOffset} />
-        </Suspense>
-      )}
-    </header>
+        {helpOpen && (
+          <Suspense fallback={null}>
+            {/* ヘルプモーダル */}
+            <HelpModal onClose={() => setHelpOpen(false)} />
+          </Suspense>
+        )}
+        {aboutOpen && (
+          <Suspense fallback={null}>
+            {/* Aboutモーダル */}
+            <AboutModal onClose={() => setAboutOpen(false)} />
+          </Suspense>
+        )}
+        {dataManagementOpen && (
+          <Suspense fallback={null}>
+            {/* データ管理モーダル */}
+            <DataManagementModal onClose={() => setDataManagementOpen(false)} />
+          </Suspense>
+        )}
+      </header>
+    </>
   )
 }

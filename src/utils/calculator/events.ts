@@ -5,10 +5,11 @@
  * 「自己保有ボーナス」（サポート自身が提供するスキルカード/Pアイテム等による追加回数）
  * を読み取る。
  */
-import type { SupportCard, SupportEvent, PItemEffect } from '../../types/card'
+import { LinkedActionGroups, PItemTriggerActionMap, TriggerActionMap } from '../../data/score'
+import type { PItemEffect, SupportCard, SupportEvent } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
-import { TriggerActionMap, LinkedActionGroups, PItemTriggerActionMap } from '../../data/score'
+import { isActionId } from '../domainValueValidation'
 
 /**
  * サポートのイベントからパラメータ上昇量を読み取る
@@ -221,7 +222,8 @@ export function getSelfAcquisitionBonus(
     // 子→親ロールアップを含む提供カウントマップを構築する
     const rolledUp: Partial<Record<ActionIdType, number>> = {}
     for (const [id, cnt] of Object.entries(providedIds)) {
-      rolledUp[id as ActionIdType] = cnt ?? 0
+      // 未知のアクションIDは保存データ由来でも計算へ流さず、既知のIDだけをロールアップする
+      if (isActionId(id)) rolledUp[id] = cnt ?? 0
     }
     for (const [parentId, ...childIds] of LinkedActionGroups) {
       let childSum = 0

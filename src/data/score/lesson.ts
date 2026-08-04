@@ -4,7 +4,7 @@
  * シナリオ×難易度×週番号ごとのレッスン情報（SP / 追い込み）を定義する。
  * 通常レッスンは計算に不要のため含まない。
  */
-import { LessonType, DifficultyType, ScenarioType, ActivityIdType, ParameterType } from '../../types/enums'
+import { ActivityIdType, DifficultyType, LessonType, ParameterType, ScenarioType } from '../../types/enums'
 import type { ParameterValues } from '../../types/unit'
 
 /** 1レッスンのデータ */

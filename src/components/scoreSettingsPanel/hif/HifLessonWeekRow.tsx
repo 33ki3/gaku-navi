@@ -4,15 +4,15 @@
  * splitSub 設定に応じて、メイン属性トグルまたは Main/Sub 2段の選択 UI を表示する。
  */
 import { useTranslation } from 'react-i18next'
-import * as enums from '../../../types/enums'
 import { HIF_LESSON_BASE_OPTIONS } from '../../../data/score/hifScheduleMaster'
+import * as enums from '../../../types/enums'
 import {
   normalizeHifLessonActivityForPairMode,
   resolveHifLessonActivity,
   resolveHifLessonPair,
 } from '../../../utils/hifScheduleHelpers'
-import { LessonMainSelector } from './LessonMainSelector'
 import { HifLessonPartRows } from './HifLessonPartRows'
+import { LessonMainSelector } from './LessonMainSelector'
 
 /** HifLessonWeekRow コンポーネントに渡すプロパティ */
 interface HifLessonWeekRowProps {

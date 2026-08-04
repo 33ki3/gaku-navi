@@ -4,8 +4,8 @@
  * サポートタイプ（Vo / Da / Vi / アシスト）ごとの表示ラベル、
  * バッジ色、ストライプ色などのカラー設定を定義する。
  */
-import { CardType, ParameterType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { CardType, ParameterType } from '../../types/enums'
 
 /** タイプ表示マスタの1行分。ラベル・色設定をフラットに持つ。 */
 export interface TypeDisplayEntry {

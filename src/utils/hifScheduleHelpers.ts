@@ -5,11 +5,11 @@
  * `t` を引数として受け取ることで i18n キーの翻訳も扱える。
  */
 import type { TFunction } from 'i18next'
-import * as enums from '../types/enums'
-import type { ParameterValues } from '../types/card'
 import type { ScheduleWeekData } from '../data'
 import { HIF_EXAM_LABEL_KEYS } from '../data'
 import { HIF_LESSON_DEFAULT_PAIR_MAP, HIF_LESSON_PAIR_MAP } from '../data/score/hifScheduleMaster'
+import type { ParameterValues } from '../types/card'
+import * as enums from '../types/enums'
 
 const HIF_LESSON_ACTIVITY_BY_PAIR_KEY = new Map<string, enums.ActivityIdType>(
   Object.entries(HIF_LESSON_PAIR_MAP).map(([activityId, pair]) => [

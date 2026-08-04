@@ -3,8 +3,8 @@
  *
  * boost.trigger_key → effect.trigger の PItemEffectPart 変換を行う。
  */
-import { TriggerKeyType, EffectTemplateKeyType, EffectKeywordType, ParameterType } from '../types/enums'
 import type { PItemEffectPart } from '../types/card'
+import { EffectKeywordType, EffectTemplateKeyType, ParameterType, TriggerKeyType } from '../types/enums'
 
 /**
  * resolveEffectTrigger は boost.trigger_key → effect.trigger の PItemEffectPart を返す。
@@ -18,7 +18,7 @@ export function resolveEffectTrigger(triggerKey: TriggerKeyType): PItemEffectPar
   }
 
   // *_card_acquire → keyword_card_acquire + keyword
-  const cardAcquireMap: Record<string, EffectKeywordType> = {
+  const cardAcquireMap: Partial<Record<TriggerKeyType, EffectKeywordType>> = {
     [TriggerKeyType.ConcentrationCardAcquire]: EffectKeywordType.Concentration,
     [TriggerKeyType.ReserveCardAcquire]: EffectKeywordType.Reserve,
     [TriggerKeyType.MotivationCardAcquire]: EffectKeywordType.Motivation,
@@ -34,7 +34,7 @@ export function resolveEffectTrigger(triggerKey: TriggerKeyType): PItemEffectPar
   }
 
   // *_lesson_end → param_lesson_end + param
-  const lessonEndMap: Record<string, ParameterType> = {
+  const lessonEndMap: Partial<Record<TriggerKeyType, ParameterType>> = {
     [TriggerKeyType.VoLessonEnd]: ParameterType.Vocal,
     [TriggerKeyType.DaLessonEnd]: ParameterType.Dance,
     [TriggerKeyType.ViLessonEnd]: ParameterType.Visual,
@@ -45,7 +45,7 @@ export function resolveEffectTrigger(triggerKey: TriggerKeyType): PItemEffectPar
   }
 
   // *_normal_lesson_end → param_normal_lesson_end + param
-  const normalLessonEndMap: Record<string, ParameterType> = {
+  const normalLessonEndMap: Partial<Record<TriggerKeyType, ParameterType>> = {
     [TriggerKeyType.VoNormalLessonEnd]: ParameterType.Vocal,
     [TriggerKeyType.DaNormalLessonEnd]: ParameterType.Dance,
     [TriggerKeyType.ViNormalLessonEnd]: ParameterType.Visual,
@@ -56,7 +56,7 @@ export function resolveEffectTrigger(triggerKey: TriggerKeyType): PItemEffectPar
   }
 
   // *_sp_lesson_end → param_sp_lesson_end + param
-  const spLessonEndMap: Record<string, ParameterType> = {
+  const spLessonEndMap: Partial<Record<TriggerKeyType, ParameterType>> = {
     [TriggerKeyType.VoSpLessonEnd]: ParameterType.Vocal,
     [TriggerKeyType.DaSpLessonEnd]: ParameterType.Dance,
     [TriggerKeyType.ViSpLessonEnd]: ParameterType.Visual,
@@ -67,7 +67,7 @@ export function resolveEffectTrigger(triggerKey: TriggerKeyType): PItemEffectPar
   }
 
   // 直接対応するキー
-  const directMap: Record<string, EffectTemplateKeyType> = {
+  const directMap: Partial<Record<TriggerKeyType, EffectTemplateKeyType>> = {
     [TriggerKeyType.LessonEnd]: EffectTemplateKeyType.LessonEnd,
     [TriggerKeyType.NormalLessonEnd]: EffectTemplateKeyType.NormalLessonEnd,
     [TriggerKeyType.SpLessonEnd]: EffectTemplateKeyType.SpLessonEnd,

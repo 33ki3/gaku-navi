@@ -34,6 +34,7 @@ jobs:
           VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
           VITE_FEEDBACK_URL: ${{ secrets.VITE_FEEDBACK_URL }}
           VITE_GITHUB_URL: ${{ secrets.VITE_GITHUB_URL }}
+          VITE_X_URL: ${{ secrets.VITE_X_URL }}
           VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH || '/gaku-navi/' }}
           VITE_SITE_URL: ${{ secrets.VITE_SITE_URL || 'https://33ki3.github.io/gaku-navi/' }}
       - uses: actions/upload-pages-artifact@v3

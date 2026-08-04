@@ -6,8 +6,8 @@
  */
 import { useTranslation } from 'react-i18next'
 
-import * as enums from '../../types/enums'
 import { getParameterTextColor } from '../../data/ui'
+import * as enums from '../../types/enums'
 
 /**
  * 内訳テーブルの列ヘッダー行を返す。

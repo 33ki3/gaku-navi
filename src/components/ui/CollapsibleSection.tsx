@@ -6,9 +6,9 @@
  * タイトルの左に ▶ アイコンがあり、開くと ▼ に回転する。
  */
 import type { ReactNode } from 'react'
+import { getCollapsibleVariantClass } from '../../data/ui'
 import type { CollapsibleVariantType } from '../../types/enums'
 import { CollapsibleVariantType as CollapsibleVariantEnum } from '../../types/enums'
-import { getCollapsibleVariantClass } from '../../data/ui'
 import { ChevronRightIcon } from './icons'
 
 /** CollapsibleSection コンポーネントに渡すプロパティ */

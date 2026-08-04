@@ -6,12 +6,12 @@
  * 個別に積み上げて合計する。
  */
 
-import type { SupportCard, CardCalculationResult, PerLessonParameterValues, ParameterValues } from '../../types/card'
-import type { UncapType, TriggerKeyType, ActionIdType } from '../../types/enums'
 import * as constant from '../../constant'
 import { TriggerActionMap } from '../../data/score'
+import type { CardCalculationResult, ParameterValues, PerLessonParameterValues, SupportCard } from '../../types/card'
+import type { ActionIdType, TriggerKeyType, UncapType } from '../../types/enums'
+import { getSelfAcquisitionBonus, parseEventParameterBoost, parsePItemParameterBoost } from './events'
 import { parseAbility } from './helpers'
-import { parseEventParameterBoost, parsePItemParameterBoost, getSelfAcquisitionBonus } from './events'
 
 /**
  * 未所持サポート用の空の計算結果を生成する

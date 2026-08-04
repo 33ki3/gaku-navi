@@ -5,11 +5,11 @@
  */
 import { useTranslation } from 'react-i18next'
 
-import { ToggleButton } from '../../ui/ToggleButton'
+import type { ScheduleWeekData } from '../../../data'
 import * as data from '../../../data'
 import * as enums from '../../../types/enums'
 import { ButtonSizeType } from '../../../types/enums'
-import type { ScheduleWeekData } from '../../../data'
+import { ToggleButton } from '../../ui/ToggleButton'
 
 /** 通常週の活動オプション */
 type NormalWeekOption = ScheduleWeekData['activities'][number] | typeof data.RestOption

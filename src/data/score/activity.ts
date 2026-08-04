@@ -4,8 +4,8 @@
  * 各活動の表示名・ボタン色・対応アクション一覧を統合的に定義する。
  */
 
-import { ActivityIdType, ActionIdType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { ActionIdType, ActivityIdType } from '../../types/enums'
 
 /** 活動エントリの型 */
 interface ActivityEntry {

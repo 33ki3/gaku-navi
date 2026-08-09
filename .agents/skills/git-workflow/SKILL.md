@@ -104,12 +104,11 @@ gh pr create --base main --head <branch> -t '<タイトル>' -F ./tmp/pr-body.md
 
 #### 手順（対応種別ごとにコミットを分ける場合）
 
-1. **全変更をバックアップ**: `git diff > ./tmp/full.patch`（新規ファイルは別途 `cp`）
-2. **ワークツリーをリセット**: `git checkout -- .` + 新規ファイル削除
-3. **全変更を復元**: `git apply ./tmp/full.patch` + 新規ファイル `cp` バック
-4. **テーマごとに `git add -p`**: hunk 単位で `y/n` を選択してステージ
-5. **コミット**: テーマに合ったコミットメッセージで `git commit`
-6. **繰り返し**: 残りの変更に対して 4-5 を繰り返す
+1. **変更を確認**: `git status --short`、`git diff`、`git diff --cached` で既存の変更を確認する。
+2. **テーマごとにステージ**: 明示したファイルパスまたは `git add -p` で、関連する変更だけをステージする。
+3. **既存変更を保護**: ユーザーの変更を含むワークツリーを `git checkout -- .` や削除でリセットしない。分割が難しい場合は、対象を限定したパッチやレビュー済みのstashなど、復元可能な方法を使う。
+4. **コミット**: テーマに合ったコミットメッセージで `git commit` する。
+5. **繰り返し**: 残りの変更に対して 2-4 を繰り返す。
 
 ### タイトル規約
 
@@ -130,16 +129,20 @@ gh pr checks <PR番号>
 # squash merge + ブランチ削除
 gh pr merge <PR番号> --squash --delete-branch
 
-# main ブランチを最新化（未コミット変更がある場合）
-git stash && git pull origin main && git stash pop
+# main ブランチを最新化（ワークツリーが clean な場合）
+git status --short
+git pull --ff-only origin main
+
+# 未コミット変更がある場合は、上記の pull の前に以下へ置き換える
+# git stash push -u -m "before updating main"
+# git pull --ff-only origin main
+# git stash pop
 ```
 
-### Branch Protection
+### CI チェック
 
-- `main` ブランチには Branch Protection が設定されている。
-- `required_status_checks`:
-  - `check` — CI の `All Checks` ジョブ（`typecheck`, `lint`, `unused`, `test` の全ジョブ完了を待つ）。
-  - `Analyze (javascript-typescript)` — CodeQL セキュリティスキャン。
+`.github/workflows/ci.yml` の `check` ジョブでは、`typecheck`、`lint`、`format`、`unused`、`test` の完了を確認する。GitHub側のBranch Protectionや追加のセキュリティチェックはリポジトリ設定を確認してから判断し、このファイルでは設定済みと断定しない。
+
 - squash merge のみ使用する。
 
 ---

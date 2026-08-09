@@ -1,0 +1,43 @@
+{
+  "description": "gaku-navi の Codex lifecycle hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/scripts/session-start.sh\"",
+            "timeout": 5,
+            "statusMessage": "gaku-navi の作業開始チェック"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/scripts/pre-tool-check.sh\"",
+            "timeout": 10,
+            "statusMessage": "gaku-navi の安全チェック"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/scripts/agent-stop.sh\"",
+            "timeout": 120,
+            "statusMessage": "gaku-navi の作業完了チェック"
+          }
+        ]
+      }
+    ]
+  }
+}

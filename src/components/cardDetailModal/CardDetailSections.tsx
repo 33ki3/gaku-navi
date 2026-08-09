@@ -7,19 +7,19 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SupportCard, CardCalculationResult } from '../../types/card'
-import type { UncapType } from '../../types/enums'
+import * as constant from '../../constant'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
-import * as constant from '../../constant'
+import type { CardCalculationResult, SupportCard } from '../../types/card'
+import type { UncapType } from '../../types/enums'
 import { UncapSelectorVariantType } from '../../types/enums'
+import { AbilityBreakdownList } from '../scoreDetailModal/AbilityBreakdownList'
 import CollapsibleSection from '../ui/CollapsibleSection'
 import { UncapSelector } from '../ui/UncapSelector'
 import { PItemDetail } from './PItemDetail'
 import { SkillCardDetail } from './SkillCardDetail'
 import { SupportAbilityList } from './SupportAbilityList'
 import { SupportEventList } from './SupportEventList'
-import { AbilityBreakdownList } from '../scoreDetailModal/AbilityBreakdownList'
 
 /** CardDetailSections コンポーネントに渡すプロパティ */
 interface CardDetailSectionsProps {
@@ -62,13 +62,14 @@ export function CardDetailSections({
 
   return (
     <div className="p-6 space-y-6">
-      {/* 凸数セレクター + 最大レベル表示 */}
+      {/* 凸数と最大レベルの設定セクション */}
       <CollapsibleSection
         title={`${t('ui.header.uncap')}${t('ui.format.summary_separator')}${t('ui.unit.level')}${maxLevel}`}
         isOpen={uncapOpen}
         onToggle={() => setUncapOpen(!uncapOpen)}
       >
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+          {/* 凸数選択セレクター */}
           <UncapSelector
             value={uncap}
             onChange={onUncapChange}
@@ -96,6 +97,7 @@ export function CardDetailSections({
         isOpen={eventsOpen}
         onToggle={() => setEventsOpen(!eventsOpen)}
       >
+        {/* サポートイベント */}
         <SupportEventList card={card} colors={colors} />
       </CollapsibleSection>
 
@@ -105,6 +107,7 @@ export function CardDetailSections({
         isOpen={abilitiesOpen}
         onToggle={() => setAbilitiesOpen(!abilitiesOpen)}
       >
+        {/* サポートアビリティ */}
         <SupportAbilityList card={card} colors={colors} uncap={uncap} />
       </CollapsibleSection>
 
@@ -115,6 +118,7 @@ export function CardDetailSections({
           isOpen={pItemOpen}
           onToggle={() => setPItemOpen(!pItemOpen)}
         >
+          {/* Pアイテム詳細 */}
           <PItemDetail pItem={card.p_item} colors={colors} />
         </CollapsibleSection>
       )}
@@ -126,6 +130,7 @@ export function CardDetailSections({
           isOpen={skillCardOpen}
           onToggle={() => setSkillCardOpen(!skillCardOpen)}
         >
+          {/* スキルカード詳細 */}
           <SkillCardDetail skillCard={card.skill_card} colors={colors} />
         </CollapsibleSection>
       )}
@@ -136,6 +141,7 @@ export function CardDetailSections({
         isOpen={scoreOpen}
         onToggle={() => setScoreOpen(!scoreOpen)}
       >
+        {/* 点数内訳 */}
         <AbilityBreakdownList result={scoreResult} />
       </CollapsibleSection>
     </div>

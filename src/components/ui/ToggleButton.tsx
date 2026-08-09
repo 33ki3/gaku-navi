@@ -4,9 +4,9 @@
  * フィルター選択などで使う「ON/OFFを切り替えるボタン」。
  * 押すと色が変わり、もう一度押すと元に戻る。
  */
-import type { ButtonSizeType } from '../../types/enums'
 import * as constant from '../../constant'
 import { getFilterButtonStyle, getToggleButtonSizeStyle } from '../../data/ui'
+import type { ButtonSizeType } from '../../types/enums'
 import { ButtonSizeType as ButtonSizeEnum, FilterButtonCategory } from '../../types/enums'
 
 /** ToggleButton コンポーネントに渡すプロパティ */

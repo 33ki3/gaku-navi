@@ -1,23 +1,23 @@
 /**
  * モーダルオーバーレイ
  *
- * 画面全体を覆う半透明の背景（バックドロップ）と、
- * その上にモーダルの白パネルを表示する汎用コンポーネント。
+ * 画面全体を覆う半透明の背景（バックドロップ）と、その上にモーダルの白パネルを表示する汎用コンポーネント。
  * 背景クリックやEscキーでモーダルを閉じることができる。
  * bodyのスクロールを自動でロックする。
  */
-import { useEffect, useCallback } from 'react'
-import type { ModalAlignType } from '../../types/enums'
-import { ModalAlignType as ModalAlignEnum } from '../../types/enums'
-import { getModalAlignClass } from '../../data/ui'
-import { MODAL_BACKDROP } from '../../constant'
+import { useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import * as constant from '../../constant'
+import * as uiData from '../../data/ui'
+import * as enums from '../../types/enums'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 
 /** ModalOverlay コンポーネントに渡すプロパティ */
 interface ModalOverlayProps {
   /** モーダルを閉じる時に呼ばれる関数 */
   onClose: () => void
   /** モーダルの配置位置（center / top）。デフォルトは center */
-  align?: ModalAlignType
+  align?: enums.ModalAlignType
   /** モーダルパネル（白い箱）に適用するCSSクラス */
   panelClassName?: string
   /** 外側コンテナに追加するCSSクラス */
@@ -26,10 +26,15 @@ interface ModalOverlayProps {
   children: React.ReactNode
 }
 
-/** モーダルオーバーレイを描画する */
+/**
+ * 背景スクロールを止め、document.body直下へモーダルを表示する。
+ *
+ * @param props - 閉じる操作、配置、パネルスタイル、内容
+ * @returns ポータル表示されるモーダルオーバーレイ
+ */
 export default function ModalOverlay({
   onClose,
-  align = ModalAlignEnum.Center,
+  align = enums.ModalAlignType.Center,
   panelClassName,
   className = '',
   children,
@@ -42,27 +47,28 @@ export default function ModalOverlay({
     [onClose],
   )
 
-  // Escキー監視の登録 + body のスクロールをロック（モーダル表示中は背景がスクロールしない）
+  // Escキー監視の登録とbodyのスクロールをロックする（モーダル表示中は背景がスクロールしない）
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)
-    document.body.style.overflow = 'hidden'
+    const unlockBodyScroll = lockBodyScroll()
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
+      unlockBodyScroll()
     }
   }, [handleKeyDown])
 
-  return (
+  return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex ${getModalAlignClass(align)} px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] ${className}`}
+      className={`fixed inset-0 z-[80] flex ${uiData.getModalAlignClass(align)} px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] ${className}`}
       onClick={onClose}
     >
       {/* 半透明の背景 */}
-      <div className={MODAL_BACKDROP} />
+      <div className={constant.MODAL_BACKDROP} />
       {/* stopPropagation でモーダル内側のクリックが背景に伝わらないようにする */}
       <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

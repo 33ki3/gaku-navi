@@ -8,13 +8,13 @@
  */
 import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as constant from '../../constant'
+import { useCardDataContext, useCardUIContext } from '../../contexts/CardContext'
+import * as data from '../../data'
+import type { TranslationKey } from '../../i18n'
 import type { SupportCard } from '../../types/card'
 import type { UncapType } from '../../types/enums'
 import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
-import type { TranslationKey } from '../../i18n'
-import { useCardDataContext, useCardUIContext } from '../../contexts/CardContext'
-import * as data from '../../data'
-import * as constant from '../../constant'
 import { getEventSummaryParts, hasSPAbility } from '../../utils/cardQuery'
 import { Badge } from '../ui/Badge'
 import { UncapSelector } from '../ui/UncapSelector'
@@ -64,7 +64,19 @@ export const CardListItem = memo(function CardListItem({
     if (unitCardSelectMode && !eligible) return
     onCardClick(card)
   }, [onCardClick, card, unitCardSelectMode, eligible])
-  const handleScoreClick = useCallback((e: React.MouseEvent) => onScoreClick(card, e), [onScoreClick, card])
+  const handleScoreClick = useCallback(
+    (e: React.MouseEvent) => {
+      // 手動編成中はスコア行もカード選択として扱う
+      // スコア詳細を開かず、親カードのクリック処理との二重実行も止める
+      if (unitCardSelectMode) {
+        e.stopPropagation()
+        if (eligible) onCardClick(card)
+        return
+      }
+      onScoreClick(card, e)
+    },
+    [onScoreClick, onCardClick, card, unitCardSelectMode, eligible],
+  )
   const handleUncapChange = useCallback((u: UncapType) => onUncapChange(card.name, u), [onUncapChange, card.name])
 
   return (

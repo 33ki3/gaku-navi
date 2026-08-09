@@ -4,12 +4,12 @@
  * サポート名・レアリティ・タイプ・プランの入力欄を提供する。
  */
 import { useTranslation } from 'react-i18next'
+import * as constant from '../../constant'
+import * as data from '../../data'
 import type { UserCardFormState } from '../../hooks/formHelpers'
 import type { FormValidation } from '../../hooks/useUserCardForm'
 import * as enums from '../../types/enums'
 import { ToggleButton } from '../ui/ToggleButton'
-import * as data from '../../data'
-import * as constant from '../../constant'
 
 /** BasicInfoSection コンポーネントに渡すプロパティ */
 interface BasicInfoSectionProps {

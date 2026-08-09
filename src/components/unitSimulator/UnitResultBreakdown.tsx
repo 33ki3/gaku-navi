@@ -5,12 +5,12 @@
  */
 import { useTranslation } from 'react-i18next'
 
+import { SelectableTypeEntries } from '../../data/card'
+import type { ScenarioType } from '../../types/enums'
+import * as enums from '../../types/enums'
+import type { ParameterValues } from '../../types/unit'
 import { ChevronRightIcon } from '../ui/icons'
 import BreakdownRow from './BreakdownRow'
-import * as enums from '../../types/enums'
-import type { ScenarioType } from '../../types/enums'
-import { SelectableTypeEntries } from '../../data/card'
-import type { ParameterValues } from '../../types/unit'
 import { CustomBreakdownRows } from './CustomBreakdownRows'
 import { HifBreakdownRows } from './HifBreakdownRows'
 import { StandardBreakdownRows } from './StandardBreakdownRows'

@@ -8,15 +8,15 @@
 import { describe, expect, it } from 'vitest'
 import { AllCards } from '../../../data'
 import { getScheduleData } from '../../../data/score'
+import type { ScoreSettings, SupportCard } from '../../../types/card'
+import type { ActionIdType } from '../../../types/enums'
+import * as enums from '../../../types/enums'
 import { calculateCardParameter } from '../../../utils/calculator/calculateCard'
 import {
   calculateParameterBonusFromSchedule,
   getPerLessonParameterValues,
 } from '../../../utils/calculator/parameterBonus'
 import { mergeScheduleCounts } from '../../../utils/scoreSettings'
-import type { SupportCard, ScoreSettings } from '../../../types/card'
-import type { ActionIdType } from '../../../types/enums'
-import * as enums from '../../../types/enums'
 
 // --- 実サポートデータ（AllCards から取得） ---
 

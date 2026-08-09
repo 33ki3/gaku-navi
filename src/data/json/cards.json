@@ -23189,5 +23189,401 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "インタビューお願いします",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/07/21",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vi_sp_lesson_rate",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "reserve_card_acquire_8",
+        "trigger_key": "reserve_card_acquire_8",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "注目インタビュー！",
+      "rarity": "ssr",
+      "memory": "memorizable",
+      "effect": {
+        "restriction": {
+          "key": "lesson_turn",
+          "param": "visual"
+        },
+        "trigger": {
+          "key": "turn_start"
+        },
+        "condition": {
+          "key": "keyword_count_gte",
+          "keyword": "reserve",
+          "threshold": 4
+        },
+        "body": [
+          {
+            "key": "active_card_param_boost",
+            "value": 22
+          }
+        ],
+        "limit": {
+          "key": "per_lesson",
+          "count": 1
+        }
+      }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "奇遇な必然",
+    "rarity": "sr",
+    "plan": "anomaly",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "gacha",
+    "release_date": "2026/07/31",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vi_initial_stat",
+        "parameter_type": "visual",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vi_sp_lesson_rate",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "delete",
+        "trigger_key": "delete",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "ファンたちの出会い？"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 15,
+        "title": "心配性で優しい先輩"
+      }
+    ],
+    "p_item": {
+      "name": "きっちりファン装備",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "outing_end"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "param_up_select_change",
+            "param": "visual",
+            "value": 40
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 1
+        }
+      },
+      "boost": {
+        "trigger_key": "outing",
+        "parameter_type": "visual",
+        "value": 40,
+        "max_count": 1
+      },
+      "actions": ["change"]
+    },
+    "skill_card": null
+  },
+  {
+    "name": "風紀が乱れるぞ！",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gacha",
+    "release_date": "2026/07/31",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vo_initial_stat",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "consult_skill_card_acquire",
+        "trigger_key": "consult_skill_card_acquire",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 5
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": "それぞれのこだわり"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": "怖くないですよ♪"
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": "これが今のあたし"
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "ぴらっ♪",
+      "rarity": "ssr",
+      "type": "active",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 6,
+          "effect": {
+            "use_condition": {
+              "key": "keyword_gte",
+              "keyword": "full_power_value",
+              "value": 10
+            },
+            "groups": [
+              {
+                "action": {
+                  "key": "param_up_multi",
+                  "value": 1,
+                  "count": 3
+                }
+              },
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 3,
+                  "keyword": "full_power_value"
+                }
+              },
+              {
+                "action": {
+                  "key": "growth_policy_change_param_boost",
+                  "value": 10,
+                  "count": 3,
+                  "value2": 3
+                }
+              }
+            ]
+          }
+        },
+        {
+          "level": "plus",
+          "cost_type": "vitality",
+          "cost_value": 4,
+          "effect": {
+            "use_condition": {
+              "key": "keyword_gte",
+              "keyword": "full_power_value",
+              "value": 10
+            },
+            "groups": [
+              {
+                "action": {
+                  "key": "param_up_multi",
+                  "value": 1,
+                  "count": 3
+                }
+              },
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 5,
+                  "keyword": "full_power_value"
+                }
+              },
+              {
+                "action": {
+                  "key": "growth_policy_change_param_boost",
+                  "value": 10,
+                  "count": 3,
+                  "value2": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": [
+        {
+          "name": {
+            "key": "cost_reduce"
+          },
+          "stages": [
+            {
+              "stage": 1,
+              "cost": 20,
+              "effect": {
+                "template": "delta",
+                "params": {
+                  "value": "-2"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "key": "keyword_plus",
+            "keyword": "full_power_value"
+          },
+          "stages": [
+            {
+              "stage": 1,
+              "cost": 70,
+              "effect": {
+                "template": "keyword_up",
+                "params": {
+                  "keyword": "full_power_value",
+                  "value": "7"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
   }
 ]

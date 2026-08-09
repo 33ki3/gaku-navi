@@ -3,9 +3,9 @@
  */
 import { useTranslation } from 'react-i18next'
 
-import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
 import { PARAMETER_LABELS } from '../../../data/score/parameterLabels'
 import { getParameterTextColor } from '../../../data/ui'
+import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
 
 /** HifLessonKindCell コンポーネントに渡すプロパティ */
 interface HifLessonKindCellProps {

@@ -1,12 +1,12 @@
-import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
+import React from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it, vi } from 'vitest'
 import { CardDetailSections } from '../../../components/cardDetailModal/CardDetailSections'
-import i18n from '../../../i18n'
 import * as data from '../../../data'
-import * as enums from '../../../types/enums'
+import i18n from '../../../i18n'
 import type { CardCalculationResult, SupportCard } from '../../../types/card'
+import * as enums from '../../../types/enums'
 
 const testCard: SupportCard = {
   name: 'テストサポート',

@@ -3,15 +3,14 @@
  *
  * 点数設定（シナリオ・難易度・アクション回数・パラメータボーナス）に基づいて
  * 全サポートのスコアを一括計算する useCardScores フックの動作を検証する。
- * サポート一覧画面でスコア順ソートや点数表示に使われるため、
- * 入力条件に応じて正しく計算結果が変化することを確認する。
+ * サポート一覧画面でスコア順ソートや点数表示に使われるため、入力条件に応じて正しく計算結果が変化することを確認する。
  */
-import { describe, expect, it } from 'vitest'
 import { renderHook } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import * as data from '../../data'
 import { useCardScores } from '../../hooks/useCardScores'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
-import * as data from '../../data'
 
 /** 空のスコア設定（全アクション回数 0・パラメータボーナス 0） */
 function emptySettings(): ScoreSettings {
@@ -46,8 +45,7 @@ describe('useCardScores', () => {
 
     // アクション回数が0なので計算対象サポートなし
     expect(result.current.cardResults.size).toBe(0)
-    // cardScores は全サポートを含むが、スコアは全て0であること
-    // （サポート一覧でスコア順ソートしても全サポートが0点として扱われる）
+    // cardScoresは全サポートを含むが、スコアは全て0であること（サポート一覧でスコア順ソートしても全サポートが0点として扱われる）
     expect(result.current.cardScores.size).toBeGreaterThan(0)
     for (const score of result.current.cardScores.values()) {
       expect(score).toBe(0)
@@ -72,8 +70,7 @@ describe('useCardScores', () => {
     settings.actionCounts = { [enums.ActionIdType.Lesson]: 5 }
     const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
-    // cardScores の各値が対応する cardResults.totalIncrease と一致すること
-    // （サポート一覧のスコア表示が計算詳細の合計と食い違わないための検証）
+    // cardScoresの各値が対応するcardResults.totalIncreaseと一致すること（サポート一覧のスコア表示が計算詳細の合計と食い違わないための検証）
     for (const [name, score] of result.current.cardScores) {
       const detail = result.current.cardResults.get(name)
       expect(detail).toBeDefined()

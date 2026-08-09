@@ -11,15 +11,15 @@
  * アビリティも持つ場合、自分のイベントで提供した分の+1回が自動加算される。
  */
 import { describe, expect, it } from 'vitest'
-import {
-  parseEventParameterBoost,
-  parsePItemParameterBoost,
-  getSelfAcquisitionBonus,
-} from '../../../utils/calculator/events'
-import type { SupportCard } from '../../../types/card'
-import * as enums from '../../../types/enums'
 import { AllCards } from '../../../data'
 import { getActionCategory } from '../../../data/score'
+import type { SupportCard } from '../../../types/card'
+import * as enums from '../../../types/enums'
+import {
+  getSelfAcquisitionBonus,
+  parseEventParameterBoost,
+  parsePItemParameterBoost,
+} from '../../../utils/calculator/events'
 
 // --- テスト用ヘルパー ---
 

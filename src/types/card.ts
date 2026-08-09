@@ -7,29 +7,29 @@
  * cards.json から読み込んだデータはここの型で型付けされる。
  */
 import type {
-  RarityType,
-  PlanType,
-  CardType,
-  SourceType,
-  PItemRarityType,
-  PItemMemoryType,
-  ParameterType,
-  ScenarioType,
-  DifficultyType,
+  AbilityNameKeyType,
   ActionIdType,
   ActivityIdType,
-  SkillCardType,
-  SkillCardRarityType,
-  SkillCardLevelType,
+  CardType,
+  CardZoneType,
   CostType,
-  TriggerKeyType,
+  DifficultyType,
+  EffectKeywordType,
+  EffectTemplateKeyType,
   EventEffectType,
   PItemActionType,
-  AbilityNameKeyType,
+  PItemMemoryType,
+  PItemRarityType,
+  ParameterType,
+  PlanType,
+  RarityType,
   ReleaseConditionType,
-  EffectKeywordType,
-  CardZoneType,
-  EffectTemplateKeyType,
+  ScenarioType,
+  SkillCardLevelType,
+  SkillCardRarityType,
+  SkillCardType,
+  SourceType,
+  TriggerKeyType,
 } from './enums'
 
 /**
@@ -116,7 +116,7 @@ interface PItemBoost {
   max_count?: number
 }
 
-/** Pアイテム効果の構成要素（制限・トリガー・条件・ボディアクション・回数制限）。 */
+/** Pアイテム効果の構成要素（制限・トリガー・条件・ボディアクション・回数制限） */
 export interface PItemEffectPart {
   /** テンプレートキー（例: "turn_start", "keyword_gte", "param_up", "per_lesson"） */
   key: EffectTemplateKeyType
@@ -144,7 +144,7 @@ export interface PItemEffectPart {
   action_id?: ActionIdType
 }
 
-/** Pアイテム効果の構造化データ（分解済み）。 */
+/** Pアイテム効果の構造化データ（分解済み） */
 export interface PItemEffect {
   /** レッスン制限（任意）（例: { key: "lesson_turn", param: "dance" }） */
   restriction?: PItemEffectPart
@@ -178,7 +178,7 @@ export interface PItem {
   trigger_key?: TriggerKeyType
 }
 
-/** スキルカード効果のアクション部品（条件・時間修飾・トリガー・本体アクション共通）。 */
+/** スキルカード効果のアクション部品（条件・時間修飾・トリガー・本体アクション共通）*/
 export interface SkillCardEffectAction {
   /** テンプレートキー（keyword_up: キーワード上昇, hp_recovery: 体力回復, param_up: パラメータ上昇, draw_card: カードを引く） */
   key: EffectTemplateKeyType
@@ -203,7 +203,7 @@ export interface SkillCardEffectAction {
   /** 段階数（例: 2） */
   stage?: number
 }
-/** スキルカード効果のアクショングループ（条件+時間修飾+トリガー+アクション）。 */
+/** スキルカード効果のアクショングループ（条件+時間修飾+トリガー+アクション） */
 interface SkillCardActionGroup {
   /** 条件（任意）（例: { key: "hp_gte_pct", pct: 50 }） */
   condition?: SkillCardEffectAction
@@ -221,7 +221,7 @@ interface SkillCardActionGroup {
   temporal_first?: boolean
 }
 
-/** スキルカード効果の構造化データ（分解済み）。 */
+/** スキルカード効果の構造化データ（分解済み） */
 export interface SkillCardEffectStructured {
   /** 使用条件（任意）（例: { key: "keyword_state", keyword: "reserve" }） */
   use_condition?: SkillCardEffectAction
@@ -235,7 +235,7 @@ export interface SkillCardEffectStructured {
   groups: SkillCardActionGroup[]
 }
 
-/** カスタムスロット名の構造化データ（分解済み）。 */
+/** カスタムスロット名の構造化データ（分解済み） */
 export interface CustomSlotNameStructured {
   /** テンプレートキー（card.customSlotName.* に対応）（例: "keyword_plus", "keyword_add", "hp_cost_reduce_add"） */
   key: EffectTemplateKeyType
@@ -243,7 +243,7 @@ export interface CustomSlotNameStructured {
   keyword?: EffectKeywordType
 }
 
-/** カスタムスロット効果の構造化データ（分解済み）。 */
+/** カスタムスロット効果の構造化データ（分解済み） */
 export interface CustomSlotEffectStructured {
   /** テンプレートキー（card.customSlotEffect.* に対応）（例: "keyword_up", "change_policy", "cost_reduce_turns", "null"） */
   template: EffectTemplateKeyType
@@ -251,7 +251,10 @@ export interface CustomSlotEffectStructured {
   params?: CustomSlotParams
 }
 
-/** カスタムスロット効果のテンプレート補間パラメータ。keyword/cond_keyword は EffectKeywordType。 */
+/**
+ * カスタムスロット効果のテンプレート補間パラメータ。
+ * keyword/cond_keyword は EffectKeywordType
+ */
 export interface CustomSlotParams {
   /** 効果キーワード（集中・好調など）（例: "full_power_value", "reserve", "vitality", "motivation"） */
   keyword?: EffectKeywordType

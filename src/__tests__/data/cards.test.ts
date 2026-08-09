@@ -3,14 +3,12 @@
  *
  * cards.json から読み込んだ全サポートデータが正しく構造化されているかを検証する。
  * アビリティ値のパース、trigger_key のマッピング、イベント構造などのテスト。
- * データ不整合があるとスコア計算やフィルタリングが壊れるため、
- * サポートデータ更新時に必ず実行する。
+ * データ不整合があるとスコア計算やフィルタリングが壊れるため、サポートデータ更新時に必ず実行する。
  */
 import { describe, expect, it } from 'vitest'
-import { AllCards } from '../../data'
-import { SourceType } from '../../types/enums'
-import { TriggerKeyType } from '../../types/enums'
 import { PERCENT_SIGN, PLUS_SIGN } from '../../constant'
+import { AllCards } from '../../data'
+import { SourceType, TriggerKeyType } from '../../types/enums'
 const validTriggerKeys = new Set(Object.values(TriggerKeyType))
 
 describe('AllCards', () => {

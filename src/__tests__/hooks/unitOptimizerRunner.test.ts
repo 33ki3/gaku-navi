@@ -10,11 +10,11 @@ vi.mock('../../utils/unitSimulator', () => ({
 }))
 
 import { runOptimizerAsync } from '../../hooks/unitOptimizerRunner'
-import { exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
-import { UnitOptimizerWorkerMessageType } from '../../types/unitOptimizerWorker'
-import type { UnitOptimizerWorkerResponseMessage } from '../../types/unitOptimizerWorker'
-import type { OptimizeInput } from '../../utils/unitSimulator'
 import * as enums from '../../types/enums'
+import type { UnitOptimizerWorkerResponseMessage } from '../../types/unitOptimizerWorker'
+import { UnitOptimizerWorkerMessageType } from '../../types/unitOptimizerWorker'
+import type { OptimizeInput } from '../../utils/unitSimulator'
+import { exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
 
 /** テスト用最適化入力を作成する */
 function makeInput(): OptimizeInput {
@@ -113,7 +113,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('Worker 未対応環境では main thread 実行にフォールバックする', async () => {
-    // Worker を無効化して main thread パスを通す。
+    // Worker を無効化して main thread パスを通す
     Reflect.deleteProperty(globalThis, 'Worker')
     mockedExhaustive.mockResolvedValueOnce(null)
 
@@ -127,7 +127,7 @@ describe('runOptimizerAsync', () => {
     })
 
     expect(worker).toBeNull()
-    // then チェーンの完了を待つ。
+    // then チェーンの完了を待つ
     await Promise.resolve()
 
     expect(mockedExhaustive).toHaveBeenCalledTimes(1)
@@ -135,7 +135,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('main thread 実行でキャンセル済みかつ null 結果なら onDone を呼ばない', async () => {
-    // キャンセル済み状態を固定して onDone 抑止を確認する。
+    // キャンセル済み状態を固定して onDone 抑止を確認する
     Reflect.deleteProperty(globalThis, 'Worker')
     mockedExhaustive.mockResolvedValueOnce(null)
 
@@ -155,7 +155,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('Worker メッセージに応じて progress/better/done を通知する', () => {
-    // Worker をモック差し替えし、受信イベントを手動で流し込む。
+    // Worker をモック差し替えし、受信イベントを手動で流し込む
     const workerInstance = new MockWorker()
     vi.stubGlobal('Worker', createWorkerConstructor(workerInstance))
 
@@ -174,14 +174,14 @@ describe('runOptimizerAsync', () => {
     expect(returned).toBe(workerInstance)
     expect(workerInstance.postMessage).toHaveBeenCalledTimes(1)
 
-    // 進捗イベントを受信したら onProgress が呼ばれる。
+    // 進捗イベントを受信したら onProgress が呼ばれる
     workerInstance.emitMessage({
       type: UnitOptimizerWorkerMessageType.Progress,
       payload: { done: 3, total: 10 },
     })
     expect(onProgress).toHaveBeenCalledWith(3, 10)
 
-    // 中間ベストイベントを受信したら onBetter が呼ばれる。
+    // 中間ベストイベントを受信したら onBetter が呼ばれる
     workerInstance.emitMessage({
       type: UnitOptimizerWorkerMessageType.Better,
       payload: {
@@ -197,7 +197,7 @@ describe('runOptimizerAsync', () => {
     })
     expect(onBetter).toHaveBeenCalledTimes(1)
 
-    // 完了イベントで Worker 終了と onDone 通知が行われる。
+    // 完了イベントで Worker 終了と onDone 通知が行われる
     workerInstance.emitMessage({
       type: UnitOptimizerWorkerMessageType.Done,
       payload: { result: null },
@@ -207,7 +207,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('Worker が Error を返した場合は main thread へフォールバックする', async () => {
-    // Worker 側失敗時に main thread 実行へ切り替わることを確認する。
+    // Worker 側失敗時に main thread 実行へ切り替わることを確認する
     const workerInstance = new MockWorker()
     vi.stubGlobal('Worker', createWorkerConstructor(workerInstance))
 

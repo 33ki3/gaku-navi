@@ -5,8 +5,8 @@
  * Pアイテムの各効果を AbilityRow で並べる。
  */
 import { useTranslation } from 'react-i18next'
-import type { CardCalculationResult } from '../../types/card'
 import * as constant from '../../constant'
+import type { CardCalculationResult } from '../../types/card'
 import { AbilityRow } from './AbilityRow'
 
 /** Pアイテムセクション */

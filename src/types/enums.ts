@@ -220,24 +220,40 @@ export const AbilityNameKeyType = {
   MSkillAcquire: 'm_skill_acquire',
   /** アクティブスキル獲得 */
   ASkillAcquire: 'a_skill_acquire',
+  /** 相談でスキルカード獲得 */
+  ConsultSkillCardAcquire: 'consult_skill_card_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
+  /** 元気系カード8枚以上でスキルカード獲得 */
+  VitalityCardAcquire8: 'vitality_card_acquire_8',
   /** 好調系カード獲得 */
   GoodConditionCardAcquire: 'good_condition_card_acquire',
+  /** 好調系カード8枚以上でスキルカード獲得 */
+  GoodConditionCardAcquire8: 'good_condition_card_acquire_8',
   /** 集中系カード獲得 */
   ConcentrationCardAcquire: 'concentration_card_acquire',
+  /** 集中系カード8枚以上でスキルカード獲得 */
+  ConcentrationCardAcquire8: 'concentration_card_acquire_8',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
   /** 好印象系カード8枚以上でスキルカード獲得 */
   GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
+  /** やる気系カード8枚以上でスキルカード獲得 */
+  MotivationCardAcquire8: 'motivation_card_acquire_8',
   /** 温存系カード獲得 */
   ReserveCardAcquire: 'reserve_card_acquire',
+  /** 温存系カード8枚以上でスキルカード獲得 */
+  ReserveCardAcquire8: 'reserve_card_acquire_8',
   /** 強気系カード獲得 */
   AggressiveCardAcquire: 'aggressive_card_acquire',
+  /** 強気系カード8枚以上でスキルカード獲得 */
+  AggressiveCardAcquire8: 'aggressive_card_acquire_8',
   /** 全力系カード獲得 */
   FullPowerCardAcquire: 'full_power_card_acquire',
+  /** 全力系カード8枚以上でスキルカード獲得 */
+  FullPowerCardAcquire8: 'full_power_card_acquire_8',
   /** 授業・営業終了時 */
   ClassWorkEnd: 'class_work_end',
   /** 試験終了時 */
@@ -300,6 +316,16 @@ export const AbilityNameKeyType = {
   SupportRate: 'support_rate',
 } as const
 export type AbilityNameKeyType = (typeof AbilityNameKeyType)[keyof typeof AbilityNameKeyType]
+
+/**
+ * ユーザーサポートフォームのアビリティ入力値。
+ * `None` は未選択を表すフォーム専用値で、保存するアビリティ識別子には含めない。
+ */
+export const AbilityFormValueType = {
+  /** 未選択 */
+  None: '',
+} as const
+export type AbilityFormValueType = (typeof AbilityFormValueType)[keyof typeof AbilityFormValueType]
 
 /**
  * スキルカードのコストタイプ定数。
@@ -500,6 +526,15 @@ export const SortModeType = {
 } as const
 export type SortModeType = (typeof SortModeType)[keyof typeof SortModeType]
 
+/** ソート方向の表示定義。sortReverseのboolean状態とUIラベルを対応付ける。 */
+export const SortDirectionType = {
+  /** 昇順。sortReverse=trueに対応する。 */
+  Ascending: 'ascending',
+  /** 降順。sortReverse=falseに対応する。 */
+  Descending: 'descending',
+} as const
+export type SortDirectionType = (typeof SortDirectionType)[keyof typeof SortDirectionType]
+
 /**
  * 回数調整フィルター種別。
  *
@@ -652,24 +687,40 @@ export const ActionIdType = {
   MSkillAcquire: 'm_skill_acquire',
   /** アクティブスキル獲得 */
   ASkillAcquire: 'a_skill_acquire',
+  /** 相談でスキルカード獲得 */
+  ConsultSkillCardAcquire: 'consult_skill_card_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
+  /** 元気系カード8枚以上でスキルカード獲得 */
+  VitalityCardAcquire8: 'vitality_card_acquire_8',
   /** 好調系カード獲得 */
   GoodConditionCardAcquire: 'good_condition_card_acquire',
+  /** 好調系カード8枚以上でスキルカード獲得 */
+  GoodConditionCardAcquire8: 'good_condition_card_acquire_8',
   /** 集中系カード獲得 */
   ConcentrationCardAcquire: 'concentration_card_acquire',
+  /** 集中系カード8枚以上でスキルカード獲得 */
+  ConcentrationCardAcquire8: 'concentration_card_acquire_8',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
   /** 好印象系カード8枚以上でスキルカード獲得 */
   GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
+  /** やる気系カード8枚以上でスキルカード獲得 */
+  MotivationCardAcquire8: 'motivation_card_acquire_8',
   /** 温存系カード獲得 */
   ReserveCardAcquire: 'reserve_card_acquire',
+  /** 温存系カード8枚以上でスキルカード獲得 */
+  ReserveCardAcquire8: 'reserve_card_acquire_8',
   /** 強気系カード獲得 */
   AggressiveCardAcquire: 'aggressive_card_acquire',
+  /** 強気系カード8枚以上でスキルカード獲得 */
+  AggressiveCardAcquire8: 'aggressive_card_acquire_8',
   /** 全力系カード獲得 */
   FullPowerCardAcquire: 'full_power_card_acquire',
+  /** 全力系カード8枚以上でスキルカード獲得 */
+  FullPowerCardAcquire8: 'full_power_card_acquire_8',
   /** SSRカード獲得 */
   SsrCardAcquire: 'ssr_card_acquire',
   /** 眠気カード獲得 */
@@ -881,24 +932,40 @@ export const TriggerKeyType = {
   MSkillAcquire: 'm_skill_acquire',
   /** アクティブスキル獲得 */
   ASkillAcquire: 'a_skill_acquire',
+  /** 相談でスキルカード獲得 */
+  ConsultSkillCardAcquire: 'consult_skill_card_acquire',
   /** 元気系カード獲得 */
   VitalityCardAcquire: 'vitality_card_acquire',
+  /** 元気系カード8枚以上でスキルカード獲得 */
+  VitalityCardAcquire8: 'vitality_card_acquire_8',
   /** 好調系カード獲得 */
   GoodConditionCardAcquire: 'good_condition_card_acquire',
+  /** 好調系カード8枚以上でスキルカード獲得 */
+  GoodConditionCardAcquire8: 'good_condition_card_acquire_8',
   /** 集中系カード獲得 */
   ConcentrationCardAcquire: 'concentration_card_acquire',
+  /** 集中系カード8枚以上でスキルカード獲得 */
+  ConcentrationCardAcquire8: 'concentration_card_acquire_8',
   /** 好印象系カード獲得 */
   GoodImpressionCardAcquire: 'good_impression_card_acquire',
   /** 好印象系カード8枚以上でスキルカード獲得 */
   GoodImpressionCardAcquire8: 'good_impression_card_acquire_8',
   /** やる気系カード獲得 */
   MotivationCardAcquire: 'motivation_card_acquire',
+  /** やる気系カード8枚以上でスキルカード獲得 */
+  MotivationCardAcquire8: 'motivation_card_acquire_8',
   /** 温存系カード獲得 */
   ReserveCardAcquire: 'reserve_card_acquire',
+  /** 温存系カード8枚以上でスキルカード獲得 */
+  ReserveCardAcquire8: 'reserve_card_acquire_8',
   /** 強気系カード獲得 */
   AggressiveCardAcquire: 'aggressive_card_acquire',
+  /** 強気系カード8枚以上でスキルカード獲得 */
+  AggressiveCardAcquire8: 'aggressive_card_acquire_8',
   /** 全力系カード獲得 */
   FullPowerCardAcquire: 'full_power_card_acquire',
+  /** 全力系カード8枚以上でスキルカード獲得 */
+  FullPowerCardAcquire8: 'full_power_card_acquire_8',
   /** SSRカード獲得 */
   SsrCardAcquire: 'ssr_card_acquire',
   /** 眠気カード獲得 */
@@ -1220,6 +1287,8 @@ export const EffectTemplateKeyType = {
 
   /** 全カードパラメータ上昇量ブースト */
   AllCardParamBoost: 'all_card_param_boost',
+  /** アクティブスキルカードのパラメータ値増加 */
+  ActiveCardParamBoost: 'active_card_param_boost',
   /** パラメータ追加 */
   ParameterAdd: 'parameter_add',
   /** パラメータ加算 */
@@ -1256,6 +1325,8 @@ export const EffectTemplateKeyType = {
   ParamUpMulti: 'param_up_multi',
   /** パラメータ上昇+累積キーワード依存の上昇量増加 */
   ParamUpCumulativeKeywordPctBoost: 'param_up_cumulative_keyword_pct_boost',
+  /** 指針変更回数に応じた成長パラメータ増加 */
+  GrowthPolicyChangeParamBoost: 'growth_policy_change_param_boost',
 
   /** スキルカード強化 */
   CardEnhance: 'card_enhance',
@@ -1656,3 +1727,105 @@ export const FilterSortTab = {
   Sort: 'sort',
 } as const
 export type FilterSortTab = (typeof FilterSortTab)[keyof typeof FilterSortTab]
+
+/**
+ * 点数設定・最適編成の表示パネル種別。
+ * スマホのパネル切り替えと、表示中パネルの判定に使用する。
+ */
+export const SettingsPanelType = {
+  /** 点数設定 */
+  Score: 'score',
+  /** 最適編成 */
+  UnitSimulator: 'unitSimulator',
+} as const
+export type SettingsPanelType = (typeof SettingsPanelType)[keyof typeof SettingsPanelType]
+
+/**
+ * ヘッダー・下部ナビゲーションの主要操作キー。
+ * 表示場所ごとに並び順を変えても、同じ操作を参照できるようにする。
+ */
+export const PrimaryNavigationKey = {
+  /** 凸数設定 */
+  Uncap: 'uncap',
+  /** 最適編成 */
+  Simulator: 'simulator',
+  /** 点数設定 */
+  ScoreSettings: 'scoreSettings',
+} as const
+export type PrimaryNavigationKey = (typeof PrimaryNavigationKey)[keyof typeof PrimaryNavigationKey]
+
+/**
+ * オプションモーダルのセクションキー。
+ * 折りたたみ状態を型安全に管理するために使用する。
+ */
+export const OptionsSectionKey = {
+  /** アプリ全体の表示設定 */
+  General: 'general',
+  /** 最適編成設定 */
+  UnitSimulator: 'unitSimulator',
+  /** 点数設定 */
+  Score: 'score',
+} as const
+export type OptionsSectionKey = (typeof OptionsSectionKey)[keyof typeof OptionsSectionKey]
+
+/**
+ * データ管理モーダルのセクションキー。
+ * ファイルとJSON文字列の開閉状態を識別する。
+ */
+export const DataManagementSectionKey = {
+  /** JSONファイルによる入出力 */
+  File: 'file',
+  /** JSON文字列による入出力 */
+  JsonText: 'jsonText',
+} as const
+export type DataManagementSectionKey = (typeof DataManagementSectionKey)[keyof typeof DataManagementSectionKey]
+
+/** エクスポート日時を分解するときに扱う日時部品 */
+export const ExportDatePartType = {
+  /** 年 */
+  Year: 'year',
+  /** 月 */
+  Month: 'month',
+  /** 日 */
+  Day: 'day',
+  /** 時 */
+  Hour: 'hour',
+  /** 分 */
+  Minute: 'minute',
+  /** 秒 */
+  Second: 'second',
+} as const
+export type ExportDatePartType = (typeof ExportDatePartType)[keyof typeof ExportDatePartType]
+
+/** インポート時に配列要素単位で検証する保存フィールドのキー */
+export const ImportArrayFieldKeyType = {
+  CustomParamBonusRows: 'customParamBonusRows',
+  HifExamRatios: 'hifExamRatios',
+  Rarities: 'rarities',
+  Types: 'types',
+  Plans: 'plans',
+  AbilityKeywords: 'abilityKeywords',
+  EventFilters: 'eventFilters',
+  Sources: 'sources',
+  Uncaps: 'uncaps',
+  CountCustom: 'countCustom',
+  AllowedTypes: 'allowedTypes',
+  LockedCards: 'lockedCards',
+  ManualCards: 'manualCards',
+  Members: 'members',
+} as const
+export type ImportArrayFieldKeyType = (typeof ImportArrayFieldKeyType)[keyof typeof ImportArrayFieldKeyType]
+
+/**
+ * データ管理の操作結果種別。
+ * 成功・失敗メッセージの表示色を決める。
+ */
+export const DataManagementMessageType = {
+  /** 操作成功 */
+  Success: 'success',
+  /** 一部補完・スキップを伴う操作 */
+  Warning: 'warning',
+  /** 操作失敗 */
+  Error: 'error',
+} as const
+export type DataManagementMessageType = (typeof DataManagementMessageType)[keyof typeof DataManagementMessageType]

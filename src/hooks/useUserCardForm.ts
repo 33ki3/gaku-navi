@@ -1,24 +1,26 @@
 /**
  * ユーザー定義サポートフォームの状態管理フック
  *
- * サポート追加・編集モーダルの入力状態、バリデーション、
- * SupportCard への変換ロジックを提供する。
+ * サポート追加・編集モーダルの入力状態とバリデーション、SupportCardへの変換ロジックを提供する。
  */
-import { useState, useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SupportCard, Ability, SupportEvent, SkillCardInfo } from '../types/card'
-import * as enums from '../types/enums'
 import * as data from '../data'
 import type { TranslationKey } from '../i18n'
-import { emptyEventRow, createDefaultAbilities, createInitialState, cardToFormState } from './formHelpers'
-import type { AbilityFormRow, EventFormRow, UserCardFormState } from './formHelpers'
+import type { Ability, SkillCardInfo, SupportCard, SupportEvent } from '../types/card'
+import * as enums from '../types/enums'
 import { deriveAbilityConfig } from '../utils/abilityDeriver'
 import { resolveEffectTrigger } from '../utils/pItemResolver'
+import type { AbilityFormRow, EventFormRow, UserCardFormState } from './formHelpers'
+import { cardToFormState, createDefaultAbilities, createInitialState, emptyEventRow } from './formHelpers'
 
 /** 有効な ActionIdType のセット（存在チェック用） */
 const VALID_ACTION_IDS = new Set<string>(data.PITEM_EFFECT_OPTIONS.map((opt) => opt.value))
 
-/** ActionIdType → effect.body エントリに変換する（表示用）。action_id を保存し i18n 解決はアプリ側で行う */
+/**
+ * ActionIdType → effect.body エントリに変換する（表示用）。
+ * action_id を保存し i18n 解決はアプリ側で行う
+ */
 function actionIdToBodyEntry(
   action: enums.ActionIdType,
   count: number,
@@ -179,7 +181,7 @@ export function useUserCardForm(editingCard?: SupportCard, existingNames?: Set<s
       }
     }
     // すべてのアビリティスロットが埋まっている必要がある
-    const allFilled = form.abilities.every((row) => (row.nameKey as string) !== '')
+    const allFilled = form.abilities.every((row) => row.nameKey !== enums.AbilityFormValueType.None)
     if (!allFilled) {
       errors.abilityError = 'userSupport.validation_ability_required'
     }
@@ -192,29 +194,29 @@ export function useUserCardForm(editingCard?: SupportCard, existingNames?: Set<s
 
   /** フォーム状態を SupportCard に変換する */
   const toSupportCard = useCallback((): SupportCard => {
-    // 全スロットを保持してAbility型に変換する（空スロットは位置情報を維持するため残す）
-    const abilities: Ability[] = form.abilities.map((row) => {
-      if ((row.nameKey as string) === '') {
+    // 入力済みの行だけをAbility型へ変換する
+    // 通常はバリデーション済みの6行が対象
+    // 未入力行を無効なenum値で保存しないよう、フォーム専用の未選択値はここで除外する
+    const abilities: Ability[] = form.abilities
+      .filter(
+        (row): row is AbilityFormRow & { nameKey: enums.AbilityNameKeyType } =>
+          row.nameKey !== enums.AbilityFormValueType.None,
+      )
+      .map((row) => {
+        const derived = deriveAbilityConfig(row.nameKey, row.parameterType)
         return {
-          name_key: '' as enums.AbilityNameKeyType,
-          trigger_key: '' as enums.TriggerKeyType,
+          name_key: row.nameKey,
+          trigger_key: derived.triggerKey,
           values: {},
+          ...(row.parameterType && { parameter_type: row.parameterType }),
+          ...(row.maxCount && { max_count: Number(row.maxCount) }),
+          ...(derived.isPercentage && { is_percentage: true }),
+          ...(derived.isParameterBonus && { is_parameter_bonus: true }),
+          ...(derived.isInitialStat && { is_initial_stat: true }),
+          ...(derived.isEventBoost && { is_event_boost: true }),
+          ...(derived.skipCalculation && { skip_calculation: true }),
         }
-      }
-      const derived = deriveAbilityConfig(row.nameKey, row.parameterType)
-      return {
-        name_key: row.nameKey,
-        trigger_key: derived.triggerKey,
-        values: {},
-        ...(row.parameterType && { parameter_type: row.parameterType }),
-        ...(row.maxCount && { max_count: Number(row.maxCount) }),
-        ...(derived.isPercentage && { is_percentage: true }),
-        ...(derived.isParameterBonus && { is_parameter_bonus: true }),
-        ...(derived.isInitialStat && { is_initial_stat: true }),
-        ...(derived.isEventBoost && { is_event_boost: true }),
-        ...(derived.skipCalculation && { skip_calculation: true }),
-      }
-    })
+      })
 
     // イベントを SupportEvent 型に変換する（パラメータ上昇値はレアリティから自動導出）
     // paramType はカードのタイプから自動決定

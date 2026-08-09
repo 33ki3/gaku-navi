@@ -6,8 +6,8 @@
 import * as enums from '../../types/enums'
 import type { ParameterBonusBreakdownRow } from '../../utils/calculator/parameterBonus'
 import { filterByStage } from '../../utils/hifScheduleHelpers'
-import { HifParamBonusBreakdown } from './hif/HifParamBonusBreakdown'
 import { HajimeParamBonusBreakdown } from './hajime/HajimeParamBonusBreakdown'
+import { HifParamBonusBreakdown } from './hif/HifParamBonusBreakdown'
 
 /** ScheduleParamBonusBreakdown コンポーネントに渡すプロパティ */
 interface ScheduleParamBonusBreakdownProps {

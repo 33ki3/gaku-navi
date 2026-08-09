@@ -4,8 +4,8 @@
  * ソートモード・タブのラベル情報を定義し、
  * enum 値をキーにした i18n キーのルックアップと表示順配列を提供する。
  */
-import { SortModeType, FilterSortTab } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { FilterSortTab, SortDirectionType, SortModeType } from '../../types/enums'
 
 /** ラベルエントリ */
 interface LabelEntry<T extends string = string> {
@@ -57,4 +57,18 @@ export const FilterSortTabOrder: readonly FilterSortTab[] = filterSortTabEntries
  */
 export function getFilterSortTabLabel(tab: FilterSortTab): TranslationKey {
   return filterSortTabMap.get(tab)!
+}
+
+/** ソート方向エントリ。enum値・状態値・表示ラベルを一つの定義にまとめる。 */
+const sortDirectionEntries: readonly (LabelEntry<SortDirectionType> & { reverse: boolean })[] = [
+  { value: SortDirectionType.Ascending, reverse: true, label: 'ui.sort.ascending' },
+  { value: SortDirectionType.Descending, reverse: false, label: 'ui.sort.descending' },
+]
+
+/** ソート方向の表示順 */
+export const SortDirectionOrder: readonly SortDirectionType[] = sortDirectionEntries.map((entry) => entry.value)
+
+/** ソート方向の表示情報を取得する */
+export function getSortDirectionEntry(direction: SortDirectionType) {
+  return sortDirectionEntries.find((entry) => entry.value === direction)!
 }

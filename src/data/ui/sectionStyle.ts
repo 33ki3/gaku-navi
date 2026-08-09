@@ -12,12 +12,6 @@ interface UncapSelectorStyle {
   button: string
 }
 
-/** タブのスタイル（アクティブ・非アクティブ） */
-interface TabStyle {
-  active: string
-  inactive: string
-}
-
 const collapsibleStyle: Record<CollapsibleVariantType, string> = {
   [CollapsibleVariantType.Modal]:
     'flex items-center gap-1.5 w-full text-left text-xs font-black text-slate-500 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors',
@@ -38,12 +32,6 @@ const uncapSelectorStyle: Record<UncapSelectorVariantType, UncapSelectorStyle> =
   },
 }
 
-const tabStyle: TabStyle = {
-  active: 'text-sm font-black pb-2 border-b-2 transition-colors text-slate-800 border-slate-800',
-  inactive:
-    'text-sm font-black pb-2 border-b-2 transition-colors text-slate-500 border-transparent hover:text-slate-600',
-}
-
 /**
  * CollapsibleSection バリアントに対応するボタンクラスを返す。
  *
@@ -62,14 +50,4 @@ export function getCollapsibleVariantClass(variant: CollapsibleVariantType): str
  */
 export function getUncapSelectorVariantStyle(variant: UncapSelectorVariantType): UncapSelectorStyle {
   return uncapSelectorStyle[variant]
-}
-
-/**
- * タブボタンの active/inactive に応じたスタイルを返す。
- *
- * @param active - タブが選択中かどうか
- * @returns Tailwind CSS クラス文字列
- */
-export function getTabStyle(active: boolean): string {
-  return active ? tabStyle.active : tabStyle.inactive
 }

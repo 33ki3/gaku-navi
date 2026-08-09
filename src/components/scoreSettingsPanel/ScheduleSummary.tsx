@@ -6,12 +6,12 @@
  * スケジュール有効時は週毎のボーナス内訳テーブルもインラインで表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings } from '../../types/card'
-import { formatScheduleSummary } from '../../utils/scoreSettings'
-import type { ParameterBonusBreakdownRow } from '../../utils/calculator/parameterBonus'
 import { getParameterTextColor } from '../../data/ui'
-import { ParameterType } from '../../types/enums'
+import type { ScoreSettings } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
+import { ParameterType } from '../../types/enums'
+import type { ParameterBonusBreakdownRow } from '../../utils/calculator/parameterBonus'
+import { formatScheduleSummary } from '../../utils/scoreSettings'
 import { ScheduleParamBonusBreakdown } from './ScheduleParamBonusBreakdown'
 
 /** ScheduleSummary コンポーネントに渡すプロパティ */

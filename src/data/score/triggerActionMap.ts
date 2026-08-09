@@ -4,7 +4,7 @@
  * アビリティの trigger_key（例: 'lesson_end'）を
  * スケジュール上のアクション回数キー（例: 'lesson'）に変換するためのデータ。
  */
-import { TriggerKeyType, ActionIdType, EffectTemplateKeyType, ParameterType } from '../../types/enums'
+import { ActionIdType, EffectTemplateKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
 
 /** trigger_key → アクション回数キーのマッピング */
 export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
@@ -26,15 +26,23 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.SkillAcquire]: ActionIdType.SkillAcquire,
   [TriggerKeyType.MSkillAcquire]: ActionIdType.MSkillAcquire,
   [TriggerKeyType.ASkillAcquire]: ActionIdType.ASkillAcquire,
+  [TriggerKeyType.ConsultSkillCardAcquire]: ActionIdType.ConsultSkillCardAcquire,
   [TriggerKeyType.VitalityCardAcquire]: ActionIdType.VitalityCardAcquire,
+  [TriggerKeyType.VitalityCardAcquire8]: ActionIdType.VitalityCardAcquire8,
   [TriggerKeyType.GoodConditionCardAcquire]: ActionIdType.GoodConditionCardAcquire,
+  [TriggerKeyType.GoodConditionCardAcquire8]: ActionIdType.GoodConditionCardAcquire8,
   [TriggerKeyType.ConcentrationCardAcquire]: ActionIdType.ConcentrationCardAcquire,
+  [TriggerKeyType.ConcentrationCardAcquire8]: ActionIdType.ConcentrationCardAcquire8,
   [TriggerKeyType.GoodImpressionCardAcquire]: ActionIdType.GoodImpressionCardAcquire,
   [TriggerKeyType.GoodImpressionCardAcquire8]: ActionIdType.GoodImpressionCardAcquire8,
   [TriggerKeyType.MotivationCardAcquire]: ActionIdType.MotivationCardAcquire,
+  [TriggerKeyType.MotivationCardAcquire8]: ActionIdType.MotivationCardAcquire8,
   [TriggerKeyType.ReserveCardAcquire]: ActionIdType.ReserveCardAcquire,
+  [TriggerKeyType.ReserveCardAcquire8]: ActionIdType.ReserveCardAcquire8,
   [TriggerKeyType.AggressiveCardAcquire]: ActionIdType.AggressiveCardAcquire,
+  [TriggerKeyType.AggressiveCardAcquire8]: ActionIdType.AggressiveCardAcquire8,
   [TriggerKeyType.FullPowerCardAcquire]: ActionIdType.FullPowerCardAcquire,
+  [TriggerKeyType.FullPowerCardAcquire8]: ActionIdType.FullPowerCardAcquire8,
   [TriggerKeyType.SsrCardAcquire]: ActionIdType.SsrCardAcquire,
   [TriggerKeyType.DrowsyAcquire]: ActionIdType.DrowsyAcquire,
   [TriggerKeyType.ClassWorkEnd]: ActionIdType.ClassWork,

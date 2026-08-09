@@ -5,9 +5,9 @@
  */
 import { useTranslation } from 'react-i18next'
 
+import { getParameterTextColor } from '../../data/ui'
 import * as enums from '../../types/enums'
 import type { ParameterBonusBreakdownRow } from '../../utils/calculator/parameterBonus'
-import { getParameterTextColor } from '../../data/ui'
 
 /** BreakdownFooter コンポーネントに渡すプロパティ */
 interface BreakdownFooterProps {

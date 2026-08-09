@@ -4,8 +4,8 @@
  * シナリオ×難易度ごとの週間スケジュールを定義する。
  */
 
-import { ActivityIdType, HifStage, ScenarioType, DifficultyType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { ActivityIdType, DifficultyType, HifStage, ScenarioType } from '../../types/enums'
 import { getActivityLabel } from './activity'
 
 /** スケジュール内の活動選択肢 */
@@ -137,7 +137,7 @@ const data: Record<ScenarioType, DifficultyMap> = {
       { week: 18, fixed: true, can_rest: false, activities: [ActivityIdType.FinalExam] },
     ],
   },
-  // HIF の第1〜20週が選抜ステージ、第21〜29週が本選ステージ。
+  // HIF の第1〜20週が選抜ステージ、第21〜29週が本選ステージ
   // HIF は難易度の概念がないため None キーのみ使用する
   [ScenarioType.Hif]: {
     [DifficultyType.None]: [

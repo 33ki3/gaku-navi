@@ -37,3 +37,9 @@ export const GRID_COL_GAP = 16
 
 /** 仮想スクロールの overscan 行数。見えている範囲の外側に余分に描画する行数。 */
 export const VIRTUAL_OVERSCAN = 5
+
+/** パネルのスクロール位置を復元する最大フレーム数 */
+export const PANEL_SCROLL_RESTORE_MAX_FRAME_COUNT = 12
+
+/** 固定パネルの上端をヘッダー下へ揃えるCSSカスタムプロパティ名 */
+export const APP_HEADER_HEIGHT_PROPERTY = '--app-header-height'

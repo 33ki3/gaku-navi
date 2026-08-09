@@ -1,17 +1,16 @@
 /**
  * ActionCountsSection の回帰テスト
  *
- * 複数スピナーを同一フレームで連続操作したとき、
- * 後続更新が古い設定スナップショットで前更新を上書きしないことを検証する。
+ * 複数スピナーを同一フレームで連続操作したとき、後続更新が古い設定スナップショットで前更新を上書きしないことを検証する。
  */
 import { act, render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { I18nextProvider } from 'react-i18next'
 import { useState } from 'react'
-import i18n from '../../../i18n'
+import { I18nextProvider } from 'react-i18next'
+import { describe, expect, it } from 'vitest'
 import { ActionCountsSection } from '../../../components/scoreSettingsPanel/ActionCountsSection'
-import * as enums from '../../../types/enums'
+import i18n from '../../../i18n'
 import type { ScoreSettings } from '../../../types/card'
+import * as enums from '../../../types/enums'
 
 function createTestSettings(): ScoreSettings {
   return {
@@ -80,7 +79,7 @@ describe('ActionCountsSection', () => {
     render(<TestWrapper />)
 
     const examPItem = getRowElements('試験後Pアイテム獲得')
-    const pItem = getRowElements('Pアイテム獲得（試験後を除く）')
+    const pItem = getRowElements('Pアイテム獲得')
 
     expect(examPItem.input.value).toBe('1')
     expect(pItem.input.value).toBe('7')
@@ -92,6 +91,6 @@ describe('ActionCountsSection', () => {
     })
 
     expect(getRowElements('試験後Pアイテム獲得').input.value).toBe('0')
-    expect(getRowElements('Pアイテム獲得（試験後を除く）').input.value).toBe('6')
+    expect(getRowElements('Pアイテム獲得').input.value).toBe('6')
   })
 })

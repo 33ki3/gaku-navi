@@ -5,10 +5,10 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import type { SupportCard, SkillCardInfo } from '../../../types/card'
-import type { UnitSimulatorSettings } from '../../../types/unit'
-import * as enums from '../../../types/enums'
 import * as constant from '../../../constant'
+import type { SkillCardInfo, SupportCard } from '../../../types/card'
+import * as enums from '../../../types/enums'
+import type { UnitSimulatorSettings } from '../../../types/unit'
 import { createDefaultSettings } from '../../../utils/scoreSettings'
 import { createRentalPool, prepareCandidates } from '../../../utils/unitOptimizer/candidatePreparation'
 

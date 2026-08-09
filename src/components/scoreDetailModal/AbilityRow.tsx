@@ -7,8 +7,8 @@
  */
 import { useTranslation } from 'react-i18next'
 import type { CardCalculationResult } from '../../types/card'
-import { getScoreStyles } from '../../utils/display/scoreStyles'
 import { getAbilityDisplayName, getEffectDescription } from '../../utils/display/abilityRowHelpers'
+import { getScoreStyles } from '../../utils/display/scoreStyles'
 
 /** AbilityRow コンポーネントに渡すプロパティ */
 interface AbilityRowProps {

@@ -4,7 +4,7 @@
  * ユーザー定義サポートフォームで使用するPアイテムの発動条件（トリガー）と
  * 発動時効果（アクション）の選択肢を定義する。
  */
-import { TriggerKeyType, ActionIdType } from '../../types/enums'
+import { ActionIdType, TriggerKeyType } from '../../types/enums'
 
 import type { TranslationKey } from '../../i18n'
 

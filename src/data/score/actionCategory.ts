@@ -4,8 +4,8 @@
  * 点数計算の「アクション回数設定」セクションに表示する
  * 全アクションの一覧・グループ分類・グループラベルを統合的に定義する。
  */
-import { ActionIdType, ActionGroupType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { ActionGroupType, ActionIdType } from '../../types/enums'
 
 /** アクション回数カテゴリの型 */
 interface ActionCountCategory {
@@ -60,14 +60,22 @@ const data: ActionGroupEntry[] = [
       { id: ActionIdType.SsrCardAcquire, label: 'score.action.ssr_acquire' },
       { id: ActionIdType.DrowsyAcquire, label: 'score.action.drowsy_acquire' },
       { id: ActionIdType.VitalityCardAcquire, label: 'score.action.vitality_acquire' },
+      { id: ActionIdType.VitalityCardAcquire8, label: 'score.action.vitality_acquire_8' },
       { id: ActionIdType.GoodConditionCardAcquire, label: 'score.action.good_condition_acquire' },
+      { id: ActionIdType.GoodConditionCardAcquire8, label: 'score.action.good_condition_acquire_8' },
       { id: ActionIdType.ConcentrationCardAcquire, label: 'score.action.concentration_acquire' },
+      { id: ActionIdType.ConcentrationCardAcquire8, label: 'score.action.concentration_acquire_8' },
       { id: ActionIdType.GoodImpressionCardAcquire, label: 'score.action.good_impression_acquire' },
       { id: ActionIdType.GoodImpressionCardAcquire8, label: 'score.action.good_impression_acquire_8' },
       { id: ActionIdType.MotivationCardAcquire, label: 'score.action.motivation_acquire' },
+      { id: ActionIdType.MotivationCardAcquire8, label: 'score.action.motivation_acquire_8' },
       { id: ActionIdType.AggressiveCardAcquire, label: 'score.action.aggressive_acquire' },
+      { id: ActionIdType.AggressiveCardAcquire8, label: 'score.action.aggressive_acquire_8' },
       { id: ActionIdType.ReserveCardAcquire, label: 'score.action.reserve_acquire' },
+      { id: ActionIdType.ReserveCardAcquire8, label: 'score.action.reserve_acquire_8' },
       { id: ActionIdType.FullPowerCardAcquire, label: 'score.action.full_power_acquire' },
+      { id: ActionIdType.FullPowerCardAcquire8, label: 'score.action.full_power_acquire_8' },
+      { id: ActionIdType.ConsultSkillCardAcquire, label: 'score.action.consult_skill_card_acquire' },
     ],
   },
   {

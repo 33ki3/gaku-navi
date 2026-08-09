@@ -4,8 +4,8 @@
  * 編成評価ホットパスを独立モジュール化し、
  * 探索ロジック本体から責務を分離する。
  */
-import type { ParameterValues } from '../../types/card'
 import * as constant from '../../constant'
+import type { ParameterValues } from '../../types/card'
 
 /** 評価に必要なシナジー情報 */
 interface EvaluatorSynergyAbility {
@@ -52,7 +52,7 @@ const supportPercentBuffer = new Float64Array(3)
  * @param requiredSize - 必要なバッファサイズ
  */
 function ensureProvidedBuffer(requiredSize: number): void {
-  // ホットパスで毎回再確保しないよう、必要になった時だけ拡張する。
+  // ホットパスで毎回再確保しないよう、必要になった時だけ拡張する
   if (totalProvidedBuffer.length >= requiredSize) return
   totalProvidedBuffer = new Float64Array(requiredSize)
 }
@@ -64,13 +64,13 @@ function ensureProvidedBuffer(requiredSize: number): void {
  * @returns 固定部分の集計済みシード
  */
 export function createEvaluatorSeed(fixedMembers: EvaluatorMember[]): EvaluatorSeed {
-  // 固定メンバーだけで必要な配列サイズを決める。
+  // 固定メンバーだけで必要な配列サイズを決める
   const actionBufferSize = fixedMembers[0]?.providedActionsVec.length ?? 0
   const fixedTotalProvided = new Float64Array(actionBufferSize)
   const fixedSupportScore = new Float64Array(3)
   const fixedSupportPercent = new Float64Array(3)
 
-  // 固定メンバー分の提供回数・基礎スコア・パラボ%を先に集計しておく。
+  // 固定メンバー分の提供回数・基礎スコア・パラボ%を先に集計しておく
   for (const m of fixedMembers) {
     for (const entry of m.providedActionEntries) {
       fixedTotalProvided[entry.actionIdx] += entry.count
@@ -109,11 +109,11 @@ export function evaluateUnitScoreWithSeed(
   outsideParamBonusPercent: ParameterValues,
   ctx: EvaluatorContext,
 ): number {
-  // 可変メンバーを含めた必要サイズへ共有バッファを合わせる。
+  // 可変メンバーを含めた必要サイズへ共有バッファを合わせる
   const actionBufferSize = Math.max(seed.fixedTotalProvided.length, variableMembers[0]?.providedActionsVec.length ?? 0)
   ensureProvidedBuffer(actionBufferSize)
 
-  // 提供回数バッファを固定メンバー分で初期化し、可変メンバー分を加算する。
+  // 提供回数バッファを固定メンバー分で初期化し、可変メンバー分を加算する
   totalProvidedBuffer.fill(0, 0, actionBufferSize)
   totalProvidedBuffer.set(seed.fixedTotalProvided)
   for (const m of variableMembers) {
@@ -122,7 +122,7 @@ export function evaluateUnitScoreWithSeed(
     }
   }
 
-  // スコア集計バッファを固定メンバー分で初期化する。
+  // スコア集計バッファを固定メンバー分で初期化する
   supportScoreBuffer[0] = seed.fixedSupportScore[0]
   supportScoreBuffer[1] = seed.fixedSupportScore[1]
   supportScoreBuffer[2] = seed.fixedSupportScore[2]
@@ -130,7 +130,7 @@ export function evaluateUnitScoreWithSeed(
   supportPercentBuffer[1] = seed.fixedSupportPercent[1]
   supportPercentBuffer[2] = seed.fixedSupportPercent[2]
 
-  // 可変メンバーの基礎値とシナジー加点を集計する。
+  // 可変メンバーの基礎値とシナジー加点を集計する
   for (const m of variableMembers) {
     supportPercentBuffer[0] += m.paramBonusPercent.vocal
     supportPercentBuffer[1] += m.paramBonusPercent.dance
@@ -140,7 +140,7 @@ export function evaluateUnitScoreWithSeed(
     if (pi < 0) continue
     supportScoreBuffer[pi] += m.baseScoreWithoutParamBonus
 
-    // 自身が提供した回数は除外し、他メンバー提供分のみをシナジーとして加算する。
+    // 自身が提供した回数は除外し、他メンバー提供分のみをシナジーとして加算する
     const vec = m.providedActionsVec
     for (const sa of m.synergyAbilities) {
       let extraCount = totalProvidedBuffer[sa.actionIdx] - vec[sa.actionIdx]
@@ -153,7 +153,7 @@ export function evaluateUnitScoreWithSeed(
     }
   }
 
-  // 固定メンバー側も同様にシナジー加点のみ再計算して足し込む。
+  // 固定メンバー側も同様にシナジー加点のみ再計算して足し込む
   for (const m of seed.fixedMembers) {
     const pi = m.paramIndex
     if (pi < 0) continue
@@ -170,7 +170,7 @@ export function evaluateUnitScoreWithSeed(
     }
   }
 
-  // ユニット全体パラボ（サポート内+サポート外）をタイプ別に加算する。
+  // ユニット全体パラボ（サポート内+サポート外）をタイプ別に加算する
   supportScoreBuffer[0] += Math.floor(
     (parameterBonusBase.vocal * (supportPercentBuffer[0] + outsideParamBonusPercent.vocal)) / constant.PERCENT_DIVISOR,
   )
@@ -182,7 +182,7 @@ export function evaluateUnitScoreWithSeed(
       constant.PERCENT_DIVISOR,
   )
 
-  // 最後にパラメータ上限を適用して合計スコアを返す。
+  // 最後にパラメータ上限を適用して合計スコアを返す
   const cap = ctx.paramCap
   const np = ctx.nonSupportParams
   if (cap !== null) {

@@ -5,9 +5,9 @@
  * スケジュール自動計算が有効なときは入力がロックされる。
  */
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings } from '../../types/card'
-import * as data from '../../data'
 import * as constant from '../../constant'
+import * as data from '../../data'
+import type { ScoreSettings } from '../../types/card'
 
 /** ParameterBonusInputs コンポーネントに渡すプロパティ */
 interface ParameterBonusInputsProps {

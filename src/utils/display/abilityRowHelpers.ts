@@ -6,11 +6,11 @@
  */
 
 import type { TFunction } from 'i18next'
+import * as constant from '../../constant'
+import * as data from '../../data'
 import type { CardCalculationResult } from '../../types/card'
 import { EffectSectionType } from '../../types/enums'
-import * as data from '../../data'
-import * as constant from '../../constant'
-import { getPItemEffectLabel, getEffectLabelKey } from './effectLabels'
+import { getEffectLabelKey, getPItemEffectLabel } from './effectLabels'
 
 /** アビリティ詳細データの型エイリアス */
 type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]

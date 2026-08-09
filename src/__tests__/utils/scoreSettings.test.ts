@@ -7,22 +7,22 @@
  * そこからアクション回数が自動算出される。スケジュール制御外のアクション
  * （スキル獲得等）は手動入力値がそのまま使われる。
  */
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as constant from '../../constant'
+import type { ScheduleWeekData } from '../../data'
+import * as data from '../../data'
+import type { ScoreSettings } from '../../types/card'
+import * as enums from '../../types/enums'
 import {
-  hasAllScheduleSelections,
   calculateCountsFromSchedule,
-  mergeScheduleCounts,
-  loadScoreSettings,
-  loadScheduleSelections,
   createDefaultSettings,
+  hasAllScheduleSelections,
+  loadScheduleSelections,
+  loadScoreSettings,
+  mergeScheduleCounts,
   resetScheduleSelectionsOnly,
   saveScoreSettings,
 } from '../../utils/scoreSettings'
-import type { ScoreSettings } from '../../types/card'
-import type { ScheduleWeekData } from '../../data'
-import * as data from '../../data'
-import * as enums from '../../types/enums'
-import * as constant from '../../constant'
 
 /** createDefaultSettings のデフォルト選択仕様テスト */
 describe('createDefaultSettings', () => {
@@ -95,7 +95,7 @@ describe('hasAllScheduleSelections', () => {
     expect(hasAllScheduleSelections(settings)).toBe(true)
   })
 
-  it('Hajimeで legacy class 値は未設定扱いになる', () => {
+  it('Hajimeでclass値は選択対象外として扱われる', () => {
     const selections: Record<number, enums.ActivityIdType> = {}
     for (let week = 1; week <= 18; week++) {
       selections[week] = enums.ActivityIdType.VoLesson
@@ -400,16 +400,16 @@ describe('loadScoreSettings / saveScoreSettings', () => {
   })
 
   it('共有キーに保存されたHajime scheduleSelectionsはHIF保存後も共有キーに保持される', () => {
-    const legacy = loadScoreSettings()
+    const storedSettings = loadScoreSettings()
     mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
-      ...legacy,
+      ...storedSettings,
       scenario: enums.ScenarioType.Hajime,
       scheduleSelections: { 4: enums.ActivityIdType.VoLesson, 10: enums.ActivityIdType.MidExam },
     })
     delete mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]
 
     saveScoreSettings({
-      ...legacy,
+      ...storedSettings,
       scenario: enums.ScenarioType.Hif,
       difficulty: enums.DifficultyType.None,
       scheduleSelections: { 7: enums.ActivityIdType.MidExam },
@@ -428,8 +428,8 @@ describe('loadScoreSettings / saveScoreSettings', () => {
   })
 
   it('共有キーに保存されたHajime複数週選択はHIF保存後も有効活動のみ復元できる', () => {
-    const legacy = loadScoreSettings()
-    const legacyHajimeSelections = {
+    const storedSettings = loadScoreSettings()
+    const hajimeSelections = {
       1: enums.ActivityIdType.Class,
       2: enums.ActivityIdType.Class,
       4: enums.ActivityIdType.DaLesson,
@@ -438,14 +438,14 @@ describe('loadScoreSettings / saveScoreSettings', () => {
       18: enums.ActivityIdType.FinalExam,
     }
     mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
-      ...legacy,
+      ...storedSettings,
       scenario: enums.ScenarioType.Hajime,
-      scheduleSelections: legacyHajimeSelections,
+      scheduleSelections: hajimeSelections,
     })
     delete mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]
 
     saveScoreSettings({
-      ...legacy,
+      ...storedSettings,
       scenario: enums.ScenarioType.Hif,
       difficulty: enums.DifficultyType.None,
       scheduleSelections: { 7: enums.ActivityIdType.MidExam },
@@ -522,7 +522,7 @@ describe('loadScoreSettings / saveScoreSettings', () => {
     expect(loadedSelections).toEqual({ 20: enums.ActivityIdType.MidExam })
   })
 
-  // 共有キー側に残っている値を誤ってHIFへ流用しないことを確認する。
+  // 共有キー側に残っている値を誤ってHIFへ流用しないことを確認する
   it('共有キーがHIFでもシナリオ別キー未保存ならHIF既定スケジュールへフォールバックする', () => {
     const base = loadScoreSettings()
     mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
@@ -547,7 +547,7 @@ describe('loadScoreSettings / saveScoreSettings', () => {
     expect(loadedSelections).toEqual(defaults)
   })
 
-  // Hajimeはシナリオ別キーを読まない仕様を回帰で固定する。
+  // Hajimeはシナリオ別キーを読まない仕様を回帰で固定する
   it('非HIFはシナリオ別キーにデータがあっても共有キーのscheduleSelectionsを優先する', () => {
     const base = loadScoreSettings()
     mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({

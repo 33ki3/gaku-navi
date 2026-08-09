@@ -6,13 +6,13 @@
  * 行ごとに切り捨て計算されるため、スケジュール週選択の代わりに正確な計算が可能。
  */
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings, ParameterValues } from '../../types/card'
-import * as data from '../../data'
 import * as constant from '../../constant'
+import * as data from '../../data'
+import type { ParameterValues, ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
+import { sumCustomParamBonusRows } from '../../utils/scoreSettings'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { CloseIcon, PlusIcon } from '../ui/icons'
-import { sumCustomParamBonusRows } from '../../utils/scoreSettings'
 import { ParameterValueInputs } from './ParameterValueInputs'
 
 /** CustomParamBonusRows コンポーネントに渡すプロパティ */

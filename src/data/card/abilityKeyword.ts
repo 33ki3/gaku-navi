@@ -6,8 +6,8 @@
  * フィルター UI、サポート一覧バッジ、キーワード検索に使用。
  */
 
-import { AbilityKeywordType, TriggerKeyType } from '../../types/enums'
 import type { TranslationKey } from '../../i18n'
+import { AbilityKeywordType, TriggerKeyType } from '../../types/enums'
 
 /** アビリティキーワードマスタの1行分 */
 interface AbilityKeywordEntry {
@@ -121,14 +121,21 @@ const entries: AbilityKeywordEntry[] = [
       TriggerKeyType.MSkillAcquire,
       TriggerKeyType.ASkillAcquire,
       TriggerKeyType.GoodConditionCardAcquire,
+      TriggerKeyType.GoodConditionCardAcquire8,
       TriggerKeyType.ConcentrationCardAcquire,
+      TriggerKeyType.ConcentrationCardAcquire8,
       TriggerKeyType.MotivationCardAcquire,
+      TriggerKeyType.MotivationCardAcquire8,
       TriggerKeyType.GoodImpressionCardAcquire,
       TriggerKeyType.GoodImpressionCardAcquire8,
       TriggerKeyType.AggressiveCardAcquire,
+      TriggerKeyType.AggressiveCardAcquire8,
       TriggerKeyType.FullPowerCardAcquire,
+      TriggerKeyType.FullPowerCardAcquire8,
       TriggerKeyType.ReserveCardAcquire,
+      TriggerKeyType.ReserveCardAcquire8,
       TriggerKeyType.VitalityCardAcquire,
+      TriggerKeyType.VitalityCardAcquire8,
       TriggerKeyType.SsrCardAcquire,
     ],
   },
@@ -179,7 +186,7 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.consult',
     badge: 'card.badge.consult',
     isParamCategory: false,
-    triggers: [TriggerKeyType.Consult],
+    triggers: [TriggerKeyType.Consult, TriggerKeyType.ConsultSkillCardAcquire],
   },
   {
     id: AbilityKeywordType.ConsultCount,

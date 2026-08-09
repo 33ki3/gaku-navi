@@ -5,14 +5,14 @@
  * サマリーを表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { ScoreSettings } from '../../../types/card'
-import { CheckboxField } from '../../ui/CheckboxField'
-import * as enums from '../../../types/enums'
 import type { ScheduleWeekData } from '../../../data/score'
+import type { ScoreSettings } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
+import * as enums from '../../../types/enums'
 import { getParameterBonusBreakdown } from '../../../utils/calculator/parameterBonus'
-import { ScheduleWeekSelector } from '../ScheduleWeekSelector'
+import { CheckboxField } from '../../ui/CheckboxField'
 import { ScheduleSummary } from '../ScheduleSummary'
+import { ScheduleWeekSelector } from '../ScheduleWeekSelector'
 
 /** HajimeScheduleContent コンポーネントに渡すプロパティ */
 interface HajimeScheduleContentProps {

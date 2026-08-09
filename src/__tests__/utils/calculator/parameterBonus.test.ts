@@ -7,13 +7,13 @@
  * 正確な算出が不可欠。
  */
 import { describe, expect, it } from 'vitest'
+import { HIF_EXAM_LABEL_KEYS } from '../../../data'
+import * as enums from '../../../types/enums'
 import {
   calculateParameterBonusFromSchedule,
-  getPerLessonParameterValues,
   getParameterBonusBreakdown,
+  getPerLessonParameterValues,
 } from '../../../utils/calculator/parameterBonus'
-import * as enums from '../../../types/enums'
-import { HIF_EXAM_LABEL_KEYS } from '../../../data'
 
 // テストデータは実際のシナリオ/難易度を使用（data/score/lesson.ts に依存）
 

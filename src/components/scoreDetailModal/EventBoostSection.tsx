@@ -5,8 +5,8 @@
  * イベント基礎値 + ボーナス値率 + 最終ブースト值を表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { CardCalculationResult } from '../../types/card'
 import * as constant from '../../constant'
+import type { CardCalculationResult } from '../../types/card'
 
 /** イベントブーストセクション */
 export function EventBoostSection({ result }: { result: CardCalculationResult }) {

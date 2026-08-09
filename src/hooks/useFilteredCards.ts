@@ -5,14 +5,14 @@
  * サポート一覧を絞り込み・並び替えした結果を返す。
  * 各サポートが持つアビリティバッジ（「スコア上昇」「パラメータ上昇」等）も計算する。
  */
-import { useMemo, useDeferredValue, useRef } from 'react'
-import type { SupportCard, ScoreSettings } from '../types/card'
-import type { UncapType } from '../types/enums'
-import type { TranslationKey } from '../i18n'
+import { useDeferredValue, useMemo, useRef } from 'react'
 import * as data from '../data'
-import { sortCards, filterSortedCards } from '../utils/filterCards'
-import { useFilterState } from './useFilterState'
+import type { TranslationKey } from '../i18n'
+import type { ScoreSettings, SupportCard } from '../types/card'
+import type { UncapType } from '../types/enums'
+import { filterSortedCards, sortCards } from '../utils/filterCards'
 import type { FilterState } from './useFilterState'
+import { useFilterState } from './useFilterState'
 
 /** useFilteredCards の戻り値型。FilterState の全フィールドに加え、絞り込み結果を含む */
 export interface CardFiltersReturn extends FilterState {
@@ -71,8 +71,8 @@ export function useFilteredCards(
   }
 
   // フィルター条件が変わったときだけサポート一覧を再計算する
-  // ソートとフィルタリングを分離して、ソート結果をキャッシュする。
-  // フィルター条件のみの変更ではソートを再実行しない（O(n) のフィルタリングだけで済む）。
+  // ソートとフィルタリングを分離して、ソート結果をキャッシュする
+  // フィルター条件のみの変更ではソートを再実行せず、O(n)のフィルタリングだけで済ませる
 
   // ソート: ソート条件（モード・方向・スコア設定）が変わったときだけ再計算する
   const sortedCards = useMemo(
@@ -83,7 +83,8 @@ export function useFilteredCards(
         sortCardUncaps: sortUncapsRef.current,
         cardScores: sortScoresRef.current,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sortScoresRef / sortUncapsRef は scoreSettings 変更時のみ更新するため ref で管理
+    // ソート用refはscoreSettings変更時だけ更新し、依存配列へ直接入れない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [cards, state.sortMode, state.sortReverse, scoreSettings],
   )
 

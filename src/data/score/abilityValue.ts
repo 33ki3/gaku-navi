@@ -5,7 +5,7 @@
  * プロパティアクセスで引けるようにする。
  */
 
-import { RarityTierType, AbilityNameKeyType } from '../../types/enums'
+import { AbilityNameKeyType, RarityTierType } from '../../types/enums'
 
 // スケジュールデータ（凸数→段階番号マッピング）
 const scheduleData = {
@@ -52,8 +52,10 @@ const stageData = {
     [AbilityNameKeyType.Change]: ['16', '21'],
     [AbilityNameKeyType.ClassWorkEnd]: ['5', '7'],
     [AbilityNameKeyType.ConcentrationCardAcquire]: ['3', '4'],
+    [AbilityNameKeyType.ConcentrationCardAcquire8]: ['16', '22'],
     [AbilityNameKeyType.Consult]: ['14', '18'],
     [AbilityNameKeyType.ConsultCount]: ['28', '38'],
+    [AbilityNameKeyType.ConsultSkillCardAcquire]: ['18', '21'],
     [AbilityNameKeyType.Customize]: ['8', '11'],
     [AbilityNameKeyType.Delete]: ['8', '11'],
     [AbilityNameKeyType.DeleteCount]: ['15', '20'],
@@ -63,6 +65,7 @@ const stageData = {
     [AbilityNameKeyType.ExamEnd]: ['17', '22'],
     [AbilityNameKeyType.ExamHp]: ['6', '8'],
     [AbilityNameKeyType.GoodConditionCardAcquire]: ['3', '4'],
+    [AbilityNameKeyType.GoodConditionCardAcquire8]: ['16', '22'],
     [AbilityNameKeyType.GoodImpressionCardAcquire]: ['3', '4'],
     [AbilityNameKeyType.GoodImpressionCardAcquire8]: ['16', '22'],
     [AbilityNameKeyType.InitialPp]: ['30', '40'],
@@ -72,6 +75,7 @@ const stageData = {
     [AbilityNameKeyType.MSkillAcquire]: ['2', '3'],
     [AbilityNameKeyType.MSkillDelete]: ['17', '22'],
     [AbilityNameKeyType.MSkillEnhance]: ['7', '9'],
+    [AbilityNameKeyType.MotivationCardAcquire8]: ['16', '22'],
     [AbilityNameKeyType.MaxHp]: ['6', '7', '8', '9', '9'],
     [AbilityNameKeyType.Outing]: ['11', '15'],
     [AbilityNameKeyType.OutingCount]: ['28', '38'],
@@ -80,6 +84,7 @@ const stageData = {
     [AbilityNameKeyType.PItemAcquire]: ['11', '15'],
     [AbilityNameKeyType.ParameterBonus]: ['6.5%', '7.0%', '7.5%', '8.0%', '8.5%'],
     [AbilityNameKeyType.ReserveCardAcquire]: ['3', '4'],
+    [AbilityNameKeyType.ReserveCardAcquire8]: ['16', '22'],
     [AbilityNameKeyType.Rest]: ['17', '22'],
     [AbilityNameKeyType.SkillEnhance]: ['3', '4'],
     [AbilityNameKeyType.SpLesson20]: ['15', '21'],
@@ -96,6 +101,9 @@ const stageData = {
     [AbilityNameKeyType.ActivitySupplyGiftCount]: ['28', '38'],
     [AbilityNameKeyType.SupportRate]: ['66.1%', '74.6%', '83.1%', '91.5%', '100%'],
     [AbilityNameKeyType.VitalityCardAcquire]: ['3', '4'],
+    [AbilityNameKeyType.VitalityCardAcquire8]: ['16', '22'],
+    [AbilityNameKeyType.AggressiveCardAcquire8]: ['16', '22'],
+    [AbilityNameKeyType.FullPowerCardAcquire8]: ['16', '22'],
   },
   [RarityTierType.EventSSR]: {
     [AbilityNameKeyType.ASkillAcquire]: ['1', '2'],

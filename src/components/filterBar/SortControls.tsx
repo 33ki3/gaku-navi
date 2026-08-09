@@ -4,11 +4,14 @@
  * 左に表示件数、右にソートモード表示ボタン・昇降順トグル・フィルタボタンを配置。
  */
 import { useTranslation } from 'react-i18next'
-import type { CardFiltersReturn } from '../../hooks'
-import { getFilterButtonStyle, getSortModeLabel } from '../../data/ui'
-import { FilterButtonCategory } from '../../types/enums'
 import * as constant from '../../constant'
-import { SortDirectionIcon, SortIcon } from '../ui/icons'
+import * as uiData from '../../data/ui'
+import type { CardFiltersReturn } from '../../hooks'
+import * as enums from '../../types/enums'
+import { getActiveFilterCount } from '../../utils/filterCount'
+import { FilterCountBadge } from '../ui/FilterCountBadge'
+import { AdjustedIcon, SortIcon } from '../ui/icons'
+import { FilterSearchInput } from './FilterSearchInput'
 
 /** SortControls コンポーネントに渡すプロパティ */
 interface SortControlsProps {
@@ -24,9 +27,16 @@ interface SortControlsProps {
   scheduleConfigured: boolean
   /** 点数設定パネルが表示中か */
   scoreSettingsVisible: boolean
+  /** サイドパネル表示中の省スペース配置にするか */
+  compactLayout: boolean
 }
 
-/** 件数表示 + ソート・フィルタボタン */
+/**
+ * 表示件数、検索欄、ソート・フィルター操作を一覧上部へ表示する。
+ *
+ * @param props - 一覧件数、フィルター状態、設定画面を開く操作
+ * @returns サポート一覧上部の操作バー
+ */
 export default function SortControls({
   count,
   filters,
@@ -34,24 +44,15 @@ export default function SortControls({
   onOpenScoreSettings,
   scheduleConfigured,
   scoreSettingsVisible,
+  compactLayout,
 }: SortControlsProps) {
   const { t } = useTranslation()
 
   // アクティブなフィルター条件の数を計算する
-  const activeFilterCount =
-    filters.selectedRarities.size +
-    filters.selectedTypes.size +
-    filters.selectedPlans.size +
-    (filters.spOnly ? 1 : 0) +
-    filters.selectedAbilityKeywords.size +
-    filters.selectedEventFilters.size +
-    filters.selectedUncaps.size +
-    (filters.searchTerm.length > 0 ? 1 : 0)
+  const activeFilterCount = getActiveFilterCount(filters)
 
   // ヘッダーボタンのスタイル
-  const inactiveStyle = getFilterButtonStyle(FilterButtonCategory.Inactive)
-  const activeStyle = getFilterButtonStyle(FilterButtonCategory.Active)
-
+  const inactiveStyle = uiData.getFilterButtonStyle(enums.FilterButtonCategory.Inactive)
   return (
     <div className="mb-3">
       {/* スマホ: ヒントをバーの上に表示 */}
@@ -65,44 +66,56 @@ export default function SortControls({
           </button>
         </div>
       )}
-      <div className="flex items-center justify-between">
-        {/* 左: 表示件数 */}
-        <p className="text-xs font-medium text-slate-600">
-          {count} {t('ui.unit.cards')}
-        </p>
-        {/* PC: ヒントを中央に表示 */}
-        {!scheduleConfigured && !scoreSettingsVisible && (
+      {/* PC: 検索欄の上にヒントを置き、一覧中央付近で見つけやすくする */}
+      {!compactLayout && !scheduleConfigured && !scoreSettingsVisible && (
+        <div className="mb-1 text-center hidden md:block">
           <button
             onClick={onOpenScoreSettings}
-            className="hidden sm:block text-[10px] text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+            className="text-[10px] text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
           >
             {t('ui.message.score_settings_hint')}
           </button>
-        )}
-        {/* 右: ソートモードボタン + 昇降順トグル */}
-        <div className="flex items-center gap-1.5">
-          {/* ソートモード名ボタン（フィルタアクティブ時は暗く + バッジ表示） */}
+        </div>
+      )}
+      {/* 表示件数・検索欄・一覧操作ボタンの同一行レイアウト */}
+      <div className="relative flex items-center gap-1.5 md:gap-2">
+        {/* 左: 表示件数 */}
+        <p className="shrink-0 text-xs font-medium text-slate-600">
+          {count} {t('ui.unit.cards')}
+        </p>
+        {/* 検索欄の配置（PCは中央、コンパクト時は可変幅） */}
+        <div
+          className={`min-w-0 flex-1 ${
+            compactLayout
+              ? 'mx-auto max-w-[24rem] md:max-w-[24rem]'
+              : 'mx-auto max-w-[24rem] md:absolute md:left-1/2 md:w-[24rem] md:-translate-x-1/2'
+          }`}
+        >
+          <FilterSearchInput value={filters.searchTerm} onChange={filters.setSearchTerm} fullWidth />
+        </div>
+        {/* ソート・フィルター操作 */}
+        <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
+          {/* ソートモード名ボタン（フィルタ適用時の色と件数バッジ） */}
           <button
             onClick={onOpenFilterSort}
-            className={`${constant.BTN_HEADER_ACTION} ${activeFilterCount > 0 ? activeStyle : inactiveStyle}`}
+            className={`${constant.BTN_HEADER_ACTION} ${
+              compactLayout ? 'md:gap-1 md:px-1.5 md:text-[10px] xl:gap-1.5 xl:px-2.5 xl:text-xs' : ''
+            } ${activeFilterCount > 0 ? constant.NAV_ITEM_ACTIVE : inactiveStyle}`}
           >
-            <SortIcon className="w-3.5 h-3.5" />
-            {t(getSortModeLabel(filters.sortMode))}
-            {activeFilterCount > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-slate-700 text-[9px] font-black">
-                {activeFilterCount}
-              </span>
-            )}
+            <AdjustedIcon className="h-3.5 w-3.5" />
+            {t(uiData.getSortModeLabel(filters.sortMode))}
+            <FilterCountBadge count={activeFilterCount} className="ml-1" />
           </button>
           {/* 昇降順トグル */}
           <button
             onClick={filters.toggleSortReverse}
-            className={`${constant.BTN_HEADER_ACTION} ${filters.sortReverse ? activeStyle : inactiveStyle}`}
-            title={t('ui.sort.reverse')}
+            className={`${constant.BTN_HEADER_ACTION} ${
+              compactLayout ? 'md:px-1.5 xl:px-2.5' : ''
+            } ${filters.sortReverse ? constant.NAV_ITEM_ACTIVE : inactiveStyle}`}
+            title={t(filters.sortReverse ? 'ui.sort.ascending' : 'ui.sort.descending')}
+            aria-label={t(filters.sortReverse ? 'ui.sort.ascending' : 'ui.sort.descending')}
           >
-            <SortDirectionIcon
-              className={`w-3.5 h-3.5 transition-transform ${filters.sortReverse ? 'rotate-180' : ''}`}
-            />
+            <SortIcon className="h-3.5 w-3.5" ascending={filters.sortReverse} />
           </button>
         </div>
       </div>

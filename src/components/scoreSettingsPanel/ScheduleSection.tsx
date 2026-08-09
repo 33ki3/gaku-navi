@@ -8,17 +8,17 @@
  */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ScheduleWeekData } from '../../data/score'
 import type { ScoreSettings } from '../../types/card'
-import CollapsibleSection from '../ui/CollapsibleSection'
+import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import { CollapsibleVariantType } from '../../types/enums'
-import type { ScheduleWeekData } from '../../data/score'
-import type { ActionIdType } from '../../types/enums'
 import { calculateParameterBonusFromSchedule, getParameterBonusBreakdown } from '../../utils/calculator/parameterBonus'
-import { CustomParamBonusRows } from './CustomParamBonusRows'
+import CollapsibleSection from '../ui/CollapsibleSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
-import { HifScheduleContent } from './hif/HifScheduleContent'
+import { CustomParamBonusRows } from './CustomParamBonusRows'
 import { HajimeScheduleContent } from './hajime/HajimeScheduleContent'
+import { HifScheduleContent } from './hif/HifScheduleContent'
 
 /** ScheduleSection コンポーネントに渡すプロパティ */
 interface ScheduleSectionProps {

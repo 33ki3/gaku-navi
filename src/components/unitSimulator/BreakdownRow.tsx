@@ -3,8 +3,8 @@
  *
  * VoDaViの3軸パラメータを1行で表示する共通コンポーネント。
  */
-import type { ParameterValues } from '../../types/unit'
 import { SelectableTypeEntries } from '../../data/card'
+import type { ParameterValues } from '../../types/unit'
 
 /** BreakdownRow に渡すプロパティ */
 interface BreakdownRowProps {

@@ -5,14 +5,14 @@
  * グループ別に並べて入力する。
  * スケジュール自動計算が有効なカテゴリはロックされる。
  */
-import { useTranslation } from 'react-i18next'
 import { useEffect, useRef } from 'react'
-import type { ScoreSettings } from '../../types/card'
-import type { ScheduleWeekData } from '../../data'
-import { SpinnerInput } from '../ui/SpinnerInput'
+import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
-import * as enums from '../../types/enums'
+import type { ScheduleWeekData } from '../../data'
 import * as data from '../../data'
+import type { ScoreSettings } from '../../types/card'
+import * as enums from '../../types/enums'
+import { SpinnerInput } from '../ui/SpinnerInput'
 
 /** ActionCountsSection コンポーネントに渡すプロパティ */
 interface ActionCountsSectionProps {

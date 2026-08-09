@@ -6,9 +6,9 @@
  *   2. パラメータ上昇（レアリティで値固定）
  *   3. 追加イベント（なし / カード強化 / カードチェンジ / トラブル削除）
  */
+import type { TranslationKey } from '../../i18n'
 import type { RarityType } from '../../types/enums'
 import { EventEffectType, RarityType as RarityEnum } from '../../types/enums'
-import type { TranslationKey } from '../../i18n'
 
 /** 初回イベントの選択肢 */
 export const FIRST_EVENT_OPTIONS: { value: EventEffectType; labelKey: TranslationKey }[] = [

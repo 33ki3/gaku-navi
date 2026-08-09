@@ -6,12 +6,12 @@
  */
 import { useTranslation } from 'react-i18next'
 
-import { ToggleButton } from '../../ui/ToggleButton'
-import * as enums from '../../../types/enums'
-import { ButtonSizeType } from '../../../types/enums'
 import * as data from '../../../data'
 import { HIF_LESSON_BASE_OPTIONS } from '../../../data/score/hifScheduleMaster'
+import * as enums from '../../../types/enums'
+import { ButtonSizeType } from '../../../types/enums'
 import { resolveHifLessonPair } from '../../../utils/hifScheduleHelpers'
+import { ToggleButton } from '../../ui/ToggleButton'
 
 /** LessonMainSelector コンポーネントに渡すプロパティ */
 interface LessonMainSelectorProps {

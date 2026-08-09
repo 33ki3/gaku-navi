@@ -3,8 +3,8 @@
  *
  * 選抜または本選の週内訳を1テーブルとして表示する。
  */
-import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
 import * as enums from '../../../types/enums'
+import type { ParameterBonusBreakdownRow } from '../../../utils/calculator/parameterBonus'
 
 import { BreakdownTableHeader } from '../BreakdownTableHeader'
 import { ParamBonusBreakdownRow } from '../ParamBonusBreakdownRow'

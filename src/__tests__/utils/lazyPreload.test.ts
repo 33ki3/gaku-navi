@@ -34,11 +34,7 @@ describe('lazyPreload', () => {
 
     await load()
     const view = render(
-      createElement(
-        Suspense,
-        { fallback: createElement('span', null, 'loading') },
-        createElement(PreloadedComponent),
-      ),
+      createElement(Suspense, { fallback: createElement('span', null, 'loading') }, createElement(PreloadedComponent)),
     )
 
     expect(screen.getByText('ready')).toBeTruthy()

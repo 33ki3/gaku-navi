@@ -8,10 +8,14 @@ export const loadFilterSortModal = createLazyModuleLoader(() => import('../compo
 export const loadCardDetailModal = createLazyModuleLoader(() => import('../components/cardDetailModal/CardDetailModal'))
 
 /** 点数詳細モーダルの共有ローダー */
-export const loadScoreDetailModal = createLazyModuleLoader(() => import('../components/scoreDetailModal/ScoreDetailModal'))
+export const loadScoreDetailModal = createLazyModuleLoader(
+  () => import('../components/scoreDetailModal/ScoreDetailModal'),
+)
 
 /** ユーザー追加カードフォームの共有ローダー */
-export const loadUserCardFormModal = createLazyModuleLoader(() => import('../components/userCardForm/UserCardFormModal'))
+export const loadUserCardFormModal = createLazyModuleLoader(
+  () => import('../components/userCardForm/UserCardFormModal'),
+)
 
 /** オプションモーダルの共有ローダー */
 export const loadOptionsModal = createLazyModuleLoader(() => import('../components/optionsModal/OptionsModal'))
@@ -28,8 +32,8 @@ export const loadDataManagementModal = createLazyModuleLoader(
 )
 
 /** その他メニュー項目の共有ローダー */
-export const loadMoreMenuItems = createLazyModuleLoader(
-  () => import('../components/header/MoreMenuItems').then(({ MoreMenuItems }) => ({ default: MoreMenuItems })),
+export const loadMoreMenuItems = createLazyModuleLoader(() =>
+  import('../components/header/MoreMenuItems').then(({ MoreMenuItems }) => ({ default: MoreMenuItems })),
 )
 
 /** 点数設定パネルの共有ローダー */

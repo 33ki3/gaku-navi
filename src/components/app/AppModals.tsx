@@ -3,17 +3,21 @@
  *
  * 各モーダルの開閉条件とデータ受け渡しだけを担当し、通常ページや固定パネルのレイアウトから分離する。
  */
-import { Suspense, lazy } from 'react'
+import { Suspense } from 'react'
+import * as constant from '../../constant'
 import type { AppOptionsState } from '../../hooks/useAppOptions'
 import type { AppState } from '../../hooks/useAppState'
 import type { CardInteractions } from '../../hooks/useCardInteractions'
 import { createEmptyResult } from '../../utils/calculator/calculateCard'
+import * as lazyModules from '../../utils/lazyModules'
+import { createPreloadedComponent } from '../../utils/preloadedComponent'
+import { ModalLoadingFallback } from '../ui/ModalLoadingFallback'
 
-const CardDetailModal = lazy(() => import('../cardDetailModal/CardDetailModal'))
-const ScoreDetailModal = lazy(() => import('../scoreDetailModal/ScoreDetailModal'))
-const FilterSortModal = lazy(() => import('../filterBar/FilterSortModal'))
-const UserCardFormModal = lazy(() => import('../userCardForm/UserCardFormModal'))
-const OptionsModal = lazy(() => import('../optionsModal/OptionsModal'))
+const FilterSortModal = createPreloadedComponent(lazyModules.loadFilterSortModal)
+const CardDetailModal = createPreloadedComponent(lazyModules.loadCardDetailModal)
+const ScoreDetailModal = createPreloadedComponent(lazyModules.loadScoreDetailModal)
+const UserCardFormModal = createPreloadedComponent(lazyModules.loadUserCardFormModal)
+const OptionsModal = createPreloadedComponent(lazyModules.loadOptionsModal)
 
 // モーダルの遅延読込・開閉条件・共通の配置計算を一箇所に集約し、Appの組み立てを簡潔にする
 interface AppModalsProps {
@@ -41,7 +45,9 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
     <>
       {/* フィルター・ソートモーダル */}
       {state.ui.filterSortOpen && (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={<ModalLoadingFallback panelClassName={constant.MODAL_PANEL_FILTER} className={panelRightOffset} />}
+        >
           <FilterSortModal
             onClose={() => state.ui.setFilterSortOpen(false)}
             filters={state.filters}
@@ -54,7 +60,7 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
 
       {/* サポートカード詳細 */}
       {selectedCard && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoadingFallback />}>
           <CardDetailModal
             card={selectedCard}
             uncap={state.scores.getCardUncap(selectedCard.name)}
@@ -70,7 +76,7 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
 
       {/* 点数内訳・回数調整 */}
       {scoreBreakdown && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoadingFallback panelClassName={constant.MODAL_PANEL_SCORE} />}>
           <ScoreDetailModal
             card={scoreBreakdown.card}
             result={state.scores.cardResults.get(scoreBreakdown.card.name) ?? createEmptyResult(scoreBreakdown.card)}
@@ -95,7 +101,7 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
 
       {/* ユーザー追加カードの編集・新規登録フォーム */}
       {state.ui.userCardFormOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoadingFallback panelClassName={constant.MODAL_PANEL_USER_CARD} />}>
           <UserCardFormModal
             onClose={() => {
               state.ui.setUserCardFormOpen(false)
@@ -122,7 +128,7 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
 
       {/* 表示設定・最適編成設定のオプションモーダル */}
       {options.isOpen && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoadingFallback panelClassName={constant.MODAL_PANEL_OPTIONS} />}>
           <OptionsModal
             onClose={options.close}
             preferences={options.preferences}

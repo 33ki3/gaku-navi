@@ -31,33 +31,6 @@ function gtagPlugin(gaId: string): Plugin {
   }
 }
 
-// 遅延チャンクをページ読み込み完了後に <link rel="prefetch"> で注入するプラグイン
-function prefetchLazyChunks(basePath: string): Plugin {
-  return {
-    name: 'prefetch-lazy-chunks',
-    enforce: 'post',
-    transformIndexHtml: {
-      order: 'post',
-      handler(_html, ctx) {
-        if (!ctx.bundle) return []
-        const urls = Object.entries(ctx.bundle)
-          .filter(([, chunk]) => chunk.type === 'chunk' && !chunk.isEntry && chunk.isDynamicEntry)
-          .map(([fileName]) => `${basePath}${fileName}`)
-        if (urls.length === 0) return []
-        const script = [
-          'window.addEventListener("load",function(){',
-          ...urls.map(
-            (u, i) =>
-              `var l${i}=document.createElement("link");l${i}.rel="prefetch";l${i}.href="${u}";document.head.appendChild(l${i});`,
-          ),
-          '});',
-        ].join('')
-        return [{ tag: 'script', attrs: { type: 'text/javascript' }, children: script, injectTo: 'body' as const }]
-      },
-    },
-  }
-}
-
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
@@ -68,7 +41,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       gtagPlugin(env.VITE_GA_ID || ''),
-      prefetchLazyChunks(basePath),
       VitePWA({
         manifest: false,
         scope: basePath,

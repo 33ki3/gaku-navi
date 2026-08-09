@@ -24,9 +24,9 @@ UIコンポーネントを作成・更新する際は以下を守る:
 - スタイリングは **Tailwind CSS** を使う（Grid, Flexbox でレスポンシブ対応）。
 - 検索・フィルターロジックは `src/hooks/useFilteredCards.ts` に集約する（`useMemo`・`useCallback` でパフォーマンスを維持）。
 - カード表示は本スキルの「UI/UX 仕様リファレンス」のデザイン仕様（レアリティ色分け等）に従う。
-- マスタデータ・定数は `src/data/` と `src/constant/` から取得する。コード中に直書きしない。
+- マスタデータ・共有定数は `src/data/` と `src/constant/` から取得する。複数箇所で使う値をコンポーネントへ重複定義しない。単発のレイアウト指定など局所的な値は、可読性を損なわない範囲で直接記述してよい。
 - 表示文字列は `src/i18n/locales/ja.json` で管理。コンポーネントでは `useTranslation()` + `t()` を使用。
-- 型定義は `src/types/` に interface/type のみ。定数値は含めない。
+- 型定義は `src/types/` に置き、`enums.ts` のような enum 相当の `as const` 値と型エイリアスも同じ場所で管理する。UI専用の設定・スタイル定数は `src/data/ui/` または `src/constant/` に置く。
 - フィルターボタンは活性・非活性で `border` を統一し、ボタン押下時のサイズ変動を防ぐ（非活性: `border border-slate-200`、活性: `border border-transparent`）。
 - 仮想スクロールは `@tanstack/react-virtual` の `useWindowVirtualizer` + `measureElement` で動的行高さ測定を行う。
 
@@ -51,7 +51,7 @@ UIコンポーネントを作成・更新する際は以下を守る:
    - `ModalOverlay` — モーダルの背景オーバーレイ
    - `SpinnerInput` — 数値入力スピナー
    - `HelpTooltip` — ヘルプツールチップ
-   - `icons.tsx` — 共有SVGアイコンコンポーネント（CloseIcon, SearchIcon, ChevronRightIcon, MenuIcon 等17種）
+   - `icons.ts` / `icons/` — 共有SVGアイコンコンポーネント（CloseIcon, SearchIcon, ChevronRightIcon, MenuIcon 等17種）
 3. **ドメインコンポーネントの利用**: フィーチャー別サブディレクトリのドメイン特化コンポーネントを活用する。
    - `src/components/cardList/` — カード一覧表示（仮想スクロール付き）
    - `src/components/cardDetailModal/` — カード詳細モーダル（イベント・アビリティ・Pアイテム・スキルカード）
@@ -75,7 +75,7 @@ UIコンポーネントを作成・更新する際は以下を守る:
 
 ## 3. メンテナンス指針
 
-- 同じ質問が繰り返される場合は、`SKILL.md` または `copilot-instructions.md` の更新を検討する。
+- 同じ問題が繰り返される場合は、`SKILL.md` または `AGENTS.md` の更新を検討する。
 
 ---
 
@@ -101,7 +101,7 @@ UIコンポーネントを作成・更新する際は以下を守る:
 - **グリッドレイアウト**: Mobile 1列, Tablet 2列, Desktop 3〜4列。
 - **仮想スクロール**: `@tanstack/react-virtual` の `useWindowVirtualizer` + `measureElement`。
 - **カード情報**: バッジ（レアリティ、プラン、入手方法、タイプ）、SPバッジ、イベント概要、スコア、アビリティバッジ。
-- カード一覧上ではアビリティを表示しない。
+- カード一覧上ではアビリティバッジを表示し、詳細なアビリティ情報はカード詳細モーダルで表示する。
 
 ### カード詳細モーダル
 
@@ -161,8 +161,8 @@ UIコンポーネントを作成・更新する際は以下を守る:
 
 - スライドパネル、アクション回数設定 → 各カードの総パラメータ上昇量を計算。
 - PC固定表示（md以上でピンボタン）、スマホはオーバーレイ。
-- シナリオ: 初 / NIA（デフォルト: 初）。難易度: レギュラー〜レジェンド（デフォルト: レジェンド）。初レジェンド以外はグレーアウト。
-- 18週のスケジュール選択、自動計算トグル。
+- シナリオ: Custom / 初 / NIA / HIF。難易度とスケジュールの選択肢は、`src/data/score/schedule.ts` のシナリオ定義に従う（初は18週、HIFは29週、NIA/Customは別扱い）。
+- シナリオに応じたスケジュール選択と自動計算トグル。
 - パラメータボーナス: Vo/Da/Vi の3つに分離入力。自動設定可能。内訳ポップアップ付き。
 - プリセット: セレクトボックス選択、上書き保存/名前付け保存/削除。
 

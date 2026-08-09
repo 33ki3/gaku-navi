@@ -1,6 +1,6 @@
 ---
 name: data-architecture
-description: Data layer architecture for the gaku-navi project (types + constant 2-layer pattern).
+description: Data layer architecture for the gaku-navi project (types + constant + data pattern).
 ---
 
 # gaku-navi データアーキテクチャ
@@ -10,17 +10,19 @@ description: Data layer architecture for the gaku-navi project (types + constant
 
 ---
 
-## 1. 2層パターン
+## 1. 3層パターン
 
 | 層 | ディレクトリ | 責務 | 例 |
 |----|-------------|------|-----|
 | **types** | `src/types/` | 型定義（`as const` enum + interface / type） | `CardType`, `RarityType`, `SupportCard` |
 | **constant** | `src/constant/` | 環境定数・スタイル定数（ストレージキー・CSSクラス・デフォルト値等） | `DEFAULT_UNCAP`, `FILTER_SECTION_LABEL`, `BTN_HEADER_ACTION` |
+| **data** | `src/data/` | ゲームルール・マスタデータ・検索用の派生データ | `cards.ts`, `badge.ts`, `schedule.ts`, `activity.ts` |
 
 ### 各層のルール
 
 - **types/**: `as const` パターンの enum 定義と interface / type 定義。値は文字列 or 数値リテラル。型エクスポートには `Type` サフィックスを付ける。
 - **constant/**: 環境定数・スタイル定数（ストレージキー・CSSクラス・デフォルト値等）。計算・変換ロジックは `utils/` に配置する。
+- **data/**: ゲームルール・マスタデータ・それらから作る lookup / Map / Set を配置する。画面固有の状態管理やUIの組み立ては `components/`・`hooks/`・`utils/` に配置する。
 
 ---
 
@@ -36,6 +38,7 @@ src/
     ui/                    # UIコンポーネントスタイル・ラベルデータ
   types/                   # 型定義（as const enum + interface / type）
   constant/                # 環境定数・スタイル定数（変更頻度の低い固定値）
+  styles/                  # 共通Tailwindクラス定数（constant/index.tsからも再エクスポート）
 ```
 
 - コンポーネントは `import * as data from '../data'` と `import * as constant from '../constant'` の namespace import で参照する（各 index.ts が再エクスポート）。
@@ -66,9 +69,9 @@ src/
 
 ### JSON 構造の設計原則
 
-1. **TS側の加工を最小化する**: グループ分けや逆引きマップ等の構造は JSON 側に持たせ、TS 側のランタイム変換（`reduce`, `flatMap` 等）を避ける。
-2. **配列には数値フィールドを持たせる**: 週番号等のインデックスは文字列キーではなく配列の数値フィールドに格納する（TS 側の `Number()` 変換不要）。
-3. **派生データも JSON に含める**: 逆引きマップ (`action_map`) やセット化対象リスト (`controlled_action_ids`) を JSON に直接記述し、TS 側の即時関数構築を不要にする。
+1. **TS側の加工を必要最小限にする**: JSONの型付け・正規化や、検索に必要な lookup / Map / Set の構築はTS側で行ってよい。元データにない派生値をUIごとに重複定義しない。
+2. **配列には意味が分かる型を持たせる**: 週番号などの値は、元データの形式を尊重しつつ、TSラッパーでドメイン型へ変換する。文字列を数値として扱う場合も、変換箇所を一か所に集約する。
+3. **派生データの置き場所を分ける**: 元データはJSONまたはTSの定義に置き、逆引きマップやセット化リストなどの派生データはTS側で必要な場所からexportする。
 
 ### データ定義パターン
 
@@ -150,11 +153,11 @@ export const AllCards = inflateCards(rawCards as RawCard[])
 
 ## 5. マスタ命名ルール
 
-`data/` 配下のファイルはすべてマスタデータであるため、ファイル名に `Master` 接尾辞を付けない。
+新規の `data/` ファイルでは、内容から分かる名前を優先し、機械的な `Master` 接尾辞は付けない。既存のドメイン固有名（例: `hifScheduleMaster.ts`）は無理に変更しない。
 
 - **JSON**: `data/json/<name>.json`（例: `cards.json`）
 - **TS**: `data/<category>/<name>.ts`（例: `data/card/badge.ts`, `data/score/activity.ts`）
-- 名前はデータの内容を端的に表す camelCase。`Master` / `Data` / `Config` 等の冗長な接尾辞は不要。
+- 名前はデータの内容を端的に表す camelCase。`Data` / `Config` 等の冗長な接尾辞は原則不要。
 
 ### キー・プロパティ命名
 
@@ -187,4 +190,4 @@ export const AllCards = inflateCards(rawCards as RawCard[])
 - `utils/calculator/` — スコア計算コア
 - `utils/display/` — 効果テキスト合成・表示ヘルパー
 
-data/ に計算ロジックを置かない。utils/ に設定データ定義を置かない。
+data/ にはゲームルールの定義・lookup・その派生データを置く。画面をまたぐ計算フローやUI固有の状態管理は `utils/`・`hooks/`・`components/` に置き、設定データ自体は `utils/` に重複定義しない。

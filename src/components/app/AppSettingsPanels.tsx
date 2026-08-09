@@ -4,14 +4,17 @@
  * パネル間の切り替えと、一覧からサポートを選ぶための接続だけを
  * ルートコンポーネントから受け取る
  */
-import { Suspense, lazy, useCallback } from 'react'
+import { Suspense, useCallback } from 'react'
 import type { AppState } from '../../hooks/useAppState'
 import type { PanelNavigationActions } from '../../hooks/usePanelNavigation'
 import type { UnitCardSelectionBridge } from '../../hooks/useUnitCardSelectionBridge'
+import * as lazyModules from '../../utils/lazyModules'
+import { createPreloadedComponent } from '../../utils/preloadedComponent'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
+import { PanelLoadingFallback } from '../ui/PanelLoadingFallback'
 
-const ScoreSettingsPanel = lazy(() => import('../scoreSettingsPanel/ScoreSettingsPanel'))
-const UnitSimulatorPanel = lazy(() => import('../unitSimulator/UnitSimulatorPanel'))
+const ScoreSettingsPanel = createPreloadedComponent(lazyModules.loadScoreSettingsPanel)
+const UnitSimulatorPanel = createPreloadedComponent(lazyModules.loadUnitSimulatorPanel)
 
 interface AppSettingsPanelsProps {
   /** アプリ全体の統合状態 */
@@ -47,7 +50,11 @@ export function AppSettingsPanels({ state, navigation, selection, reserveMobileN
       {/* 点数設定パネル（表示条件に応じた遅延読込） */}
       {(state.ui.scoreSettingsOpen || state.ui.settingsPinned) && (
         <ErrorBoundary onCancel={closeScoreSettings}>
-          <Suspense fallback={null}>
+          <Suspense
+            fallback={
+              <PanelLoadingFallback pinned={state.ui.settingsPinned} reserveMobileNavSpace={reserveMobileNavSpace} />
+            }
+          >
             {/* 点数設定パネル */}
             <ScoreSettingsPanel
               isOpen={state.ui.scoreSettingsOpen}
@@ -65,7 +72,15 @@ export function AppSettingsPanels({ state, navigation, selection, reserveMobileN
       {/* 最適編成パネル（手動選択中もマウント維持） */}
       {(state.ui.simulatorOpen || state.ui.simulatorPinned || state.ui.unitCardSelectMode) && (
         <ErrorBoundary>
-          <Suspense fallback={null}>
+          <Suspense
+            fallback={
+              <PanelLoadingFallback
+                pinned={state.ui.simulatorPinned}
+                secondPanel={state.ui.bothPanelsPinned}
+                reserveMobileNavSpace={reserveMobileNavSpace}
+              />
+            }
+          >
             {/* 最適編成パネル */}
             <UnitSimulatorPanel
               isOpen={state.ui.simulatorOpen}

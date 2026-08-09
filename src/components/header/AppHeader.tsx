@@ -5,16 +5,20 @@
  * アプリタイトル、凸数設定/スコア設定/最適編成ボタン、
  * データ管理パネル、モバイルメニューを含む。
  */
-import { Suspense, lazy, useRef, useState } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as constant from '../../constant'
 import { useCardUIContext } from '../../contexts/CardContext'
 import { useHeaderHeightCssVariable } from '../../hooks/useHeaderHeightCssVariable'
+import * as lazyModules from '../../utils/lazyModules'
+import { createPreloadedComponent } from '../../utils/preloadedComponent'
+import { ModalLoadingFallback } from '../ui/ModalLoadingFallback'
 import { DesktopHeaderNavigation } from './DesktopHeaderNavigation'
 import { MobileMenu } from './MobileMenu'
 
-const HelpModal = lazy(() => import('../helpModal/HelpModal'))
-const AboutModal = lazy(() => import('../aboutModal/AboutModal'))
-const DataManagementModal = lazy(() => import('./dataManagement/DataManagementModal'))
+const HelpModal = createPreloadedComponent(lazyModules.loadHelpModal)
+const AboutModal = createPreloadedComponent(lazyModules.loadAboutModal)
+const DataManagementModal = createPreloadedComponent(lazyModules.loadDataManagementModal)
 
 /** AppHeader コンポーネントに渡すプロパティ */
 interface AppHeaderProps {
@@ -152,19 +156,19 @@ export default function AppHeader({
           </div>
         </div>
         {helpOpen && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<ModalLoadingFallback />}>
             {/* ヘルプモーダル */}
             <HelpModal onClose={() => setHelpOpen(false)} />
           </Suspense>
         )}
         {aboutOpen && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<ModalLoadingFallback />}>
             {/* Aboutモーダル */}
             <AboutModal onClose={() => setAboutOpen(false)} />
           </Suspense>
         )}
         {dataManagementOpen && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<ModalLoadingFallback panelClassName={constant.MODAL_PANEL_DETAIL} />}>
             {/* データ管理モーダル */}
             <DataManagementModal onClose={() => setDataManagementOpen(false)} />
           </Suspense>

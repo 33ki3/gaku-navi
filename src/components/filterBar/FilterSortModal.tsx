@@ -4,7 +4,6 @@
  * ソートとフィルタの操作をタブ切り替えで提供するモーダル。
  * 縦幅が足りない画面でもスクロール可能なモーダル内で操作できるようにする。
  */
-import { memo } from 'react'
 import * as constant from '../../constant'
 import type { CardFiltersReturn } from '../../hooks'
 import * as enums from '../../types/enums'
@@ -35,7 +34,7 @@ interface FilterSortModalProps {
  * @param props - フィルター状態、選択中タブ、モーダル操作
  * @returns PCとスマホに対応したフィルタ・ソートモーダル
  */
-export default memo(function FilterSortModal({
+export default function FilterSortModal({
   onClose,
   filters,
   panelRightOffset,
@@ -81,4 +80,4 @@ export default memo(function FilterSortModal({
       </div>
     </ModalOverlay>
   )
-})
+}

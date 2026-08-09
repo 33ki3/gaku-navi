@@ -1,16 +1,14 @@
-import { Suspense, lazy } from 'react'
+import { Suspense } from 'react'
+import * as lazyModules from '../../utils/lazyModules'
+import { createPreloadedComponent } from '../../utils/preloadedComponent'
 import type { MoreMenuItemsProps } from './MoreMenuItems'
 
-const MoreMenuItems = lazy(() =>
-  import('./MoreMenuItems').then(({ MoreMenuItems: Component }) => ({ default: Component })),
-)
+const MoreMenuItems = createPreloadedComponent(lazyModules.loadMoreMenuItems)
+
 /**
- * 初回表示では使わない「その他」の項目を、メニューを開いた時だけ読み込む。
- * 親メニューのレイアウトは各ナビゲーション側に残し、共通項目だけを
- * 遅延境界に入れる
+ * その他メニューの遅延コンポーネントを共通のSuspense境界で表示する。
  */
 export function DeferredMoreMenuItems(props: MoreMenuItemsProps) {
-  // 「その他」は初回表示に必須ではないため、操作時のチャンクへ分ける
   return (
     <Suspense fallback={null}>
       {/* 共通のその他メニュー項目 */}

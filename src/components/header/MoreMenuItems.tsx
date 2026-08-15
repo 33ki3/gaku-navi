@@ -34,7 +34,7 @@ export function MoreMenuItems({ actions, onAfterAction }: MoreMenuItemsProps) {
       {/* サポート追加操作 */}
       <button onClick={() => runAction(actions.openUserCardForm)} className={navigationStyles.MORE_MENU_ITEM_CLASS}>
         <PlusIcon className="h-4 w-4" />
-        {t('userSupport.add_button')}
+        {t('user_support.add_button')}
       </button>
       <div className="my-1 border-t border-slate-100" />
       {/* データ管理操作 */}

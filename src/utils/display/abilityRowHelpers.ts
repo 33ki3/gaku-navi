@@ -6,7 +6,6 @@
  */
 
 import type { TFunction } from 'i18next'
-import * as constant from '../../constant'
 import * as data from '../../data'
 import type { CardCalculationResult } from '../../types/card'
 import { EffectSectionType } from '../../types/enums'
@@ -19,8 +18,8 @@ type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]
  * アビリティの表示名を生成する
  *
  * i18n テンプレートからアビリティ名を翻訳し、
- * {{param}}/{{count}} は i18next 補間、{v} は valuePerTrigger で手動置換する。
- * 例: "初期{{param}}上昇+{v}" → "初期Vo上昇+10"
+ * {{param}}/{{count}}/{{value}} を i18next の名前付き補間で埋め込む。
+ * 例: "初期{{param}}上昇+{{value}}" → "初期Vo上昇+10"
  *
  * @param ab - アビリティ詳細データ
  * @param t - i18next の翻訳関数
@@ -31,9 +30,10 @@ export function getAbilityDisplayName(ab: AbilityDetail, t: TFunction): string {
     ? t(getEffectLabelKey(EffectSectionType.AbilityName, ab.nameKey), {
         param: ab.parameterType ? t(data.getParamLabel(ab.parameterType)) : '',
         count: ab.maxCount ?? 0,
+        value: ab.valuePerTrigger,
       })
     : (ab.displayName ?? '')
-  return rawName.replace(constant.VALUE_PLACEHOLDER_RE, String(ab.valuePerTrigger))
+  return rawName
 }
 
 /**

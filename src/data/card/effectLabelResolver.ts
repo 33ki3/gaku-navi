@@ -6,7 +6,7 @@
  * イベント解放条件・コスト種別のラベルと、エフェクトテンプレートセクションのプレフィックスを提供する。
  */
 import type { TranslationKey } from '../../i18n'
-import type { ParameterType } from '../../types/enums'
+import type { AbilityNameKeyType, EffectTemplateKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
 import {
   CardZoneType,
   CostType,
@@ -153,6 +153,18 @@ export function getCostTypeLabelKey(costType: CostType): TranslationKey {
  * @param section - セクション種別（例: EffectSectionType.SkillAction）
  * @returns i18n プレフィックス（例: "card.skill_effect.action"）
  */
-export function getEffectSectionPrefix(section: EffectSectionType): string {
+function getEffectSectionPrefix(section: EffectSectionType): string {
   return effectSectionPrefixMap.get(section)!
+}
+
+/**
+ * エフェクトセクションとテンプレートキーから、表示用のi18nキーを返す。
+ *
+ * カードデータに保持されたキーの組み立てはこの関数に集約し、監査テストからも同じ処理を検証できるようにする。
+ */
+export function getEffectLabelKey(
+  section: EffectSectionType,
+  key: EffectTemplateKeyType | AbilityNameKeyType | TriggerKeyType,
+): TranslationKey {
+  return `${getEffectSectionPrefix(section)}.${key}` as TranslationKey
 }

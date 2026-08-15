@@ -37,7 +37,9 @@ export function PItemDetail({ pItem, colors }: PItemDetailProps) {
       </div>
       {/* 効果テキスト */}
       {pItem.effect && (
-        <p className="text-xs text-slate-600 mt-2 leading-relaxed">{getPItemEffectLabel(pItem.effect, t)}</p>
+        <p className="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line">
+          {getPItemEffectLabel(pItem.effect, t)}
+        </p>
       )}
     </div>
   )

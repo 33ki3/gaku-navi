@@ -9,6 +9,7 @@ import i18n from 'i18next'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AllCards } from '../../data'
 import ja from '../../i18n/locales/ja.json'
+import * as enums from '../../types/enums'
 import {
   getCustomSlotEffectLabel,
   getCustomSlotNameLabel,
@@ -128,7 +129,10 @@ describe('effectLabels テンプレート補間', () => {
     /** ユーザー定義で生成されうる body キーのパターン */
     const userPItemBodies: { label: string; body: { key: string; [k: string]: unknown }[] }[] = [
       { label: 'Enhance', body: [{ key: 'select_cards_enhance', count: 3 }] },
-      { label: 'Delete', body: [{ key: 'select_cards_delete', count: 2 }] },
+      {
+        label: 'Delete',
+        body: [{ key: 'simple_effect_count', action_id: enums.ActionIdType.Delete, count: 2 }],
+      },
       { label: 'Change', body: [{ key: 'select_change' }] },
       { label: 'TroubleDelete', body: [{ key: 'trouble_delete_param_up', param: 'vocal', value: 10 }] },
       { label: 'PDrinkAcquire', body: [{ key: 'random_pdrink_count', count: 1 }] },
@@ -143,10 +147,9 @@ describe('effectLabels テンプレート補間', () => {
         label: 'ParamUp+Delete',
         body: [
           { key: 'param_up', param: 'dance', value: 10 },
-          { key: 'select_cards_delete', count: 3 },
+          { key: 'simple_effect_count', action_id: enums.ActionIdType.Delete, count: 3 },
         ],
       },
-      { label: 'Null(bodyCountOnly)', body: [{ key: 'null', count: 2 }] },
     ]
 
     for (const { label, body } of userPItemBodies) {

@@ -70,6 +70,18 @@ jobs:
           key: node-modules-${{ hashFiles('package-lock.json') }}
       - run: npx knip --reporter compact
 
+  i18n:
+    name: i18n
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+      - run: npm run i18n:check
+
   test:
     name: Vitest
     needs: setup
@@ -83,7 +95,7 @@ jobs:
       - run: npm test -- --run
 
   check:
-    needs: [typecheck, lint, format, unused, test]
+    needs: [typecheck, lint, format, unused, i18n, test]
     runs-on: ubuntu-latest
     steps:
       - run: echo "All checks passed"

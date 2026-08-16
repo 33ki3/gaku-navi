@@ -12,6 +12,7 @@ import { HelpTooltip } from '../../ui/HelpTooltip'
 import ModalOverlay from '../../ui/ModalOverlay'
 import DataManagementFileSection from './DataManagementFileSection'
 import DataManagementJsonSection from './DataManagementJsonSection'
+import DataManagementKeySelector from './DataManagementKeySelector'
 import * as styles from './styles'
 import { useDataManagementController } from './useDataManagementController'
 
@@ -46,20 +47,27 @@ export default function DataManagementModal({ onClose }: DataManagementModalProp
   const jsonMessage =
     controller.message?.section === enums.DataManagementSectionKey.JsonText ? controller.message : null
   const pendingPreview = controller.pendingImport?.preview ?? null
-  const hasImportWarnings = (pendingPreview?.warnings.length ?? 0) > 0
+  const hasSelectionWarnings = (pendingPreview?.selectionWarnings.length ?? 0) > 0
+  const hasValidationWarnings = (pendingPreview?.validationWarnings.length ?? 0) > 0
   // インポート結果に応じて、通常確認・警告確認・エラー確認の文言を決める
   const importConfirmationTitle = !pendingPreview?.canImport
     ? t('ui.data_management.import_error_confirm_title')
-    : hasImportWarnings
+    : hasValidationWarnings
       ? t('ui.data_management.import_warning_confirm_title')
       : t('ui.data_management.import_ready_confirm_title')
   const importConfirmationMessage = !pendingPreview
     ? ''
     : !pendingPreview.canImport
       ? pendingPreview.message
-      : hasImportWarnings
-        ? t('ui.data_management.import_warning_confirm', { message: pendingPreview.message })
-        : t('ui.data_management.import_ready_confirm', { count: pendingPreview.importedKeys })
+      : hasValidationWarnings
+        ? t('ui.data_management.import_warning_confirm', {
+            message: pendingPreview.message,
+            items: pendingPreview.importedItems.join('、'),
+          })
+        : `${t('ui.data_management.import_ready_confirm', {
+            count: pendingPreview.importedKeys,
+            items: pendingPreview.importedItems.join('、'),
+          })}${hasSelectionWarnings ? `\n\n${pendingPreview.selectionWarnings.join('\n')}` : ''}`
 
   return (
     <ModalOverlay onClose={closeModal} panelClassName={styles.MODAL_PANEL}>
@@ -75,6 +83,16 @@ export default function DataManagementModal({ onClose }: DataManagementModalProp
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-4 sm:p-6">
+        {/* ファイルとJSON文字列で共通する対象データ選択 */}
+        <DataManagementKeySelector
+          isOpen={controller.isSelectionSectionOpen}
+          onToggle={() => controller.toggleSection(enums.DataManagementSectionKey.Selection)}
+          selectedKeys={controller.selectedKeys}
+          onToggleKey={controller.toggleKey}
+          onSelectAll={controller.selectAllKeys}
+          onClearAll={controller.clearAllKeys}
+        />
+
         {/* JSONファイルのインポート・エクスポート欄 */}
         <DataManagementFileSection
           isOpen={controller.isFileSectionOpen}
@@ -104,7 +122,7 @@ export default function DataManagementModal({ onClose }: DataManagementModalProp
           title={importConfirmationTitle}
           message={importConfirmationMessage}
           confirmLabel={
-            hasImportWarnings
+            hasValidationWarnings
               ? t('ui.data_management.import_warning_confirm_button')
               : t('ui.data_management.import_confirm_button')
           }
@@ -112,7 +130,7 @@ export default function DataManagementModal({ onClose }: DataManagementModalProp
             pendingPreview.canImport ? t('ui.data_management.cancel_apply') : t('ui.data_management.import_close')
           }
           canConfirm={pendingPreview.canImport}
-          danger={!pendingPreview.canImport || hasImportWarnings}
+          danger={!pendingPreview.canImport || hasValidationWarnings}
           onCancel={controller.closeConfirmation}
           onConfirm={controller.confirmImport}
         />

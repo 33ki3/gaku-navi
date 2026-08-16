@@ -1770,9 +1770,11 @@ export type OptionsSectionKey = (typeof OptionsSectionKey)[keyof typeof OptionsS
 
 /**
  * データ管理モーダルのセクションキー。
- * ファイルとJSON文字列の開閉状態を識別する。
+ * 保存項目、ファイル、JSON文字列の開閉状態を識別する。
  */
 export const DataManagementSectionKey = {
+  /** 保存項目の選択 */
+  Selection: 'selection',
   /** JSONファイルによる入出力 */
   File: 'file',
   /** JSON文字列による入出力 */

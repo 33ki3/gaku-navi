@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import * as data from '../../data'
-import { TriggerActionMap } from '../../data/score'
+import { PItemBodyActionMap, TriggerActionMap } from '../../data/score'
 import { AbilityExceptionMap } from '../../data/score/abilityException'
 import { getSchedule } from '../../data/score/abilityValue'
 import * as enums from '../../types/enums'
@@ -244,6 +244,21 @@ describe('triggerActionMap', () => {
     const validActions = new Set(Object.values(enums.ActionIdType))
     for (const [key, value] of Object.entries(TriggerActionMap)) {
       expect(validActions.has(value), `${key} → ${value} は無効な ActionIdType`).toBe(true)
+    }
+  })
+})
+
+/** Pアイテム本文から連携アクションへのマッピングが有効な enum 値だけを参照すること */
+describe('pItemBodyActionMap', () => {
+  it('全キーとアクションIDが有効な enum 値である', () => {
+    const validTemplates = new Set(Object.values(enums.EffectTemplateKeyType))
+    const validActions = new Set(Object.values(enums.ActionIdType))
+
+    for (const [key, actionIds] of Object.entries(PItemBodyActionMap)) {
+      expect(validTemplates.has(key as enums.EffectTemplateKeyType), `${key} は無効な効果キー`).toBe(true)
+      for (const actionId of actionIds) {
+        expect(validActions.has(actionId), `${key} → ${actionId} は無効な ActionIdType`).toBe(true)
+      }
     }
   })
 })

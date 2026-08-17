@@ -104,14 +104,13 @@ export function runOptimizerAsync(options: RunOptimizerOptions): Worker | null {
       runOnMainThread()
     }
 
-    // Worker へ入力を送信する（Map は構造化複製できないため配列に変換する）
+    // Workerへ入力を送信する。カード配列はWorker側でMapへ変換するため二重送信しない
     const workerPayload: UnitOptimizerWorkerInput = {
       settings: input.settings,
       scoreSettings: input.scoreSettings,
       cardUncaps: input.cardUncaps,
       cardCountCustom: input.cardCountCustom,
       allCards: input.allCards,
-      cardByNameEntries: [...input.cardByName.entries()],
     }
     const workerInput: UnitOptimizerWorkerRequestMessage = {
       type: UnitOptimizerWorkerMessageType.Start,

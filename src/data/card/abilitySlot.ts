@@ -23,6 +23,7 @@ export const ABILITY_MAX_COUNT: Partial<Record<enums.AbilityNameKeyType, number>
   [enums.AbilityNameKeyType.ASkillDelete]: 3,
   [enums.AbilityNameKeyType.ConsultCount]: 2,
   [enums.AbilityNameKeyType.DeleteCount]: 4,
+  [enums.AbilityNameKeyType.PDrinkAcquireCount]: 10,
   [enums.AbilityNameKeyType.VitalityCardAcquire8]: 4,
   [enums.AbilityNameKeyType.GoodConditionCardAcquire8]: 4,
   [enums.AbilityNameKeyType.ConcentrationCardAcquire8]: 4,

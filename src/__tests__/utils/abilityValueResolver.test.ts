@@ -199,5 +199,8 @@ describe('固定スロット', () => {
 
     expect(getAvailableAbilities(RarityTierType.SR)).toContain(AbilityNameKeyType.ActivitySupplyGiftCount)
     expect(ABILITY_MAX_COUNT[AbilityNameKeyType.ActivitySupplyGiftCount]).toBe(2)
+
+    expect(getAvailableAbilities(RarityTierType.SR)).toContain(AbilityNameKeyType.PDrinkAcquireCount)
+    expect(ABILITY_MAX_COUNT[AbilityNameKeyType.PDrinkAcquireCount]).toBe(10)
   })
 })

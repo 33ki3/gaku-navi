@@ -102,7 +102,12 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.card_delete',
     badge: 'card.badge.card_delete',
     isParamCategory: false,
-    triggers: [TriggerKeyType.Delete, TriggerKeyType.ASkillDelete, TriggerKeyType.MSkillDelete],
+    triggers: [
+      TriggerKeyType.Delete,
+      TriggerKeyType.DeleteCount,
+      TriggerKeyType.ASkillDelete,
+      TriggerKeyType.MSkillDelete,
+    ],
   },
   {
     id: AbilityKeywordType.CardChange,
@@ -200,7 +205,7 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.p_drink',
     badge: 'card.badge.p_drink',
     isParamCategory: false,
-    triggers: [TriggerKeyType.PDrinkAcquire, TriggerKeyType.PDrinkExchange],
+    triggers: [TriggerKeyType.PDrinkAcquire, TriggerKeyType.PDrinkAcquireCount, TriggerKeyType.PDrinkExchange],
   },
   {
     id: AbilityKeywordType.Rest,

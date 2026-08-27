@@ -159,6 +159,7 @@ const stageData = {
     [AbilityNameKeyType.PDrinkExchange]: ['4', '8'],
     [AbilityNameKeyType.PItemAcquire]: ['6', '11'],
     [AbilityNameKeyType.ParameterBonus]: ['4.4%', '4.9%', '5.4%', '5.9%', '6.4%'],
+    [AbilityNameKeyType.PDrinkAcquireCount]: ['3', '6'],
     [AbilityNameKeyType.ReserveCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.Rest]: ['9', '17'],
     [AbilityNameKeyType.SkillAcquire]: ['1', '2'],

@@ -6,6 +6,7 @@ export { getCloseButtonSizeStyle, getFilterButtonStyle, getToggleButtonSizeStyle
 export { CountTargetRows } from './countTarget'
 export { EXPORT_KEYS } from './exportImport'
 export type { ExportKey } from './exportImport'
+export { IMPORT_VALUE_METADATA } from './importData'
 export {
   FilterSortTabOrder,
   getFilterSortTabLabel,

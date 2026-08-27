@@ -20,3 +20,10 @@ export const FILE_EXPORT_BUTTON = `${ACTION_BUTTON_BASE} min-h-11 gap-2 bg-blue-
 /** JSON文字列を表示・編集する入力欄 */
 export const JSON_TEXTAREA =
   'h-[min(60dvh,32rem)] min-h-80 w-full resize-none rounded-2xl border border-slate-700 bg-slate-950 p-4 font-mono text-[11px] leading-relaxed text-slate-100 outline-none transition-shadow focus:ring-2 focus:ring-blue-500'
+
+/** 保存項目の一括操作ボタン */
+export const SELECTION_ACTION_BUTTON =
+  'min-h-9 rounded-lg px-3 py-2 text-[10px] font-bold transition-colors disabled:cursor-not-allowed'
+
+/** 保存項目の一括操作ボタン（使用可能） */
+export const SELECTION_ACTION_ACTIVE = 'bg-slate-100 text-slate-600 hover:bg-slate-200'

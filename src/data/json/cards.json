@@ -23000,7 +23000,7 @@
       },
       {
         "name_key": "delete_count",
-        "trigger_key": "delete",
+        "trigger_key": "delete_count",
         "parameter_type": "vocal",
         "values": {},
         "max_count": 4
@@ -23802,5 +23802,225 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "大切な思い出、またひとつ",
+    "rarity": "ssr",
+    "plan": "sense",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gravure_limited",
+    "release_date": "2026/08/26",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "delete_count",
+        "trigger_key": "delete_count",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "concentration_card_acquire_8",
+        "trigger_key": "concentration_card_acquire_8",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "真夏に咲く太陽",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_acquire",
+          "keyword": "concentration"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "vocal",
+          "threshold": 900
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 10
+          },
+          {
+            "key": "select_delete"
+          },
+          {
+            "key": "select_skill_card_r_acquire"
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      },
+      "boost": {
+        "trigger_key": "concentration_card_acquire",
+        "parameter_type": "vocal",
+        "value": 10,
+        "max_count": 2
+      },
+      "actions": ["delete"],
+      "provided_action_ids": {
+        "skill_acquire": 1
+      }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "おやすみのふたり",
+    "rarity": "sr",
+    "plan": "sense",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gravure_limited",
+    "release_date": "2026/08/26",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "p_drink_acquire_count",
+        "trigger_key": "p_drink_acquire_count",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 10
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "のんびりすやすや",
+      "rarity": "sr",
+      "type": "mental",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 3,
+          "effect": {
+            "groups": [
+              {
+                "temporal": {
+                  "key": "ongoing",
+                  "turns": 3
+                },
+                "trigger": {
+                  "key": "turn_end"
+                },
+                "action": {
+                  "key": "keyword_up",
+                  "value": 2,
+                  "keyword": "concentration"
+                },
+                "temporal_first": true
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": []
+    }
   }
 ]

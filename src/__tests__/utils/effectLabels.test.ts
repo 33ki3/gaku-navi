@@ -129,6 +129,8 @@ describe('effectLabels テンプレート補間', () => {
     const userPItemBodies: { label: string; body: { key: string; [k: string]: unknown }[] }[] = [
       { label: 'Enhance', body: [{ key: 'select_cards_enhance', count: 3 }] },
       { label: 'Delete', body: [{ key: 'select_cards_delete', count: 2 }] },
+      { label: 'SelectDelete', body: [{ key: 'select_delete' }] },
+      { label: 'SelectSkillCardRAcquire', body: [{ key: 'select_skill_card_r_acquire' }] },
       { label: 'Change', body: [{ key: 'select_change' }] },
       { label: 'TroubleDelete', body: [{ key: 'trouble_delete_param_up', param: 'vocal', value: 10 }] },
       { label: 'PDrinkAcquire', body: [{ key: 'random_pdrink_count', count: 1 }] },

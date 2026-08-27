@@ -148,6 +148,12 @@ export function getSelfAcquisitionBonus(
       enums.ActionIdType.PDrinkAcquire,
       pDrinkTotalCount,
     ],
+    [
+      pActions.includes(enums.PItemActionType.PDrinkAcquire),
+      enums.TriggerKeyType.PDrinkAcquireCount,
+      enums.ActionIdType.PDrinkAcquire,
+      pDrinkTotalCount,
+    ],
   ]
 
   // イベント・Pアイテム両方がソースになりうるルール
@@ -163,6 +169,7 @@ export function getSelfAcquisitionBonus(
     [enhanceEvent, enhancePItem, enums.TriggerKeyType.ASkillEnhance, enums.ActionIdType.ASkillEnhance],
     // 汎用 + タイプ固有の削除ルール（Pアイテムの select_delete はM/Aどちらも対象になりうる）
     [deleteEvent, deletePItem, enums.TriggerKeyType.Delete, enums.ActionIdType.Delete],
+    [deleteEvent, deletePItem, enums.TriggerKeyType.DeleteCount, enums.ActionIdType.Delete],
     [deleteEvent, deletePItem, enums.TriggerKeyType.MSkillDelete, enums.ActionIdType.MSkillDelete],
     [deleteEvent, deletePItem, enums.TriggerKeyType.ASkillDelete, enums.ActionIdType.ASkillDelete],
     [

@@ -117,6 +117,34 @@ describe('hasAbilityKeyword', () => {
     expect(hasAbilityKeyword(card, enums.AbilityKeywordType.Outing)).toBe(false)
   })
 
+  it('delete_count トリガーも削除キーワードにマッチする', () => {
+    const card = makeCard({
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.DeleteCount,
+          trigger_key: enums.TriggerKeyType.DeleteCount,
+          values: { '0': '5' },
+          max_count: 4,
+        },
+      ],
+    })
+    expect(hasAbilityKeyword(card, enums.AbilityKeywordType.CardDelete)).toBe(true)
+  })
+
+  it('p_drink_acquire_count トリガーもPドリンクキーワードにマッチする', () => {
+    const card = makeCard({
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.PDrinkAcquireCount,
+          trigger_key: enums.TriggerKeyType.PDrinkAcquireCount,
+          values: { '0': '5' },
+          max_count: 10,
+        },
+      ],
+    })
+    expect(hasAbilityKeyword(card, enums.AbilityKeywordType.PDrink)).toBe(true)
+  })
+
   it('アビリティなしは false', () => {
     expect(hasAbilityKeyword(makeCard(), enums.AbilityKeywordType.Lesson)).toBe(false)
   })

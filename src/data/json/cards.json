@@ -23583,5 +23583,222 @@
         }
       ]
     }
+  },
+  {
+    "name": "食レポ、得意かも！",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gravure_limited",
+    "release_date": "2026/08/17",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "reserve_card_acquire_8",
+        "trigger_key": "reserve_card_acquire_8",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "activity_supply_gift_count",
+        "trigger_key": "activity_supply_gift_count",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "大満足レポート♪",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "special_training_start"
+        },
+        "condition": {
+          "key": "param_lte",
+          "param": "dance",
+          "threshold": 900
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 25
+          },
+          {
+            "key": "select_enhance"
+          },
+          {
+            "key": "special_training_customize_discount",
+            "value": 20
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 1
+        }
+      },
+      "boost": {
+        "trigger_key": "special_training",
+        "parameter_type": "vocal",
+        "value": 25,
+        "max_count": 1
+      },
+      "actions": ["enhance"]
+    },
+    "skill_card": null
+  },
+  {
+    "name": "こんにゃくなきもだめし",
+    "rarity": "sr",
+    "plan": "anomaly",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gravure_limited",
+    "release_date": "2026/08/17",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vo_initial_stat",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "sp_lesson_20",
+        "trigger_key": "sp_lesson_20",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "ほっぺたべたり",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "exam_end"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "vocal",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 20
+          },
+          {
+            "key": "hp_recovery",
+            "value": 5
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      },
+      "boost": {
+        "trigger_key": "exam_end",
+        "parameter_type": "vocal",
+        "value": 20,
+        "max_count": 2
+      }
+    },
+    "skill_card": null
   }
 ]

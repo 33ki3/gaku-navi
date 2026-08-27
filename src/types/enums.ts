@@ -112,6 +112,8 @@ export const SourceType = {
   UnitLimited: 'unit_limited',
   /** ライブツアー限定 */
   LiveTourLimited: 'live_tour_limited',
+  /** グラビア限定 */
+  GravureLimited: 'gravure_limited',
   /** 初星フェス */
   HatsuboshiFes: 'hatsuboshi_fes',
   /** 初期配布 */
@@ -1491,6 +1493,8 @@ export const EffectTemplateKeyType = {
   NotKeywordStatus: 'not_keyword_status',
   /** パラメータ以上条件 */
   ParamGte: 'param_gte',
+  /** パラメータ以下条件 */
+  ParamLte: 'param_lte',
   /** 方針転換以上条件 */
   PolicyChangeGte: 'policy_change_gte',
   /** ターン以上条件 */
@@ -1623,6 +1627,8 @@ export const EffectTemplateKeyType = {
   GrowthAdd: 'growth_add',
   /** 相談割引 */
   ConsultDiscount: 'consult_discount',
+  /** 次の特別指導のカスタマイズ割引 */
+  SpecialTrainingCustomizeDiscount: 'special_training_customize_discount',
   /** 相談選択 */
   ConsultSelection: 'consult_selection',
   /** 活動支給・差し入れ選択 */

@@ -20,6 +20,7 @@ const entries: SourceDisplayEntry[] = [
   { id: SourceType.SeasonLimited, label: 'card.source.season_limited', badge: 'bg-purple-100 text-purple-700' },
   { id: SourceType.UnitLimited, label: 'card.source.unit_limited', badge: 'bg-purple-100 text-purple-700' },
   { id: SourceType.LiveTourLimited, label: 'card.source.live_tour_limited', badge: 'bg-purple-100 text-purple-700' },
+  { id: SourceType.GravureLimited, label: 'card.source.gravure_limited', badge: 'bg-purple-100 text-purple-700' },
   { id: SourceType.HatsuboshiFes, label: 'card.source.hatsuboshi_fes', badge: 'bg-orange-100 text-orange-700' },
   { id: SourceType.Event, label: 'card.source.event', badge: 'bg-cyan-100 text-cyan-700' },
   { id: SourceType.Initial, label: 'card.source.initial', badge: 'bg-slate-100 text-slate-600' },

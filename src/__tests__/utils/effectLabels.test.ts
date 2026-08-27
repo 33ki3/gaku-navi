@@ -133,6 +133,8 @@ describe('effectLabels テンプレート補間', () => {
         label: 'Delete',
         body: [{ key: 'simple_effect_count', action_id: enums.ActionIdType.Delete, count: 2 }],
       },
+      { label: 'SelectDelete', body: [{ key: 'select_delete' }] },
+      { label: 'SelectSkillCardRAcquire', body: [{ key: 'select_skill_card_r_acquire' }] },
       { label: 'Change', body: [{ key: 'select_change' }] },
       { label: 'TroubleDelete', body: [{ key: 'trouble_delete_param_up', param: 'vocal', value: 10 }] },
       { label: 'PDrinkAcquire', body: [{ key: 'random_pdrink_count', count: 1 }] },

@@ -384,6 +384,35 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.PDrinkAcquire]).toBe(1)
   })
 
+  it('Pドリンク獲得アクション + p_drink_acquire_count トリガー → PDrinkAcquire +1', () => {
+    const card = makeCard({
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
+      ],
+      p_item: {
+        name: 'テスト',
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
+        actions: [enums.PItemActionType.PDrinkAcquire],
+      },
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.PDrinkAcquireCount,
+          trigger_key: enums.TriggerKeyType.PDrinkAcquireCount,
+          values: { '0': '5' },
+          max_count: 10,
+        },
+      ],
+    })
+    const bonus = getSelfAcquisitionBonus(card)
+    expect(bonus[enums.ActionIdType.PDrinkAcquire]).toBe(1)
+  })
+
   it('アクティブスキルカード提供 + a_skill_acquire トリガー → ASkillAcquire +1', () => {
     const card = makeCard({
       events: [
@@ -446,6 +475,28 @@ describe('getSelfAcquisitionBonus', () => {
           name_key: enums.AbilityNameKeyType.ASkillDelete,
           trigger_key: enums.TriggerKeyType.Delete,
           values: { '0': '5' },
+        },
+      ],
+    })
+    const bonus = getSelfAcquisitionBonus(card)
+    expect(bonus[enums.ActionIdType.Delete]).toBe(1)
+  })
+
+  it('SelectDelete イベント + delete_count トリガー → Delete +1', () => {
+    const card = makeCard({
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.SelectDelete,
+          title: 'テスト',
+        },
+      ],
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.DeleteCount,
+          trigger_key: enums.TriggerKeyType.DeleteCount,
+          values: { '0': '5' },
+          max_count: 4,
         },
       ],
     })

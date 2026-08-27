@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest'
 import type { SupportCard } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
+import { deriveAbilityConfig } from '../../../utils/abilityDeriver'
 import { calculateCardParameter } from '../../../utils/calculator/calculateCard'
 
 /** 最小限のサポートを作るファクトリ */
@@ -146,6 +147,61 @@ describe('calculateCardParameter', () => {
     // 5 * 3 = 15（max_count 3 で制限）
     expect(result.abilityBoosts[0].count).toBe(3)
     expect(result.totalIncrease).toBe(15)
+  })
+
+  it('サポート追加の delete_count は専用トリガーから削除回数に紐づき、4回を上限に加算される', () => {
+    const derived = deriveAbilityConfig(enums.AbilityNameKeyType.DeleteCount)
+    const card = makeCard({
+      rarity: enums.RarityType.SSR,
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.DeleteCount,
+          trigger_key: derived.triggerKey,
+          parameter_type: enums.ParameterType.Vocal,
+          values: { '4': '20' },
+          max_count: 4,
+        },
+      ],
+    })
+    const result = calculateCardParameter(
+      card,
+      enums.UncapType.Four,
+      { [enums.ActionIdType.Delete]: 6 },
+      emptyExtra,
+      zeroBonusBase,
+    )
+
+    expect(derived.triggerKey).toBe(enums.TriggerKeyType.DeleteCount)
+    expect(result.abilityBoosts[0].count).toBe(4)
+    expect(result.abilityBoosts[0].total).toBe(80)
+    expect(result.totalIncrease).toBe(80)
+  })
+
+  it('サポート追加の p_drink_acquire_count は専用トリガーからPドリンク獲得回数に紐づき、10回を上限に加算される', () => {
+    const derived = deriveAbilityConfig(enums.AbilityNameKeyType.PDrinkAcquireCount)
+    const card = makeCard({
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.PDrinkAcquireCount,
+          trigger_key: derived.triggerKey,
+          parameter_type: enums.ParameterType.Vocal,
+          values: { '0': '6' },
+          max_count: 10,
+        },
+      ],
+    })
+    const result = calculateCardParameter(
+      card,
+      enums.UncapType.Zero,
+      { [enums.ActionIdType.PDrinkAcquire]: 12 },
+      emptyExtra,
+      zeroBonusBase,
+    )
+
+    expect(derived.triggerKey).toBe(enums.TriggerKeyType.PDrinkAcquireCount)
+    expect(result.abilityBoosts[0].count).toBe(10)
+    expect(result.abilityBoosts[0].total).toBe(60)
+    expect(result.totalIncrease).toBe(60)
   })
 
   it('好印象8枚以上時発動は専用回数を使い4回で制限される', () => {

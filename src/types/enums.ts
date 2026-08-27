@@ -280,6 +280,8 @@ export const AbilityNameKeyType = {
   MaxHp: 'max_hp',
   /** Pドリンク獲得 */
   PDrinkAcquire: 'p_drink_acquire',
+  /** Pドリンク獲得（回数制限） */
+  PDrinkAcquireCount: 'p_drink_acquire_count',
   /** SPレッスン終了時体力回復 */
   SpLessonHp: 'sp_lesson_hp',
   /** SPレッスン終了時体力回復（全体） */
@@ -922,6 +924,8 @@ export const TriggerKeyType = {
   ASkillEnhance: 'a_skill_enhance',
   /** カード削除 */
   Delete: 'delete',
+  /** カード削除（回数制限） */
+  DeleteCount: 'delete_count',
   /** メンタルスキル削除 */
   MSkillDelete: 'm_skill_delete',
   /** アクティブスキル削除 */
@@ -990,6 +994,8 @@ export const TriggerKeyType = {
   ConsultCount: 'consult_count',
   /** Pドリンク獲得 */
   PDrinkAcquire: 'p_drink_acquire',
+  /** Pドリンク獲得（回数制限） */
+  PDrinkAcquireCount: 'p_drink_acquire_count',
   /** Pドリンク交換 */
   PDrinkExchange: 'p_drink_exchange',
   /** 休む */
@@ -1366,6 +1372,10 @@ export const EffectTemplateKeyType = {
   SelectCardsEnhance: 'select_cards_enhance',
   /** スキルカード複数選択削除 */
   SelectCardsDelete: 'select_cards_delete',
+  /** スキルカード選択削除 */
+  SelectDelete: 'select_delete',
+  /** Rスキルカード選択獲得 */
+  SelectSkillCardRAcquire: 'select_skill_card_r_acquire',
   /** スキルカード選択コピー+Pポイント */
   SelectCopyPp: 'select_copy_pp',
   /** スキルカード選択削除+アイテム獲得 */

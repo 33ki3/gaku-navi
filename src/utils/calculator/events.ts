@@ -5,11 +5,12 @@
  * 「自己保有ボーナス」（サポート自身が提供するスキルカード/Pアイテム等による追加回数）
  * を読み取る。
  */
-import { LinkedActionGroups, PItemTriggerActionMap, TriggerActionMap } from '../../data/score'
+import { LinkedActionGroups, TriggerActionMap } from '../../data/score'
 import type { PItemEffect, SupportCard, SupportEvent } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import { isActionId } from '../domainValueValidation'
+import { getPItemBodyActionCounts, resolvePItemFireCount } from '../supportSynergy'
 
 /**
  * サポートのイベントからパラメータ上昇量を読み取る
@@ -104,17 +105,18 @@ export function getSelfAcquisitionBonus(
     card.events.some((e: SupportEvent) => types.includes(e.effect_type))
 
   const pActions = card.p_item?.actions ?? []
-  // Pアイテムの効果回数（limit.count がある場合はその回数分、なければ1回）
-  const pItemLimitCount = card.p_item?.effect?.limit?.count ?? 1
+  const pItemFireCount = card.p_item?.effect ? resolvePItemFireCount(card.p_item.effect, actionCounts) : 1
   // Pドリンク獲得個数（body内のrandom_pdrink_countのcountフィールド、なければ1）
   const pDrinkBodyCount =
     card.p_item?.effect?.body?.find((b) => b.key === enums.EffectTemplateKeyType.RandomPdrinkCount)?.count ?? 1
   // Pドリンク獲得の総カウント = 発動回数 × 1回あたりの獲得個数
-  const pDrinkTotalCount = pItemLimitCount * pDrinkBodyCount
+  const pDrinkTotalCount = pItemFireCount * pDrinkBodyCount
   // Pアイテムの1回あたり操作枚数（body内の最初のエントリのcount、なければ1）
   const pItemBodyCount = card.p_item?.effect?.body?.[0]?.count ?? 1
   // Pアイテム効果の総カウント = 発動回数 × 1回あたりの操作枚数
-  const pItemTotalCount = pItemLimitCount * pItemBodyCount
+  const pItemTotalCount = pItemFireCount * pItemBodyCount
+  const bodyActionCounts =
+    card.p_item?.effect && !card.p_item.provided_action_ids ? getPItemBodyActionCounts(card.p_item.effect) : {}
 
   // トリガーキー → アクションID の対応テーブル
   // each entry: [条件フラグ, トリガーキー, アクションID, カウント数]
@@ -204,28 +206,27 @@ export function getSelfAcquisitionBonus(
     }
   }
 
+  // 本文から判定できるカード獲得・Pアイテム獲得・削除も自己獲得回数に含める。
+  for (const ability of card.abilities) {
+    if (!ability.trigger_key || ability.skip_calculation) continue
+    const actionId = TriggerActionMap[ability.trigger_key]
+    if (!actionId) continue
+    for (const [bodyActionId, count] of Object.entries(bodyActionCounts)) {
+      if (!isActionId(bodyActionId)) continue
+      if (bodyActionId === enums.ActionIdType.Delete && deletePItem) continue
+      if (bodyActionId === actionId) {
+        bonus[actionId] = (bonus[actionId] ?? 0) + count * pItemFireCount
+      }
+    }
+  }
+
   // ユーザー定義カードの場合: provided_action_ids からPアイテム由来の自己ボーナスを追加する
   // pActions が空のため dualSourceRules でPアイテム分がカウントされないので、ここで補完する
   if (card.p_item?.provided_action_ids) {
     const providedIds = card.p_item.provided_action_ids
-    // 発動回数を算出する（limitあり → limit.count、なし → トリガーのスケジュール回数 → 1）
-    let fireCount: number
-    if (card.p_item.effect?.limit?.count !== undefined) {
-      fireCount = card.p_item.effect.limit.count
-    } else if (actionCounts && card.p_item.effect) {
-      // パラメータ固有のトリガー → 汎用トリガー（boost.trigger_key）の順でフォールバック
-      let triggerActionId: ActionIdType | null = null
-      const paramMap = PItemTriggerActionMap[card.p_item.effect.trigger.key]
-      if (paramMap && card.p_item.effect.trigger.param) {
-        triggerActionId = paramMap[card.p_item.effect.trigger.param] ?? null
-      }
-      if (!triggerActionId && card.p_item.boost?.trigger_key) {
-        triggerActionId = TriggerActionMap[card.p_item.boost.trigger_key] ?? null
-      }
-      fireCount = triggerActionId ? (actionCounts[triggerActionId] ?? 1) : 1
-    } else {
-      fireCount = 1
-    }
+    const fireCount = card.p_item.effect
+      ? resolvePItemFireCount(card.p_item.effect, actionCounts, card.p_item.boost?.trigger_key)
+      : 1
     // 子→親ロールアップを含む提供カウントマップを構築する
     const rolledUp: Partial<Record<ActionIdType, number>> = {}
     for (const [id, cnt] of Object.entries(providedIds)) {

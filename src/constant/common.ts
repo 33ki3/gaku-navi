@@ -97,6 +97,8 @@ export const SLOT_COUNT = 6
 export const SP_TOTAL_MAX = 6
 /** 総当たり最適化の候補枚数のデフォルト値 */
 export const EXHAUSTIVE_CANDIDATE_LIMIT = 30
+/** 候補プール内で保護するPアイテム行動提供元の最大枚数（最終編成枚数の2倍） */
+export const P_ITEM_ACTION_PROVIDER_LIMIT = UNIT_SIZE * 2
 /** 総当たり進捗の目標更新回数（UI更新頻度の目安） */
 export const EXHAUSTIVE_PROGRESS_TARGET_UPDATES = 200
 /** 総当たり進捗バッチサイズの下限（小規模探索でも中間進捗を通知する） */

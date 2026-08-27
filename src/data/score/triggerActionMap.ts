@@ -4,7 +4,13 @@
  * アビリティの trigger_key（例: 'lesson_end'）を
  * スケジュール上のアクション回数キー（例: 'lesson'）に変換するためのデータ。
  */
-import { ActionIdType, EffectTemplateKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
+import {
+  ActionIdType,
+  EffectKeywordType,
+  EffectTemplateKeyType,
+  ParameterType,
+  TriggerKeyType,
+} from '../../types/enums'
 
 /** trigger_key → アクション回数キーのマッピング */
 export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
@@ -102,15 +108,10 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.None]: ActionIdType.Nothing,
 }
 
-/**
- * Pアイテムの effect.trigger → スケジュール上のアクションIDへのマッピング
- *
- * Pアイテムのトリガーキー × パラメータ種別 から、
- * スケジュール上の対応するアクションIDを逆引きするためのテーブル。
- */
-export const PItemTriggerActionMap: Partial<
-  Record<EffectTemplateKeyType, Partial<Record<ParameterType, ActionIdType>>>
-> = {
+/** Pアイテムの発動条件 → スケジュール上のアクションID */
+type PItemTriggerAction = ActionIdType | Partial<Record<ParameterType | EffectKeywordType, ActionIdType>>
+
+export const PItemTriggerActionMap: Partial<Record<EffectTemplateKeyType, PItemTriggerAction>> = {
   [EffectTemplateKeyType.ParamSpLessonEnd]: {
     [ParameterType.Vocal]: ActionIdType.SpLessonVo,
     [ParameterType.Dance]: ActionIdType.SpLessonDa,
@@ -126,4 +127,43 @@ export const PItemTriggerActionMap: Partial<
     [ParameterType.Dance]: ActionIdType.NormalLessonDa,
     [ParameterType.Visual]: ActionIdType.NormalLessonVi,
   },
+  [EffectTemplateKeyType.LessonEnd]: ActionIdType.Lesson,
+  [EffectTemplateKeyType.NormalLessonEnd]: ActionIdType.NormalLesson,
+  [EffectTemplateKeyType.SpLessonEnd]: ActionIdType.SpLesson,
+  [EffectTemplateKeyType.SpLesson20]: ActionIdType.SpLesson20,
+  [EffectTemplateKeyType.KeywordCardAcquire]: {
+    [EffectKeywordType.Vitality]: ActionIdType.VitalityCardAcquire,
+    [EffectKeywordType.GoodCondition]: ActionIdType.GoodConditionCardAcquire,
+    [EffectKeywordType.Concentration]: ActionIdType.ConcentrationCardAcquire,
+    [EffectKeywordType.GoodImpression]: ActionIdType.GoodImpressionCardAcquire,
+    [EffectKeywordType.Motivation]: ActionIdType.MotivationCardAcquire,
+    [EffectKeywordType.Reserve]: ActionIdType.ReserveCardAcquire,
+    [EffectKeywordType.Aggressive]: ActionIdType.AggressiveCardAcquire,
+    [EffectKeywordType.FullPower]: ActionIdType.FullPowerCardAcquire,
+  },
+  [EffectTemplateKeyType.LessonStart]: ActionIdType.Lesson,
+  [EffectTemplateKeyType.ClassWorkEnd]: ActionIdType.ClassWork,
+  [EffectTemplateKeyType.ExamEnd]: ActionIdType.ExamEnd,
+  [EffectTemplateKeyType.OutingEnd]: ActionIdType.Outing,
+  [EffectTemplateKeyType.ConsultSelection]: ActionIdType.Consult,
+  [EffectTemplateKeyType.ActivitySupplyGiftSelection]: ActionIdType.ActivitySupplyGift,
+  [EffectTemplateKeyType.SpecialTrainingStart]: ActionIdType.SpecialTraining,
+  [EffectTemplateKeyType.Rest]: ActionIdType.Rest,
+  [EffectTemplateKeyType.Customize]: ActionIdType.Customize,
+  [EffectTemplateKeyType.PDrinkAcquire]: ActionIdType.PDrinkAcquire,
+  [EffectTemplateKeyType.PDrinkExchange]: ActionIdType.PDrinkExchange,
+  [EffectTemplateKeyType.CardEnhance]: ActionIdType.SkillEnhance,
+  [EffectTemplateKeyType.MSkillEnhance]: ActionIdType.MSkillEnhance,
+  [EffectTemplateKeyType.ASkillEnhance]: ActionIdType.ASkillEnhance,
+  [EffectTemplateKeyType.SkillDelete]: ActionIdType.Delete,
+  [EffectTemplateKeyType.MSkillDelete]: ActionIdType.MSkillDelete,
+  [EffectTemplateKeyType.ASkillDelete]: ActionIdType.ASkillDelete,
+  [EffectTemplateKeyType.SkillChange]: ActionIdType.Change,
+  [EffectTemplateKeyType.SkillAcquire]: ActionIdType.SkillAcquire,
+  [EffectTemplateKeyType.MSkillAcquire]: ActionIdType.MSkillAcquire,
+  [EffectTemplateKeyType.ASkillAcquire]: ActionIdType.ASkillAcquire,
+  [EffectTemplateKeyType.SsrCardAcquire]: ActionIdType.SsrCardAcquire,
+  [EffectTemplateKeyType.DrowsyAcquire]: ActionIdType.DrowsyAcquire,
+  [EffectTemplateKeyType.PItemAcquire]: ActionIdType.PItemAcquire,
+  [EffectTemplateKeyType.TroubleDelete]: ActionIdType.TroubleDelete,
 }

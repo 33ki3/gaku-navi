@@ -581,6 +581,38 @@ describe('最適編成', () => {
       expect(happiiSynergy).toBe(2)
       expect(fuwafuwaSynergy).toBeGreaterThan(happiiSynergy)
     })
+
+    it('Pアイテムの無制限おでかけトリガーもスケジュール回数で発動する', () => {
+      const shinseikatsu = AllCards.find((c) => c.name === '新生活のはじまりだね')
+      if (!shinseikatsu) return
+
+      const provided = getProvidedActions(shinseikatsu, {
+        actionCounts: { [enums.ActionIdType.Outing]: 3 },
+      })
+
+      expect(provided[enums.ActionIdType.Change]).toBe(3)
+    })
+
+    it('Pアイテム本文のスキルカード生成も獲得回数として扱う', () => {
+      const generator = AllCards.find((c) => c.name === 'すっかり仲良しって感じ♪')
+      if (!generator) return
+
+      const provided = getProvidedActions(generator, {
+        actionCounts: { [enums.ActionIdType.Lesson]: 5 },
+      })
+
+      expect(provided[enums.ActionIdType.SkillAcquire]).toBe(5)
+    })
+
+    it('Pアイテム本文のアイテム獲得も獲得回数として扱う', () => {
+      const itemAcquirer = AllCards.find((c) => c.name === '自分と向き合う時間だ')
+      if (!itemAcquirer) return
+
+      const provided = getProvidedActions(itemAcquirer)
+
+      // サポートイベントのPアイテム獲得1回 + Pアイテム本文の獲得2回
+      expect(provided[enums.ActionIdType.PItemAcquire]).toBe(3)
+    })
   })
 
   describe('Exhaustive stats', () => {

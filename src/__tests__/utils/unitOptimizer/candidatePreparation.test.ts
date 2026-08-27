@@ -6,11 +6,16 @@
 import { describe, expect, it } from 'vitest'
 
 import * as constant from '../../../constant'
+import { AllCards } from '../../../data/card/cards'
 import type { SkillCardInfo, SupportCard } from '../../../types/card'
 import * as enums from '../../../types/enums'
 import type { UnitSimulatorSettings } from '../../../types/unit'
 import { createDefaultSettings } from '../../../utils/scoreSettings'
-import { createRentalPool, prepareCandidates } from '../../../utils/unitOptimizer/candidatePreparation'
+import {
+  createRentalPool,
+  prepareCandidates,
+  selectSynergyAwareCandidates,
+} from '../../../utils/unitOptimizer/candidatePreparation'
 
 /** テスト用スキルカード */
 const testSkillCard: SkillCardInfo = {
@@ -168,5 +173,38 @@ describe('候補準備のコンテスト用除外', () => {
     const candidates = prepareCandidates(input, schedule)
 
     expect(candidates.map((candidate) => candidate.card.name)).toEqual([skillCard.name])
+  })
+})
+
+describe('Pアイテム相乗効果を考慮した候補選定', () => {
+  it('基礎点が低いPアイテム行動提供元を候補に残す', () => {
+    const settings = makeSettings({
+      plan: enums.PlanType.Sense,
+      allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual, enums.CardType.Assist],
+    })
+    const scoreSettings = { ...createDefaultSettings(), useFixedUncap: true }
+    const input = {
+      settings,
+      scoreSettings,
+      cardUncaps: {},
+      cardCountCustom: {},
+      allCards: AllCards,
+      cardByName: new Map(AllCards.map((card) => [card.name, card])),
+    }
+    const schedule = {
+      effectiveCounts: {
+        [enums.ActionIdType.SpLessonDa]: 3,
+        [enums.ActionIdType.SpLessonVo]: 3,
+      },
+      perLessonValues: undefined,
+    }
+
+    const candidates = prepareCandidates(input, schedule)
+    const pool = selectSynergyAwareCandidates(candidates, 30)
+    const rentalPool = createRentalPool(input, schedule, new Set(), 30)
+    const expectedNames = ['ふわふわでワクワク', '今はあえて、背を向けて']
+
+    expect(pool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
+    expect(rentalPool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
   })
 })

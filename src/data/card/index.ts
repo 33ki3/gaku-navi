@@ -26,7 +26,7 @@ export { getEffectKeywordEntry } from './effectKeyword'
 export {
   getCardZoneLabel,
   getCostTypeLabelKey,
-  getEffectSectionPrefix,
+  getEffectLabelKey,
   getEventEffectLabelKey,
   getEventReleaseLabelKey,
   getParamLabel,

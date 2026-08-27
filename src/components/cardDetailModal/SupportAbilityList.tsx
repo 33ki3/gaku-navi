@@ -2,14 +2,14 @@
  * サポートアビリティ一覧コンポーネント
  *
  * サポート詳細モーダル内でサポートアビリティを番号付きで一覧表示する。
- * アビリティ名に {v} がある場合、凸数に対応する値を埋め込む。
+ * アビリティ名に {{value}} がある場合、凸数に対応する値を埋め込む。
  */
 import { useTranslation } from 'react-i18next'
 import type { TypeDisplayEntry } from '../../data'
 import * as data from '../../data'
 import type { SupportCard } from '../../types/card'
 import type { UncapType } from '../../types/enums'
-import { getAbilityNameLabelKey, resolveAbilityValue } from '../../utils/display/effectLabels'
+import { getAbilityNameLabelKey } from '../../utils/display/effectLabels'
 
 /** SupportAbilityList コンポーネントに渡すプロパティ */
 interface SupportAbilityListProps {
@@ -31,15 +31,16 @@ export function SupportAbilityList({ card, colors, uncap }: SupportAbilityListPr
         // 空スロット（ユーザー定義カードで未設定のアビリティ）はスキップ
         if (!ability.name_key) return null
         // パラメータ名を翻訳してからテンプレートに埋め込む
-        // 例: parameter_type="vocal" → param="ボーカル"、name_key="vitality" → "元気{v}ボーカル"
+        // 例: parameter_type="vocal" → param="ボーカル"、name_key="vitality" → "元気{{value}}ボーカル"
         const param = ability.parameter_type ? t(data.getParamLabel(ability.parameter_type)) : ''
-        const template = t(getAbilityNameLabelKey(ability.name_key), {
+        // 現在の凸数の値が未定義でも、0凸の基準値があれば表示できるようにする。
+        const value = ability.values[String(uncap)] ?? ability.values['0'] ?? ''
+        // 例: "元気{{value}}ボーカル" + uncap=4 + values={"4":"3"} → "元気3ボーカル"
+        const displayName = t(getAbilityNameLabelKey(ability.name_key), {
           param,
           count: ability.max_count ?? 0,
+          value,
         })
-        // 翻訳済みテンプレートの {v} を凸数に対応する値で置換
-        // 例: "元気{v}ボーカル" + uncap=4 + values={"4":"3"} → "元気3ボーカル"
-        const displayName = resolveAbilityValue(template, uncap, ability.values)
         return (
           <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
             <span

@@ -74,8 +74,6 @@ export const EXPORT_VERSION = 1
 export const PERCENT_SIGN = '%'
 /** プラス記号（アビリティ値文字列から数値を抽出する際に取り除く） */
 export const PLUS_SIGN = '+'
-/** アビリティ名テンプレート内の `{v}` を値に置き換えるための正規表現 */
-export const VALUE_PLACEHOLDER_RE = /\{v\}/g
 /** スコア設定のデフォルトシナリオ */
 export const DEFAULT_SCENARIO = ScenarioType.Hajime
 /** スコア設定のデフォルト難易度 */

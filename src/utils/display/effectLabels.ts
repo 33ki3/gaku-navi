@@ -16,31 +16,10 @@ import type {
   SkillCardEffectStructured,
   SupportEvent,
 } from '../../types/card'
-import type {
-  AbilityNameKeyType,
-  EffectKeywordType,
-  EffectTemplateKeyType,
-  ParameterType,
-  TriggerKeyType,
-  UncapType,
-} from '../../types/enums'
+import type { AbilityNameKeyType, EffectKeywordType, ParameterType } from '../../types/enums'
 import { EffectSectionType, EventEffectType } from '../../types/enums'
 
-/**
- * エフェクトテンプレートの i18n ラベルキーを返す。
- *
- * セクションプレフィックスとキーを結合して i18n パスを構築する。
- *
- * @param section - セクション識別子
- * @param key - テンプレートキー
- * @returns i18n キー（例: "card.pitem_body.param_boost"）
- */
-export function getEffectLabelKey(
-  section: EffectSectionType,
-  key: EffectTemplateKeyType | AbilityNameKeyType | TriggerKeyType,
-): TranslationKey {
-  return `${data.getEffectSectionPrefix(section)}.${key}` as TranslationKey
-}
+export { getEffectLabelKey } from '../../data/card/effectLabelResolver'
 
 /**
  * アビリティ名の i18n ラベルキーを返す。
@@ -51,7 +30,7 @@ export function getEffectLabelKey(
  * @returns i18n キー（例: "card.ability_name.vitality"）
  */
 export function getAbilityNameLabelKey(key: AbilityNameKeyType): TranslationKey {
-  return getEffectLabelKey(EffectSectionType.AbilityName, key)
+  return data.getEffectLabelKey(EffectSectionType.AbilityName, key)
 }
 
 /**
@@ -166,30 +145,32 @@ export function getPItemEffectLabel(effect: PItemEffect, t: TFunction): string {
 
   // 制限条件（例: "センス編のみ"）
   if (effect.restriction) {
-    const key = getEffectLabelKey(EffectSectionType.PitemRestriction, effect.restriction.key)
+    const key = data.getEffectLabelKey(EffectSectionType.PitemRestriction, effect.restriction.key)
     parts.push(t(key, buildPItemInterpolation(effect.restriction, t)))
   }
 
   // トリガー（例: "レッスン開始時"）
-  const triggerKey = getEffectLabelKey(EffectSectionType.PitemTrigger, effect.trigger.key)
+  const triggerKey = data.getEffectLabelKey(EffectSectionType.PitemTrigger, effect.trigger.key)
   parts.push(t(triggerKey, buildPItemInterpolation(effect.trigger, t)))
 
   // 条件（例: "体力が50%以上の時"）
   if (effect.condition) {
-    const condKey = getEffectLabelKey(EffectSectionType.PitemCondition, effect.condition.key)
+    const condKey = data.getEffectLabelKey(EffectSectionType.PitemCondition, effect.condition.key)
     parts.push(t(condKey, buildPItemInterpolation(effect.condition, t)))
   }
 
-  // 本体効果（例: "パラメータ+10"）— 複数ある場合は「、」で区切る
+  // 本体効果は効果ごとに改行し、「・」を付ける
+  const bodyLineSeparator = `\n${t('user_support.pitem_body_separator')}`
   for (let i = 0; i < effect.body.length; i++) {
-    if (i > 0) parts.push(t('userSupport.pitem_body_separator'))
-    const bodyKey = getEffectLabelKey(EffectSectionType.PitemBody, effect.body[i].key)
+    if (i > 0 || parts.length > 0) parts.push(bodyLineSeparator)
+    const bodyKey = data.getEffectLabelKey(EffectSectionType.PitemBody, effect.body[i].key)
     parts.push(t(bodyKey, buildPItemInterpolation(effect.body[i], t)))
   }
 
   // 回数制限（例: "（プロデュース中3回）"）
   if (effect.limit) {
-    const limitKey = getEffectLabelKey(EffectSectionType.PitemLimit, effect.limit.key)
+    parts.push(bodyLineSeparator)
+    const limitKey = data.getEffectLabelKey(EffectSectionType.PitemLimit, effect.limit.key)
     parts.push(t(limitKey, buildPItemInterpolation(effect.limit, t)))
   }
 
@@ -247,13 +228,13 @@ export function getSkillCardEffectLabel(effect: SkillCardEffectStructured, t: TF
 
   // 使用条件（例: "レッスン中1回"）
   if (effect.use_condition) {
-    const key = getEffectLabelKey(EffectSectionType.SkillUseCondition, effect.use_condition.key)
+    const key = data.getEffectLabelKey(EffectSectionType.SkillUseCondition, effect.use_condition.key)
     parts.push(t(key, buildSkillInterpolation(effect.use_condition, t)))
   }
 
   // 前修飾（例: "次のターン"）
   if (effect.pre_modifier) {
-    const key = getEffectLabelKey(EffectSectionType.SkillPreModifier, effect.pre_modifier.key)
+    const key = data.getEffectLabelKey(EffectSectionType.SkillPreModifier, effect.pre_modifier.key)
     parts.push(t(key, buildSkillInterpolation(effect.pre_modifier, t)))
   }
 
@@ -262,36 +243,36 @@ export function getSkillCardEffectLabel(effect: SkillCardEffectStructured, t: TF
     if (group.temporal_first) {
       // 時制が先に来るパターン（例: "次のターン、○○時、△△する"）
       if (group.temporal) {
-        const key = getEffectLabelKey(EffectSectionType.SkillTemporal, group.temporal.key)
+        const key = data.getEffectLabelKey(EffectSectionType.SkillTemporal, group.temporal.key)
         parts.push(t(key, buildSkillInterpolation(group.temporal, t)))
       }
       if (group.trigger) {
-        const key = getEffectLabelKey(EffectSectionType.SkillTrigger, group.trigger.key)
+        const key = data.getEffectLabelKey(EffectSectionType.SkillTrigger, group.trigger.key)
         parts.push(t(key, buildSkillInterpolation(group.trigger, t)))
       }
       if (group.condition) {
-        const key = getEffectLabelKey(EffectSectionType.SkillCondition, group.condition.key)
+        const key = data.getEffectLabelKey(EffectSectionType.SkillCondition, group.condition.key)
         parts.push(t(key, buildSkillInterpolation(group.condition, t)))
       }
     } else {
       // 条件が先に来るパターン（例: "○○時、次のターン、△△する"）
       if (group.condition) {
-        const key = getEffectLabelKey(EffectSectionType.SkillCondition, group.condition.key)
+        const key = data.getEffectLabelKey(EffectSectionType.SkillCondition, group.condition.key)
         parts.push(t(key, buildSkillInterpolation(group.condition, t)))
       }
       if (group.temporal) {
-        const key = getEffectLabelKey(EffectSectionType.SkillTemporal, group.temporal.key)
+        const key = data.getEffectLabelKey(EffectSectionType.SkillTemporal, group.temporal.key)
         parts.push(t(key, buildSkillInterpolation(group.temporal, t)))
       }
       if (group.trigger) {
-        const key = getEffectLabelKey(EffectSectionType.SkillTrigger, group.trigger.key)
+        const key = data.getEffectLabelKey(EffectSectionType.SkillTrigger, group.trigger.key)
         parts.push(t(key, buildSkillInterpolation(group.trigger, t)))
       }
     }
 
     // アクション（実際の効果本体）
     if (group.action) {
-      const key = getEffectLabelKey(EffectSectionType.SkillAction, group.action.key)
+      const key = data.getEffectLabelKey(EffectSectionType.SkillAction, group.action.key)
       parts.push(t(key, buildSkillInterpolation(group.action, t)))
     }
   }
@@ -311,7 +292,7 @@ export function getSkillCardEffectLabel(effect: SkillCardEffectStructured, t: TF
  * @returns 翻訳済みの表示テキスト
  */
 export function getCustomSlotNameLabel(name: CustomSlotNameStructured, t: TFunction): string {
-  const key = getEffectLabelKey(EffectSectionType.CustomSlotName, name.key)
+  const key = data.getEffectLabelKey(EffectSectionType.CustomSlotName, name.key)
   if (!name.keyword) return t(key)
   return t(key, { keyword: resolveKeyword(name.keyword, t) })
 }
@@ -327,7 +308,7 @@ export function getCustomSlotNameLabel(name: CustomSlotNameStructured, t: TFunct
 export function getCustomSlotEffectLabel(effect: CustomSlotEffectStructured | undefined, t: TFunction): string {
   if (!effect) return ''
   const { template, params } = effect
-  const key = getEffectLabelKey(EffectSectionType.CustomSlotEffect, template)
+  const key = data.getEffectLabelKey(EffectSectionType.CustomSlotEffect, template)
 
   // パラメータがなければそのまま翻訳する
   if (!params || Object.keys(params).length === 0) {
@@ -357,19 +338,5 @@ export function getCustomSlotEffectLabel(effect: CustomSlotEffectStructured | un
  * @returns 翻訳済みのテキスト（例: "段階1"）
  */
 export function getCustomSlotStageLabel(stage: number, t: TFunction): string {
-  return t('card.custom_slot_stage' as TranslationKey, { n: stage })
-}
-
-/**
- * アビリティ名テンプレートの {v} を凸数に対応する値で置き換える
- *
- * @param template - 翻訳済みテンプレート文字列
- * @param uncap - 現在の凸数
- * @param values - 凸数→値のマップ
- * @returns 値を埋め込んだ文字列
- */
-export function resolveAbilityValue(template: string, uncap: UncapType, values: Record<string, string>): string {
-  const value = values[String(uncap)] ?? values['0'] ?? ''
-  if (!value) return template
-  return template.replace('{v}', value)
+  return t('card.custom_slot_stage', { n: stage })
 }

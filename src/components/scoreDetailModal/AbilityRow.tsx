@@ -39,7 +39,7 @@ export function AbilityRow({ ab, extraCount = 0 }: AbilityRowProps) {
         {effectDescription && (
           <>
             <br />
-            <span className={`text-[10px] ${styles.subTextColor}`}>{effectDescription}</span>
+            <span className={`text-[10px] whitespace-pre-line ${styles.subTextColor}`}>{effectDescription}</span>
           </>
         )}
       </span>

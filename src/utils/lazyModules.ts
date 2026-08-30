@@ -45,18 +45,3 @@ export const loadScoreSettingsPanel = createLazyModuleLoader(
 export const loadUnitSimulatorPanel = createLazyModuleLoader(
   () => import('../components/unitSimulator/UnitSimulatorPanel'),
 )
-
-/** アプリ起動直後に取得・評価を開始する遅延画面 */
-export const INITIAL_PRELOAD_MODULES = [
-  loadFilterSortModal,
-  loadCardDetailModal,
-  loadScoreDetailModal,
-  loadUnitSimulatorPanel,
-  loadScoreSettingsPanel,
-  loadUserCardFormModal,
-  loadOptionsModal,
-  loadMoreMenuItems,
-  loadHelpModal,
-  loadAboutModal,
-  loadDataManagementModal,
-] as const

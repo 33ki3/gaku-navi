@@ -4,6 +4,7 @@
  * i18next-cliが追跡できない動的キーを、実際のデータを使って未使用判定から除外する。
  */
 import * as data from '../data'
+import rawCards from '../data/json/cards.json'
 import * as activityData from '../data/score/activity'
 import * as importData from '../data/ui/importData'
 import * as hifScheduleData from '../data/score/hifScheduleMaster'
@@ -19,6 +20,7 @@ type EffectPart = {
 }
 
 const locale = ja as LocaleResource
+const cards = data.inflateCards(rawCards)
 const localeRoots = new Set(Object.keys(locale))
 const dottedPathPattern = /^[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*)+$/
 const nonExtractedTranslationKeys = [
@@ -99,7 +101,7 @@ function collectCardKeys(keys: Set<string>): void {
   addEffectKey(keys, enums.EffectSectionType.PitemBody, { key: enums.EffectTemplateKeyType.SimpleEffectCount })
   addEffectKey(keys, enums.EffectSectionType.PitemLimit, { key: enums.EffectTemplateKeyType.PerProduce })
 
-  for (const card of data.AllCards) {
+  for (const card of cards) {
     for (const ability of card.abilities) {
       addEffectKey(keys, enums.EffectSectionType.AbilityName, { key: ability.name_key })
     }

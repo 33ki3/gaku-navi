@@ -1,7 +1,7 @@
 /**
- * 遅延importの共有ローダー。
+ * 遅延importの共有ローダーと起動時先読み。
  *
- * 実際に表示する処理で同じPromiseを使い、同一チャンクの二重取得を避ける。
+ * 実際に表示する処理と先読みで同じPromiseを使い、同一チャンクの二重取得を避ける。
  */
 
 /** 読み込み済み状態を表示側から参照できる遅延モジュールローダー */
@@ -31,4 +31,14 @@ export function createLazyModuleLoader<T>(importer: () => Promise<T>): LazyModul
   }) as LazyModuleLoader<T>
   load.getResolved = () => resolved
   return load
+}
+
+/**
+ * 登録済みの遅延モジュールを起動直後にまとめて取得・評価する。
+ *
+ * Promiseを待たずに呼び出せるため、root描画の開始後に並行して進む。
+ * dynamic importのチャンク構成は維持し、メインJSへは結合しない。
+ */
+export function preloadAllLazyModules(loaders: readonly (() => Promise<unknown>)[]): Promise<void> {
+  return Promise.all(loaders.map((loader) => loader().catch(() => undefined))).then(() => undefined)
 }

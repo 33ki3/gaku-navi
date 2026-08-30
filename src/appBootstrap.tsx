@@ -4,6 +4,8 @@ import App from './App'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { initializeCards } from './data/card/cards'
 import { initializeI18n } from './i18n'
+import * as lazyModules from './utils/lazyModules'
+import { preloadAllLazyModules } from './utils/lazyPreload'
 import './index.css'
 
 /** 翻訳JSONとして扱えるオブジェクトか判定する */
@@ -31,4 +33,7 @@ export async function startApp(rawCards: unknown, rawLocale: unknown): Promise<v
       </ErrorBoundary>
     </StrictMode>,
   )
+
+  // appBootstrapの評価が終わってから先読みを始め、entryとapp-listの循環を避ける
+  void preloadAllLazyModules(lazyModules.INITIAL_PRELOAD_MODULES)
 }

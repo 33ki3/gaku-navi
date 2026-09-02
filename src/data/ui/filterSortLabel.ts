@@ -5,7 +5,7 @@
  * enum 値をキーにした i18n キーのルックアップと表示順配列を提供する。
  */
 import type { TranslationKey } from '../../i18n'
-import { FilterSortTab, SortDirectionType, SortModeType } from '../../types/enums'
+import { CardExclusionFilterType, FilterSortTab, SortDirectionType, SortModeType } from '../../types/enums'
 
 /** ラベルエントリ */
 interface LabelEntry<T extends string = string> {
@@ -58,6 +58,12 @@ export const FilterSortTabOrder: readonly FilterSortTab[] = filterSortTabEntries
 export function getFilterSortTabLabel(tab: FilterSortTab): TranslationKey {
   return filterSortTabMap.get(tab)!
 }
+
+/** 最適編成除外フィルターのラベル定義 */
+export const CardExclusionFilterEntries: readonly LabelEntry<CardExclusionFilterType>[] = [
+  { value: CardExclusionFilterType.Excluded, label: 'ui.filter.card_exclusion_excluded' },
+  { value: CardExclusionFilterType.NotExcluded, label: 'ui.filter.card_exclusion_not_excluded' },
+]
 
 /** ソート方向エントリ。enum値・状態値・表示ラベルを一つの定義にまとめる。 */
 const sortDirectionEntries: readonly (LabelEntry<SortDirectionType> & { reverse: boolean })[] = [

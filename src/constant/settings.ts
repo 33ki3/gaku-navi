@@ -33,10 +33,12 @@ export const DEFAULT_UNIT_SIMULATOR_SETTINGS: UnitSimulatorSettings = {
   rentalCardName: null,
   lockedCards: [],
   manualCards: [],
+  excludedCardNames: [],
   initialParams: { vocal: 0, dance: 0, visual: 0 },
   paramCapOverride: null,
   unifyRentalLock: false,
   excludeContestSkillCards: false,
   excludeContestPItems: false,
+  ignoreCardExclusions: false,
   exhaustiveCandidateLimit: EXHAUSTIVE_CANDIDATE_LIMIT,
 }

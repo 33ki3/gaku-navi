@@ -540,6 +540,20 @@ export const SortDirectionType = {
 export type SortDirectionType = (typeof SortDirectionType)[keyof typeof SortDirectionType]
 
 /**
+ * サポート一覧で相互排他にする選択系の操作モード。
+ * 凸数編集は独立した表示状態として管理する。
+ */
+export const CardListInteractionModeType = {
+  /** 通常表示 */
+  None: 'none',
+  /** 最適編成からの除外設定 */
+  CardExclusionEdit: 'card_exclusion_edit',
+  /** 最適編成への手動編成選択 */
+  UnitCardSelect: 'unit_card_select',
+} as const
+export type CardListInteractionModeType = (typeof CardListInteractionModeType)[keyof typeof CardListInteractionModeType]
+
+/**
  * 回数調整フィルター種別。
  *
  * 「未調整」「調整済」の2状態でサポートを絞り込む。
@@ -551,6 +565,15 @@ export const CountCustomFilter = {
   Adjusted: 'adjusted',
 } as const
 export type CountCustomFilter = (typeof CountCustomFilter)[keyof typeof CountCustomFilter]
+
+/** 最適編成候補からの除外状態フィルター */
+export const CardExclusionFilterType = {
+  /** 最適編成から除外中 */
+  Excluded: 'excluded',
+  /** 最適編成から除外していない */
+  NotExcluded: 'not_excluded',
+} as const
+export type CardExclusionFilterType = (typeof CardExclusionFilterType)[keyof typeof CardExclusionFilterType]
 
 /**
  * フィルターアクション種別定数。
@@ -577,6 +600,8 @@ export const FilterActionType = {
   ToggleUncap: 'TOGGLE_UNCAP',
   /** 回数調整フィルター切替 */
   ToggleCountCustom: 'TOGGLE_COUNT_CUSTOM',
+  /** 最適編成除外フィルター切替 */
+  ToggleCardExclusionFilter: 'TOGGLE_CARD_EXCLUSION_FILTER',
   /** 並び替えモード設定 */
   SetSortMode: 'SET_SORT_MODE',
   /** 並び替え逆順切替 */
@@ -1827,9 +1852,11 @@ export const ImportArrayFieldKeyType = {
   Sources: 'sources',
   Uncaps: 'uncaps',
   CountCustom: 'countCustom',
+  CardExclusionFilters: 'cardExclusionFilters',
   AllowedTypes: 'allowedTypes',
   LockedCards: 'lockedCards',
   ManualCards: 'manualCards',
+  ExcludedCardNames: 'excludedCardNames',
   Members: 'members',
 } as const
 export type ImportArrayFieldKeyType = (typeof ImportArrayFieldKeyType)[keyof typeof ImportArrayFieldKeyType]

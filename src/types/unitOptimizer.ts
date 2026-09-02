@@ -22,6 +22,8 @@ export interface OptimizeInput {
   allCards: SupportCard[]
   /** サポート名からサポートを引くマップ */
   cardByName: Map<string, SupportCard>
+  /** 最適編成から除外するサポート名 */
+  excludedCardNames: readonly string[]
 }
 
 /** 設定と回数調整から最適編成の実行入力を作る関数 */

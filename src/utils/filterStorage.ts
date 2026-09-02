@@ -7,6 +7,7 @@
 import * as constant from '../constant'
 import type {
   AbilityKeywordType,
+  CardExclusionFilterType,
   CardType,
   CountCustomFilter,
   PlanType,
@@ -38,6 +39,8 @@ export interface PersistedFilterState {
   uncaps: UncapType[]
   /** 選択中の回数調整フィルター */
   countCustom: CountCustomFilter[]
+  /** 選択中の最適編成除外状態フィルター */
+  cardExclusionFilters: CardExclusionFilterType[]
   /** 現在のソートモード */
   sortMode: enums.SortModeType
   /** 逆順で表示するかどうか */
@@ -58,6 +61,7 @@ const VALID_EVENT_FILTERS = new Set(Object.values(enums.EventFilterType))
 const VALID_SOURCES = new Set(Object.values(enums.SourceType))
 const VALID_UNCAPS = new Set(Object.values(enums.UncapType))
 const VALID_COUNT_CUSTOM = new Set(Object.values(enums.CountCustomFilter))
+const VALID_CARD_EXCLUSION_FILTERS = new Set(Object.values(enums.CardExclusionFilterType))
 const VALID_SORT_MODES = new Set(Object.values(enums.SortModeType))
 
 /**
@@ -85,6 +89,9 @@ export function loadFilterState(): PersistedFilterState | null {
       sources: Array.isArray(parsed.sources) ? filterValid(parsed.sources, VALID_SOURCES) : [],
       uncaps: Array.isArray(parsed.uncaps) ? filterValid(parsed.uncaps, VALID_UNCAPS) : [],
       countCustom: Array.isArray(parsed.countCustom) ? filterValid(parsed.countCustom, VALID_COUNT_CUSTOM) : [],
+      cardExclusionFilters: Array.isArray(parsed.cardExclusionFilters)
+        ? filterValid(parsed.cardExclusionFilters, VALID_CARD_EXCLUSION_FILTERS)
+        : [],
       sortMode: VALID_SORT_MODES.has(parsed.sortMode as enums.SortModeType)
         ? (parsed.sortMode as enums.SortModeType)
         : enums.SortModeType.Rarity,

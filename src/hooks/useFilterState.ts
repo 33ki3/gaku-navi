@@ -9,6 +9,7 @@ import { useCallback, useEffect, useReducer } from 'react'
 import * as constant from '../constant'
 import type {
   AbilityKeywordType,
+  CardExclusionFilterType,
   CardType,
   CountCustomFilter,
   PlanType,
@@ -43,6 +44,7 @@ interface FilterData {
   selectedSources: Set<SourceType>
   selectedUncaps: Set<UncapType>
   selectedCountCustom: Set<CountCustomFilter>
+  selectedCardExclusionFilters: Set<CardExclusionFilterType>
   sortMode: enums.SortModeType
   sortReverse: boolean
 }
@@ -58,6 +60,10 @@ type FilterAction =
   | { type: typeof enums.FilterActionType.ToggleSource; source: SourceType }
   | { type: typeof enums.FilterActionType.ToggleUncap; uncap: UncapType }
   | { type: typeof enums.FilterActionType.ToggleCountCustom; filter: CountCustomFilter }
+  | {
+      type: typeof enums.FilterActionType.ToggleCardExclusionFilter
+      filter: CardExclusionFilterType
+    }
   | { type: typeof enums.FilterActionType.SetSortMode; mode: enums.SortModeType }
   | { type: typeof enums.FilterActionType.ToggleSortReverse }
   | { type: typeof enums.FilterActionType.ClearFilters }
@@ -84,6 +90,8 @@ function filterReducer(state: FilterData, action: FilterAction): FilterData {
       return { ...state, selectedUncaps: toggleInSet(state.selectedUncaps, action.uncap) }
     case enums.FilterActionType.ToggleCountCustom:
       return { ...state, selectedCountCustom: toggleInSet(state.selectedCountCustom, action.filter) }
+    case enums.FilterActionType.ToggleCardExclusionFilter:
+      return { ...state, selectedCardExclusionFilters: toggleInSet(state.selectedCardExclusionFilters, action.filter) }
     case enums.FilterActionType.SetSortMode:
       return { ...state, sortMode: action.mode }
     case enums.FilterActionType.ToggleSortReverse:
@@ -101,6 +109,7 @@ function filterReducer(state: FilterData, action: FilterAction): FilterData {
         selectedSources: new Set(),
         selectedUncaps: new Set(),
         selectedCountCustom: new Set(),
+        selectedCardExclusionFilters: new Set(),
       }
   }
 }
@@ -130,6 +139,9 @@ export interface FilterState {
   /** 選択中の回数調整フィルター */
   selectedCountCustom: Set<CountCustomFilter>
   toggleCountCustom: (filter: CountCustomFilter) => void
+  /** 選択中の最適編成候補フィルター */
+  selectedCardExclusionFilters: Set<CardExclusionFilterType>
+  toggleCardExclusionFilter: (filter: CardExclusionFilterType) => void
   /** 現在の並び替えモード */
   sortMode: enums.SortModeType
   setSortMode: (mode: enums.SortModeType) => void
@@ -160,6 +172,7 @@ function initFilterData(): FilterData {
     selectedSources: new Set(saved?.sources),
     selectedUncaps: new Set(saved?.uncaps),
     selectedCountCustom: new Set(saved?.countCustom),
+    selectedCardExclusionFilters: new Set(saved?.cardExclusionFilters),
     sortMode: saved?.sortMode ?? enums.SortModeType.Rarity,
     sortReverse: saved?.sortReverse ?? false,
   }
@@ -190,6 +203,7 @@ export function useFilterState(): FilterState {
         sources: [...state.selectedSources],
         uncaps: [...state.selectedUncaps],
         countCustom: [...state.selectedCountCustom],
+        cardExclusionFilters: [...state.selectedCardExclusionFilters],
         sortMode: state.sortMode,
         sortReverse: state.sortReverse,
       }
@@ -229,6 +243,10 @@ export function useFilterState(): FilterState {
     (filter: CountCustomFilter) => dispatch({ type: enums.FilterActionType.ToggleCountCustom, filter }),
     [],
   )
+  const toggleCardExclusionFilter = useCallback(
+    (filter: CardExclusionFilterType) => dispatch({ type: enums.FilterActionType.ToggleCardExclusionFilter, filter }),
+    [],
+  )
   const setSortMode = useCallback(
     (mode: enums.SortModeType) => dispatch({ type: enums.FilterActionType.SetSortMode, mode }),
     [],
@@ -250,6 +268,8 @@ export function useFilterState(): FilterState {
     selectedUncaps: state.selectedUncaps,
     selectedCountCustom: state.selectedCountCustom,
     toggleCountCustom,
+    selectedCardExclusionFilters: state.selectedCardExclusionFilters,
+    toggleCardExclusionFilter,
     sortMode: state.sortMode,
     setSortMode,
     sortReverse: state.sortReverse,

@@ -21,6 +21,7 @@ function createDefaultSettings(): UnitSimulatorSettings {
     paramBonusPercent: { ...defaults.paramBonusPercent },
     lockedCards: [...defaults.lockedCards],
     manualCards: [...defaults.manualCards],
+    excludedCardNames: [...defaults.excludedCardNames],
     initialParams: { ...defaults.initialParams },
   }
 }
@@ -42,6 +43,7 @@ function cloneSettings(settings: UnitSimulatorSettings): UnitSimulatorSettings {
     paramBonusPercent: { ...settings.paramBonusPercent },
     lockedCards: [...settings.lockedCards],
     manualCards: [...settings.manualCards],
+    excludedCardNames: [...settings.excludedCardNames],
     initialParams: { ...settings.initialParams },
   }
 }

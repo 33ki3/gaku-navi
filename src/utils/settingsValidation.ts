@@ -73,6 +73,8 @@ export function isUnitSimulatorSettings(value: unknown): value is UnitSimulatorS
     (typeof value.rentalCardName === 'string' || value.rentalCardName === null) &&
     isStringArray(value.lockedCards) &&
     isNullableStringArray(value.manualCards) &&
+    isStringArray(value.excludedCardNames) &&
+    value.excludedCardNames.every((name) => name.trim() !== '') &&
     isParameterValues(value.initialParams)
 
   if (!requiredValuesAreValid) return false
@@ -82,6 +84,7 @@ export function isUnitSimulatorSettings(value: unknown): value is UnitSimulatorS
     isOptional(value.unifyRentalLock, (item) => typeof item === 'boolean') &&
     isOptional(value.excludeContestSkillCards, (item) => typeof item === 'boolean') &&
     isOptional(value.excludeContestPItems, (item) => typeof item === 'boolean') &&
+    isOptional(value.ignoreCardExclusions, (item) => typeof item === 'boolean') &&
     isOptional(value.exhaustiveCandidateLimit, (item) => isFiniteNumber(item) && Number.isSafeInteger(item) && item > 0)
   )
 }

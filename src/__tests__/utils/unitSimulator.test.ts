@@ -67,6 +67,7 @@ function makeSimulatorSettings(
     rentalCardName: null,
     lockedCards: [],
     manualCards: cardNames,
+    excludedCardNames: [],
     initialParams: { vocal: 0, dance: 0, visual: 0 },
     ...overrides,
   }
@@ -101,6 +102,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -158,6 +160,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -198,6 +201,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings: baseSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -205,6 +209,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings: customSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -242,6 +247,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings: baseSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -249,6 +255,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings: classVoSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -291,6 +298,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -396,6 +404,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -406,6 +415,7 @@ describe('最適編成', () => {
         scoreSettings,
         cardUncaps: {},
         cardCountCustom: customCounts,
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -508,6 +518,7 @@ describe('最適編成', () => {
         settings: builderSettings,
         scoreSettings,
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       })
@@ -638,6 +649,7 @@ describe('最適編成', () => {
         }),
         scoreSettings: makeScoreSettings(),
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: testCards,
         cardByName: new Map(testCards.map((c) => [c.name, c])),
       }
@@ -680,6 +692,7 @@ describe('最適編成', () => {
           includePItem: true,
         }),
         cardUncaps: {},
+        excludedCardNames: [],
         allCards: testCards,
         cardByName: new Map(testCards.map((c) => [c.name, c])),
       }

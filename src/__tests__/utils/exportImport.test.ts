@@ -156,6 +156,24 @@ describe('importUserDataText', () => {
     expect(localStorage.getItem(constant.SETTINGS_PINNED_KEY)).toBe('true')
   })
 
+  it('最適編成設定に除外サポートを含めてエクスポート・インポートできる', () => {
+    const settings = {
+      ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
+      excludedCardNames: ['除外カード'],
+    }
+    localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(settings))
+
+    const exported = JSON.parse(getUserDataJson(new Date('2026-07-30T00:00:00.000Z')))
+    expect(exported.data[constant.UNIT_SIMULATOR_STORAGE_KEY]).toEqual(settings)
+
+    localStorage.clear()
+    const importedSettings = { ...settings, excludedCardNames: ['別の除外カード'] }
+    const result = importUserDataText(makeImportData({ [constant.UNIT_SIMULATOR_STORAGE_KEY]: importedSettings }))
+
+    expect(result.success).toBe(true)
+    expect(JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY) ?? 'null')).toEqual(importedSettings)
+  })
+
   it('一部の保存値が壊れていても、正しい項目は反映して警告する', () => {
     // 既存値を用意し、凸数は正常・プリセットはJSON構文エラーの入力にする
     localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ 既存カード: 2 }))
@@ -311,6 +329,7 @@ describe('importUserDataText', () => {
       sources: [enums.SourceType.User, 'invalid-source'],
       uncaps: [enums.UncapType.Four, 'invalid-uncap'],
       countCustom: [enums.CountCustomFilter.Adjusted, 'invalid-count'],
+      cardExclusionFilters: [enums.CardExclusionFilterType.Excluded, 'invalid-exclusion'],
       sortMode: enums.SortModeType.Rarity,
       sortReverse: false,
     }
@@ -337,6 +356,7 @@ describe('importUserDataText', () => {
       sources: [enums.SourceType.User],
       uncaps: [enums.UncapType.Four],
       countCustom: [enums.CountCustomFilter.Adjusted],
+      cardExclusionFilters: [enums.CardExclusionFilterType.Excluded],
     })
   })
 

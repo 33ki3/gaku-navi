@@ -11,6 +11,7 @@ import * as enums from '../types/enums'
 import { createEmptyResult } from '../utils/calculator/calculateCard'
 import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
 import { useCardCountCustom } from './useCardCountCustom'
+import { useCardExclusions } from './useCardExclusions'
 import { useCardScores } from './useCardScores'
 import { useCardUncaps } from './useCardUncaps'
 import { useFilteredCards } from './useFilteredCards'
@@ -32,8 +33,9 @@ import { useUserCards } from './useUserCards'
 export function useAppState() {
   // --- 各フックから状態を取得 ---
   const ui = useUIState()
-  const { setSelectedCard, setScoreBreakdown, setUncapEditMode } = ui
+  const { setSelectedCard, setScoreBreakdown, toggleCardListMode, toggleUncapEditMode } = ui
   const uncaps = useCardUncaps()
+  const cardExclusions = useCardExclusions()
   const countCustom = useCardCountCustom()
   const userCards = useUserCards()
   const { setCardUncap } = uncaps
@@ -88,6 +90,7 @@ export function useAppState() {
     uncaps.cardUncaps,
     scoreSettings,
     countCustomCardNames,
+    cardExclusions.excludedCardNames,
   )
 
   // cardResults を ref で保持し、useCallback の依存配列から除外する
@@ -123,16 +126,10 @@ export function useAppState() {
     },
     [setCardUncap],
   )
-
-  /** 凸数編集モードの切り替え */
-  const uncapEditModeRef = useRef(ui.uncapEditMode)
-  useEffect(() => {
-    uncapEditModeRef.current = ui.uncapEditMode
-  }, [ui.uncapEditMode])
-
-  const handleToggleUncapEdit = useCallback(() => {
-    setUncapEditMode(!uncapEditModeRef.current)
-  }, [setUncapEditMode])
+  /** 最適編成の除外設定モードを切り替える */
+  const handleToggleCardExclusionMode = useCallback(() => {
+    toggleCardListMode(enums.CardListInteractionModeType.CardExclusionEdit)
+  }, [toggleCardListMode])
 
   return {
     // UI 状態（モーダル・パネルの開閉など）
@@ -152,12 +149,19 @@ export function useAppState() {
     },
     // フィルター・並び替え
     filters,
+    // 最適編成から除外するサポート
+    exclusions: {
+      excludedCardNames: cardExclusions.excludedCardNames,
+      isCardExcluded: cardExclusions.isCardExcluded,
+    },
     // イベントハンドラ
     handlers: {
       handleCardClick,
       handleScoreClick,
       handleUncapChange,
-      handleToggleUncapEdit,
+      handleToggleUncapEdit: toggleUncapEditMode,
+      handleToggleCardExclusionMode,
+      handleToggleCardExcluded: cardExclusions.toggleCardExcluded,
     },
   }
 }

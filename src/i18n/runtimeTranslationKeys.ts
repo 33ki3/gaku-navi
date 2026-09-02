@@ -6,10 +6,10 @@
 import * as data from '../data'
 import rawCards from '../data/json/cards.json'
 import * as activityData from '../data/score/activity'
-import * as importData from '../data/ui/importData'
 import * as hifScheduleData from '../data/score/hifScheduleMaster'
 import * as parameterInputData from '../data/score/parameterInput'
 import * as parameterLabelsData from '../data/score/parameterLabels'
+import * as importData from '../data/ui/importData'
 import * as enums from '../types/enums'
 import * as pItemResolver from '../utils/pItemResolver'
 import ja from './locales/ja.json'
@@ -27,6 +27,8 @@ const nonExtractedTranslationKeys = [
   'ui.message.import_item_unit_members',
   'ui.message.import_item_unit_result',
   'ui.message.import_reason_invalid_array_item',
+  'unit.manual_select_done',
+  'unit.card_exclusion_select_bar',
 ] as const
 
 /** 翻訳JSONに存在するドット区切りのキーかを判定する */

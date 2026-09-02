@@ -5,6 +5,8 @@
  * このファイルへ集約する
  */
 import * as constant from '../constant'
+import { EXPORT_KEYS } from '../data/ui'
+import type { ExportKey } from '../data/ui'
 import {
   FILTER_ARRAY_FIELD_METADATA,
   IMPORT_VALUE_METADATA,
@@ -12,8 +14,6 @@ import {
   UNIT_SETTINGS_ARRAY_FIELD_METADATA,
 } from '../data/ui/importData'
 import type { ImportArrayFieldMetadata, ImportValueMetadata } from '../data/ui/importData'
-import { EXPORT_KEYS } from '../data/ui'
-import type { ExportKey } from '../data/ui'
 import type { TranslationKey } from '../i18n'
 import i18n from '../i18n'
 import * as enums from '../types/enums'
@@ -186,6 +186,7 @@ const FILTER_ARRAY_FIELDS = withValidators(FILTER_ARRAY_FIELD_METADATA, {
   [enums.ImportArrayFieldKeyType.Sources]: (item) => isEnumValue(item, enums.SourceType),
   [enums.ImportArrayFieldKeyType.Uncaps]: (item) => isEnumValue(item, enums.UncapType),
   [enums.ImportArrayFieldKeyType.CountCustom]: (item) => isEnumValue(item, enums.CountCustomFilter),
+  [enums.ImportArrayFieldKeyType.CardExclusionFilters]: (item) => isEnumValue(item, enums.CardExclusionFilterType),
 })
 
 /** 最適編成設定の配列フィールドへ、項目ごとの型検証を割り当てる */
@@ -193,6 +194,7 @@ const UNIT_SETTINGS_ARRAY_FIELDS = withValidators(UNIT_SETTINGS_ARRAY_FIELD_META
   [enums.ImportArrayFieldKeyType.AllowedTypes]: (item) => isEnumValue(item, enums.CardType),
   [enums.ImportArrayFieldKeyType.LockedCards]: (item) => typeof item === 'string',
   [enums.ImportArrayFieldKeyType.ManualCards]: (item) => typeof item === 'string' || item === null,
+  [enums.ImportArrayFieldKeyType.ExcludedCardNames]: (item) => typeof item === 'string' && item.trim() !== '',
 })
 
 /** キーごとの検証方法とエラー表示情報 */

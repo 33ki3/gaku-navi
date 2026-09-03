@@ -47,6 +47,8 @@ function defaultParams() {
     selectedUncaps: new Set<enums.UncapType>(),
     selectedCountCustom: new Set<enums.CountCustomFilter>(),
     countCustomCardNames: new Set<string>(),
+    selectedCardExclusionFilters: new Set<enums.CardExclusionFilterType>(),
+    excludedCardNames: new Set<string>(),
     cardUncaps: {} as Record<string, enums.UncapType>,
     sortCardUncaps: {} as Record<string, enums.UncapType>,
     sortMode: enums.SortModeType.Rarity,
@@ -93,6 +95,45 @@ describe('filterAndSortCards - フィルタリング', () => {
   it('フィルターなしで全サポート返る', () => {
     const result = filterAndSortCards(cards, defaultParams())
     expect(result).toHaveLength(4)
+  })
+
+  it('最適編成から除外したサポートも通常一覧に残る', () => {
+    const params = {
+      ...defaultParams(),
+      excludedCardNames: new Set(['Aサポート']),
+    }
+
+    expect(filterAndSortCards(cards, params).map((card) => card.name)).toContain('Aサポート')
+  })
+
+  it('除外状態フィルターは除外中・除外なしを複数選択できる', () => {
+    const params = {
+      ...defaultParams(),
+      excludedCardNames: new Set(['Aサポート']),
+    }
+    const allCards = filterAndSortCards(cards, params)
+
+    expect(
+      filterAndSortCards(cards, {
+        ...params,
+        selectedCardExclusionFilters: new Set([enums.CardExclusionFilterType.Excluded]),
+      }),
+    ).toEqual([cards[0]])
+    expect(
+      filterAndSortCards(cards, {
+        ...params,
+        selectedCardExclusionFilters: new Set([enums.CardExclusionFilterType.NotExcluded]),
+      }),
+    ).toHaveLength(3)
+    expect(
+      filterAndSortCards(cards, {
+        ...params,
+        selectedCardExclusionFilters: new Set([
+          enums.CardExclusionFilterType.Excluded,
+          enums.CardExclusionFilterType.NotExcluded,
+        ]),
+      }),
+    ).toEqual(allCards)
   })
 
   it('レアリティフィルター: SSR のみ', () => {

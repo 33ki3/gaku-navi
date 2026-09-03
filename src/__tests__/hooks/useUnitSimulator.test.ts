@@ -96,6 +96,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       rentalCardName: 'CardA', // CardAをレンタルでロック
       lockedCards: ['CardB'], // CardBを通常枠でロック
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
+      excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: true, // ロック自動入れ替え機能をON
     }
@@ -159,6 +160,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       rentalCardName: 'CardA', // CardAがレンタルロック
       lockedCards: [], // 通常ロックなし
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
+      excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: true, // ロック自動入れ替え機能をON
     }
@@ -217,6 +219,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       rentalCardName: 'CardA',
       lockedCards: ['CardB'],
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
+      excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: false, // ロック自動入れ替え機能をOFF
     }
@@ -275,6 +278,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       rentalCardName: null,
       lockedCards: ['CardB'], // CardBのみ通常ロック
       manualCards: ['CardB', 'CardC', null, null, null, null],
+      excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: true, // ロック自動入れ替え機能をON
     }

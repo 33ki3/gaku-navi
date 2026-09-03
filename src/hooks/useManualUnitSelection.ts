@@ -20,7 +20,7 @@ interface UseManualUnitSelectionParams {
   /** 一覧でカードを選択できるか判定する関数の登録先 */
   registerIsCardEligible: (handler: ((card: SupportCard) => boolean) | null) => void
   /** サポート一覧で選択中か */
-  unitCardSelectMode: boolean
+  isUnitCardSelectMode: boolean
   /** サポート一覧の選択状態を切り替える関数 */
   setUnitCardSelectMode: (enabled: boolean) => void
   /** サポートごとの凸数 */
@@ -51,7 +51,7 @@ export function useManualUnitSelection({
   setSettings,
   registerAddManualCard,
   registerIsCardEligible,
-  unitCardSelectMode,
+  isUnitCardSelectMode,
   setUnitCardSelectMode,
   cardUncaps,
   useFixedUncap,
@@ -68,7 +68,7 @@ export function useManualUnitSelection({
   /**
    * コールバック登録先から常に最新状態を参照できるようrefへ同期する。
    *
-   * パネルを閉じた直後でも一覧クリックが先に処理される可能性があるため、通常のeffectではなくレイアウト確定時に同期する。
+   * パネルの再マウント直後に一覧クリックが先に処理される可能性があるため、通常のeffectではなくレイアウト確定時に同期する。
    */
   useLayoutEffect(() => {
     // パネルの開閉をまたぐクリックでも、一覧側から最新設定を参照できるようにする
@@ -97,7 +97,7 @@ export function useManualUnitSelection({
   /**
    * サポート一覧から受け取ったカードを、対象スロットまたは最初の空きへ入れる。
    *
-   * この登録もレイアウト確定時に行い、PCでパネルだけ閉じた後の最初のクリックを取りこぼさない。
+   * この登録もレイアウト確定時に行い、パネルの表示切り替え直後の最初のクリックを取りこぼさない。
    * 完了時コールバックはref経由で参照し、画面の開閉だけで登録を解除・再登録しない
    */
   useLayoutEffect(() => {
@@ -163,12 +163,12 @@ export function useManualUnitSelection({
       // 選択対象を保存してから一覧選択モードへ切り替える
       targetSlotIndexRef.current = slotIndex
       setTargetSlotIndex(slotIndex)
-      if (unitCardSelectMode) return
+      if (isUnitCardSelectMode) return
 
       setUnitCardSelectMode(true)
       if (!window.matchMedia(constant.DESKTOP_MEDIA_QUERY).matches) onClosePanel()
     },
-    [onClosePanel, setUnitCardSelectMode, unitCardSelectMode],
+    [onClosePanel, setUnitCardSelectMode, isUnitCardSelectMode],
   )
 
   return { startSlotSelection, clearTargetSlot }

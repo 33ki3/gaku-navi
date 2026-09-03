@@ -6,6 +6,7 @@
  * サポート一覧・サポート詳細モーダルの両方で使われる。
  */
 import { useTranslation } from 'react-i18next'
+import * as constant from '../../constant'
 import { getUncapSelectorVariantStyle } from '../../data/ui'
 import type { UncapSelectorVariantType, UncapType } from '../../types/enums'
 import * as enums from '../../types/enums'
@@ -26,6 +27,8 @@ interface UncapSelectorProps {
   variant?: UncapSelectorVariantType
   /** 追加のCSSクラス */
   className?: string
+  /** 選択操作を無効にするか */
+  disabled?: boolean
 }
 
 /** 凸数（0凸〜4凸）を選択するボタン群 */
@@ -37,6 +40,7 @@ export function UncapSelector({
   showNotOwned = true,
   variant = enums.UncapSelectorVariantType.Compact,
   className = '',
+  disabled = false,
 }: UncapSelectorProps) {
   const { t } = useTranslation()
   const style = getUncapSelectorVariantStyle(variant)
@@ -49,8 +53,10 @@ export function UncapSelector({
       {uncapValues.map((u) => (
         <button
           key={u}
+          type="button"
           onClick={() => onChange(u)}
-          className={`${style.button} transition-colors ${value === u ? (u === enums.UncapType.NotOwned ? 'bg-slate-500 text-white' : activeClass) : inactiveClass}`}
+          disabled={disabled}
+          className={`${style.button} transition-colors ${disabled ? constant.BTN_DISABLED : value === u ? (u === enums.UncapType.NotOwned ? 'bg-slate-500 text-white' : activeClass) : inactiveClass}`}
         >
           {u === enums.UncapType.NotOwned ? t('ui.uncap.not_owned') : `${u}${t('ui.unit.uncap')}`}
         </button>

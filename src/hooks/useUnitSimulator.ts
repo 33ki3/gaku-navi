@@ -61,6 +61,7 @@ export function useUnitSimulator(
       cardCountCustom: customCardCount ?? loadCardCountCustom(),
       allCards,
       cardByName,
+      excludedCardNames: nextSettings.ignoreCardExclusions ? [] : nextSettings.excludedCardNames,
     }),
     [allCards, cardByName, scoreSettings],
   )

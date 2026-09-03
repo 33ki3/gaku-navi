@@ -10,35 +10,32 @@ import { useUnitCardSelectionBridge } from '../../hooks/useUnitCardSelectionBrid
 const targetCard = data.AllCards[0]
 
 describe('useUnitCardSelectionBridge', () => {
-  it('通常時のカードクリックは詳細表示へ渡す', () => {
-    const openCardDetail = vi.fn()
+  it('手動選択モード外のカードクリックは追加しない', () => {
+    const addManualCard = vi.fn()
     const { result } = renderHook(() =>
       useUnitCardSelectionBridge({
         selectionMode: false,
         setSelectionMode: vi.fn(),
-        openCardDetail,
-        openScoreDetail: vi.fn(),
         isMobileViewport: () => false,
         openUnitSimulator: vi.fn(),
       }),
     )
 
-    // 選択モードOFFでカードをクリックし、通常の詳細表示へ渡す
-    act(() => result.current.onCardClick(targetCard))
+    // 選択モードOFFで手動選択用のクリック処理を呼んでも追加しない
+    act(() => {
+      result.current.registerAddManualCard(addManualCard)
+      result.current.handleManualCardClick(targetCard)
+    })
 
-    // 詳細ハンドラには、一覧でクリックした同じカードがそのまま渡される
-    expect(openCardDetail).toHaveBeenCalledWith(targetCard)
+    expect(addManualCard).not.toHaveBeenCalled()
   })
 
   it('選択モード中は登録された追加処理へサポート名を渡す', () => {
     const addManualCard = vi.fn()
-    const openCardDetail = vi.fn()
     const { result } = renderHook(() =>
       useUnitCardSelectionBridge({
         selectionMode: true,
         setSelectionMode: vi.fn(),
-        openCardDetail,
-        openScoreDetail: vi.fn(),
         isMobileViewport: () => false,
         openUnitSimulator: vi.fn(),
       }),
@@ -47,33 +44,10 @@ describe('useUnitCardSelectionBridge', () => {
     // 選択モード用の追加処理を登録してから、カードクリックを発生させる
     act(() => {
       result.current.registerAddManualCard(addManualCard)
-      result.current.onCardClick(targetCard)
+      result.current.handleManualCardClick(targetCard)
     })
 
     // 選択中はカードオブジェクト全体ではなく、追加処理が扱うカード名だけを渡す
-    expect(addManualCard).toHaveBeenCalledWith(targetCard.name)
-    expect(openCardDetail).not.toHaveBeenCalled()
-  })
-
-  it('パネルの追加処理が未登録でも、選択したサポートを登録後に引き渡す', () => {
-    const addManualCard = vi.fn()
-    const { result } = renderHook(() =>
-      useUnitCardSelectionBridge({
-        selectionMode: true,
-        setSelectionMode: vi.fn(),
-        openCardDetail: vi.fn(),
-        openScoreDetail: vi.fn(),
-        isMobileViewport: () => true,
-        openUnitSimulator: vi.fn(),
-      }),
-    )
-
-    // 先にクリックして保留し、後からパネル側の追加処理を登録する順序を再現する
-    act(() => result.current.onCardClick(targetCard))
-    act(() => result.current.registerAddManualCard(addManualCard))
-
-    // 保留されたカードが登録直後に1回だけ引き渡される
-    expect(addManualCard).toHaveBeenCalledOnce()
     expect(addManualCard).toHaveBeenCalledWith(targetCard.name)
   })
 
@@ -82,8 +56,6 @@ describe('useUnitCardSelectionBridge', () => {
       useUnitCardSelectionBridge({
         selectionMode: true,
         setSelectionMode: vi.fn(),
-        openCardDetail: vi.fn(),
-        openScoreDetail: vi.fn(),
         isMobileViewport: () => false,
         openUnitSimulator: vi.fn(),
       }),
@@ -107,8 +79,6 @@ describe('useUnitCardSelectionBridge', () => {
       useUnitCardSelectionBridge({
         selectionMode: true,
         setSelectionMode,
-        openCardDetail: vi.fn(),
-        openScoreDetail: vi.fn(),
         isMobileViewport: () => true,
         openUnitSimulator,
         requestMobileNavigationShow,

@@ -13,7 +13,7 @@ import type { TranslationKey } from '../i18n'
 import type { ParameterValues, PerLessonParameterValues, ScoreSettings } from '../types/card'
 import * as enums from '../types/enums'
 import { resolveHifLessonPair } from './hifScheduleHelpers'
-import { isScoreSettings, isScoreSettingsBase } from './scoreSettingsValidation'
+import { isScoreSettings } from './scoreSettingsValidation'
 import { isRecord } from './valueValidation'
 
 /**
@@ -61,42 +61,34 @@ export function createDefaultSettings(scenario: enums.ScenarioType = constant.DE
 /**
  * 保存済みスコア設定へ、コード側の既定値を補完する。
  *
- * 保存文字列そのものは変更せず、画面や計算処理で利用する一時的なオブジェクトだけを補完する。
  * 保存データに含まれる既知の設定値は保持する。
  *
  * @param value - 保存データから読み込んだ値
- * @returns 補完済み設定。基礎部分が壊れている場合は null
+ * @returns オブジェクトなら補完済み設定、それ以外は入力値
  */
-export function normalizeScoreSettings(value: unknown): ScoreSettings | null {
-  if (!isScoreSettingsBase(value)) return null
+export function fillScoreSettingsDefaults(value: unknown): unknown {
+  if (!isRecord(value)) return value
 
   const scenario = Object.values(enums.ScenarioType).find((candidate) => candidate === value.scenario)
-  if (!scenario) return null
+  const defaults = createDefaultSettings(scenario ?? constant.DEFAULT_SCENARIO)
+  const actionCounts =
+    value.actionCounts === undefined
+      ? defaults.actionCounts
+      : isRecord(value.actionCounts)
+        ? { ...defaults.actionCounts, ...value.actionCounts }
+        : value.actionCounts
 
-  const defaults = createDefaultSettings(scenario)
-  const storedActionCounts = isRecord(value.actionCounts) ? value.actionCounts : {}
-  const actionCounts = { ...defaults.actionCounts, ...storedActionCounts }
-
-  const normalized: Record<string, unknown> = {
+  return {
     ...defaults,
     ...value,
     actionCounts,
   }
-  return isScoreSettings(normalized) ? normalized : null
 }
 
-/**
- * 保存データにフロント側の既定値で補完する項目があるか判定する。
- *
- * @param value - 保存データから読み込んだ値
- * @returns 欠落した既定値項目があれば true
- */
-export function hasMissingScoreSettingsDefaults(value: unknown): boolean {
-  if (!isRecord(value)) return false
-  const scenario = Object.values(enums.ScenarioType).find((candidate) => candidate === value.scenario)
-  if (!scenario) return false
-
-  return Object.keys(createDefaultSettings(scenario)).some((key) => !(key in value))
+/** 保存済み点数設定を既定値補完してから厳密に検証する */
+export function normalizeScoreSettings(value: unknown): ScoreSettings | null {
+  const normalized = fillScoreSettingsDefaults(value)
+  return isScoreSettings(normalized) ? normalized : null
 }
 
 /**

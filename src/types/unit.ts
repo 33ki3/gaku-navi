@@ -48,6 +48,8 @@ export interface UnitSimulatorSettings {
   lockedCards: string[]
   /** 手動選択されたサポート名リスト（手動モード用・null はスロット空き） */
   manualCards: (string | null)[]
+  /** 最適編成の自動候補から除外するサポート名リスト */
+  excludedCardNames: string[]
   /** 初期パラメータ（プロデュース開始時のアイドルステータス） */
   initialParams: ParameterValues
   /** パラメータ上限値の上書き設定（null の場合はシナリオ既定値） */
@@ -58,6 +60,8 @@ export interface UnitSimulatorSettings {
   excludeContestSkillCards?: boolean
   /** コンテスト用にメモリ化Pアイテム獲得サポートを候補から除外するか */
   excludeContestPItems?: boolean
+  /** 最適編成の自動候補から除外中のサポートを含めるか */
+  ignoreCardExclusions?: boolean
   /** 総当たり最適化の候補上位枚数（未設定時は既定値） */
   exhaustiveCandidateLimit?: number
 }

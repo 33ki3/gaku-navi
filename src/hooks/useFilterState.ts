@@ -18,7 +18,7 @@ import type {
   UncapType,
 } from '../types/enums'
 import * as enums from '../types/enums'
-import type { PersistedFilterState } from '../utils/filterStorage'
+import type { PersistedFilterState } from '../types/app'
 import { loadFilterState, saveFilterState } from '../utils/filterStorage'
 
 /**
@@ -160,21 +160,21 @@ export interface FilterState {
 }
 
 function initFilterData(): FilterData {
-  const saved = loadFilterState()
+  const saved = loadFilterState() ?? constant.DEFAULT_FILTER_STATE
   return {
-    searchTerm: saved?.searchTerm ?? '',
-    selectedRarities: new Set(saved?.rarities),
-    selectedTypes: new Set(saved?.types),
-    spOnly: saved?.spOnly ?? false,
-    selectedAbilityKeywords: new Set(saved?.abilityKeywords),
-    selectedPlans: new Set(saved?.plans),
-    selectedEventFilters: new Set(saved?.eventFilters),
-    selectedSources: new Set(saved?.sources),
-    selectedUncaps: new Set(saved?.uncaps),
-    selectedCountCustom: new Set(saved?.countCustom),
-    selectedCardExclusionFilters: new Set(saved?.cardExclusionFilters),
-    sortMode: saved?.sortMode ?? enums.SortModeType.Rarity,
-    sortReverse: saved?.sortReverse ?? false,
+    searchTerm: saved.searchTerm,
+    selectedRarities: new Set(saved.rarities),
+    selectedTypes: new Set(saved.types),
+    spOnly: saved.spOnly,
+    selectedAbilityKeywords: new Set(saved.abilityKeywords),
+    selectedPlans: new Set(saved.plans),
+    selectedEventFilters: new Set(saved.eventFilters),
+    selectedSources: new Set(saved.sources),
+    selectedUncaps: new Set(saved.uncaps),
+    selectedCountCustom: new Set(saved.countCustom),
+    selectedCardExclusionFilters: new Set(saved.cardExclusionFilters),
+    sortMode: saved.sortMode,
+    sortReverse: saved.sortReverse,
   }
 }
 

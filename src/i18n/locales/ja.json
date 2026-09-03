@@ -634,8 +634,6 @@
       "import_ready": "{{count}} 件のデータを読み込めます。",
       "import_message_with_warnings": "{{message}}\n{{warnings}}",
       "import_success": "{{count}} 件のデータをインポートしました。\n再読み込みすると画面に反映されます。",
-      "import_warning_defaults": "「{{item}}」は不足項目を初期値で補完して扱います。\n保存データ自体は変更していません。",
-      "import_warning_missing_defaults_count": "「{{item}}」の{{count}}件は不足項目を初期値で補完して扱います。\n保存データ自体は変更していません。",
       "import_warning_skipped": "「{{item}}」は読み込めないためスキップしました（{{reason}}）。\n他の読み込み可能なデータは反映します。",
       "import_warning_partial_item": "「{{item}}」の{{index}}件目{{name}}を除外して、読み込めるデータだけ反映します（{{reason}}）。",
       "import_no_valid_data": "読み込めるデータがありませんでした。\n現在のデータは変更されていません。",

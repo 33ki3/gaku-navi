@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import * as constant from '../../constant'
+import { EXPORT_KEYS } from '../../data/ui'
 import * as enums from '../../types/enums'
 import { loadAppPreferences } from '../../utils/appPreferences'
 import {
@@ -10,8 +11,11 @@ import {
   mergeImportJsonText,
   prepareImportText,
 } from '../../utils/exportImport'
+import { loadFilterState } from '../../utils/filterStorage'
 import { loadPresets } from '../../utils/presetHelpers'
-import { createDefaultSettings } from '../../utils/scoreSettings'
+import { createDefaultSettings, loadScoreSettings, normalizeScoreSettings } from '../../utils/scoreSettings'
+import { loadUnitSimulatorSettings } from '../../utils/unitSimulatorSettings'
+import { createCompleteExportValues } from '../fixtures/exportData'
 
 /**
  * テスト用のエクスポートJSONを作る
@@ -172,6 +176,61 @@ describe('importUserDataText', () => {
 
     expect(result.success).toBe(true)
     expect(JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY) ?? 'null')).toEqual(importedSettings)
+  })
+
+  it.each([
+    { name: 'v1のJSON文字列形式', version: constant.MIN_SUPPORTED_EXPORT_VERSION, includeV2Settings: false },
+    { name: 'v2のJSON値形式', version: constant.EXPORT_VERSION, includeV2Settings: true },
+  ])('$nameの全保存項目を互換性を保って読み込む', ({ version, includeV2Settings }) => {
+    const values = createCompleteExportValues(includeV2Settings)
+    const data = Object.fromEntries(
+      EXPORT_KEYS.map((key) => [
+        key,
+        version === constant.MIN_SUPPORTED_EXPORT_VERSION ? JSON.stringify(values[key]) : values[key],
+      ]),
+    )
+    expect(Object.keys(values)).toEqual(EXPORT_KEYS)
+    expect(Object.values(data).every((value) => typeof value === 'string')).toBe(
+      version === constant.MIN_SUPPORTED_EXPORT_VERSION,
+    )
+
+    const preview = prepareImportText(makeImportData(data, version))
+    const result = applyImportPreview(preview)
+
+    expect(preview.canImport).toBe(true)
+    expect(preview.validationWarnings).toEqual([])
+    expect(preview.importedKeys).toBe(EXPORT_KEYS.length)
+    expect(preview.message).not.toContain('読み込めないためスキップしました')
+    expect(result.success).toBe(true)
+    expect(result.importedKeys).toBe(EXPORT_KEYS.length)
+
+    for (const key of EXPORT_KEYS) {
+      const expected = JSON.parse(JSON.stringify(values[key]))
+      if (key === constant.UNIT_SIMULATOR_STORAGE_KEY && !includeV2Settings) {
+        expected.excludedCardNames = []
+        expected.ignoreCardExclusions = false
+      }
+      if (key === constant.APP_PREFERENCES_STORAGE_KEY && !includeV2Settings) {
+        expected.keepMobileBottomNavFixed = false
+      }
+      if (key === constant.FILTER_STORAGE_KEY && !includeV2Settings) {
+        expected.cardExclusionFilters = []
+      }
+      expect(JSON.parse(localStorage.getItem(key) ?? 'null')).toEqual(expected)
+    }
+
+    expect(loadScoreSettings()).toEqual({
+      ...JSON.parse(JSON.stringify(values[constant.SCORE_SETTINGS_STORAGE_KEY])),
+      scheduleSelections: JSON.parse(JSON.stringify(values[constant.SCHEDULE_SELECTIONS_STORAGE_KEY])).hif,
+    })
+    expect(loadAppPreferences()).toEqual({
+      showMobileBottomNav: false,
+      keepMobileBottomNavFixed: includeV2Settings,
+    })
+    expect(loadFilterState()?.cardExclusionFilters).toEqual(
+      includeV2Settings ? Object.values(enums.CardExclusionFilterType) : [],
+    )
+    expect(loadUnitSimulatorSettings().excludedCardNames).toEqual(includeV2Settings ? ['互換テスト除外'] : [])
   })
 
   it('一部の保存値が壊れていても、正しい項目は反映して警告する', () => {
@@ -489,7 +548,7 @@ describe('importUserDataText', () => {
     expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ 新しいカード: 4 }))
   })
 
-  it('不足項目がある点数設定プリセットを初期値補完し、保存文字列は変更しない', () => {
+  it('不足項目がある点数設定プリセットを初期値補完して保存する', () => {
     // 後から追加されたキーがない保存データを作り、インポート時の既定値補完を確認する
     const partialSettings = {
       name: '一部項目欠落プリセット',
@@ -509,12 +568,14 @@ describe('importUserDataText', () => {
       }),
     )
 
-    // 不足項目がある設定でも読み込みは成功し、補完が行われたことをメッセージで知らせる
+    // 不足項目がある設定でも読み込みは成功し、完全な設定として保存する
     expect(result.success).toBe(true)
-    expect(result.message).toContain('初期値で補完')
-    expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(rawPresets)
+    expect(result.message).not.toContain('読み込みエラー')
 
-    // localStorageの生文字列は変えず、読み込み時だけ不足項目を補完する
+    const stored = JSON.parse(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY) ?? 'null')
+    expect(stored[0].settings).toEqual(normalizeScoreSettings(partialSettings))
+
+    // アプリからの読み込みでも補完済みの値をそのまま利用できる
     const loaded = loadPresets()
     // 現在のアクションIDは保持され、追加された既定値だけが読み込み時に補完される
     expect(loaded).toHaveLength(1)
@@ -540,8 +601,8 @@ describe('importUserDataText', () => {
     expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(rawPresets)
   })
 
-  it('不足項目がある一般オプションを初期値補完し、保存文字列は変更しない', () => {
-    // keepMobileBottomNavFixedがない保存データをそのまま保存する
+  it('不足項目がある一般オプションを初期値補完して保存する', () => {
+    // keepMobileBottomNavFixedがない保存データを読み込む
     const rawPreferences = JSON.stringify({ showMobileBottomNav: false })
     const result = importUserDataText(
       makeImportData({
@@ -549,13 +610,157 @@ describe('importUserDataText', () => {
       }),
     )
 
-    // インポートは成功し、不足項目を補完したことをメッセージに含める
+    // インポートは成功し、欠けた設定は通常の互換処理として扱う
     expect(result.success).toBe(true)
-    expect(result.message).toContain('一般オプション')
-    expect(result.message).toContain('初期値で補完')
-    expect(localStorage.getItem(constant.APP_PREFERENCES_STORAGE_KEY)).toBe(rawPreferences)
-    // 生データは変更せず、アプリから読む時だけ新しい項目を既定値falseで補完する
+    expect(result.message).not.toContain('読み込みエラー')
+    expect(localStorage.getItem(constant.APP_PREFERENCES_STORAGE_KEY)).toBe(
+      JSON.stringify({ showMobileBottomNav: false, keepMobileBottomNavFixed: false }),
+    )
+    // 保存時点で現在の完全な設定になり、アプリからも同じ値を読み込める
     expect(loadAppPreferences()).toEqual({ showMobileBottomNav: false, keepMobileBottomNavFixed: false })
+  })
+
+  it.each([
+    {
+      name: '点数設定',
+      key: constant.SCORE_SETTINGS_STORAGE_KEY,
+      value: { ...createDefaultSettings(), useFixedUncap: undefined },
+      expectedKey: 'useFixedUncap',
+      expectedValue: false,
+    },
+    {
+      name: '検索・絞り込み・並び順設定',
+      key: constant.FILTER_STORAGE_KEY,
+      value: {
+        searchTerm: '',
+        rarities: [],
+        types: [],
+        plans: [],
+        spOnly: false,
+        abilityKeywords: [],
+        eventFilters: [],
+        sources: [],
+        uncaps: [],
+        countCustom: [],
+        sortMode: enums.SortModeType.Rarity,
+        sortReverse: false,
+      },
+      expectedKey: 'cardExclusionFilters',
+      expectedValue: [],
+    },
+    {
+      name: '最適編成設定',
+      key: constant.UNIT_SIMULATOR_STORAGE_KEY,
+      value: { ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS, excludedCardNames: undefined },
+      expectedKey: 'excludedCardNames',
+      expectedValue: [],
+    },
+    {
+      name: '一般オプション',
+      key: constant.APP_PREFERENCES_STORAGE_KEY,
+      value: { showMobileBottomNav: false },
+      expectedKey: 'keepMobileBottomNavFixed',
+      expectedValue: false,
+    },
+  ])('$nameは保存値にない項目を現在の既定値で補完する', ({ key, value, expectedKey, expectedValue }) => {
+    const result = importUserDataText(makeImportData({ [key]: value }))
+
+    expect(result.success).toBe(true)
+    expect(JSON.parse(localStorage.getItem(key) ?? 'null')[expectedKey]).toEqual(expectedValue)
+  })
+
+  it.each([
+    {
+      name: '点数設定',
+      key: constant.SCORE_SETTINGS_STORAGE_KEY,
+      expected: createDefaultSettings(),
+    },
+    {
+      name: '検索・絞り込み・並び順設定',
+      key: constant.FILTER_STORAGE_KEY,
+      expected: constant.DEFAULT_FILTER_STATE,
+    },
+    {
+      name: '最適編成設定',
+      key: constant.UNIT_SIMULATOR_STORAGE_KEY,
+      expected: constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
+    },
+    {
+      name: '一般オプション',
+      key: constant.APP_PREFERENCES_STORAGE_KEY,
+      expected: constant.DEFAULT_APP_PREFERENCES,
+    },
+  ])('$nameが空オブジェクトなら現在の既定値一式を保存する', ({ key, expected }) => {
+    const result = importUserDataText(makeImportData({ [key]: {} }))
+
+    expect(result.success).toBe(true)
+    expect(JSON.parse(localStorage.getItem(key) ?? 'null')).toEqual(expected)
+  })
+
+  it('点数設定は保存されたシナリオに対応する既定値で補完する', () => {
+    const value = {
+      ...createDefaultSettings(enums.ScenarioType.Custom),
+      useCustomMode: undefined,
+    }
+
+    const result = importUserDataText(makeImportData({ [constant.SCORE_SETTINGS_STORAGE_KEY]: value }))
+
+    expect(result.success).toBe(true)
+    expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null').useCustomMode).toBe(true)
+  })
+
+  it('選択したカテゴリだけを既定値補完し、未選択カテゴリは変更しない', () => {
+    const existingPreferences = { showMobileBottomNav: true, keepMobileBottomNavFixed: true }
+    localStorage.setItem(constant.APP_PREFERENCES_STORAGE_KEY, JSON.stringify(existingPreferences))
+    const preview = prepareImportText(
+      makeImportData({
+        [constant.UNIT_SIMULATOR_STORAGE_KEY]: {
+          ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
+          excludedCardNames: undefined,
+        },
+        [constant.APP_PREFERENCES_STORAGE_KEY]: { showMobileBottomNav: false },
+      }),
+      [constant.UNIT_SIMULATOR_STORAGE_KEY],
+    )
+
+    expect(applyImportPreview(preview).success).toBe(true)
+    expect(loadUnitSimulatorSettings().excludedCardNames).toEqual([])
+    expect(loadAppPreferences()).toEqual(existingPreferences)
+  })
+
+  it.each([
+    {
+      name: '点数設定',
+      key: constant.SCORE_SETTINGS_STORAGE_KEY,
+      value: { ...createDefaultSettings(), useFixedUncap: null },
+    },
+    {
+      name: '検索・絞り込み・並び順設定',
+      key: constant.FILTER_STORAGE_KEY,
+      value: { ...constant.DEFAULT_FILTER_STATE, cardExclusionFilters: null },
+    },
+    {
+      name: '最適編成設定',
+      key: constant.UNIT_SIMULATOR_STORAGE_KEY,
+      value: { ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS, excludedCardNames: null },
+    },
+    {
+      name: '一般オプション',
+      key: constant.APP_PREFERENCES_STORAGE_KEY,
+      value: { ...constant.DEFAULT_APP_PREFERENCES, keepMobileBottomNavFixed: null },
+    },
+  ])('$nameの明示された不正値を既定値で隠さず、そのカテゴリだけをスキップする', ({ key, value }) => {
+    const result = importUserDataText(
+      makeImportData({
+        [constant.UNCAP_STORAGE_KEY]: { 正常カード: enums.UncapType.Four },
+        [key]: value,
+      }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.importedKeys).toBe(1)
+    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ 正常カード: enums.UncapType.Four }))
+    expect(localStorage.getItem(key)).toBeNull()
   })
 
   it('JSON全体が壊れていれば、エラー位置を表示する', () => {

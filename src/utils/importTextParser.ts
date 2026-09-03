@@ -3,15 +3,11 @@
  *
  * JSON構文、外側の形式、各 localStorage 値の順に確認し、保存処理へ渡せるデータだけを返す。
  */
-import * as constant from '../constant'
 import { EXPORT_KEYS } from '../data/ui'
 import type { ExportKey } from '../data/ui'
 import i18n from '../i18n'
-import { hasMissingAppPreferencesDefaults } from './appPreferences'
 import type { ImportSalvageResult, ValidatedStorageEntry } from './importDataValidation'
-import { getImportValueDefinition, isExportData, isExportKey } from './importDataValidation'
-import { hasMissingScoreSettingsDefaults } from './scoreSettings'
-import { inspectScorePresetArray } from './scoreSettingsValidation'
+import { fillImportValueDefaults, getImportValueDefinition, isExportData, isExportKey } from './importDataValidation'
 
 /** JSON.parse が返す文字位置を取り出す正規表現。ブラウザ実装差を吸収する */
 const JSON_POSITION_PATTERN = /position\s+(\d+)/i
@@ -190,6 +186,8 @@ export function parseImportText(text: string, selectedKeys: readonly ExportKey[]
       value = rawValue
     }
 
+    value = fillImportValueDefaults(key, value)
+
     let isValid = false
     try {
       isValid = definition.validate(value)
@@ -218,23 +216,6 @@ export function parseImportText(text: string, selectedKeys: readonly ExportKey[]
       value = salvageResult.value
     }
 
-    if (key === constant.SCORE_SETTINGS_STORAGE_KEY && hasMissingScoreSettingsDefaults(value)) {
-      warnings.push(i18n.t('ui.message.import_warning_defaults', { item: itemLabel }))
-    }
-    if (key === constant.APP_PREFERENCES_STORAGE_KEY && hasMissingAppPreferencesDefaults(value)) {
-      warnings.push(i18n.t('ui.message.import_warning_defaults', { item: itemLabel }))
-    }
-    if (key === constant.SCORE_PRESETS_STORAGE_KEY) {
-      const inspection = inspectScorePresetArray(value)
-      if (inspection.missingDefaultsCount > 0) {
-        warnings.push(
-          i18n.t('ui.message.import_warning_missing_defaults_count', {
-            item: itemLabel,
-            count: inspection.missingDefaultsCount,
-          }),
-        )
-      }
-    }
     // Web Storageへ保存するときだけ、値をコンパクトなJSON文字列へ戻す
     entries.push([key, JSON.stringify(value)])
   }

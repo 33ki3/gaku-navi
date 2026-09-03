@@ -4,6 +4,7 @@
 import * as constant from '../constant'
 import type { UnitSimulatorSettings } from '../types/unit'
 import { isUnitSimulatorSettings } from './settingsValidation'
+import { isRecord } from './valueValidation'
 
 /**
  * 共有既定値の入れ子を変更しないよう、新しい設定一式を作る
@@ -49,6 +50,17 @@ function cloneSettings(settings: UnitSimulatorSettings): UnitSimulatorSettings {
 }
 
 /**
+ * 保存済み最適編成設定へ、コード側の既定値を補完する
+ *
+ * @param value - 保存データから読み込んだ値
+ * @returns 補完済み設定。設定の構造が壊れている場合は null
+ */
+function parseUnitSimulatorSettings(value: unknown): UnitSimulatorSettings | null {
+  const settings = isRecord(value) ? { ...createDefaultSettings(), ...value } : value
+  return isUnitSimulatorSettings(settings) ? cloneSettings(settings) : null
+}
+
+/**
  * localStorage から最適編成設定を読み込む
  *
  * @returns 保存済み設定。未保存または不正な場合は既定値
@@ -59,7 +71,7 @@ export function loadUnitSimulatorSettings(): UnitSimulatorSettings {
     if (raw === null) return createDefaultSettings()
 
     const parsed: unknown = JSON.parse(raw)
-    return isUnitSimulatorSettings(parsed) ? cloneSettings(parsed) : createDefaultSettings()
+    return parseUnitSimulatorSettings(parsed) ?? createDefaultSettings()
   } catch {
     return createDefaultSettings()
   }

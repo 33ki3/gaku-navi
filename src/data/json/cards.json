@@ -24022,5 +24022,105 @@
       "custom_cap": 1,
       "custom_slot": []
     }
+  },
+  {
+    "name": "イクラ～♪　ウニ～♪",
+    "rarity": "ssr",
+    "plan": "logic",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "event",
+    "source_detail": "さいごの文化祭",
+    "is_event_source": true,
+    "release_date": "2026/09/04",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vi_initial_stat",
+        "parameter_type": "visual",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vi_sp_lesson_rate",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "p_item_acquire",
+        "trigger_key": "p_item_acquire",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 6
+      },
+      {
+        "name_key": "good_impression_card_acquire",
+        "trigger_key": "good_impression_card_acquire",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_change",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "たらふくすし放題♪",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "exam_start"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "hp_recovery",
+            "value": 6
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 4
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

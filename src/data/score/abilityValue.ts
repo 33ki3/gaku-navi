@@ -114,6 +114,7 @@ const stageData = {
     [AbilityNameKeyType.EventBoost]: ['50%', '75%', '100%'],
     [AbilityNameKeyType.ExamEnd]: ['11', '17'],
     [AbilityNameKeyType.ExamHp]: ['4', '6'],
+    [AbilityNameKeyType.GoodImpressionCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.InitialPp]: ['20', '30'],
     [AbilityNameKeyType.InitialStat]: ['52', '55', '59', '62', '65'],
     [AbilityNameKeyType.LessonEnd]: ['3', '4'],

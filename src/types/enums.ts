@@ -1561,6 +1561,8 @@ export const EffectTemplateKeyType = {
 
   /** 授業・営業終了時 */
   ClassWorkEnd: 'class_work_end',
+  /** 試験開始時 */
+  ExamStart: 'exam_start',
   /** 試験終了時 */
   ExamEnd: 'exam_end',
   /** レッスンリミット */

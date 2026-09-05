@@ -12,6 +12,7 @@ import * as data from '../data'
 import type { TranslationKey } from '../i18n'
 import type { ParameterValues, PerLessonParameterValues, ScoreSettings } from '../types/card'
 import * as enums from '../types/enums'
+import { calculateParameterBonusFromSchedule } from './calculator/parameterBonus'
 import { resolveHifLessonPair } from './hifScheduleHelpers'
 import { isScoreSettings } from './scoreSettingsValidation'
 import { isRecord } from './valueValidation'
@@ -91,6 +92,61 @@ export function normalizeScoreSettings(value: unknown): ScoreSettings | null {
   return isScoreSettings(normalized) ? normalized : null
 }
 
+/** localStorage保存時に自動計算値を任意項目として扱う型 */
+type PersistedScoreSettings = Omit<ScoreSettings, 'parameterBonusBase'> & {
+  parameterBonusBase?: ParameterValues
+}
+
+/** シナリオに対して使用する難易度を解決する。 */
+export function resolveScoreSettingsDifficulty(
+  scenario: enums.ScenarioType,
+  difficulty: enums.DifficultyType | null | undefined,
+): enums.DifficultyType {
+  if (scenario === enums.ScenarioType.Hif || scenario === enums.ScenarioType.Custom) {
+    return enums.DifficultyType.None
+  }
+
+  return difficulty && difficulty !== enums.DifficultyType.None ? difficulty : constant.DEFAULT_DIFFICULTY
+}
+
+/** スケジュール設定から派生する値を正規化する。 */
+export function normalizeScoreSettingsDerived(settings: ScoreSettings): ScoreSettings {
+  const difficulty = resolveScoreSettingsDifficulty(settings.scenario, settings.difficulty)
+  if (!settings.useScheduleLimits || settings.useCustomMode) {
+    return { ...settings, difficulty }
+  }
+
+  return {
+    ...settings,
+    difficulty,
+    parameterBonusBase: calculateParameterBonusFromSchedule(
+      settings.scheduleSelections,
+      settings.scenario,
+      difficulty,
+      settings.hifLessonSplitSub,
+      settings.hifExamRatios,
+    ),
+  }
+}
+
+/** 自動計算される値を保存せず、設定をlocalStorage保存形式へ変換する */
+export function getScoreSettingsForStorage(settings: ScoreSettings): PersistedScoreSettings {
+  const normalizedSettings = normalizeScoreSettingsDerived(settings)
+  const useSchedule = normalizedSettings.useScheduleLimits && !normalizedSettings.useCustomMode
+  const actionCounts: ScoreSettings['actionCounts'] = {}
+  for (const { id } of data.ActionCategoryList) {
+    if (useSchedule && data.ScheduleControlledIds.has(id)) continue
+    const count = normalizedSettings.actionCounts[id]
+    if (count !== undefined) actionCounts[id] = count
+  }
+
+  if (!useSchedule) return { ...normalizedSettings, actionCounts }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { parameterBonusBase: _parameterBonusBase, ...persistedSettings } = normalizedSettings
+  return { ...persistedSettings, actionCounts }
+}
+
 /**
  * 現在のスコア設定からスケジュール選択のみを初期化した設定を返す。
  *
@@ -99,10 +155,10 @@ export function normalizeScoreSettings(value: unknown): ScoreSettings | null {
  */
 export function resetScheduleSelectionsOnly(settings: ScoreSettings): ScoreSettings {
   const defaultScheduleSelections = createDefaultSettings(settings.scenario).scheduleSelections
-  return {
+  return normalizeScoreSettingsDerived({
     ...settings,
     scheduleSelections: defaultScheduleSelections,
-  }
+  })
 }
 
 /** localStorage の生データを安全にパースして ScoreSettings に変換する */
@@ -285,25 +341,19 @@ export function mergeScheduleCounts(
   settings: ScoreSettings,
   schedule: ScheduleWeekData[],
 ): Partial<Record<enums.ActionIdType, number>> {
-  // スケジュール自動計算が無効なら、手動入力の値をそのまま返す
-  if (!settings.useScheduleLimits) {
-    // 参照共有による後段の意図しない変更を防ぐため、常にコピーを返す
-    return { ...settings.actionCounts }
-  }
-
-  // スケジュール選択からアクション回数を計算する
-  const scheduleCounts = calculateCountsFromSchedule(settings.scheduleSelections, schedule)
-
-  // スケジュールで自動制御されるアクションIDの一覧を作る
-  const scheduleControlledIds = new Set(Object.values(data.ActivityActionMap).flat())
-
-  // 手動入力をベースに、自動制御分だけ上書きする
   const merged = { ...settings.actionCounts }
-  for (const id of scheduleControlledIds) {
-    merged[id] = scheduleCounts[id] ?? 0
+
+  if (settings.useScheduleLimits) {
+    // スケジュール選択からアクション回数を計算する
+    const scheduleCounts = calculateCountsFromSchedule(settings.scheduleSelections, schedule)
+
+    // 手動入力をベースに、自動制御分だけ上書きする
+    for (const id of data.ScheduleControlledIds) {
+      merged[id] = scheduleCounts[id] ?? 0
+    }
   }
 
-  // Vo/Da/Vi 分割されたカウントから合計値を集計する
+  // 自動・手動のどちらでも、合算値は通常/SPの内訳から作る
   computeLessonTotals(merged)
 
   return merged
@@ -352,16 +402,15 @@ export function loadScoreSettings(): ScoreSettings {
   try {
     const parsed = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
     if (!parsed) return createDefaultSettings()
-    if (parsed.scenario === enums.ScenarioType.Hif) {
-      // HIF のスケジュール選択はシナリオ別キーから読み込む
-      const scheduleSelections = loadScheduleSelections(parsed.scenario)
-      return {
-        ...parsed,
-        scheduleSelections,
-      }
-    }
-    // HIF 以外は共有キーの scheduleSelections を使用する（旧来通り）
-    return parsed
+    const scheduleSelections =
+      parsed.scenario === enums.ScenarioType.Hajime || parsed.scenario === enums.ScenarioType.Custom
+        ? parsed.scheduleSelections
+        : loadScheduleSelections(parsed.scenario)
+
+    return normalizeScoreSettingsDerived({
+      ...parsed,
+      scheduleSelections,
+    })
   } catch {
     return createDefaultSettings()
   }
@@ -402,24 +451,29 @@ export function sumCustomParamBonusRows(rows: ParameterValues[]): ParameterValue
  */
 export function saveScoreSettings(settings: ScoreSettings): void {
   try {
+    const persistedSettings = getScoreSettingsForStorage(settings)
+
     // Hajime 以外（カスタム除く）の scheduleSelections はシナリオ別キーに保存する
-    if (settings.scenario !== enums.ScenarioType.Custom && settings.scenario !== enums.ScenarioType.Hajime) {
+    if (
+      persistedSettings.scenario !== enums.ScenarioType.Custom &&
+      persistedSettings.scenario !== enums.ScenarioType.Hajime
+    ) {
       const rawSchedules = localStorage.getItem(constant.SCHEDULE_SELECTIONS_STORAGE_KEY)
       const allSchedules: ScenarioScheduleSelections = rawSchedules
         ? (JSON.parse(rawSchedules) as ScenarioScheduleSelections)
         : {}
-      allSchedules[settings.scenario] = { ...settings.scheduleSelections }
+      allSchedules[persistedSettings.scenario] = { ...persistedSettings.scheduleSelections }
       localStorage.setItem(constant.SCHEDULE_SELECTIONS_STORAGE_KEY, JSON.stringify(allSchedules))
     }
 
-    if (settings.scenario === enums.ScenarioType.Hajime) {
+    if (persistedSettings.scenario === enums.ScenarioType.Hajime) {
       // Hajime は scheduleSelections を含めて共有キーに保存する
-      localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+      localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(persistedSettings))
     } else {
       // Hajime 以外は scheduleSelections を除いた設定を共有キーに保存する
       // 共有キーの scheduleSelections は Hajime 用として保持する
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { scheduleSelections: _omit, ...settingsWithoutSchedule } = settings
+      const { scheduleSelections: _omit, ...settingsWithoutSchedule } = persistedSettings
       const previousShared = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
       const preservedHajimeSchedules = previousShared?.scheduleSelections
       const sharedPayload = preservedHajimeSchedules

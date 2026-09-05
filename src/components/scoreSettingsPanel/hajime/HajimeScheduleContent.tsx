@@ -10,6 +10,7 @@ import type { ScoreSettings } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
 import { getParameterBonusBreakdown } from '../../../utils/calculator/parameterBonus'
+import { normalizeScoreSettingsDerived } from '../../../utils/scoreSettings'
 import { CheckboxField } from '../../ui/CheckboxField'
 import { ScheduleSummary } from '../ScheduleSummary'
 import { ScheduleWeekSelector } from '../ScheduleWeekSelector'
@@ -52,7 +53,14 @@ export function HajimeScheduleContent({
       <CheckboxField
         label={t('ui.settings.schedule_auto')}
         checked={settings.useScheduleLimits}
-        onChange={(checked) => onSettingsChange({ ...settings, useScheduleLimits: checked })}
+        onChange={(checked) =>
+          onSettingsChange(
+            normalizeScoreSettingsDerived({
+              ...settings,
+              useScheduleLimits: checked,
+            }),
+          )
+        }
       />
       {/* 週ごとのアクティビティ選択UI */}
       {scheduleData && (

@@ -53,9 +53,9 @@ describe('useCardScores', () => {
   })
 
   it('アクション回数を設定すると全サポートにスコアが算出される', () => {
-    // レッスン回数を10に設定してフックを実行する
+    // 通常レッスン（Vo）を10回に設定してフックを実行する
     const settings = emptySettings()
-    settings.actionCounts = { [enums.ActionIdType.Lesson]: 10 }
+    settings.actionCounts = { [enums.ActionIdType.NormalLessonVo]: 10 }
     const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // lesson_end トリガーのアビリティを持つサポートがスコア > 0 で計算されること
@@ -65,9 +65,9 @@ describe('useCardScores', () => {
   })
 
   it('cardScores は cardResults の totalIncrease を返す', () => {
-    // レッスン回数5でフックを実行し、cardScores と cardResults の整合性を確認する
+    // 通常レッスン（Vo）5回でフックを実行し、cardScores と cardResults の整合性を確認する
     const settings = emptySettings()
-    settings.actionCounts = { [enums.ActionIdType.Lesson]: 5 }
+    settings.actionCounts = { [enums.ActionIdType.NormalLessonVo]: 5 }
     const { result } = renderHook(() => useCardScores(data.AllCards, data.CardByName, settings, {}))
 
     // cardScoresの各値が対応するcardResults.totalIncreaseと一致すること（サポート一覧のスコア表示が計算詳細の合計と食い違わないための検証）

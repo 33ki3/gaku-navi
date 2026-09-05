@@ -12,8 +12,14 @@ import {
   prepareImportText,
 } from '../../utils/exportImport'
 import { loadFilterState } from '../../utils/filterStorage'
-import { loadPresets } from '../../utils/presetHelpers'
-import { createDefaultSettings, loadScoreSettings, normalizeScoreSettings } from '../../utils/scoreSettings'
+import { loadPresets, savePreset } from '../../utils/presetHelpers'
+import {
+  createDefaultSettings,
+  loadScoreSettings,
+  mergeScheduleCounts,
+  normalizeScoreSettings,
+  saveScoreSettings,
+} from '../../utils/scoreSettings'
 import { loadUnitSimulatorSettings } from '../../utils/unitSimulatorSettings'
 import { createCompleteExportValues } from '../fixtures/exportData'
 
@@ -35,6 +41,53 @@ function makeImportData(data: Record<string, unknown>, version = constant.EXPORT
 // プレビュー、正常反映、部分的な欠損、構文エラーの各経路で
 // 保存文字列と画面用の補完値を確認する
 describe('importUserDataText', () => {
+  it.each([
+    { useScheduleLimits: true, useCustomMode: false },
+    { useScheduleLimits: false, useCustomMode: false },
+    { useScheduleLimits: true, useCustomMode: true },
+  ])('旧合算値を含むJSONの入力値と計算結果を保存後も維持する: %o', (mode) => {
+    const settings = {
+      ...createDefaultSettings(),
+      ...mode,
+      actionCounts: {
+        [enums.ActionIdType.LessonVo]: 99,
+        [enums.ActionIdType.Lesson]: 99,
+        [enums.ActionIdType.NormalLessonVo]: 2,
+        [enums.ActionIdType.SpLessonVo]: 3,
+        [enums.ActionIdType.SpLesson20]: 1,
+      },
+    }
+    const imported = importUserDataText(
+      makeImportData({
+        [constant.SCORE_SETTINGS_STORAGE_KEY]: settings,
+        [constant.SCORE_PRESETS_STORAGE_KEY]: [{ name: '旧形式', settings }],
+      }),
+    )
+    expect(imported.success).toBe(true)
+    const exported = JSON.parse(getUserDataJson())
+    expect(exported.data[constant.SCORE_SETTINGS_STORAGE_KEY].actionCounts).toMatchObject(settings.actionCounts)
+    const effectiveCounts = (value: ReturnType<typeof loadScoreSettings>) =>
+      mergeScheduleCounts({ ...value, useScheduleLimits: value.useScheduleLimits && !value.useCustomMode }, [])
+    const loaded = loadScoreSettings()
+    const before = effectiveCounts(loaded)
+    expect(before[enums.ActionIdType.LessonVo]).toBe(mode.useScheduleLimits && !mode.useCustomMode ? 2 : 5)
+    saveScoreSettings(loaded)
+    savePreset('旧形式', loadPresets()[0].settings)
+    const saved = JSON.parse(getUserDataJson())
+    for (const value of [
+      saved.data[constant.SCORE_SETTINGS_STORAGE_KEY],
+      saved.data[constant.SCORE_PRESETS_STORAGE_KEY][0].settings,
+    ]) {
+      expect(value.actionCounts).not.toHaveProperty(enums.ActionIdType.LessonVo)
+      expect(value.actionCounts).not.toHaveProperty(enums.ActionIdType.Lesson)
+      expect(value.actionCounts[enums.ActionIdType.NormalLessonVo]).toBe(2)
+      expect(value.actionCounts[enums.ActionIdType.SpLesson20]).toBe(1)
+    }
+    expect(importUserDataText(JSON.stringify(saved)).success).toBe(true)
+    expect(effectiveCounts(loadScoreSettings())).toEqual(before)
+    expect(effectiveCounts(loadPresets()[0].settings)).toEqual(before)
+  })
+
   beforeEach(() => {
     // 各ケースを空のlocalStorageから始め、前のインポート結果を持ち越さない
     localStorage.clear()
@@ -368,11 +421,39 @@ describe('importUserDataText', () => {
     expect(result.message).toContain('カスタムパラメータ行')
     expect(result.message).toContain('HIF配分比率')
     // 保存文字列ではnull要素が取り除かれ、正常な行の順序は保たれる
-    expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).toEqual({
+    const expectedSettings = {
       ...invalidSettings,
       customParamBonusRows: [validRow],
       hifExamRatios: [validRow],
-    })
+    }
+    expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).toEqual(expectedSettings)
+  })
+
+  it('既存エクスポートの自動計算パラボ対象値はエラーにせず保存し、実行時は再計算する', () => {
+    const oldSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+    }
+
+    const result = importUserDataText(
+      makeImportData({
+        [constant.SCORE_SETTINGS_STORAGE_KEY]: oldSettings,
+      }),
+    )
+
+    expect(result.success).toBe(true)
+    const stored = JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null') as Record<
+      string,
+      unknown
+    >
+    expect(stored.parameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
+    expect(loadScoreSettings().parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+
+    saveScoreSettings(loadScoreSettings())
+    expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).not.toHaveProperty(
+      'parameterBonusBase',
+    )
   })
 
   it('一覧フィルターの配列内の不正要素だけを除外する', () => {
@@ -525,7 +606,7 @@ describe('importUserDataText', () => {
     expect(result.success).toBe(true)
     expect(result.message).toContain('点数設定プリセット')
     expect(result.message).toContain('2件目（壊れたプリセット）')
-    // 保存結果は正常なプリセット1件だけになる
+    // 保存結果は正常なプリセット1件だけになり、インポート元の値は保持する
     expect(JSON.parse(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY) ?? 'null')).toEqual([validPreset])
   })
 
@@ -573,6 +654,7 @@ describe('importUserDataText', () => {
     expect(result.message).not.toContain('読み込みエラー')
 
     const stored = JSON.parse(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY) ?? 'null')
+    expect(normalizeScoreSettings(partialSettings)).not.toBeNull()
     expect(stored[0].settings).toEqual(normalizeScoreSettings(partialSettings))
 
     // アプリからの読み込みでも補完済みの値をそのまま利用できる
@@ -582,6 +664,49 @@ describe('importUserDataText', () => {
     expect(loaded[0].settings.useFixedUncap).toBe(false)
     expect(loaded[0].settings.customParamBonusRows).toEqual([{ vocal: 0, dance: 0, visual: 0 }])
     expect(loaded[0].settings.actionCounts[enums.ActionIdType.ClassWork]).toBe(2)
+  })
+
+  it('自動計算中のプリセットを読み込むとパラボ対象値を再計算する', () => {
+    const staleSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+    }
+    localStorage.setItem(
+      constant.SCORE_PRESETS_STORAGE_KEY,
+      JSON.stringify([{ name: '古い対象値', settings: staleSettings }]),
+    )
+
+    expect(loadPresets()[0]?.settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+  })
+
+  it('自動計算中の既存プリセットは次回保存でパラボ対象値を記録しない', () => {
+    const staleSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+      actionCounts: {
+        ...createDefaultSettings(enums.ScenarioType.Hajime).actionCounts,
+        [enums.ActionIdType.ActivitySupplyGift]: 88,
+        [enums.ActionIdType.LessonVo]: 77,
+        [enums.ActionIdType.NormalLessonVo]: 5,
+      },
+    }
+    localStorage.setItem(
+      constant.SCORE_PRESETS_STORAGE_KEY,
+      JSON.stringify([{ name: '古い対象値', settings: staleSettings }]),
+    )
+
+    const loaded = loadPresets()[0]
+    expect(loaded?.settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+
+    savePreset('古い対象値', loaded!.settings)
+
+    const stored = JSON.parse(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY) ?? 'null')
+    expect(stored[0].settings).not.toHaveProperty('parameterBonusBase')
+    expect(stored[0].settings.actionCounts).not.toHaveProperty(enums.ActionIdType.ActivitySupplyGift)
+    expect(stored[0].settings.actionCounts).not.toHaveProperty(enums.ActionIdType.LessonVo)
+    expect(stored[0].settings.actionCounts[enums.ActionIdType.NormalLessonVo]).toBe(5)
   })
 
   it('全項目が揃った点数設定プリセットには補完警告を出さない', () => {
@@ -797,6 +922,22 @@ describe('getUserDataJson', () => {
 
     expect(exportedText).toContain('\n  "version": 2,')
     expect(exportedText).toContain(`\n    "${constant.UNCAP_STORAGE_KEY}": {`)
+  })
+
+  it('手動入力のパラボ対象値はエクスポートへ含める', () => {
+    const manualSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      useScheduleLimits: false,
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+    }
+    localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(manualSettings))
+
+    const exported = JSON.parse(getUserDataJson()) as { data: Record<string, unknown> }
+
+    expect(exported.data[constant.SCORE_SETTINGS_STORAGE_KEY]).toMatchObject({
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+      useScheduleLimits: false,
+    })
   })
 
   it('未保存キーと壊れたキーを除外し、救出できる配列要素だけを出力する', () => {

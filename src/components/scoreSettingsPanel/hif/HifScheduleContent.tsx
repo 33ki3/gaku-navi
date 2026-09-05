@@ -9,11 +9,9 @@ import type { ScheduleWeekData } from '../../../data/score'
 import type { ScoreSettings } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
-import {
-  calculateParameterBonusFromSchedule,
-  getParameterBonusBreakdown,
-} from '../../../utils/calculator/parameterBonus'
+import { getParameterBonusBreakdown } from '../../../utils/calculator/parameterBonus'
 import { normalizeHifLessonActivityForPairMode } from '../../../utils/hifScheduleHelpers'
+import { normalizeScoreSettingsDerived } from '../../../utils/scoreSettings'
 import { CheckboxField } from '../../ui/CheckboxField'
 import { ScheduleSummary } from '../ScheduleSummary'
 import { HifScheduleWeekSelector } from './HifScheduleWeekSelector'
@@ -24,8 +22,6 @@ interface HifScheduleContentProps {
   settings: ScoreSettings
   /** 設定値変更コールバック */
   onSettingsChange: (settings: ScoreSettings) => void
-  /** 解決済み難易度（null を DEFAULT_DIFFICULTY で代替済み） */
-  resolvedDifficulty: enums.DifficultyType
   /** 週スケジュールデータ */
   scheduleData: ScheduleWeekData[] | null
   /** スケジュールから算出した回数（自動計算無効時は null） */
@@ -45,7 +41,6 @@ interface HifScheduleContentProps {
 export function HifScheduleContent({
   settings,
   onSettingsChange,
-  resolvedDifficulty,
   scheduleData,
   scheduleCounts,
   paramBonusBreakdown,
@@ -61,7 +56,14 @@ export function HifScheduleContent({
       <CheckboxField
         label={t('ui.settings.schedule_auto')}
         checked={settings.useScheduleLimits}
-        onChange={(checked) => onSettingsChange({ ...settings, useScheduleLimits: checked })}
+        onChange={(checked) =>
+          onSettingsChange(
+            normalizeScoreSettingsDerived({
+              ...settings,
+              useScheduleLimits: checked,
+            }),
+          )
+        }
       />
       {/* HIF: サブを半分ずつ割り振るチェックボックス */}
       <CheckboxField
@@ -76,19 +78,13 @@ export function HifScheduleContent({
                 ]),
               )
             : settings.scheduleSelections
-          const newBonus = calculateParameterBonusFromSchedule(
-            normalizedSelections,
-            settings.scenario,
-            resolvedDifficulty,
-            value,
-            hifExamRatios,
+          onSettingsChange(
+            normalizeScoreSettingsDerived({
+              ...settings,
+              scheduleSelections: normalizedSelections,
+              hifLessonSplitSub: value,
+            }),
           )
-          onSettingsChange({
-            ...settings,
-            scheduleSelections: normalizedSelections,
-            hifLessonSplitSub: value,
-            parameterBonusBase: newBonus,
-          })
         }}
       />
       {/* HIF週毎選択・試験比率設定UI */}
@@ -98,16 +94,14 @@ export function HifScheduleContent({
           scheduleSelections={settings.scheduleSelections}
           onSelect={onScheduleSelect}
           hifExamRatios={hifExamRatios}
-          onHifExamRatiosChange={(ratios) => {
-            const newBonus = calculateParameterBonusFromSchedule(
-              settings.scheduleSelections,
-              settings.scenario,
-              resolvedDifficulty,
-              hifLessonSplitSub,
-              ratios,
+          onHifExamRatiosChange={(ratios) =>
+            onSettingsChange(
+              normalizeScoreSettingsDerived({
+                ...settings,
+                hifExamRatios: ratios,
+              }),
             )
-            onSettingsChange({ ...settings, hifExamRatios: ratios, parameterBonusBase: newBonus })
-          }}
+          }
           hifLessonSplitSub={hifLessonSplitSub}
         />
       )}

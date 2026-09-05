@@ -12,7 +12,7 @@ import * as data from '../../data'
 import { useAccordionState } from '../../hooks'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
-import { calculateCountsFromSchedule } from '../../utils/scoreSettings'
+import { calculateCountsFromSchedule, resolveScoreSettingsDifficulty } from '../../utils/scoreSettings'
 import CollapsibleSection from '../ui/CollapsibleSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { ActionCountsSection } from './ActionCountsSection'
@@ -48,12 +48,8 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
     [enums.ScoreSettingsSectionKey.Options]: false,
   })
 
-  // 固定難易度シナリオ（HIF/Custom）では difficulty=null のため None を使う
-  const resolvedDifficulty =
-    settings.difficulty ??
-    (settings.scenario === enums.ScenarioType.Hif || settings.scenario === enums.ScenarioType.Custom
-      ? enums.DifficultyType.None
-      : constant.DEFAULT_DIFFICULTY)
+  // 固定難易度シナリオ（HIF/Custom）は None、それ以外は有効な難易度を使う
+  const resolvedDifficulty = resolveScoreSettingsDifficulty(settings.scenario, settings.difficulty)
 
   const scheduleData = useMemo(
     () => data.getScheduleData(settings.scenario, resolvedDifficulty),

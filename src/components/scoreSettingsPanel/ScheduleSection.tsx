@@ -13,7 +13,8 @@ import type { ScoreSettings } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import { CollapsibleVariantType } from '../../types/enums'
-import { calculateParameterBonusFromSchedule, getParameterBonusBreakdown } from '../../utils/calculator/parameterBonus'
+import { getParameterBonusBreakdown } from '../../utils/calculator/parameterBonus'
+import { normalizeScoreSettingsDerived } from '../../utils/scoreSettings'
 import CollapsibleSection from '../ui/CollapsibleSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { CustomParamBonusRows } from './CustomParamBonusRows'
@@ -71,18 +72,12 @@ export function ScheduleSection({
 
   const handleScheduleSelect = (week: number, activityId: enums.ActivityIdType) => {
     const newSelections = { ...settings.scheduleSelections, [week]: activityId }
-    const newBonus = calculateParameterBonusFromSchedule(
-      newSelections,
-      settings.scenario,
-      resolvedDifficulty,
-      settings.hifLessonSplitSub,
-      settings.hifExamRatios,
+    onSettingsChange(
+      normalizeScoreSettingsDerived({
+        ...settings,
+        scheduleSelections: newSelections,
+      }),
     )
-    onSettingsChange({
-      ...settings,
-      scheduleSelections: newSelections,
-      parameterBonusBase: newBonus,
-    })
   }
 
   return (
@@ -108,7 +103,6 @@ export function ScheduleSection({
           <HifScheduleContent
             settings={settings}
             onSettingsChange={onSettingsChange}
-            resolvedDifficulty={resolvedDifficulty}
             scheduleData={scheduleData}
             scheduleCounts={scheduleCounts}
             paramBonusBreakdown={paramBonusBreakdown}

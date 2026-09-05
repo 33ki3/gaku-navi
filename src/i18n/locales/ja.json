@@ -530,9 +530,6 @@
       "interval": "インターバル"
     },
     "action": {
-      "lesson_vo": "レッスン(Vo)",
-      "lesson_da": "レッスン(Da)",
-      "lesson_vi": "レッスン(Vi)",
       "normal_lesson_vo": "通常レッスン(Vo)",
       "normal_lesson_da": "通常レッスン(Da)",
       "normal_lesson_vi": "通常レッスン(Vi)",

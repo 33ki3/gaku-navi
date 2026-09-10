@@ -24135,13 +24135,15 @@
       {
         "name_key": "max_hp",
         "trigger_key": "max_hp",
-        "values": {}
+        "values": {},
+        "skip_calculation": true
       },
       {
         "name_key": "sp_lesson_hp",
         "trigger_key": "vi_sp_lesson_hp",
         "parameter_type": "visual",
-        "values": {}
+        "values": {},
+        "skip_calculation": true
       },
       {
         "name_key": "support_rate",

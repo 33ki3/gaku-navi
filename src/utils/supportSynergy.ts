@@ -126,8 +126,15 @@ export function getProvidedActions(
       provided[enums.ActionIdType.TroubleDelete] = (provided[enums.ActionIdType.TroubleDelete] ?? 0) + 1
       provided[enums.ActionIdType.Delete] = (provided[enums.ActionIdType.Delete] ?? 0) + 1
     }
-    if (hasEventEffectType(enums.EventEffectType.CardChange)) {
+    const cardChangeEvent = hasEventEffectType(enums.EventEffectType.CardChange)
+    if (cardChangeEvent) {
+      // イベントのカードチェンジは「基本」を含むカードが対象。汎用チェンジも同時に成立する。
       provided[enums.ActionIdType.Change] = (provided[enums.ActionIdType.Change] ?? 0) + 1
+      provided[enums.ActionIdType.BasicCardChange] = (provided[enums.ActionIdType.BasicCardChange] ?? 0) + 1
+    }
+    // Pアイテムのチェンジ先は基本カードとは限らないため、基本チェンジ欄だけ0で追加する。
+    if (!cardChangeEvent && provided[enums.ActionIdType.Change] !== undefined) {
+      provided[enums.ActionIdType.BasicCardChange] = provided[enums.ActionIdType.BasicCardChange] ?? 0
     }
     return provided
   }
@@ -198,6 +205,8 @@ export function getProvidedActions(
   const deleteEvent = hasEventEffectType(enums.EventEffectType.CardDelete, enums.EventEffectType.SelectDelete)
   const troubleDeletePItem = pActions.includes(enums.PItemActionType.TroubleDelete)
   const deletePItem = pActions.includes(enums.PItemActionType.Delete)
+  const cardChangeEvent = hasEventEffectType(enums.EventEffectType.CardChange)
+  const changePItem = pActions.includes(enums.PItemActionType.Change)
 
   const dualRules: [boolean, boolean, ActionIdType][] = [
     [enhanceEvent, enhancePItem, enums.ActionIdType.SkillEnhance],
@@ -208,11 +217,9 @@ export function getProvidedActions(
     [deleteEvent, deletePItem, enums.ActionIdType.MSkillDelete],
     [deleteEvent, deletePItem, enums.ActionIdType.ASkillDelete],
     [hasEventEffectType(enums.EventEffectType.TroubleDelete), troubleDeletePItem, enums.ActionIdType.TroubleDelete],
-    [
-      hasEventEffectType(enums.EventEffectType.CardChange),
-      pActions.includes(enums.PItemActionType.Change),
-      enums.ActionIdType.Change,
-    ],
+    // イベントのカードチェンジは基本カード対象なので、汎用と基本を同じ1回分提供する
+    [cardChangeEvent, changePItem, enums.ActionIdType.Change],
+    [cardChangeEvent, false, enums.ActionIdType.BasicCardChange],
   ]
   for (const [eventCond, pItemCond, actionId] of dualRules) {
     if (eventCond || pItemCond) {
@@ -224,6 +231,12 @@ export function getProvidedActions(
         provided[actionId] = (provided[actionId] ?? 0) + count
       }
     }
+  }
+
+  // Pアイテムのチェンジ先は基本カードとは限らないため、基本チェンジ欄だけ0で追加する。
+  // イベントのカードチェンジがある場合は、上のルールで1回分が既に入っている。
+  if (changePItem) {
+    provided[enums.ActionIdType.BasicCardChange] = provided[enums.ActionIdType.BasicCardChange] ?? 0
   }
 
   return provided

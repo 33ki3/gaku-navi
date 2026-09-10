@@ -24122,5 +24122,113 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "もうすぐ本番ですね",
+    "rarity": "ssr",
+    "plan": "free",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/09/10",
+    "abilities": [
+      {
+        "name_key": "max_hp",
+        "trigger_key": "max_hp",
+        "values": {},
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_hp",
+        "trigger_key": "vi_sp_lesson_hp",
+        "parameter_type": "visual",
+        "values": {},
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "basic_card_change",
+        "trigger_key": "basic_card_change",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 3
+      },
+      {
+        "name_key": "exam_15",
+        "trigger_key": "exam_15",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 5
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_change",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "素敵なお仕事",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "skill_change"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 400
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "visual",
+            "value": 25
+          },
+          {
+            "key": "hp_recovery",
+            "value": 2
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 3
+        }
+      },
+      "boost": {
+        "trigger_key": "change",
+        "parameter_type": "visual",
+        "value": 25,
+        "max_count": 3
+      }
+    },
+    "skill_card": null
   }
 ]

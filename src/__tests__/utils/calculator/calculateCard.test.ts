@@ -9,6 +9,7 @@
  * 計算ロジックの正確性が最重要。
  */
 import { describe, expect, it } from 'vitest'
+import { AllCards } from '../../../data'
 import type { SupportCard } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
@@ -736,6 +737,44 @@ describe('calculateCardParameter', () => {
     const pItemDetail = result.allAbilityDetails.find((d) => d.displayName === 'テストアイテム')
     expect(pItemDetail).toBeDefined()
     expect(pItemDetail?.total).toBe(18)
+  })
+
+  it('自身のカードチェンジがチェンジ時発動Pアイテムに自動加算され、回数調整で置換できる', () => {
+    const card = AllCards.find((c) => c.name === 'もうすぐ本番ですね')
+    expect(card).toBeDefined()
+    if (!card) return
+
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const pItemDetail = result.allAbilityDetails.find((d) => d.displayName === '素敵なお仕事')
+    expect(pItemDetail).toMatchObject({ count: 1, total: 25 })
+
+    const adjustedResult = calculateCardParameter(
+      card,
+      enums.UncapType.Zero,
+      emptyActions,
+      emptyExtra,
+      zeroBonusBase,
+      true,
+      true,
+      undefined,
+      { [enums.ActionIdType.Change]: 0 },
+    )
+    const adjustedPItemDetail = adjustedResult.allAbilityDetails.find((d) => d.displayName === '素敵なお仕事')
+    expect(adjustedPItemDetail).toMatchObject({ count: 0, total: 0 })
+
+    const customOneResult = calculateCardParameter(
+      card,
+      enums.UncapType.Zero,
+      emptyActions,
+      emptyExtra,
+      zeroBonusBase,
+      false,
+      true,
+      undefined,
+      { [enums.ActionIdType.Change]: 1 },
+    )
+    const customOnePItemDetail = customOneResult.allAbilityDetails.find((d) => d.displayName === '素敵なお仕事')
+    expect(customOnePItemDetail).toMatchObject({ count: 1, total: 25 })
   })
 
   it('複数の初期値アビリティが合算される', () => {

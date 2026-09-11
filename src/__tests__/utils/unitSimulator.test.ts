@@ -303,6 +303,26 @@ describe('最適編成', () => {
       expect(receiver!.supportSynergy).toBeGreaterThan(0)
     })
 
+    it('基本カードチェンジイベントは汎用と基本の両方を1回提供する', () => {
+      const card = AllCards.find((c) => c.name === 'もうすぐ本番ですね')
+      expect(card).toBeDefined()
+      if (!card) return
+
+      const provided = getProvidedActions(card)
+      expect(provided[enums.ActionIdType.Change]).toBe(1)
+      expect(provided[enums.ActionIdType.BasicCardChange]).toBe(1)
+    })
+
+    it('Pアイテムの汎用チェンジは基本カードチェンジを0回で提供する', () => {
+      const card = AllCards.find((c) => c.name === 'パクパクもぐもぐ')
+      expect(card).toBeDefined()
+      if (!card) return
+
+      const provided = getProvidedActions(card)
+      expect(provided[enums.ActionIdType.Change]).toBe(2)
+      expect(provided[enums.ActionIdType.BasicCardChange]).toBe(0)
+    })
+
     it('cardCountCustom で提供回数が変動する', () => {
       // 他サポートに何かを提供していて、かつ自身も同じアクションの自動ボーナスを持つサポートを探す
       // provided > 0 条件で ZERO_DEFAULT_ACTIONS（MSkillEnhance 等）を除外する

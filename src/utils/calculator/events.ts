@@ -184,6 +184,12 @@ export function getSelfAcquisitionBonus(
       enums.TriggerKeyType.Change,
       enums.ActionIdType.Change,
     ],
+    [
+      hasEventEffectType(enums.EventEffectType.CardChange),
+      false,
+      enums.TriggerKeyType.BasicCardChange,
+      enums.ActionIdType.BasicCardChange,
+    ],
   ]
 
   for (const ability of card.abilities) {

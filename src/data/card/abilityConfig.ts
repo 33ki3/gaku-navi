@@ -105,6 +105,14 @@ export const ABILITY_CONFIG: Partial<Record<AbilityNameKeyType, AbilityAutoConfi
     baseTriggerKey: TriggerKeyType.SpLessonPp,
     isPercentage: true,
   },
+  [AbilityNameKeyType.BasicCardChange]: {
+    needsParameterType: true,
+    baseTriggerKey: TriggerKeyType.BasicCardChange,
+  },
+  [AbilityNameKeyType.Exam15]: {
+    needsParameterType: true,
+    baseTriggerKey: TriggerKeyType.Exam15,
+  },
   // パラメータなし（trigger_key = name_key と同一）
   [AbilityNameKeyType.EventBoost]: {
     needsParameterType: false,

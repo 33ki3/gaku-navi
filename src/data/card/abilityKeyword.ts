@@ -114,7 +114,7 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.change',
     badge: 'card.badge.change',
     isParamCategory: false,
-    triggers: [TriggerKeyType.Change],
+    triggers: [TriggerKeyType.Change, TriggerKeyType.BasicCardChange],
   },
   {
     id: AbilityKeywordType.CardAcquire,
@@ -156,7 +156,7 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.exam',
     badge: 'card.badge.exam',
     isParamCategory: false,
-    triggers: [TriggerKeyType.ExamEnd, TriggerKeyType.ExamHp],
+    triggers: [TriggerKeyType.ExamEnd, TriggerKeyType.ExamHp, TriggerKeyType.Exam15],
   },
   {
     id: AbilityKeywordType.ActivitySupplyGift,

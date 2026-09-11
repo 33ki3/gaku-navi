@@ -216,6 +216,8 @@ export const AbilityNameKeyType = {
   ASkillDelete: 'a_skill_delete',
   /** カードチェンジ */
   Change: 'change',
+  /** 名前に「基本」を含むスキルカードチェンジ */
+  BasicCardChange: 'basic_card_change',
   /** スキルカード獲得 */
   SkillAcquire: 'skill_acquire',
   /** メンタルスキル獲得 */
@@ -260,6 +262,8 @@ export const AbilityNameKeyType = {
   ClassWorkEnd: 'class_work_end',
   /** 試験終了時 */
   ExamEnd: 'exam_end',
+  /** 所持スキルカード15枚以上で試験終了時 */
+  Exam15: 'exam_15',
   /** 差し入れ・活動支給 */
   ActivitySupplyGift: 'activity_supply_gift',
   /** 差し入れ・活動支給（回数制限） */
@@ -710,6 +714,8 @@ export const ActionIdType = {
   ASkillDelete: 'a_skill_delete',
   /** カードチェンジ */
   Change: 'change',
+  /** 名前に「基本」を含むスキルカードチェンジ */
+  BasicCardChange: 'basic_card_change',
   /** スキルカード獲得 */
   SkillAcquire: 'skill_acquire',
   /** メンタルスキル獲得 */
@@ -756,6 +762,8 @@ export const ActionIdType = {
   DrowsyAcquire: 'drowsy_acquire',
   /** 試験終了時 */
   ExamEnd: 'exam_end',
+  /** 所持スキルカード15枚以上で試験終了時 */
+  Exam15: 'exam_15',
   /** 差し入れ・活動支給 */
   ActivitySupplyGift: 'activity_supply_gift',
   /** お出かけ */
@@ -957,6 +965,8 @@ export const TriggerKeyType = {
   ASkillDelete: 'a_skill_delete',
   /** カードチェンジ */
   Change: 'change',
+  /** 名前に「基本」を含むスキルカードチェンジ */
+  BasicCardChange: 'basic_card_change',
   /** スキルカード獲得 */
   SkillAcquire: 'skill_acquire',
   /** メンタルスキル獲得 */
@@ -1005,6 +1015,8 @@ export const TriggerKeyType = {
   ClassWorkEnd: 'class_work_end',
   /** 試験終了時 */
   ExamEnd: 'exam_end',
+  /** 所持スキルカード15枚以上で試験終了時 */
+  Exam15: 'exam_15',
   /** 差し入れ・活動支給 */
   ActivitySupplyGift: 'activity_supply_gift',
   /** 差し入れ・活動支給（回数制限） */
@@ -1586,6 +1598,8 @@ export const EffectTemplateKeyType = {
 
   /** 授業・営業終了時 */
   ClassWorkEnd: 'class_work_end',
+  /** 試験開始時 */
+  ExamStart: 'exam_start',
   /** 試験終了時 */
   ExamEnd: 'exam_end',
   /** レッスンリミット */

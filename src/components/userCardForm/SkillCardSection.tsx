@@ -29,7 +29,7 @@ export default function SkillCardSection({ form, updateField }: SkillCardSection
       <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 flex flex-col gap-3">
         {/* 種別 */}
         <div>
-          <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.skillcard_type')}</label>
+          <label className={constant.USER_FORM_SECTION_LABEL}>{t('user_support.skillcard_type')}</label>
           <div className="flex gap-2">
             {data.SKILL_CARD_TYPE_OPTIONS.map((opt) => {
               const entry = data.getSkillTypeBadge(opt.value)
@@ -50,7 +50,7 @@ export default function SkillCardSection({ form, updateField }: SkillCardSection
 
         {/* レアリティ */}
         <div>
-          <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.skillcard_rarity')}</label>
+          <label className={constant.USER_FORM_SECTION_LABEL}>{t('user_support.skillcard_rarity')}</label>
           <div className="flex gap-2">
             {data.SKILL_CARD_RARITY_OPTIONS.map((opt) => {
               const rarity = isEnumValue(opt.value, enums.RarityType) ? opt.value : enums.RarityType.SSR

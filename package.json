@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "knip": {
+    "entry": ["i18next.config.ts", "src/main.tsx"],
     "ignore": [
       "src/i18n/i18next.d.ts",
       "src/env.d.ts"
@@ -15,7 +16,8 @@
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "i18n:check": "i18next-cli status && i18next-cli status --unused && vitest run src/__tests__/i18n"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.19",
@@ -37,6 +39,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "i18next-cli": "^1.69.0",
     "jsdom": "^27.0.1",
     "knip": "^5.85.0",
     "postcss": "^8.5.26",

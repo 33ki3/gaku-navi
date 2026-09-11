@@ -42,20 +42,22 @@ export default function BasicInfoSection({
     <div className="flex flex-col gap-4">
       {/* サポート名 */}
       <div>
-        <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.card_name')}</label>
+        <label className={constant.USER_FORM_SECTION_LABEL}>{t('user_support.card_name')}</label>
         <input
           type="text"
           value={form.name}
           onChange={(e) => updateField('name', e.target.value)}
-          placeholder={t('userSupport.card_name_placeholder')}
+          placeholder={t('user_support.card_name_placeholder')}
           className={`${constant.USER_FORM_INPUT} ${validation.nameError ? 'border-red-400 focus:ring-red-500' : ''}`}
         />
-        {validation.nameError && <p className="text-xs text-red-500 mt-1">{t(validation.nameError)}</p>}
+        {validation.nameError && (
+          <p className="text-xs text-red-500 mt-1">{t(data.getFormErrorTranslationKey(validation.nameError))}</p>
+        )}
       </div>
 
       {/* レアリティ */}
       <div>
-        <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.rarity')}</label>
+        <label className={constant.USER_FORM_SECTION_LABEL}>{t('user_support.rarity')}</label>
         <div className="flex gap-2">
           {data.RARITY_SELECT_OPTIONS.map((opt) => {
             const entry = data.getRarityEntry(opt.value)
@@ -81,14 +83,14 @@ export default function BasicInfoSection({
               onChange={(e) => setIsEventSource(e.target.checked)}
               className="rounded border-slate-300"
             />
-            {t('userSupport.is_event_source')}
+            {t('user_support.is_event_source')}
           </label>
         )}
       </div>
 
       {/* タイプ */}
       <div>
-        <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.type')}</label>
+        <label className={constant.USER_FORM_SECTION_LABEL}>{t('user_support.type')}</label>
         <div className="flex gap-2">
           {data.TYPE_SELECT_OPTIONS.map((opt) => {
             const entry = data.getTypeEntry(opt.value)
@@ -109,7 +111,7 @@ export default function BasicInfoSection({
 
       {/* プラン */}
       <div>
-        <label className={constant.USER_FORM_SECTION_LABEL}>{t('userSupport.plan')}</label>
+        <label className={constant.USER_FORM_SECTION_LABEL}>{t('user_support.plan')}</label>
         <div className="flex gap-2">
           {data.PLAN_SELECT_OPTIONS.map((opt) => {
             const entry = data.getPlanBadge(opt.value)

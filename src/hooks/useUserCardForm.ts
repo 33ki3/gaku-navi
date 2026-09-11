@@ -6,7 +6,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as data from '../data'
-import type { TranslationKey } from '../i18n'
 import type { Ability, SkillCardInfo, SupportCard, SupportEvent } from '../types/card'
 import * as enums from '../types/enums'
 import { deriveAbilityConfig } from '../utils/abilityDeriver'
@@ -31,14 +30,14 @@ function actionIdToBodyEntry(
 
 /** バリデーションエラー */
 export interface FormValidation {
-  /** カード名エラーメッセージの i18n キー */
-  nameError?: TranslationKey
-  /** アビリティエラーメッセージの i18n キー */
-  abilityError?: TranslationKey
+  /** カード名エラー */
+  nameError?: data.FormErrorType
+  /** アビリティエラー */
+  abilityError?: data.FormErrorType
   /** Pアイテム操作回数エラー */
-  pItemBodyCountError?: TranslationKey
+  pItemBodyCountError?: data.FormErrorType
   /** Pアイテム発動条件エラー */
-  pItemTriggerError?: TranslationKey
+  pItemTriggerError?: data.FormErrorType
 }
 
 /**
@@ -170,24 +169,24 @@ export function useUserCardForm(editingCard?: SupportCard, existingNames?: Set<s
   const validation = useMemo<FormValidation>(() => {
     const errors: FormValidation = {}
     if (!form.name.trim()) {
-      errors.nameError = 'userSupport.validation_name_required'
+      errors.nameError = data.FormErrorType.NameRequired
     }
     // 編集時は自分自身の名前を除外して重複チェック
     const checkName = form.name.trim()
     if (existingNames) {
       const isOwnName = editingCard?.name === checkName
       if (!isOwnName && existingNames.has(checkName)) {
-        errors.nameError = 'userSupport.validation_name_duplicate'
+        errors.nameError = data.FormErrorType.NameDuplicate
       }
     }
     // すべてのアビリティスロットが埋まっている必要がある
     const allFilled = form.abilities.every((row) => row.nameKey !== enums.AbilityFormValueType.None)
     if (!allFilled) {
-      errors.abilityError = 'userSupport.validation_ability_required'
+      errors.abilityError = data.FormErrorType.AbilityRequired
     }
     // Pアイテム: 発動時効果ありで回数未入力の効果がある場合（発動条件なし時は効果設定不要）
     if (form.hasPItem && form.pItemTrigger !== enums.TriggerKeyType.None && form.pItemEffects.some((e) => !e.count)) {
-      errors.pItemBodyCountError = 'userSupport.validation_body_count_required'
+      errors.pItemBodyCountError = data.FormErrorType.BodyCountRequired
     }
     return errors
   }, [form.name, form.abilities, form.hasPItem, form.pItemEffects, form.pItemTrigger, existingNames, editingCard])
@@ -290,7 +289,7 @@ export function useUserCardForm(editingCard?: SupportCard, existingNames?: Set<s
     }
     const pItem = form.hasPItem
       ? {
-          name: t('userSupport.pitem_name_suffix', { name: form.name }),
+          name: t('user_support.pitem_name_suffix', { name: form.name }),
           rarity: form.rarity === enums.RarityType.SSR ? enums.PItemRarityType.SSR : enums.PItemRarityType.SR,
           memory: enums.PItemMemoryType.NonMemorizable,
           ...(!isNoneTrigger && { trigger_key: form.pItemTrigger }),
@@ -310,7 +309,7 @@ export function useUserCardForm(editingCard?: SupportCard, existingNames?: Set<s
     // スキルカード（簡易版）
     const skillCard: SkillCardInfo | null = form.hasSkillCard
       ? {
-          name: t('userSupport.skillcard_name_suffix', { name: form.name }),
+          name: t('user_support.skillcard_name_suffix', { name: form.name }),
           rarity: form.skillCardRarity,
           type: form.skillCardType,
           lesson_limit: 0,

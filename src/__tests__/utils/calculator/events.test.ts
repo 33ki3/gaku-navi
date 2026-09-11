@@ -542,6 +542,24 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.Change]).toBe(1)
   })
 
+  it('CardChange イベント + basic_card_change トリガー → BasicCardChange +1', () => {
+    const card = makeCard({
+      events: [
+        { release: enums.ReleaseConditionType.Initial, effect_type: enums.EventEffectType.CardChange, title: 'テスト' },
+      ],
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.BasicCardChange,
+          trigger_key: enums.TriggerKeyType.BasicCardChange,
+          values: { '0': '5' },
+        },
+      ],
+    })
+    const bonus = getSelfAcquisitionBonus(card)
+    expect(bonus[enums.ActionIdType.BasicCardChange]).toBe(1)
+    expect(bonus[enums.ActionIdType.Change]).toBeUndefined()
+  })
+
   it('Pアイテム強化アクションのみ（イベント強化なし）→ SkillEnhance +1', () => {
     const card = makeCard({
       events: [
@@ -624,6 +642,34 @@ describe('getSelfAcquisitionBonus', () => {
     })
     const bonus = getSelfAcquisitionBonus(card)
     expect(bonus[enums.ActionIdType.Change]).toBe(1)
+  })
+
+  it('Pアイテムの汎用チェンジは basic_card_change トリガーを自己加算しない', () => {
+    const card = makeCard({
+      events: [
+        {
+          release: enums.ReleaseConditionType.Initial,
+          effect_type: enums.EventEffectType.ParamBoost,
+          param_value: 10,
+          title: 'テスト',
+        },
+      ],
+      p_item: {
+        name: 'テスト',
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
+        actions: [enums.PItemActionType.Change],
+      },
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.BasicCardChange,
+          trigger_key: enums.TriggerKeyType.BasicCardChange,
+          values: { '0': '5' },
+        },
+      ],
+    })
+    const bonus = getSelfAcquisitionBonus(card)
+    expect(bonus[enums.ActionIdType.BasicCardChange]).toBeUndefined()
   })
 
   it('PアイテムTroubleDeleteアクション + trouble_delete トリガー → TroubleDelete +1', () => {

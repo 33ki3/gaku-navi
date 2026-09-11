@@ -10,6 +10,7 @@ import * as constant from '../../constant'
 import { TriggerActionMap } from '../../data/score'
 import type { CardCalculationResult, ParameterValues, PerLessonParameterValues, SupportCard } from '../../types/card'
 import type { ActionIdType, TriggerKeyType, UncapType } from '../../types/enums'
+import { getProvidedActions } from '../supportSynergy'
 import { getSelfAcquisitionBonus, parseEventParameterBoost, parsePItemParameterBoost } from './events'
 import { parseAbility } from './helpers'
 
@@ -194,12 +195,19 @@ export function calculateCardParameter(
 
   // Pアイテムによるパラメータ上昇を処理する
   const pItemBoosts = includePItem ? parsePItemParameterBoost(card) : []
+  // Pアイテム自身の発動トリガーに対して、同じカードが提供するイベント/Pアイテムの回数を加算する。
+  // 回数調整が指定された場合は、後続で selfBonusCustom を優先して置換する。
+  const selfProvidedActions =
+    pItemBoosts.length > 0 ? getProvidedActions(card, { includeSelfTrigger, includePItem, actionCounts }) : {}
   for (const boost of pItemBoosts) {
     // Pアイテム発動回数の回数調整があれば回数を置換する
     const boostActionId = resolveActionId(boost.triggerKey)
     const baseCount = actionCounts[boostActionId] ?? 0
     const extraCount = extraEventCounts[boostActionId] ?? 0
-    const selfBonusCount = selfBonus[boostActionId] ?? 0
+    const selfBonusCount =
+      selfBonusCustom && boostActionId in selfBonusCustom
+        ? selfBonusCustom[boostActionId]!
+        : (selfProvidedActions[boostActionId] ?? 0)
     const rawCount = baseCount + extraCount + selfBonusCount
 
     // 自動カウント回数を記録する（回数調整なしの値）

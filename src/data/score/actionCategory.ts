@@ -45,6 +45,7 @@ const data: ActionGroupEntry[] = [
       { id: ActionIdType.NormalLessonDa, label: 'score.action.normal_lesson_da' },
       { id: ActionIdType.NormalLessonVi, label: 'score.action.normal_lesson_vi' },
       { id: ActionIdType.SpLesson20, label: 'score.action.sp_lesson_20' },
+      { id: ActionIdType.Exam15, label: 'score.action.exam_15' },
     ],
   },
   {
@@ -107,6 +108,7 @@ const data: ActionGroupEntry[] = [
     label: 'score.action_group.other',
     categories: [
       { id: ActionIdType.Change, label: 'score.action.change' },
+      { id: ActionIdType.BasicCardChange, label: 'score.action.basic_card_change' },
       { id: ActionIdType.Customize, label: 'score.action.customize' },
       { id: ActionIdType.PItemAcquire, label: 'score.action.p_item' },
     ],

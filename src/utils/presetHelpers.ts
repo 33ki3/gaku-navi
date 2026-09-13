@@ -7,7 +7,7 @@
 
 import * as constant from '../constant'
 import type { ScoreSettings } from '../types/card'
-import { normalizeScoreSettings } from './scoreSettings'
+import { getScoreSettingsForStorage, normalizeScoreSettings, normalizeScoreSettingsDerived } from './scoreSettings'
 import { isRecord } from './valueValidation'
 
 /** プリセット1件のデータ。保存名と設定値を持つ。 */
@@ -16,6 +16,25 @@ export interface ScorePreset {
   name: string
   /** 保存された点数設定 */
   settings: ScoreSettings
+}
+
+/** プリセット一覧をlocalStorage保存形式へ変換する */
+function getScorePresetsForStorage(presets: readonly ScorePreset[]) {
+  return presets.map(({ name, settings }) => ({
+    name,
+    settings: getScoreSettingsForStorage(settings),
+  }))
+}
+
+/** 保存データのプリセット配列を実行時設定へ変換する */
+function normalizeScorePresets(value: unknown): ScorePreset[] | null {
+  if (!Array.isArray(value)) return null
+
+  return value.flatMap((item): ScorePreset[] => {
+    if (!isRecord(item) || typeof item.name !== 'string') return []
+    const settings = normalizeScoreSettings(item.settings)
+    return settings ? [{ name: item.name, settings: normalizeScoreSettingsDerived(settings) }] : []
+  })
 }
 
 /**
@@ -27,14 +46,8 @@ export function loadPresets(): ScorePreset[] {
   try {
     const raw = localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw) as unknown[]
-    if (!Array.isArray(parsed)) return []
     // 配列でない値・名前のない項目・設定が壊れた項目は除外し、読めるプリセットだけを残す
-    return parsed.flatMap((item): ScorePreset[] => {
-      if (!isRecord(item) || typeof item.name !== 'string') return []
-      const settings = normalizeScoreSettings(item.settings)
-      return settings ? [{ name: item.name, settings }] : []
-    })
+    return normalizeScorePresets(JSON.parse(raw)) ?? []
   } catch {
     return []
   }
@@ -47,7 +60,7 @@ export function loadPresets(): ScorePreset[] {
  */
 function savePresets(presets: ScorePreset[]): void {
   try {
-    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, JSON.stringify(presets))
+    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, JSON.stringify(getScorePresetsForStorage(presets)))
   } catch {
     /* 容量超過等は無視する */
   }
@@ -65,7 +78,7 @@ export function savePreset(name: string, settings: ScoreSettings): ScorePreset[]
   const presets = loadPresets()
 
   // 設定の name フィールドもプリセット名に合わせる
-  const savedSettings: ScoreSettings = { ...settings, name }
+  const savedSettings: ScoreSettings = { ...normalizeScoreSettingsDerived(settings), name }
 
   // 同名のプリセットがあれば上書き、なければ追加する
   const existing = presets.findIndex((p) => p.name === name)

@@ -174,6 +174,20 @@ describe('actionCategory', () => {
     }
   })
 
+  it('レッスンの合算値は入力カテゴリに含めない', () => {
+    const categoryIds = data.ActionCategoryList.map(({ id }) => id)
+
+    expect(categoryIds).not.toContain(enums.ActionIdType.LessonVo)
+    expect(categoryIds).not.toContain(enums.ActionIdType.LessonDa)
+    expect(categoryIds).not.toContain(enums.ActionIdType.LessonVi)
+    expect(categoryIds).toContain(enums.ActionIdType.NormalLessonVo)
+    expect(categoryIds).toContain(enums.ActionIdType.NormalLessonDa)
+    expect(categoryIds).toContain(enums.ActionIdType.NormalLessonVi)
+    expect(categoryIds).toContain(enums.ActionIdType.SpLessonVo)
+    expect(categoryIds).toContain(enums.ActionIdType.SpLessonDa)
+    expect(categoryIds).toContain(enums.ActionIdType.SpLessonVi)
+  })
+
   it.each(Object.values(enums.ActionGroupType))('getActionGroupLabel(%s) が文字列を返す', (group) => {
     expect(typeof data.getActionGroupLabel(group)).toBe('string')
   })

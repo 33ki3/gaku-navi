@@ -5,7 +5,7 @@
  * 手動入力とスケジュール算出のマージ・localStorage への保存/読み込みを検証する。
  * スケジュールモード（useScheduleLimits=true）ではユーザーが各週の活動を選択し、
  * そこからアクション回数が自動算出される。スケジュール制御外のアクション
- * （スキル獲得等）は手動入力値がそのまま使われる。
+ * （スキル獲得等）は手動入力値がそのまま使われる。レッスン合計はSP/通常の内訳から算出される。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as constant from '../../constant'
@@ -20,6 +20,7 @@ import {
   loadScheduleSelections,
   loadScoreSettings,
   mergeScheduleCounts,
+  normalizeScoreSettingsDerived,
   resetScheduleSelectionsOnly,
   saveScoreSettings,
 } from '../../utils/scoreSettings'
@@ -48,6 +49,39 @@ describe('createDefaultSettings', () => {
     expect(next.scheduleSelections).toEqual({})
     expect(next.name).toBe('preset')
     expect(next.actionCounts[enums.ActionIdType.ClassWork]).toBe(2)
+  })
+})
+
+/** スケジュール由来の派生値同期テスト */
+describe('normalizeScoreSettingsDerived', () => {
+  it('HIFから初編へ切り替えるときは初編の難易度で対象値を再計算する', () => {
+    const settings = {
+      ...createDefaultSettings(enums.ScenarioType.Hif),
+      scenario: enums.ScenarioType.Hajime,
+      difficulty: enums.DifficultyType.None,
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+    }
+
+    expect(normalizeScoreSettingsDerived(settings)).toMatchObject({
+      difficulty: enums.DifficultyType.Legend,
+      parameterBonusBase: { vocal: 140, dance: 55, visual: 55 },
+    })
+  })
+
+  it('自動計算をOFFにしている間は手動値を保持し、ONへ戻すと再計算する', () => {
+    const settings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+      useScheduleLimits: false,
+    }
+
+    expect(normalizeScoreSettingsDerived(settings).parameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
+    expect(normalizeScoreSettingsDerived({ ...settings, useScheduleLimits: true }).parameterBonusBase).toEqual({
+      vocal: 140,
+      dance: 55,
+      visual: 55,
+    })
   })
 })
 
@@ -267,10 +301,29 @@ describe('mergeScheduleCounts', () => {
     hifLessonSplitSub: true,
   }
 
-  it('useScheduleLimits = false の場合、手動入力の値をそのまま返す', () => {
-    const settings = { ...baseSettings, useScheduleLimits: false }
+  it('useScheduleLimits = false の場合もレッスン合計を内訳から計算し、その他は手動値を使う', () => {
+    const settings = {
+      ...baseSettings,
+      useScheduleLimits: false,
+      actionCounts: {
+        ...baseSettings.actionCounts,
+        [enums.ActionIdType.SpLessonVo]: 2,
+        [enums.ActionIdType.SpLessonDa]: 1,
+        [enums.ActionIdType.SpLessonVi]: 3,
+        [enums.ActionIdType.NormalLessonVo]: 1,
+        [enums.ActionIdType.NormalLessonDa]: 2,
+        [enums.ActionIdType.NormalLessonVi]: 4,
+        // 旧形式の合算値が残っていても、内訳を正とする
+        [enums.ActionIdType.LessonVo]: 99,
+      },
+    }
     const result = mergeScheduleCounts(settings, schedule)
+    expect(result[enums.ActionIdType.SpLesson]).toBe(6)
+    expect(result[enums.ActionIdType.NormalLesson]).toBe(7)
     expect(result[enums.ActionIdType.LessonVo]).toBe(3)
+    expect(result[enums.ActionIdType.LessonDa]).toBe(3)
+    expect(result[enums.ActionIdType.LessonVi]).toBe(7)
+    expect(result[enums.ActionIdType.Lesson]).toBe(13)
     expect(result[enums.ActionIdType.SkillAcquire]).toBe(10)
   })
 
@@ -355,6 +408,114 @@ describe('loadScoreSettings / saveScoreSettings', () => {
     const loaded = loadScoreSettings()
     expect(loaded.name).toBe('テストプリセット')
     expect(loaded.actionCounts[enums.ActionIdType.SkillAcquire]).toBe(42)
+  })
+
+  it('自動計算が有効な保存値は読み込み時にスケジュールから再計算する', () => {
+    const staleSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+    }
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify(staleSettings)
+
+    expect(loadScoreSettings().parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+  })
+
+  it('自動計算のパラボ対象値は読み込み時に再計算し、次回保存で記録しない', () => {
+    const settings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+    }
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify(settings)
+
+    const loaded = loadScoreSettings()
+    expect(loaded.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+
+    saveScoreSettings(loaded)
+
+    const stored = JSON.parse(mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]) as Record<string, unknown>
+    expect(stored).not.toHaveProperty('parameterBonusBase')
+    expect(loadScoreSettings().parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+  })
+
+  it('自動計算されるアクション回数は次回保存で記録せず、手動値は保持する', () => {
+    const settings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
+      actionCounts: {
+        ...createDefaultSettings(enums.ScenarioType.Hajime).actionCounts,
+        [enums.ActionIdType.SpLessonVo]: 99,
+        [enums.ActionIdType.ActivitySupplyGift]: 88,
+        [enums.ActionIdType.ClassWork]: 77,
+        [enums.ActionIdType.Outing]: 66,
+        [enums.ActionIdType.Consult]: 55,
+        [enums.ActionIdType.SpecialTraining]: 44,
+        [enums.ActionIdType.ExamEnd]: 33,
+        [enums.ActionIdType.ExamPItemAcquire]: 22,
+        [enums.ActionIdType.Rest]: 11,
+        [enums.ActionIdType.SpLesson]: 10,
+        [enums.ActionIdType.NormalLesson]: 9,
+        [enums.ActionIdType.Lesson]: 8,
+        [enums.ActionIdType.LessonVo]: 7,
+        [enums.ActionIdType.LessonDa]: 6,
+        [enums.ActionIdType.LessonVi]: 5,
+        [enums.ActionIdType.NormalLessonVo]: 4,
+        [enums.ActionIdType.SkillAcquire]: 3,
+      },
+    }
+
+    saveScoreSettings(settings)
+
+    const stored = JSON.parse(mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]) as {
+      actionCounts: Record<string, number>
+    }
+    for (const actionId of [
+      enums.ActionIdType.SpLessonVo,
+      enums.ActionIdType.ActivitySupplyGift,
+      enums.ActionIdType.ClassWork,
+      enums.ActionIdType.Outing,
+      enums.ActionIdType.Consult,
+      enums.ActionIdType.SpecialTraining,
+      enums.ActionIdType.ExamEnd,
+      enums.ActionIdType.ExamPItemAcquire,
+      enums.ActionIdType.Rest,
+      enums.ActionIdType.SpLesson,
+      enums.ActionIdType.NormalLesson,
+      enums.ActionIdType.Lesson,
+      enums.ActionIdType.LessonVo,
+      enums.ActionIdType.LessonDa,
+      enums.ActionIdType.LessonVi,
+    ]) {
+      expect(stored.actionCounts).not.toHaveProperty(actionId)
+    }
+    expect(stored.actionCounts[enums.ActionIdType.NormalLessonVo]).toBe(4)
+    expect(stored.actionCounts[enums.ActionIdType.SkillAcquire]).toBe(3)
+  })
+
+  it('手動入力のパラボ対象値は保存して復元する', () => {
+    const settings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      useScheduleLimits: false,
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+      actionCounts: {
+        ...createDefaultSettings(enums.ScenarioType.Hajime).actionCounts,
+        [enums.ActionIdType.SpLessonVo]: 99,
+        [enums.ActionIdType.ActivitySupplyGift]: 88,
+        [enums.ActionIdType.LessonVo]: 77,
+      },
+    }
+
+    saveScoreSettings(settings)
+
+    const stored = JSON.parse(mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]) as Record<string, unknown>
+    expect(stored.parameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
+    expect(stored.actionCounts).toMatchObject({
+      [enums.ActionIdType.SpLessonVo]: 99,
+      [enums.ActionIdType.ActivitySupplyGift]: 88,
+    })
+    expect(stored.actionCounts).not.toHaveProperty(enums.ActionIdType.LessonVo)
+    expect(loadScoreSettings().parameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
   })
 
   it('壊れたJSONの場合はデフォルトを返す', () => {

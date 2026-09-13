@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ScoreSettings, SupportCard } from '../types/card'
 import * as enums from '../types/enums'
 import { createEmptyResult } from '../utils/calculator/calculateCard'
-import { loadScoreSettings, saveScoreSettings } from '../utils/scoreSettings'
+import { loadScoreSettings, normalizeScoreSettingsDerived, saveScoreSettings } from '../utils/scoreSettings'
 import { useCardCountCustom } from './useCardCountCustom'
 import { useCardExclusions } from './useCardExclusions'
 import { useCardScores } from './useCardScores'
@@ -42,29 +42,20 @@ export function useAppState() {
 
   // スコア設定（変更時に localStorage にも保存する）
   const [scoreSettings, setScoreSettingsRaw] = useState<ScoreSettings>(() => {
-    const loaded = loadScoreSettings()
-    const normalizedDifficulty =
-      loaded.scenario === enums.ScenarioType.Hif || loaded.scenario === enums.ScenarioType.Custom
-        ? enums.DifficultyType.None
-        : enums.DifficultyType.Legend
-    return { ...loaded, difficulty: normalizedDifficulty }
+    return normalizeScoreSettingsDerived(loadScoreSettings())
   })
   const setScoreSettings = useCallback((settings: ScoreSettings) => {
-    const normalizedDifficulty =
-      settings.scenario === enums.ScenarioType.Hif || settings.scenario === enums.ScenarioType.Custom
-        ? enums.DifficultyType.None
-        : enums.DifficultyType.Legend
+    const normalizedSettings = normalizeScoreSettingsDerived(settings)
 
     // setState 後に外部参照が変更されても状態が汚染されないよう、保存前に値を複製する
     const safeSettings: ScoreSettings = {
-      ...settings,
-      difficulty: normalizedDifficulty,
-      parameterBonusBase: { ...settings.parameterBonusBase },
-      actionCounts: { ...settings.actionCounts },
-      scheduleSelections: { ...settings.scheduleSelections },
-      customParamBonusRows: settings.customParamBonusRows.map((row) => ({ ...row })),
-      customClassBonus: { ...settings.customClassBonus },
-      customNonBonusGain: { ...settings.customNonBonusGain },
+      ...normalizedSettings,
+      parameterBonusBase: { ...normalizedSettings.parameterBonusBase },
+      actionCounts: { ...normalizedSettings.actionCounts },
+      scheduleSelections: { ...normalizedSettings.scheduleSelections },
+      customParamBonusRows: normalizedSettings.customParamBonusRows.map((row) => ({ ...row })),
+      customClassBonus: { ...normalizedSettings.customClassBonus },
+      customNonBonusGain: { ...normalizedSettings.customNonBonusGain },
     }
 
     setScoreSettingsRaw(() => safeSettings)

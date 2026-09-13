@@ -117,6 +117,7 @@ function buildPItemInterpolation(part: PItemEffectPart, t: TFunction): Record<st
   if (part.turns !== undefined && part.turns !== 0) result.turns = part.turns
   // カード名・アイテム名（固有名詞をそのまま設定）
   if (part.card_name) result.card_name = part.card_name
+  if (part.pdrink_name) result.pdrink_name = part.pdrink_name
   if (part.item_name) result.item_name = part.item_name
   // 汎用テンプレートのアクションIDからラベル名を解決する（i18nキーはアプリ側で決定）
   if (part.action_id) {

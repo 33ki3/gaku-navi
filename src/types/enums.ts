@@ -1325,8 +1325,8 @@ export type CardZoneType = (typeof CardZoneType)[keyof typeof CardZoneType]
  * i18n テンプレートを識別するキー。
  */
 export const EffectTemplateKeyType = {
-  /** アイテム獲得+Pポイント */
-  AcquireItemPp: 'acquire_item_pp',
+  /** Pドリンク獲得+Pポイント */
+  AcquirePdrinkPp: 'acquire_pdrink_pp',
   /** アクティブスキルカード使用時 */
   ActiveCardUse: 'active_card_use',
 
@@ -1415,8 +1415,8 @@ export const EffectTemplateKeyType = {
   SelectSkillCardRAcquire: 'select_skill_card_r_acquire',
   /** スキルカード選択コピー+Pポイント */
   SelectCopyPp: 'select_copy_pp',
-  /** スキルカード選択削除+アイテム獲得 */
-  SelectDeleteAcquireItem: 'select_delete_acquire_item',
+  /** スキルカード選択削除+メンタルスキルカード獲得 */
+  SelectDeleteAcquireMentalCard: 'select_delete_acquire_mental_card',
   /** スキルカード選択削除+Pポイント */
   SelectDeletePp: 'select_delete_pp',
   /** スキルカード選択チェンジ */

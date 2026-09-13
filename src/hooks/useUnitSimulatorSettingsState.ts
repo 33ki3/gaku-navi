@@ -41,6 +41,7 @@ export function useUnitSimulatorSettingsState(): UnitSimulatorSettingsState {
 
       const detail: unknown = event.detail
       if (isUnitSimulatorSettings(detail)) {
+        settingsRef.current = detail
         setSettingsRaw(detail)
       }
     }
@@ -51,16 +52,22 @@ export function useUnitSimulatorSettingsState(): UnitSimulatorSettingsState {
     }
   }, [])
 
-  const setSettings = useCallback((next: UnitSimulatorSettings) => {
-    // 画面とlocalStorageを同じ値で更新し、別コンポーネントへ変更イベントを通知する
-    setSettingsRaw(next)
-    saveUnitSimulatorSettings(next)
-  }, [])
+  const setSettings = useCallback(
+    (next: UnitSimulatorSettings) => {
+      // 画面とlocalStorageを同じ値で更新し、別コンポーネントへ変更イベントを通知する
+      settingsRef.current = next
+      setSettingsRaw(next)
+      saveUnitSimulatorSettings(next)
+    },
+    [settingsRef],
+  )
 
   const reload = useCallback(() => {
     // モーダルを開く前など、保存済みの最新設定を読み直す
-    setSettingsRaw(loadUnitSimulatorSettings())
-  }, [])
+    const next = loadUnitSimulatorSettings()
+    settingsRef.current = next
+    setSettingsRaw(next)
+  }, [settingsRef])
 
   return { settings, setSettings, reload, settingsRef }
 }

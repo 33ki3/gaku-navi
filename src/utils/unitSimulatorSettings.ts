@@ -4,6 +4,7 @@
 import * as constant from '../constant'
 import type { UnitSimulatorSettings } from '../types/unit'
 import { isUnitSimulatorSettings } from './settingsValidation'
+import { isRecord } from './valueValidation'
 
 /**
  * 共有既定値の入れ子を変更しないよう、新しい設定一式を作る
@@ -21,6 +22,7 @@ function createDefaultSettings(): UnitSimulatorSettings {
     paramBonusPercent: { ...defaults.paramBonusPercent },
     lockedCards: [...defaults.lockedCards],
     manualCards: [...defaults.manualCards],
+    excludedCardNames: [...defaults.excludedCardNames],
     initialParams: { ...defaults.initialParams },
   }
 }
@@ -42,8 +44,20 @@ function cloneSettings(settings: UnitSimulatorSettings): UnitSimulatorSettings {
     paramBonusPercent: { ...settings.paramBonusPercent },
     lockedCards: [...settings.lockedCards],
     manualCards: [...settings.manualCards],
+    excludedCardNames: [...settings.excludedCardNames],
     initialParams: { ...settings.initialParams },
   }
+}
+
+/**
+ * 保存済み最適編成設定へ、コード側の既定値を補完する
+ *
+ * @param value - 保存データから読み込んだ値
+ * @returns 補完済み設定。設定の構造が壊れている場合は null
+ */
+function parseUnitSimulatorSettings(value: unknown): UnitSimulatorSettings | null {
+  const settings = isRecord(value) ? { ...createDefaultSettings(), ...value } : value
+  return isUnitSimulatorSettings(settings) ? cloneSettings(settings) : null
 }
 
 /**
@@ -57,7 +71,7 @@ export function loadUnitSimulatorSettings(): UnitSimulatorSettings {
     if (raw === null) return createDefaultSettings()
 
     const parsed: unknown = JSON.parse(raw)
-    return isUnitSimulatorSettings(parsed) ? cloneSettings(parsed) : createDefaultSettings()
+    return parseUnitSimulatorSettings(parsed) ?? createDefaultSettings()
   } catch {
     return createDefaultSettings()
   }

@@ -6,6 +6,7 @@
 import { useCallback, useMemo } from 'react'
 import type { CardDataContextValue, CardUIContextValue } from '../contexts/CardContext'
 import type { SupportCard } from '../types/card'
+import * as enums from '../types/enums'
 import type { AppState } from './useAppState'
 import type { UnitCardSelectionBridge } from './useUnitCardSelectionBridge'
 
@@ -36,9 +37,27 @@ interface UseCardInteractionsParams {
  */
 export function useCardInteractions({ state, selection }: UseCardInteractionsParams): CardInteractions {
   // Contextへ渡す操作と、ユーザー追加サポートの編集操作を状態から取り出す
-  const { handleUncapChange, handleToggleUncapEdit } = state.handlers
+  const { handleCardClick, handleScoreClick, handleUncapChange, handleToggleUncapEdit, handleToggleCardExcluded } =
+    state.handlers
   const { setEditingUserCard, setUserCardFormOpen } = state.ui
   const { deleteUserCard: removeUserCard } = state.userCards
+  const { handleManualCardClick } = selection
+
+  // 一覧のクリック入口は共通にし、現在の操作モードに応じた処理だけをここで振り分ける
+  const onCardClick = useCallback(
+    (card: SupportCard) => {
+      if (state.ui.cardListMode === enums.CardListInteractionModeType.CardExclusionEdit) {
+        handleToggleCardExcluded(card.name)
+        return
+      }
+      if (state.ui.cardListMode === enums.CardListInteractionModeType.UnitCardSelect) {
+        handleManualCardClick(card)
+        return
+      }
+      handleCardClick(card)
+    },
+    [handleCardClick, handleManualCardClick, handleToggleCardExcluded, state.ui.cardListMode],
+  )
 
   const editUserCard = useCallback(
     (card: SupportCard) => {
@@ -61,34 +80,26 @@ export function useCardInteractions({ state, selection }: UseCardInteractionsPar
   const dataContext = useMemo<CardDataContextValue>(
     () => ({
       getCardUncap: state.scores.getCardUncap,
-      onCardClick: selection.onCardClick,
-      onScoreClick: selection.onScoreClick,
+      onCardClick,
+      onScoreClick: handleScoreClick,
       onUncapChange: handleUncapChange,
-      onEditUserCard: editUserCard,
-      onDeleteUserCard: deleteUserCard,
+      isCardExcluded: state.exclusions.isCardExcluded,
     }),
-    [
-      state.scores.getCardUncap,
-      selection.onCardClick,
-      selection.onScoreClick,
-      handleUncapChange,
-      editUserCard,
-      deleteUserCard,
-    ],
+    [state.scores.getCardUncap, onCardClick, handleScoreClick, handleUncapChange, state.exclusions.isCardExcluded],
   )
 
   // 一覧へ渡す表示状態と選択可否のContext値
   const uiContext = useMemo<CardUIContextValue>(
     () => ({
+      cardListMode: state.ui.cardListMode,
       uncapEditMode: state.ui.uncapEditMode,
       onToggleUncapEdit: handleToggleUncapEdit,
-      unitCardSelectMode: state.ui.unitCardSelectMode,
       isCardEligible: selection.isCardEligible,
       eligibilityVersion: selection.eligibilityVersion,
     }),
     [
+      state.ui.cardListMode,
       state.ui.uncapEditMode,
-      state.ui.unitCardSelectMode,
       handleToggleUncapEdit,
       selection.isCardEligible,
       selection.eligibilityVersion,

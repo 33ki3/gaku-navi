@@ -14,6 +14,7 @@ import type { CardFiltersReturn } from '../../hooks'
 import * as enums from '../../types/enums'
 import { ToggleButton } from '../ui/ToggleButton'
 import { AbilityFilter } from './AbilityFilter'
+import { CardExclusionFilter } from './CardExclusionFilter'
 import { EventTypeFilter } from './EventTypeFilter'
 import { FilterSearchInput } from './FilterSearchInput'
 import { RarityTypePlanFilter } from './RarityTypePlanFilter'
@@ -46,7 +47,8 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
     filters.selectedEventFilters.size > 0 ||
     filters.selectedSources.size > 0 ||
     filters.selectedUncaps.size > 0 ||
-    filters.selectedCountCustom.size > 0
+    filters.selectedCountCustom.size > 0 ||
+    filters.selectedCardExclusionFilters.size > 0
 
   return (
     <div className="mt-3 flex flex-col gap-3">
@@ -76,6 +78,12 @@ export default memo(function FilterBar({ filters }: FilterBarProps) {
 
       {/* 凸数フィルター */}
       <UncapFilter selectedUncaps={filters.selectedUncaps} toggleUncap={filters.toggleUncap} />
+
+      {/* 最適編成候補からの除外状態フィルター */}
+      <CardExclusionFilter
+        filters={filters.selectedCardExclusionFilters}
+        toggleFilter={filters.toggleCardExclusionFilter}
+      />
 
       {/* イベント種別フィルター */}
       <EventTypeFilter

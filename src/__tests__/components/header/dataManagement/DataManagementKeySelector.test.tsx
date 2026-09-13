@@ -37,7 +37,7 @@ describe('DataManagementKeySelector', () => {
     expect(screen.getByRole('button', { name: '凸数設定' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: '点数設定保存なし' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getAllByText('保存なし').length).toBeGreaterThan(0)
-    expect(screen.getByText('1 / 10 件選択中')).toBeTruthy()
+    expect(screen.getByText(`1 / ${data.EXPORT_KEYS.length} 件選択中`)).toBeTruthy()
   })
 
   it('セクションの開閉を呼び出し元へ通知する', () => {

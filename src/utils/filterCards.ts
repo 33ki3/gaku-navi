@@ -10,6 +10,7 @@ import * as data from '../data'
 import type { SupportCard } from '../types/card'
 import type {
   AbilityKeywordType,
+  CardExclusionFilterType,
   CardType,
   CountCustomFilter,
   EventFilterType,
@@ -60,6 +61,10 @@ interface FilterSortParams {
   sortReverse: boolean
   /** サポート名 → 計算スコアのマッピング（スコアソート用） */
   cardScores: Map<string, number>
+  /** 選択中の最適編成除外状態フィルター */
+  selectedCardExclusionFilters: ReadonlySet<CardExclusionFilterType>
+  /** 最適編成から除外するサポート名の集合 */
+  excludedCardNames: ReadonlySet<string>
 }
 
 /**
@@ -109,6 +114,10 @@ interface FilterOnlyParams {
   countCustomCardNames: Set<string>
   /** サポート名 → 現在の凸数のマッピング（フィルタリング用） */
   cardUncaps: Record<string, UncapType>
+  /** 選択中の最適編成除外状態フィルター */
+  selectedCardExclusionFilters: ReadonlySet<CardExclusionFilterType>
+  /** 最適編成から除外するサポート名の集合 */
+  excludedCardNames: ReadonlySet<string>
 }
 
 /**
@@ -123,6 +132,16 @@ interface FilterOnlyParams {
 function matchesEventFilter(card: SupportCard, filter: EventFilterType): boolean {
   const effects = data.getEventFilterEffects(filter)
   return card.events.some((e) => effects.includes(e.effect_type))
+}
+
+/** 除外状態フィルターに一致するか判定する。未選択なら全カードを通す。 */
+function matchesCardExclusionFilter(
+  isExcluded: boolean,
+  selectedFilters: ReadonlySet<CardExclusionFilterType>,
+): boolean {
+  if (selectedFilters.size === 0) return true
+  const cardFilter = isExcluded ? enums.CardExclusionFilterType.Excluded : enums.CardExclusionFilterType.NotExcluded
+  return selectedFilters.has(cardFilter)
 }
 
 /**
@@ -290,9 +309,14 @@ export function filterSortedCards(sortedCards: readonly SupportCard[], params: F
     selectedCountCustom,
     countCustomCardNames,
     cardUncaps,
+    selectedCardExclusionFilters,
+    excludedCardNames,
   } = params
 
   return sortedCards.filter((card) => {
+    const isExcluded = excludedCardNames.has(card.name)
+    if (!matchesCardExclusionFilter(isExcluded, selectedCardExclusionFilters)) return false
+
     // テキスト検索: サポート名・Pアイテム名・スキルカード名・イベント名のどれかに部分一致
     const term = searchTerm.toLowerCase()
     if (

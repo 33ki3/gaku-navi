@@ -11,6 +11,7 @@ import type { CardCountCustomState } from '../../hooks/useCardCountCustom'
 import { useManualUnitSelection } from '../../hooks/useManualUnitSelection'
 import { useUnitResultSync } from '../../hooks/useUnitResultSync'
 import { useUnitSimulator } from '../../hooks/useUnitSimulator'
+import type { CardListModeController } from '../../types/app'
 import type { ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import CloseButton from '../ui/CloseButton'
@@ -20,6 +21,7 @@ import { PanelSwitcher } from '../ui/PanelSwitcher'
 import { SidePanelLayout } from '../ui/SidePanelLayout'
 import { UnitOptimizationSection } from './UnitOptimizationSection'
 import UnitSettings from './UnitSettings'
+
 interface UnitSimulatorPanelProps {
   /** パネルが開いているか */
   isOpen: boolean
@@ -33,10 +35,8 @@ interface UnitSimulatorPanelProps {
   registerAddManualCard: (handler: ((cardName: string) => void) | null) => void
   /** サポート一覧で選択可能か判定する関数の登録先 */
   registerIsCardEligible: (handler: ((card: SupportCard) => boolean) | null) => void
-  /** サポート一覧でカード選択中か */
-  unitCardSelectMode: boolean
-  /** サポート一覧の選択状態を切り替える関数 */
-  setUnitCardSelectMode: (enabled: boolean) => void
+  /** サポート一覧の操作モードと切り替え操作 */
+  cardListMode: CardListModeController
   /** サポート別の回数調整 */
   countCustom: CardCountCustomState
   /** 現在の点数設定 */
@@ -68,8 +68,7 @@ export default function UnitSimulatorPanel({
   secondPanel,
   registerAddManualCard,
   registerIsCardEligible,
-  unitCardSelectMode,
-  setUnitCardSelectMode,
+  cardListMode,
   countCustom,
   scoreSettings,
   allCards,
@@ -80,6 +79,8 @@ export default function UnitSimulatorPanel({
   onSwitchToScoreSettings,
 }: UnitSimulatorPanelProps) {
   const { t } = useTranslation()
+  const isUnitCardSelectMode = cardListMode.mode === enums.CardListInteractionModeType.UnitCardSelect
+  const isCardExclusionEditMode = cardListMode.mode === enums.CardListInteractionModeType.CardExclusionEdit
   const simulator = useUnitSimulator(allCards, allCardByName, scoreSettings)
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
 
@@ -88,8 +89,8 @@ export default function UnitSimulatorPanel({
     setSettings: simulator.setSettings,
     registerAddManualCard,
     registerIsCardEligible,
-    unitCardSelectMode,
-    setUnitCardSelectMode,
+    isUnitCardSelectMode,
+    setUnitCardSelectMode: cardListMode.setManualSelection,
     cardUncaps,
     useFixedUncap: scoreSettings.useFixedUncap,
     onClosePanel: onClose,
@@ -116,7 +117,13 @@ export default function UnitSimulatorPanel({
     [scoreSettings.scenario, scoreSettings.difficulty, simulator.settings.paramCapOverride],
   )
 
-  if (!isOpen && !pinned && !unitCardSelectMode) return null
+  // 手動選択を開始する前に除外設定を終了する
+  const startManualSelection = (slotIndex: number) => {
+    if (isCardExclusionEditMode) cardListMode.toggleExclusion()
+    manualSelection.startSlotSelection(slotIndex)
+  }
+
+  if (!isOpen && !pinned && cardListMode.mode === enums.CardListInteractionModeType.None) return null
 
   return (
     <SidePanelLayout
@@ -161,6 +168,8 @@ export default function UnitSimulatorPanel({
                 settings={simulator.settings}
                 onChange={simulator.setSettings}
                 resolvedParamCap={resolvedParamCap}
+                isCardExclusionEditMode={isCardExclusionEditMode}
+                onToggleCardExclusionMode={cardListMode.toggleExclusion}
               />
             </div>
           </CollapsibleSection>
@@ -170,9 +179,9 @@ export default function UnitSimulatorPanel({
         <UnitOptimizationSection
           simulator={simulator}
           manualSelection={{
-            active: unitCardSelectMode,
-            setActive: setUnitCardSelectMode,
-            startSlotSelection: manualSelection.startSlotSelection,
+            active: isUnitCardSelectMode,
+            setActive: cardListMode.setManualSelection,
+            startSlotSelection: startManualSelection,
             clearTargetSlot: manualSelection.clearTargetSlot,
           }}
           scoreSettings={scoreSettings}

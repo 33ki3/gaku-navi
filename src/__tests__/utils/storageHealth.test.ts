@@ -54,6 +54,39 @@ describe('storageHealth', () => {
     )
   })
 
+  it('旧保存データの不足項目は既定値補完して正常と判定する', () => {
+    localStorage.setItem(
+      constant.SCORE_SETTINGS_STORAGE_KEY,
+      JSON.stringify({ ...createDefaultSettings(), useFixedUncap: undefined }),
+    )
+    localStorage.setItem(
+      constant.FILTER_STORAGE_KEY,
+      JSON.stringify({
+        ...constant.DEFAULT_FILTER_STATE,
+        cardExclusionFilters: undefined,
+      }),
+    )
+    localStorage.setItem(
+      constant.UNIT_SIMULATOR_STORAGE_KEY,
+      JSON.stringify({
+        ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
+        excludedCardNames: undefined,
+        ignoreCardExclusions: undefined,
+      }),
+    )
+    localStorage.setItem(constant.APP_PREFERENCES_STORAGE_KEY, JSON.stringify({ showMobileBottomNav: false }))
+
+    expect(inspectStoredData()).toEqual([])
+  })
+
+  it('正常な保存データへ修復処理を呼んでも削除しない', () => {
+    const raw = JSON.stringify({ テストカード: enums.UncapType.Four })
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, raw)
+
+    expect(repairStoredData(constant.UNCAP_STORAGE_KEY)).toBe(true)
+    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(raw)
+  })
+
   it('壊れた配列要素だけを除外し、正常な要素を残して修復する', () => {
     // 正常な追加サポートとnull要素を同じ配列へ入れ、要素単位の修復を再現する
     const validSupport = {
@@ -81,6 +114,7 @@ describe('storageHealth', () => {
     // 点数設定・プリセット・フィルターの各配列へ、正常要素と不正要素を混在させる
     const scoreSettings = {
       ...createDefaultSettings(),
+      useFixedUncap: undefined,
       customParamBonusRows: [{ vocal: 1, dance: 2, visual: 3 }, null],
     }
     localStorage.setItem(constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(scoreSettings))
@@ -136,6 +170,7 @@ describe('storageHealth', () => {
     // 点数設定ではnullのカスタム行だけが除外される
     expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).toEqual({
       ...scoreSettings,
+      useFixedUncap: false,
       customParamBonusRows: [{ vocal: 1, dance: 2, visual: 3 }],
     })
     // フィルターでは不正なレアリティだけが除外され、SSRは残る

@@ -6,9 +6,11 @@
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import type { UnitSimulatorSettings } from '../../types/unit'
+import * as enums from '../../types/enums'
 import { CheckboxField } from '../ui/CheckboxField'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { SpinnerInput } from '../ui/SpinnerInput'
+import { ToggleButton } from '../ui/ToggleButton'
 
 interface UnitOptimizerOptionsProps {
   /** 現在の最適編成設定 */
@@ -19,6 +21,10 @@ interface UnitOptimizerOptionsProps {
   resolvedParamCap?: number | null
   /** パラメータ上限と候補枚数の数値設定を表示するか */
   showNumericOptions?: boolean
+  /** 除外設定モードが有効か */
+  isCardExclusionEditMode?: boolean
+  /** 除外設定モードの切り替え */
+  onToggleCardExclusionMode?: () => void
 }
 
 /**
@@ -32,11 +38,38 @@ export function UnitOptimizerOptions({
   onChange,
   resolvedParamCap,
   showNumericOptions = true,
+  isCardExclusionEditMode = false,
+  onToggleCardExclusionMode,
 }: UnitOptimizerOptionsProps) {
   const { t } = useTranslation()
 
   return (
     <div className="space-y-3">
+      {onToggleCardExclusionMode && (
+        <div className="space-y-1.5">
+          <ToggleButton
+            isActive={isCardExclusionEditMode}
+            onClick={onToggleCardExclusionMode}
+            activeClass="bg-rose-500 text-white shadow border border-transparent"
+            size={enums.ButtonSizeType.Sm}
+            className="w-full"
+          >
+            {t(
+              isCardExclusionEditMode
+                ? 'unit.settings.card_exclusion_mode_active'
+                : 'unit.settings.card_exclusion_mode',
+            )}
+          </ToggleButton>
+          <p className="text-[9px] text-slate-500">{t('unit.settings.card_exclusion_mode_tip')}</p>
+        </div>
+      )}
+      {/* 除外設定を自動最適化だけで無視する設定 */}
+      <CheckboxField
+        label={t('unit.settings.ignore_card_exclusions')}
+        checked={!!settings.ignoreCardExclusions}
+        onChange={(checked) => onChange({ ...settings, ignoreCardExclusions: checked })}
+        description={t('unit.settings.ignore_card_exclusions_tip')}
+      />
       {/* レンタル枠と通常枠のロックを、カード単位で引き継ぐ設定 */}
       <CheckboxField
         label={t('unit.settings.unify_rental_lock')}

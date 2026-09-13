@@ -17,6 +17,7 @@ export function getActiveFilterCount(filters: FilterState): number {
     filters.selectedSources.size +
     filters.selectedUncaps.size +
     filters.selectedCountCustom.size +
+    filters.selectedCardExclusionFilters.size +
     (filters.searchTerm.trim() ? 1 : 0)
   )
 }

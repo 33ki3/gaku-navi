@@ -38,6 +38,7 @@ function makeInput(): OptimizeInput {
       rentalCardName: null,
       lockedCards: [],
       manualCards: [],
+      excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       exhaustiveCandidateLimit: 10,
     },
@@ -64,6 +65,7 @@ function makeInput(): OptimizeInput {
       actionCounts: {},
     },
     cardUncaps: {},
+    excludedCardNames: [],
     allCards: [],
     cardByName: new Map(),
   }

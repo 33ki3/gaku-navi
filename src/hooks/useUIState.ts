@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as constant from '../constant'
 import type { CardCalculationResult, SupportCard } from '../types/card'
-import { FilterSortTab } from '../types/enums'
+import { CardListInteractionModeType, FilterSortTab } from '../types/enums'
 
 /** useUIState の返却型 */
 interface UIState {
@@ -36,15 +36,21 @@ interface UIState {
   /** フィルタ・ソートモーダルの選択中タブ */
   filterSortTab: FilterSortTab
   setFilterSortTab: (tab: FilterSortTab) => void
-  /** 凸数を編集できるモードかどうか */
+  /** サポート一覧で相互排他にする選択系の操作モード */
+  cardListMode: CardListInteractionModeType
+  /** サポート一覧の操作モードを直接設定する */
+  setCardListMode: (mode: CardListInteractionModeType) => void
+  /** 指定したサポート一覧操作モードを切り替える */
+  toggleCardListMode: (mode: CardListInteractionModeType) => void
+  /** 凸数セレクターを編集できるか */
   uncapEditMode: boolean
-  setUncapEditMode: (mode: boolean) => void
+  /** 凸数編集を直接設定する */
+  setUncapEditMode: (enabled: boolean) => void
+  /** 凸数編集を切り替える */
+  toggleUncapEditMode: () => void
   /** スコア内訳モーダルに渡すデータ（nullなら閉じている） */
   scoreBreakdown: { card: SupportCard; result: CardCalculationResult } | null
   setScoreBreakdown: (data: { card: SupportCard; result: CardCalculationResult } | null) => void
-  /** 手動編成のサポート一覧選択モード */
-  unitCardSelectMode: boolean
-  setUnitCardSelectMode: (mode: boolean) => void
   /** ユーザーカード登録・編集モーダルが開いているか */
   userCardFormOpen: boolean
   setUserCardFormOpen: (open: boolean) => void
@@ -72,12 +78,12 @@ export function useUIState(): UIState {
     if (saved === FilterSortTab.Filter || saved === FilterSortTab.Sort) return saved
     return FilterSortTab.Sort
   })
-  const [uncapEditMode, setUncapEditMode] = useState(false)
+  const [cardListMode, setCardListModeRaw] = useState<CardListInteractionModeType>(CardListInteractionModeType.None)
+  const [uncapEditMode, setUncapEditModeRaw] = useState(false)
   const [scoreBreakdown, setScoreBreakdown] = useState<{
     card: SupportCard
     result: CardCalculationResult
   } | null>(null)
-  const [unitCardSelectMode, setUnitCardSelectMode] = useState(false)
   const [userCardFormOpen, setUserCardFormOpen] = useState(false)
   const [editingUserCard, setEditingUserCard] = useState<SupportCard | null>(null)
 
@@ -94,6 +100,22 @@ export function useUIState(): UIState {
 
   const setSimulatorPinned = useCallback((pinned: boolean) => {
     setSimulatorPinnedRaw(pinned)
+  }, [])
+
+  const setCardListMode = useCallback((mode: CardListInteractionModeType) => {
+    setCardListModeRaw(mode)
+  }, [])
+
+  const toggleCardListMode = useCallback((mode: CardListInteractionModeType) => {
+    setCardListModeRaw((current) => (current === mode ? CardListInteractionModeType.None : mode))
+  }, [])
+
+  const setUncapEditMode = useCallback((enabled: boolean) => {
+    setUncapEditModeRaw(enabled)
+  }, [])
+
+  const toggleUncapEditMode = useCallback(() => {
+    setUncapEditModeRaw((current) => !current)
   }, [])
 
   const settingsPinned = settingsPinnedRaw
@@ -131,12 +153,14 @@ export function useUIState(): UIState {
     setFilterSortOpen,
     filterSortTab,
     setFilterSortTab,
+    cardListMode,
+    setCardListMode,
+    toggleCardListMode,
     uncapEditMode,
     setUncapEditMode,
+    toggleUncapEditMode,
     scoreBreakdown,
     setScoreBreakdown,
-    unitCardSelectMode,
-    setUnitCardSelectMode,
     userCardFormOpen,
     setUserCardFormOpen,
     editingUserCard,

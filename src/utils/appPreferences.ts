@@ -3,7 +3,7 @@
  */
 import * as constant from '../constant'
 import type { AppPreferences } from '../types/app'
-import { isAppPreferences, isImportableAppPreferences } from './settingsValidation'
+import { isAppPreferences } from './settingsValidation'
 import { isRecord } from './valueValidation'
 
 /**
@@ -23,25 +23,13 @@ function createDefaultPreferences(): AppPreferences {
  * @returns 補完済み設定。既知の設定がない場合は null
  */
 function normalizeAppPreferences(value: unknown): AppPreferences | null {
-  if (!isImportableAppPreferences(value)) return null
+  if (!isRecord(value)) return null
 
   const normalized: Record<string, unknown> = {
     ...createDefaultPreferences(),
-    ...(isRecord(value) ? value : {}),
+    ...value,
   }
   return isAppPreferences(normalized) ? normalized : null
-}
-
-/**
- * 保存データにアプリ表示設定の既定値補完が必要か判定する
- *
- * @param value - 保存データから読み込んだ値
- * @returns 欠落した既定値項目があれば true
- */
-export function hasMissingAppPreferencesDefaults(value: unknown): boolean {
-  // 保存設定のキーを既定値から取得し、新しい設定を追加しても
-  // 判定漏れが起きないようにする
-  return isRecord(value) && Object.keys(constant.DEFAULT_APP_PREFERENCES).some((key) => !(key in value))
 }
 
 /**

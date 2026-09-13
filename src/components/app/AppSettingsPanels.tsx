@@ -8,6 +8,8 @@ import { Suspense, useCallback } from 'react'
 import type { AppState } from '../../hooks/useAppState'
 import type { PanelNavigationActions } from '../../hooks/usePanelNavigation'
 import type { UnitCardSelectionBridge } from '../../hooks/useUnitCardSelectionBridge'
+import type { CardListModeController } from '../../types/app'
+import { CardListInteractionModeType } from '../../types/enums'
 import * as lazyModules from '../../utils/lazyModules'
 import { createPreloadedComponent } from '../../utils/preloadedComponent'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
@@ -23,6 +25,8 @@ interface AppSettingsPanelsProps {
   navigation: PanelNavigationActions
   /** 最適編成パネルと一覧の選択接続 */
   selection: UnitCardSelectionBridge
+  /** サポート一覧の操作モードと切り替え操作 */
+  cardListMode: CardListModeController
   /** スマホ下部メニュー分の余白をパネルに確保するか */
   reserveMobileNavSpace: boolean
 }
@@ -33,7 +37,13 @@ interface AppSettingsPanelsProps {
  * @param props - アプリ状態、パネル遷移、一覧選択接続、下部余白設定
  * @returns 表示対象の設定パネル
  */
-export function AppSettingsPanels({ state, navigation, selection, reserveMobileNavSpace }: AppSettingsPanelsProps) {
+export function AppSettingsPanels({
+  state,
+  navigation,
+  selection,
+  cardListMode,
+  reserveMobileNavSpace,
+}: AppSettingsPanelsProps) {
   const closeScoreSettings = useCallback(() => {
     state.ui.setScoreSettingsOpen(false)
     state.ui.setSettingsPinned(false)
@@ -42,7 +52,7 @@ export function AppSettingsPanels({ state, navigation, selection, reserveMobileN
   const closeUnitSimulator = useCallback(() => {
     state.ui.setSimulatorOpen(false)
     state.ui.setSimulatorPinned(false)
-    // 手動選択中は一覧からのカード追加処理を維持するため、選択モードはここで解除しない
+    // 手動選択・除外設定中は一覧との連携を維持するため、モード自体はここで解除しない
   }, [state.ui])
 
   return (
@@ -70,7 +80,9 @@ export function AppSettingsPanels({ state, navigation, selection, reserveMobileN
       )}
 
       {/* 最適編成パネル（手動選択中もマウント維持） */}
-      {(state.ui.simulatorOpen || state.ui.simulatorPinned || state.ui.unitCardSelectMode) && (
+      {(state.ui.simulatorOpen ||
+        state.ui.simulatorPinned ||
+        cardListMode.mode !== CardListInteractionModeType.None) && (
         <ErrorBoundary>
           <Suspense
             fallback={
@@ -89,8 +101,7 @@ export function AppSettingsPanels({ state, navigation, selection, reserveMobileN
               secondPanel={state.ui.bothPanelsPinned}
               registerAddManualCard={selection.registerAddManualCard}
               registerIsCardEligible={selection.registerIsCardEligible}
-              unitCardSelectMode={state.ui.unitCardSelectMode}
-              setUnitCardSelectMode={selection.setSelectionMode}
+              cardListMode={cardListMode}
               countCustom={state.scores.countCustom}
               scoreSettings={state.scores.scoreSettings}
               allCards={state.userCards.allCards}

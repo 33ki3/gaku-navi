@@ -76,6 +76,10 @@ export const FILTER_ARRAY_FIELD_METADATA: readonly ImportArrayFieldMetadata[] = 
     key: enums.ImportArrayFieldKeyType.CountCustom,
     labelKey: 'ui.message.import_field_count',
   },
+  {
+    key: enums.ImportArrayFieldKeyType.CardExclusionFilters,
+    labelKey: 'ui.message.import_field_card_exclusion',
+  },
 ]
 
 /** 最適編成設定の配列フィールドメタデータ */
@@ -91,6 +95,10 @@ export const UNIT_SETTINGS_ARRAY_FIELD_METADATA: readonly ImportArrayFieldMetada
   {
     key: enums.ImportArrayFieldKeyType.ManualCards,
     labelKey: 'ui.message.import_field_manual_card',
+  },
+  {
+    key: enums.ImportArrayFieldKeyType.ExcludedCardNames,
+    labelKey: 'ui.message.import_field_excluded_cards',
   },
 ]
 

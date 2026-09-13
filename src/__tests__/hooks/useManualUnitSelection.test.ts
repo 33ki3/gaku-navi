@@ -53,6 +53,7 @@ function createInitialSettings(): UnitSimulatorSettings {
     paramBonusPercent: { ...defaults.paramBonusPercent },
     lockedCards: [...defaults.lockedCards],
     manualCards: Array.from({ length: constant.UNIT_SIZE }, () => null),
+    excludedCardNames: [...defaults.excludedCardNames],
     initialParams: { ...defaults.initialParams },
   }
 }
@@ -79,8 +80,6 @@ function useManualSelectionHarness(onClosePanel: () => void, isMobileViewport = 
   const bridge = useUnitCardSelectionBridge({
     selectionMode: unitCardSelectMode,
     setSelectionMode: setUnitCardSelectMode,
-    openCardDetail: vi.fn(),
-    openScoreDetail: vi.fn(),
     isMobileViewport: () => isMobileViewport,
     openUnitSimulator: vi.fn(),
   })
@@ -89,7 +88,7 @@ function useManualSelectionHarness(onClosePanel: () => void, isMobileViewport = 
     setSettings,
     registerAddManualCard: bridge.registerAddManualCard,
     registerIsCardEligible: bridge.registerIsCardEligible,
-    unitCardSelectMode,
+    isUnitCardSelectMode: unitCardSelectMode,
     setUnitCardSelectMode: bridge.setSelectionMode,
     cardUncaps: {},
     useFixedUncap: true,
@@ -113,7 +112,7 @@ describe('useManualUnitSelection', () => {
     // 3番目のスロットを選択してから、一覧のカードクリックを発生させる
     act(() => {
       result.current.manualSelection.startSlotSelection(2)
-      result.current.bridge.onCardClick(targetCard)
+      result.current.bridge.handleManualCardClick(targetCard)
     })
 
     // クリックしたカードは指定スロットだけへ入り、選択モードと一覧クローズ通知も維持される
@@ -146,12 +145,25 @@ describe('useManualUnitSelection', () => {
     // PCではパネルを閉じる前に5番目のスロットを選択し、利用者の閉じる操作を再現する
     act(() => result.current.manualSelection.startSlotSelection(4))
     act(() => result.current.closePanel())
-    act(() => result.current.bridge.onCardClick(targetCard))
+    act(() => result.current.bridge.handleManualCardClick(targetCard))
 
     // パネルが閉じた後も選択モードのコールバックが残り、クリックしたカードが指定位置へ入る
     expect(result.current.panelOpen).toBe(false)
     expect(result.current.settings.manualCards[4]).toBe(targetCard.name)
     expect(result.current.unitCardSelectMode).toBe(true)
     expect(onClosePanel).not.toHaveBeenCalled()
+  })
+
+  it('除外カードでも一覧から手動編成へ新規追加できる', () => {
+    stubViewport(false)
+    const onClosePanel = vi.fn()
+    const { result } = renderHook(() => useManualSelectionHarness(onClosePanel, true))
+
+    act(() => result.current.manualSelection.startSlotSelection(0))
+    expect(result.current.bridge.isCardEligible(targetCard)).toBe(true)
+
+    act(() => result.current.bridge.handleManualCardClick(targetCard))
+
+    expect(result.current.settings.manualCards[0]).toBe(targetCard.name)
   })
 })

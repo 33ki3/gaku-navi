@@ -10,7 +10,7 @@ import type { TranslationKey } from '../i18n'
 import i18n from '../i18n'
 import * as enums from '../types/enums'
 import type { ImportSalvageResult } from './importDataValidation'
-import { getImportValueDefinition, salvageObjectArrayFields } from './importDataValidation'
+import { fillImportValueDefaults, getImportValueDefinition, salvageObjectArrayFields } from './importDataValidation'
 import { isStoredUnitMember, isStoredUnitResult } from './unitResultStorageValidation'
 
 /** エラー画面から確認・破棄できる保存データの定義 */
@@ -23,6 +23,8 @@ interface StorageHealthDefinition {
   validate: (value: unknown) => boolean
   /** 検証に失敗したときの理由の翻訳キー */
   invalidReasonKey: TranslationKey
+  /** 旧保存データの不足項目を検証前に補完する処理 */
+  fillDefaults?: (value: unknown) => unknown
   /** 配列要素単位で救出できる場合の検証処理 */
   salvage?: (value: unknown) => ImportSalvageResult | null
 }
@@ -64,6 +66,7 @@ const STORAGE_HEALTH_DEFINITIONS: StorageHealthDefinition[] = [
       labelKey: definition.labelKey,
       validate: definition.validate,
       invalidReasonKey: definition.invalidReasonKey,
+      fillDefaults: (value) => fillImportValueDefaults(key, value),
       salvage: definition.salvage,
     }
   }),
@@ -127,9 +130,10 @@ export function inspectStoredData(): StorageHealthIssue[] {
       continue
     }
 
+    const value = definition.fillDefaults?.(parsed) ?? parsed
     let isValid = false
     try {
-      isValid = definition.validate(parsed)
+      isValid = definition.validate(value)
     } catch {
       isValid = false
     }
@@ -137,7 +141,7 @@ export function inspectStoredData(): StorageHealthIssue[] {
     if (!isValid) {
       let salvageResult: ImportSalvageResult | null = null
       try {
-        salvageResult = definition.salvage?.(parsed) ?? null
+        salvageResult = definition.salvage?.(value) ?? null
       } catch {
         salvageResult = null
       }
@@ -186,7 +190,8 @@ export function discardStoredData(key: string): boolean {
  * @returns すべて破棄できた場合に true
  */
 export function discardStoredDataBatch(keys: string[]): boolean {
-  return keys.every(discardStoredData)
+  const results = keys.map(discardStoredData)
+  return results.every(Boolean)
 }
 
 /** 壊れた保存データを可能な範囲で修復し、復旧できない場合は削除する */
@@ -206,9 +211,16 @@ export function repairStoredData(key: string): boolean {
       return true
     }
 
+    const value = definition.fillDefaults?.(parsed) ?? parsed
+    try {
+      if (definition.validate(value)) return true
+    } catch {
+      /** 検証例外も通常の破損値として修復処理へ進める */
+    }
+
     let salvageResult: ImportSalvageResult | null = null
     try {
-      salvageResult = definition.salvage?.(parsed) ?? null
+      salvageResult = definition.salvage?.(value) ?? null
     } catch {
       salvageResult = null
     }
@@ -226,5 +238,6 @@ export function repairStoredData(key: string): boolean {
 
 /** 壊れた保存データを可能な範囲でまとめて修復する */
 export function repairStoredDataBatch(keys: string[]): boolean {
-  return keys.every(repairStoredData)
+  const results = keys.map(repairStoredData)
+  return results.every(Boolean)
 }

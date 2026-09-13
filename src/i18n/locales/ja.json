@@ -326,7 +326,7 @@
       "select_enhance_hp": "スキルカードを選択して強化\n・体力回復{{value}}",
       "select_delete_pp": "スキルカードを選択して削除\n・Pポイント+{{value}}",
       "select_copy_pp": "スキルカードを選択してコピー\n・Pポイント+{{value}}",
-      "select_delete_acquire_item": "スキルカードを選択して削除\n・{{item_name}}を獲得",
+      "select_delete_acquire_mental_card": "スキルカードを選択して削除\n・{{card_name}}を獲得",
       "select_cards_enhance": "スキルカードを{{count}}枚まで選択して強化",
       "trouble_delete_param_up": "ランダムなトラブルカードを削除\n・{{param}}上昇+{{value}}",
       "trouble_delete_pp": "ランダムなトラブルカードを削除\n・Pポイント+{{value}}",
@@ -372,7 +372,7 @@
       "pp_hp_recovery": "Pポイント+{{value}}\n・体力回復{{count}}",
       "random_enhance_pp": "ランダムなスキルカードを強化\n・Pポイント+{{value}}",
       "random_enhance_hp": "ランダムなスキルカードを強化\n・体力回復{{value}}",
-      "acquire_item_pp": "{{item_name}}を獲得\n・Pポイント+{{value}}",
+      "acquire_pdrink_pp": "{{pdrink_name}}を獲得\n・Pポイント+{{value}}",
       "keyword_enhance_pct": "{{keyword}}強化+{{value}}％",
       "hp_cost_reduce_turns": "消費体力減少{{turns}}ターン",
       "keyword_turns": "{{keyword}}{{turns}}ターン"

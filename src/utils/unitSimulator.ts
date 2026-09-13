@@ -25,6 +25,7 @@ import {
   createRentalBranchContexts,
   createRentalPool,
   prepareCandidates,
+  selectSynergyAwareCandidates,
 } from './unitOptimizer/candidatePreparation'
 import { countSpTypeConstrainedCombos, spTypeConstrainedCombos } from './unitOptimizer/combinatorics'
 import { createEvaluatorSeed, evaluateUnitScoreWithSeed } from './unitOptimizer/evaluator'
@@ -738,10 +739,10 @@ function calculateTotalCombos(
     scoredFree.push(c)
   }
 
-  // 実アクション回数スコア上位 candidateLimit 枚を採用する
-  const byActual = [...scoredFree].sort((a, b) => b.baseScore - a.baseScore)
-  const freePoolMap = new Map<string, CandidateCard>()
-  for (const c of byActual.slice(0, candidateLimit)) freePoolMap.set(c.card.name, c)
+  // 実アクション回数スコア上位に加えて、Pアイテム行動の相乗効果が大きい候補を採用する
+  const freePoolMap = new Map(
+    selectSynergyAwareCandidates(scoredFree, candidateLimit).map((candidate) => [candidate.card.name, candidate]),
+  )
 
   // SP制約を満たすために必要な SP カードをプールに補充する
   // レンタル候補の多くがSP属性のとき freePool から除外されても残るよう UNIT_SIZE 枚分確保する
@@ -1141,10 +1142,10 @@ export async function exhaustiveOptimizeAsync(
     scoredFree.push(c)
   }
 
-  // 実アクション回数スコア上位 candidateLimit 枚を採用する
-  const byActual = [...scoredFree].sort((a, b) => b.baseScore - a.baseScore)
-  const freePoolMap = new Map<string, CandidateCard>()
-  for (const c of byActual.slice(0, candidateLimit)) freePoolMap.set(c.card.name, c)
+  // 実アクション回数スコア上位に加えて、Pアイテム行動の相乗効果が大きい候補を採用する
+  const freePoolMap = new Map(
+    selectSynergyAwareCandidates(scoredFree, candidateLimit).map((candidate) => [candidate.card.name, candidate]),
+  )
 
   // SP制約を満たすために必要な SP カードをプールに補充する
   // レンタル候補の多くがSP属性のとき freePool から除外されても残るよう UNIT_SIZE 枚分確保する

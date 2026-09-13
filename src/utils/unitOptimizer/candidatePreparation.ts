@@ -20,7 +20,7 @@ import type { TypeCountValues, UnitSimulatorSettings } from '../../types/unit'
 import { calculateCardParameter } from '../calculator/calculateCard'
 import { parseAbility } from '../calculator/helpers'
 import { isActionId } from '../domainValueValidation'
-import { getProvidedActions } from '../supportSynergy'
+import { getPItemBodyActionCounts, getProvidedActions } from '../supportSynergy'
 import type { OptimizeInput } from '../../types/unitOptimizer'
 
 /** ActionIdType の全値（インデックス参照用） */
@@ -49,6 +49,100 @@ export interface CandidateCard {
   providedActionEntries: { actionIdx: number; count: number }[]
   /** シナジー対象アビリティ情報（evaluateUnit 高速化用） */
   synergyAbilities: SynergyAbilityInfo[]
+}
+
+/** Pアイテムの行動提供を持つ候補か判定する */
+function isPItemActionProvider(candidate: CandidateCard): boolean {
+  if ((candidate.card.p_item?.actions?.length ?? 0) > 0) return true
+  if (Object.keys(candidate.card.p_item?.provided_action_ids ?? {}).length > 0) return true
+  if (!candidate.card.p_item?.effect) return false
+  return Object.keys(getPItemBodyActionCounts(candidate.card.p_item.effect)).length > 0
+}
+
+/**
+ * 候補が実際の編成枠で他カードへ提供するアクションの相乗効果を概算する。
+ * 自身の baseScore は含めず、候補に残すべき提供元を決める補助スコアとして使う。
+ */
+function calculateReceiverSynergyPotential(provider: CandidateCard, receivers: readonly CandidateCard[]): number {
+  const receiverScores: number[] = []
+  for (const receiver of receivers) {
+    if (receiver.card.name === provider.card.name) continue
+    let receiverTotal = 0
+    for (const ability of receiver.synergyAbilities) {
+      const providedCount = provider.providedActionsVec[ability.actionIdx]
+      const availableCount =
+        ability.maxCount === undefined
+          ? providedCount
+          : Math.min(providedCount, Math.max(0, ability.maxCount - ability.usedCount))
+      if (availableCount > 0 && ability.parsedValue > 0) {
+        receiverTotal += ability.parsedValue * availableCount
+      }
+    }
+    if (receiverTotal > 0) receiverScores.push(receiverTotal)
+  }
+
+  // 候補30枚全体ではなく、提供元を除く最大5枠の受け手だけを上限評価する
+  receiverScores.sort((a, b) => b - a)
+  return receiverScores.slice(0, Math.max(0, constant.UNIT_SIZE - 1)).reduce((total, score) => total + score, 0)
+}
+
+/**
+ * Pアイテム行動提供元のうち、他カードへの寄与が大きい候補を取得する。
+ * 最終編成を決める処理ではなく、候補プールから落とさないカードを選ぶ処理。
+ */
+function getTopPItemActionProviders(candidates: readonly CandidateCard[], candidateLimit: number): CandidateCard[] {
+  const providerLimit = Math.min(candidateLimit, constant.P_ITEM_ACTION_PROVIDER_LIMIT)
+  if (providerLimit <= 0) return []
+
+  const potentialByName = new Map(
+    candidates.map((candidate) => [candidate.card.name, calculateReceiverSynergyPotential(candidate, candidates)]),
+  )
+  return [...candidates]
+    .filter(isPItemActionProvider)
+    .sort(
+      (a, b) =>
+        (potentialByName.get(b.card.name) ?? 0) - (potentialByName.get(a.card.name) ?? 0) || b.baseScore - a.baseScore,
+    )
+    .slice(0, providerLimit)
+}
+
+/** 保護候補を残しながら基礎点順で候補上限に収める */
+function trimCandidatePool(
+  candidates: readonly CandidateCard[],
+  candidateLimit: number,
+  protectedCandidates: readonly CandidateCard[] = [],
+): CandidateCard[] {
+  if (candidateLimit <= 0) return []
+
+  const selected = new Map<string, CandidateCard>()
+  for (const candidate of [...candidates].sort((a, b) => b.baseScore - a.baseScore).slice(0, candidateLimit)) {
+    selected.set(candidate.card.name, candidate)
+  }
+  for (const candidate of protectedCandidates) selected.set(candidate.card.name, candidate)
+
+  if (selected.size > candidateLimit) {
+    const protectedNames = new Set(protectedCandidates.map((candidate) => candidate.card.name))
+    const removable = [...selected.values()]
+      .filter((candidate) => !protectedNames.has(candidate.card.name))
+      .sort((a, b) => a.baseScore - b.baseScore)
+    while (selected.size > candidateLimit && removable.length > 0) {
+      selected.delete(removable.shift()!.card.name)
+    }
+  }
+
+  return [...selected.values()].sort((a, b) => b.baseScore - a.baseScore)
+}
+
+/**
+ * 基礎点上位に加えて、Pアイテム行動の相乗効果が大きい候補を残す。
+ * 保護候補は最終編成に確定採用されず、後続の実スコア評価で選別される。
+ */
+export function selectSynergyAwareCandidates(
+  candidates: readonly CandidateCard[],
+  candidateLimit: number,
+): CandidateCard[] {
+  const providers = getTopPItemActionProviders(candidates, candidateLimit)
+  return trimCandidatePool(candidates, candidateLimit, providers)
 }
 
 /** SP/タイプ別に分類した候補プール */
@@ -394,7 +488,8 @@ function categorizeCandidatePools(pool: CandidateCard[], excludedName?: string):
 /**
  * 全サポートから 4凸レンタル候補を最大 candidateLimit 枚取得する
  *
- * 実アクション回数でのスコア上位と、カウントゼロでのスコア上位の和集合を返す。
+ * 実アクション回数でのスコア上位と、カウントゼロでのスコア上位に加えて、
+ * Pアイテムの行動提供による相乗効果が大きい候補を返す。
  * これにより、アクション回数依存型（m_skill_enhance 等）と非依存型のどちらも
  * 漏れなく候補に含め、Phase 0 マルチスタートでの評価バイアスを解消する。
  *
@@ -498,7 +593,6 @@ function buildRentalPool(
   }
 
   // byActual/byZero を candidateLimit 枚ずつ取り Map で重複をマージする
-  // 重複排除後、baseScore 降順の上位 candidateLimit 枚に丸める（SP/typeCountMin 補充カードは除外対象外）
   const byActual = [...scoredCards].sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
   const byZero = [...scoredCards].sort((a, b) => b.zeroCountScore - a.zeroCountScore)
 
@@ -548,7 +642,14 @@ function buildRentalPool(
     }
   }
 
-  return [...poolMap.values()].sort((a, b) => b.baseScore - a.baseScore).slice(0, candidateLimit)
+  // 基礎点だけでは落ちるPアイテム行動提供元を候補上限内で保護する
+  const pItemActionProviders = getTopPItemActionProviders(
+    scoredCards.map(({ candidate }) => candidate),
+    candidateLimit,
+  )
+  for (const candidate of pItemActionProviders) poolMap.set(candidate.card.name, candidate)
+
+  return trimCandidatePool([...poolMap.values()], candidateLimit, pItemActionProviders)
 }
 
 /**

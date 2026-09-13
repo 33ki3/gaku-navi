@@ -22,10 +22,10 @@ workerScope.onmessage = async (event: MessageEvent<UnitOptimizerWorkerRequestMes
   if (event.data.type !== UnitOptimizerWorkerMessageType.Start) return
   try {
     const { input } = event.data.payload
-    // 受信時は配列化されている cardByName を Map に戻して実行入力を再構築する
+    // 受信したカード配列から、検索用MapだけをWorker内で再構築する
     const runtimeInput = {
       ...input,
-      cardByName: new Map(input.cardByNameEntries),
+      cardByName: new Map(input.allCards.map((card) => [card.name, card])),
     }
     const result = await exhaustiveOptimizeAsync(
       runtimeInput,

@@ -9,14 +9,13 @@ import type { ScoreSettings, SupportCard } from './card'
 import type { UncapType } from './enums'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from './unit'
 
-/** Workerへ渡す最適化入力（Mapは構造化複製しやすい配列へ変換する） */
+/** Workerへ渡す最適化入力（カード配列からWorker内でMapを再構築する） */
 export interface UnitOptimizerWorkerInput {
   settings: UnitSimulatorSettings
   scoreSettings: ScoreSettings
   cardUncaps: Record<string, UncapType>
   cardCountCustom?: CardCountCustom
   allCards: SupportCard[]
-  cardByNameEntries: Array<[string, SupportCard]>
 }
 
 /** Worker通信メッセージ種別 */

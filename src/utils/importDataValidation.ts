@@ -45,7 +45,7 @@ export interface ExportData {
   version: number
   /** エクスポートした日時 */
   exportedAt: string
-  /** localStorage キーとJSON文字列 */
+  /** 保存キーとJSON値 */
   data: Record<string, unknown>
 }
 
@@ -275,7 +275,10 @@ export function isExportKey(key: string): key is ExportKey {
 export function isExportData(value: unknown): value is ExportData {
   return (
     isRecord(value) &&
-    value.version === constant.EXPORT_VERSION &&
+    typeof value.version === 'number' &&
+    Number.isInteger(value.version) &&
+    value.version >= constant.MIN_SUPPORTED_EXPORT_VERSION &&
+    value.version <= constant.EXPORT_VERSION &&
     typeof value.exportedAt === 'string' &&
     isRecord(value.data)
   )

@@ -4,6 +4,7 @@
  * 状態管理フックと表示コンポーネントの受け渡しを明示し、個々のコンポーネントに処理の詳細を持ち込まないために使用する。
  */
 import type { ChangeEvent, RefObject } from 'react'
+import type { ExportKey } from '../../../data/ui'
 import * as enums from '../../../types/enums'
 import type { ImportPreview } from '../../../utils/exportImport'
 
@@ -29,12 +30,16 @@ export interface PendingImport {
 export interface DataManagementController {
   /** モーダルが開いているか */
   isOpen: boolean
+  /** 保存項目の選択セクションが開いているか */
+  isSelectionSectionOpen: boolean
   /** ファイルセクションが開いているか */
   isFileSectionOpen: boolean
   /** JSONセクションが開いているか */
   isJsonSectionOpen: boolean
   /** JSON入力欄に表示する文字列 */
   jsonText: string
+  /** ファイルとJSON文字列で扱う保存キー */
+  selectedKeys: readonly ExportKey[]
   /** インポート確認画面が開いているか */
   isConfirmationOpen: boolean
   /** 確認中のインポートデータ */
@@ -61,6 +66,12 @@ export interface DataManagementController {
   setJsonText: (value: string) => void
   /** JSON入力欄を現在のデータで更新する */
   reloadJsonText: () => void
+  /** 保存キーの選択状態を切り替える */
+  toggleKey: (key: ExportKey) => void
+  /** 保存キーをすべて選択する */
+  selectAllKeys: () => void
+  /** 保存キーをすべて選択解除する */
+  clearAllKeys: () => void
   /** JSON反映の確認画面を開く */
   openConfirmation: () => void
   /** インポート確認画面を閉じる */

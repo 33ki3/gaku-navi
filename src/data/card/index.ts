@@ -4,7 +4,7 @@
 export { buildAbilityBadgeMap } from './abilityBadge'
 export { AbilityCategoryParam, AbilityEffectKeywords, AbilityKeywordMap, AbilityParamKeywords } from './abilityKeyword'
 export { getMemoryBadge, getPlanBadge, getSkillTypeBadge, SelectablePlanEntries } from './badge'
-export { AllCards, CardByName } from './cards'
+export { AllCards, CardByName, inflateCards } from './cards'
 export {
   EventCategoryAcquire,
   EventFilterAcquireList,

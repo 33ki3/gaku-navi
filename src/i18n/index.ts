@@ -9,8 +9,6 @@ import { initReactI18next } from 'react-i18next'
 
 import type { ParseKeys } from 'i18next'
 
-import ja from './locales/ja.json'
-
 /** 翻訳キー型 */
 export type TranslationKey = ParseKeys
 
@@ -20,17 +18,23 @@ const DEFAULT_LANG = 'ja'
 /** デフォルト名前空間 */
 const DEFAULT_NS = 'translation'
 
-i18n.use(initReactI18next).init({
-  resources: {
-    ja: { [DEFAULT_NS]: ja },
-  },
-  lng: DEFAULT_LANG,
-  fallbackLng: DEFAULT_LANG,
-  ns: [DEFAULT_NS],
-  defaultNS: DEFAULT_NS,
-  interpolation: {
-    escapeValue: false,
-  },
-})
+/** 翻訳JSONをi18nextへ登録する */
+export function initializeI18n(ja: Record<string, unknown>): Promise<void> {
+  return i18n
+    .use(initReactI18next)
+    .init({
+      resources: {
+        ja: { [DEFAULT_NS]: ja },
+      },
+      lng: DEFAULT_LANG,
+      fallbackLng: DEFAULT_LANG,
+      ns: [DEFAULT_NS],
+      defaultNS: DEFAULT_NS,
+      interpolation: {
+        escapeValue: false,
+      },
+    })
+    .then(() => undefined)
+}
 
 export default i18n

@@ -268,7 +268,7 @@ export function getProvidedActions(
     }
   }
 
-  // 本文から判定できるカード獲得・Pアイテム獲得・削除も連携対象に含める。
+  // 本文から判定できるカード・Pドリンクの獲得と削除も連携対象に含める。
   // bodyActionCounts は1回分なので、ここでPアイテム全体の発動回数を掛ける。
   for (const [actionId, count] of Object.entries(bodyActionCounts)) {
     if (!isActionId(actionId)) continue

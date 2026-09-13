@@ -212,7 +212,7 @@ export function getSelfAcquisitionBonus(
     }
   }
 
-  // 本文から判定できるカード獲得・Pアイテム獲得・削除も自己獲得回数に含める。
+  // 本文から判定できるカード・Pドリンクの獲得と削除も自己獲得回数に含める。
   for (const ability of card.abilities) {
     if (!ability.trigger_key || ability.skip_calculation) continue
     const actionId = TriggerActionMap[ability.trigger_key]

@@ -635,14 +635,15 @@ describe('最適編成', () => {
       expect(provided[enums.ActionIdType.SkillAcquire]).toBe(5)
     })
 
-    it('Pアイテム本文のアイテム獲得も獲得回数として扱う', () => {
+    it('Pアイテム本文のPドリンク獲得も獲得回数として扱う', () => {
       const itemAcquirer = AllCards.find((c) => c.name === '自分と向き合う時間だ')
       if (!itemAcquirer) return
 
       const provided = getProvidedActions(itemAcquirer)
 
-      // サポートイベントのPアイテム獲得1回 + Pアイテム本文の獲得2回
-      expect(provided[enums.ActionIdType.PItemAcquire]).toBe(3)
+      // サポートイベントのPアイテム獲得1回と、Pアイテム本文のPドリンク獲得2回
+      expect(provided[enums.ActionIdType.PItemAcquire]).toBe(1)
+      expect(provided[enums.ActionIdType.PDrinkAcquire]).toBe(2)
     })
   })
 

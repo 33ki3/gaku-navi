@@ -6,6 +6,11 @@ export const PItemBodyActionMap: Partial<Record<EffectTemplateKeyType, readonly 
   [EffectTemplateKeyType.GenerateCard]: [ActionIdType.SkillAcquire],
   [EffectTemplateKeyType.GenerateEnhancedCard]: [ActionIdType.SkillAcquire],
   [EffectTemplateKeyType.RandomSkillCardRAcquire]: [ActionIdType.SkillAcquire],
-  [EffectTemplateKeyType.AcquireItemPp]: [ActionIdType.PItemAcquire],
-  [EffectTemplateKeyType.SelectDeleteAcquireItem]: [ActionIdType.PItemAcquire, ActionIdType.Delete],
+  [EffectTemplateKeyType.SelectSkillCardRAcquire]: [ActionIdType.SkillAcquire],
+  [EffectTemplateKeyType.AcquirePdrinkPp]: [ActionIdType.PDrinkAcquire],
+  [EffectTemplateKeyType.SelectDeleteAcquireMentalCard]: [
+    ActionIdType.SkillAcquire,
+    ActionIdType.MSkillAcquire,
+    ActionIdType.Delete,
+  ],
 }

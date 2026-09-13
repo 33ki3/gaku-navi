@@ -75,16 +75,34 @@ describe('supportSynergy', () => {
       body: [
         { key: enums.EffectTemplateKeyType.GenerateCard, count: 2 },
         { key: enums.EffectTemplateKeyType.RandomSkillCardRAcquire },
-        { key: enums.EffectTemplateKeyType.AcquireItemPp },
-        { key: enums.EffectTemplateKeyType.SelectDeleteAcquireItem },
+        { key: enums.EffectTemplateKeyType.AcquirePdrinkPp },
+        { key: enums.EffectTemplateKeyType.SelectDeleteAcquireMentalCard },
+        { key: enums.EffectTemplateKeyType.SelectSkillCardRAcquire },
       ],
     })
 
     expect(counts).toEqual({
-      [enums.ActionIdType.SkillAcquire]: 3,
-      [enums.ActionIdType.PItemAcquire]: 2,
+      [enums.ActionIdType.SkillAcquire]: 5,
+      [enums.ActionIdType.MSkillAcquire]: 1,
+      [enums.ActionIdType.PDrinkAcquire]: 1,
       [enums.ActionIdType.Delete]: 1,
     })
+  })
+
+  it('Pドリンク獲得本文をPアイテム獲得として数えない', () => {
+    const card = makeCard(
+      {
+        trigger: { key: enums.EffectTemplateKeyType.ClassWorkEnd },
+        body: [{ key: enums.EffectTemplateKeyType.AcquirePdrinkPp }],
+        limit: { key: enums.EffectTemplateKeyType.PerProduce, count: 2 },
+      },
+      [],
+    )
+
+    const provided = getProvidedActions(card)
+
+    expect(provided[enums.ActionIdType.PDrinkAcquire]).toBe(2)
+    expect(provided[enums.ActionIdType.PItemAcquire]).toBeUndefined()
   })
 
   it('ユーザー定義Pアイテムのレッスンごとの回数制限を反映する', () => {

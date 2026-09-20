@@ -423,6 +423,7 @@
         "param_up": "パラメータ+{{value}}",
         "param_up_multi": "パラメータ+{{value}}（{{count}}回）",
         "param_up_cumulative_keyword_pct_boost": "パラメータ+{{value}}（累積{{keyword}}の{{pct}}%分、パラメータ上昇量増加）",
+        "all_card_param_boost": "手札のパラメータ値増加+{{value}}",
         "growth_policy_change_param_boost": "成長：直接効果で指針を{{count}}回変更するたび、自身のパラメータ値増加+{{value}}（{{value2}}回まで）",
         "param_up_keyword_multiply": "パラメータ+{{value}}({{keyword}}効果を{{rate}}倍適用)",
         "keyword_pct_param_up": "{{keyword}}の{{pct}}%分パラメータ上昇",

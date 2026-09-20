@@ -24230,5 +24230,232 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "わたしに、まかせて",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gacha",
+    "release_date": "2026/09/20",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "full_power_card_acquire_8",
+        "trigger_key": "full_power_card_acquire_8",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "consult_skill_card_acquire",
+        "trigger_key": "consult_skill_card_acquire",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 5
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "うたたねレポート",
+      "rarity": "ssr",
+      "type": "mental",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 4,
+          "effect": {
+            "groups": [
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 4,
+                  "keyword": "full_power_value"
+                }
+              },
+              {
+                "condition": {
+                  "key": "not_keyword_status",
+                  "keyword": "full_power"
+                },
+                "action": {
+                  "key": "keyword_up",
+                  "value": 2,
+                  "keyword": "full_power_value"
+                }
+              },
+              {
+                "condition": {
+                  "key": "keyword_state",
+                  "keyword": "full_power"
+                },
+                "action": {
+                  "key": "all_card_param_boost",
+                  "value": 7
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": []
+    }
+  },
+  {
+    "name": "激辛！　初星カレー！！",
+    "rarity": "sr",
+    "plan": "anomaly",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "gacha",
+    "release_date": "2026/09/20",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "da_initial_stat",
+        "parameter_type": "dance",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "da_sp_lesson_rate",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "outing_count",
+        "trigger_key": "outing_count",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "reserve_card_acquire_8",
+        "trigger_key": "reserve_card_acquire_8",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "限界への挑戦券",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_enhance",
+          "keyword": "reserve"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "dance",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "dance",
+            "value": 20
+          },
+          {
+            "key": "pp_gain",
+            "value": 10
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 3
+        }
+      },
+      "boost": {
+        "trigger_key": "skill_enhance",
+        "parameter_type": "dance",
+        "value": 20,
+        "max_count": 3
+      }
+    },
+    "skill_card": null
   }
 ]

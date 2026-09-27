@@ -606,6 +606,225 @@
       "rest": "休む"
     }
   },
+  "webmcp": {
+    "tools": {
+      "search_support_cards": {
+        "title": "サポートカード検索",
+        "description": "名前・入手方法・能力・イベント名でカードを検索する"
+      },
+      "get_support_card": {
+        "title": "サポートカード詳細",
+        "description": "名前一致のカード概要と指定sectionの詳細を取得する"
+      },
+      "get_support_card_score": {
+        "title": "サポートカード点数",
+        "description": "現在設定でカードの点数と内訳を取得する"
+      },
+      "get_calculation_capabilities": {
+        "title": "計算パラメータ一覧",
+        "description": "計算用IDと入力上限を区分別に取得する"
+      },
+      "compare_support_card_scores": {
+        "title": "サポートカード点数比較",
+        "description": "保存せず複数条件のカード点数を比較する"
+      },
+      "compare_unit_optimizations": {
+        "title": "最適編成比較",
+        "description": "保存せず複数条件の最適編成を比較する"
+      },
+      "get_current_app_state": {
+        "title": "現在のアプリ状態",
+        "description": "状態概要と指定sectionを取得する"
+      },
+      "update_card_filters": {
+        "title": "カード一覧フィルターを更新",
+        "description": "絞り込み・並び順の指定項目を更新する"
+      },
+      "update_app_preferences": {
+        "title": "表示設定を更新",
+        "description": "表示設定の指定項目を更新・保存する"
+      },
+      "update_calculation_settings": {
+        "title": "計算設定を更新",
+        "description": "計算設定・凸数・回数調整を更新・保存する"
+      },
+      "get_score_presets": {
+        "title": "点数設定プリセット一覧",
+        "description": "保存済み点数プリセットを取得する"
+      },
+      "upsert_score_preset": {
+        "title": "点数設定プリセットを保存",
+        "description": "現在の点数設定を新規・上書き保存する"
+      },
+      "load_score_preset": {
+        "title": "点数設定プリセットを読み込む",
+        "description": "プリセットを現在設定へ読み込む"
+      },
+      "preview_delete_score_preset": {
+        "title": "点数設定プリセット削除を確認",
+        "description": "プリセット削除用の確認トークンを作る"
+      },
+      "delete_score_preset": {
+        "title": "点数設定プリセットを削除",
+        "description": "確認済みプリセットを削除する"
+      },
+      "get_user_data_export": {
+        "title": "ユーザーデータを書き出す",
+        "description": "選択データをJSONで取得する。保存値は変更しない"
+      },
+      "download_user_data_export": {
+        "title": "ユーザーデータをファイル保存",
+        "description": "選択データをJSONファイルでダウンロードする"
+      },
+      "preview_user_data_import": {
+        "title": "ユーザーデータインポートを確認",
+        "description": "JSONを検証し、対象キーと警告を返す"
+      },
+      "apply_user_data_import": {
+        "title": "ユーザーデータをインポート",
+        "description": "確認済みJSONを保存データへ反映する"
+      },
+      "get_user_support_cards": {
+        "title": "ユーザー定義サポート一覧",
+        "description": "ユーザー定義サポートを取得する"
+      },
+      "upsert_user_support_card": {
+        "title": "ユーザー定義サポートを保存",
+        "description": "ユーザー定義サポートを新規・上書き保存する"
+      },
+      "preview_delete_user_support_card": {
+        "title": "ユーザー定義サポート削除を確認",
+        "description": "ユーザー定義サポート削除用の確認トークンを作る"
+      },
+      "delete_user_support_card": {
+        "title": "ユーザー定義サポートを削除",
+        "description": "確認済みユーザー定義サポートを削除する"
+      },
+      "undo_last_change": {
+        "title": "直前の変更を取り消す",
+        "description": "直前に保存した変更を1回だけ元に戻す"
+      },
+      "control_app_ui": {
+        "title": "画面を操作",
+        "description": "モーダル・カード・パネル・編集モードを操作する"
+      }
+    },
+    "schema": {
+      "search_query": "検索語。省略または空文字なら全カードを対象にする",
+      "card_name": "サポートカードの完全一致する名前",
+      "comparison_card_name": "比較するサポートカードの完全一致する名前",
+      "capability_card_name": "card_count_custom区分で調べるサポートカードの完全一致する名前",
+      "schedule_selections": "週番号をキーにした活動ID。現在のシナリオでその週に表示される選択肢だけ指定できる",
+      "action_counts": "アクション回数の差分。通常レッスンはnormal_lesson_vo/normal_lesson_da、SSR取得はssr_card_acquireを使う",
+      "card_uncap_all": "全サポートへ一括適用する凸数。個別指定があれば個別指定を優先する",
+      "card_uncaps": "カード名→凸数。1枚だけの個別変更にも、複数または全カードの一括変更にも使う",
+      "card_count_custom": "カード名→個別回数調整。指定カードだけを現在値へ上書きする",
+      "clear_card_count_custom": "指定カードの回数調整を削除する",
+      "clear_filters": "trueなら絞り込み条件を既定値へ戻してから差分を適用する",
+      "support_card_input": "ユーザー定義サポートフォームと同じSupportCard形式。内部フィールドはフォームのJSONを使用し、保存時に既存の厳密な検証を行う。必須項目はname, rarity, plan, type, parameter_type, source, release_date, abilities, events, p_item, skill_card",
+      "selected_export_keys": "省略時はすべてのユーザーデータを対象にする",
+      "import_json": "get_user_data_exportまたは画面のJSON編集欄と同じ形式",
+      "import_confirmation": "対象キーと警告を確認した場合だけtrue",
+      "preset_name": "プリセット名",
+      "preset_overwrite": "同名がある場合に上書きするか。省略時false",
+      "delete_confirmation": "削除内容を確認した場合だけtrue",
+      "undo_confirmation": "取り消しを確認した場合だけtrue",
+      "user_support_old_name": "編集前のサポート名。省略時は新規追加"
+    },
+    "undo": {
+      "update_card_filters": "カード一覧フィルターの変更",
+      "update_app_preferences": "アプリ表示設定の変更",
+      "update_calculation_settings": "計算条件の変更",
+      "upsert_score_preset": "点数設定プリセットの保存",
+      "load_score_preset": "点数設定プリセットの読み込み",
+      "delete_score_preset": "点数設定プリセットの削除",
+      "apply_user_data_import": "ユーザーデータのインポート",
+      "upsert_user_support_card": "ユーザー定義サポートの保存",
+      "delete_user_support_card": "ユーザー定義サポートの削除"
+    },
+    "messages": {
+      "registration_failed": "ページツールの登録に失敗しました: {{toolName}}",
+      "load_failed": "ページツールの読み込みに失敗しました",
+      "invalid_query": "queryは文字列で指定してください",
+      "card_detail_sections_invalid": "カード詳細のsectionsが不正です",
+      "app_state_options_invalid": "現在状態のsectionsまたはページ指定が不正です",
+      "invalid_search_limit": "limitは1から{{max}}までの整数で指定してください",
+      "name_required": "nameを指定してください",
+      "card_name_required": "cardNameを指定してください",
+      "card_not_found": "カードが見つかりません: {{cardName}}",
+      "user_support_not_found": "ユーザー定義サポートが見つかりません: {{cardName}}",
+      "invalid_schedule_configuration": "シナリオと難易度の組み合わせが不正です",
+      "invalid_section": "sectionが不正です",
+      "card_count_custom_card_name_required": "card_count_customではcardNameを指定してください",
+      "no_feasible_sp_total": "SP発生率の必要枚数合計が{{unitSize}}枚を超えています",
+      "no_feasible_type_min_total": "タイプ別最小枚数の合計が{{unitSize}}枚を超えています",
+      "no_feasible_type_max_total": "タイプ別最大枚数の合計が{{unitSize}}枚に届きません",
+      "no_feasible_constraints": "指定したプラン・固定・除外・枚数条件を満たす編成が見つかりません",
+      "comparison_card_name_required": "cardNameを指定してください",
+      "score_variants_range": "variantsは1件から20件まで指定してください",
+      "score_comparison_aborted": "比較処理がキャンセルされました",
+      "score_comparison_stale": "計算条件が変更されたため、比較結果を破棄しました。もう一度実行してください",
+      "patch_required": "patchを指定してください",
+      "label_string": "labelは文字列で指定してください",
+      "score_patch_invalid": "patchの型または値が不正です",
+      "score_variant_invalid": "計算条件として適用できません",
+      "unit_variants_range": "variantsは1件から5件まで指定してください",
+      "unit_comparison_aborted": "最適編成比較がキャンセルされました",
+      "unit_comparison_stale": "計算条件が変更されたため、最適編成比較を破棄しました。もう一度実行してください",
+      "unit_patch_invalid": "patchの型または値が不正です",
+      "unit_variant_invalid": "最適編成条件として適用できません",
+      "selected_keys_invalid": "selectedKeysに不正な保存キーがあります",
+      "json_too_large": "jsonは{{max}}文字以内の文字列で指定してください",
+      "import_aborted": "データインポートがキャンセルされました",
+      "import_confirmation_required": "インポートプレビューのpreviewTokenとconfirmation:trueが必要です",
+      "import_preview_invalid": "インポートプレビューが存在しないか期限切れです",
+      "storage_snapshot_failed": "保存前のデータを退避できませんでした",
+      "import_command_failed": "インポートの保存または画面反映に失敗しました",
+      "import_applied": "ユーザーデータをインポートしました",
+      "preset_save_aborted": "プリセット保存がキャンセルされました",
+      "name_length_invalid": "nameは1文字以上100文字以内で指定してください",
+      "overwrite_boolean": "overwriteはbooleanで指定してください",
+      "preset_conflict": "同名のプリセットが存在します。上書きする場合はoverwrite:trueを指定してください: {{name}}",
+      "preset_save_failed": "プリセットを保存できなかったため、更新を中止しました",
+      "preset_load_aborted": "プリセット読み込みがキャンセルされました",
+      "preset_not_found": "プリセットが見つかりません: {{name}}",
+      "preset_invalid": "プリセットの計算条件を適用できません",
+      "preset_load_storage_failed": "点数設定を保存できなかったため、読み込みを中止しました",
+      "preset_delete_aborted": "プリセット削除がキャンセルされました",
+      "delete_confirmation_required": "削除プレビューのpreviewTokenとconfirmation:trueが必要です",
+      "delete_preview_invalid": "削除プレビューが存在しないか期限切れです",
+      "preset_state_changed": "プレビュー後にプリセットが変更されたため、削除を中止しました",
+      "preset_delete_failed": "プリセットを削除できなかったため、処理を中止しました",
+      "filters_update_aborted": "フィルター更新がキャンセルされました",
+      "clear_filters_boolean": "clearFiltersはbooleanで指定してください",
+      "filters_patch_invalid": "フィルターの型または値が不正です",
+      "filters_patch_empty": "変更するフィルターを1つ以上指定してください",
+      "filters_save_failed": "フィルターを保存できなかったため、更新を中止しました",
+      "preferences_update_aborted": "表示設定の更新がキャンセルされました",
+      "preferences_patch_empty": "変更する表示設定を1つ以上指定してください",
+      "preferences_save_failed": "表示設定を保存できなかったため、更新を中止しました",
+      "calculation_update_aborted": "更新処理がキャンセルされました",
+      "calculation_patch_invalid": "更新内容の型または値が不正です",
+      "clear_card_count_custom_invalid": "clearCardCountCustomはカード名の配列で指定してください",
+      "calculation_patch_empty": "変更する設定を1つ以上指定してください",
+      "calculation_invalid": "計算条件として適用できません",
+      "calculation_update_failed": "計算設定を保存できなかったため、更新を中止しました",
+      "ui_command_invalid": "画面操作のactionまたは引数が不正です",
+      "ui_sync_timeout": "画面操作の反映を確認できませんでした",
+      "undo_confirmation_required": "取り消しを実行するにはconfirmation:trueが必要です",
+      "undo_not_found": "取り消せる変更がありません",
+      "undo_failed": "変更前の状態へ戻せなかったため、取り消しを完了できませんでした",
+      "undo_state_changed": "変更後の状態が変わっているため、取り消しを中止しました",
+      "user_support_update_aborted": "ユーザー定義サポートの更新がキャンセルされました",
+      "user_support_invalid": "cardがユーザー定義サポート形式として不正です",
+      "old_name_invalid": "oldNameは空でない文字列で指定してください",
+      "support_name_conflict": "同名のサポートがすでに存在します: {{cardName}}",
+      "user_support_save_failed": "ユーザー定義サポートを保存できなかったため、更新を中止しました",
+      "user_support_delete_aborted": "ユーザー定義サポートの削除がキャンセルされました",
+      "user_support_state_changed": "プレビュー後にユーザー定義サポートが変更されたため、削除を中止しました",
+      "user_support_delete_failed": "ユーザー定義サポートを削除できなかったため、処理を中止しました"
+    }
+  },
   "ui": {
     "app_title": "学マス サポート一覧",
     "footer": "© 2026 GAKU-NAVI PROJECT",
@@ -725,7 +944,9 @@
       "panel_switcher": "設定パネルの切り替え",
       "close": "閉じる",
       "clear_search": "検索をクリア",
-      "help": "ヘルプ"
+      "help": "ヘルプ",
+      "open_card_detail": "{{name}}の詳細を表示",
+      "open_score_detail": "{{name}}の点数内訳を表示"
     },
     "navigation": {
       "uncap": "凸数設定",
@@ -870,6 +1091,10 @@
       "uncap_desc": "ヘッダーの「凸数設定」を押すと、サポート一覧に凸数セレクタが表示されます。\n各サポートの凸数（0〜4凸）を個別に設定でき、凸数に応じた点数が計算されます。\n詳細モーダルでも凸数を変更して点数を確認でき、保存ボタンから凸数設定に反映できます。",
       "data_title": "データ管理",
       "data_desc": "凸数やプリセット等の設定データをJSONファイルとしてインポート/エクスポートできます。\nブラウザを変えた場合や、設定をバックアップしたい場合に便利です。",
+      "webmcp_title": "WebMCP（AIから操作）",
+      "webmcp_desc": "WebMCPに対応したAIクライアントでサイトツールを有効にすると、このサイトをAIから操作できます。\n詳しい利用方法や対応状況は、ご利用のAIクライアントの案内を確認してください。\n対応している環境でこのサイトのURLをAIに渡し、やりたいことを指示してください。\n\n【できること】\nカードの検索・詳細確認、点数や内訳の確認、複数条件での点数比較・最適編成比較、点数設定・スケジュール・凸数・カード別回数調整・最適編成設定の変更、プリセットやユーザー定義サポートの管理などを実行できます。\n\n「各プランで最適編成を計算して」、「SP発生率の枚数を1と2で比較して」など現在の設定値を変更せず様々な条件で最適編成の計算実行が可能です。\nまた凸数の一括変更やサポート毎の自動カウント調整を変更するなども可能です。",
+      "pwa_title": "PWA（アプリとして使う）",
+      "pwa_desc": "対応ブラウザでは、このサイトをスマートフォンやPCのアプリのようにインストールできます。\n\nChrome・Edgeではアドレスバーのインストールアイコンまたはブラウザメニューからインストールしてください。\nAndroidでは「ホーム画面に追加」、iPhone・iPadではSafariの共有メニューにある「ホーム画面に追加」を選択してください。\n\n【表示されない場合】\nブラウザやOSがPWAに対応していない、すでにインストール済みの可能性があります。\n\nインストール後はアプリ単独のウィンドウで起動できます。\n更新が反映されない場合はアプリを閉じて再起動してください。",
       "card_list_title": "サポート一覧",
       "card_list_desc": "各サポートにはレアリティ・タイプ・プランのバッジ、入手先（イベント名等の詳細付き）、イベント概要（スキルカード・Pアイテム等の種類と数）が表示されます。\nカウント回数を調整したサポートにはスコア横にアイコンが表示されます。\n点数設定が有効な場合はスコアも表示され、クリックすると点数内訳が確認できます。\nサポート全体をクリックすると詳細モーダルが開きます。\n除外設定は最適編成パネルの「オプション」から設定できます。\n除外中のサポートは「除外中」バッジが表示されます。\n除外中でも手動編成で選択することが可能です。",
       "count_target_title": "自動カウント対象の対応表",

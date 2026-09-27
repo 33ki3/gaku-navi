@@ -1,9 +1,9 @@
 /**
  * 点数計算統合テスト
  *
- * 実際のサポートデータとスケジュールを使って点数を検証する。
+ * 実際のサポートデータとスケジュールを使って点数を検証する
  * アビリティが満遍なくカバーされるようサポートを選出し、
- * 計算結果を手計算の期待値と照合する。
+ * 計算結果を手計算の期待値と照合する
  */
 import { describe, expect, it } from 'vitest'
 import { AllCards } from '../../../data'
@@ -20,7 +20,7 @@ import { mergeScheduleCounts } from '../../../utils/scoreSettings'
 
 // --- 実サポートデータ（AllCards から取得） ---
 
-/** 名前でサポートを検索し、見つからない場合はエラーにする */
+// 名前でサポートを検索し、見つからない場合はエラーにする
 function findCard(name: string): SupportCard {
   const card = AllCards.find((c) => c.name === name)
   if (!card) throw new Error(`サポートが見つかりません: ${name}`)
@@ -350,7 +350,7 @@ const manualInputs: Partial<Record<ActionIdType, number>> = {
   [enums.ActionIdType.SpLesson20]: 3,
 }
 
-/** テスト用の ScoreSettings を作る */
+// テスト用の点数設定を作る
 function makeSettings(selections: Record<number, enums.ActivityIdType>): ScoreSettings {
   return {
     name: 'test',
@@ -378,17 +378,17 @@ function makeSettings(selections: Record<number, enums.ActivityIdType>): ScoreSe
 
 /**
  * パターン1: Vo重視スケジュール
- * 授業→授業→活動支給→Voレッスン→活動支給→授業→Voレッスン→相談
+ * Vo授業→Vo授業→活動支給→Voレッスン→活動支給→Vo授業→Voレッスン→相談
  * →特別指導→中間試験→活動支給→Voレッスン→活動支給→Voレッスン
- * →授業→Daレッスン→相談→最終試験
+ * →Vo授業→Daレッスン→相談→最終試験
  */
 const pattern1Selections: Record<number, enums.ActivityIdType> = {
-  1: enums.ActivityIdType.Class,
-  2: enums.ActivityIdType.Class,
+  1: enums.ActivityIdType.ClassVo,
+  2: enums.ActivityIdType.ClassVo,
   3: enums.ActivityIdType.ActivitySupply,
   4: enums.ActivityIdType.VoLesson,
   5: enums.ActivityIdType.ActivitySupply,
-  6: enums.ActivityIdType.Class,
+  6: enums.ActivityIdType.ClassVo,
   7: enums.ActivityIdType.VoLesson,
   8: enums.ActivityIdType.Consult,
   9: enums.ActivityIdType.SpecialTraining,
@@ -397,7 +397,7 @@ const pattern1Selections: Record<number, enums.ActivityIdType> = {
   12: enums.ActivityIdType.VoLesson,
   13: enums.ActivityIdType.ActivitySupply,
   14: enums.ActivityIdType.VoLesson,
-  15: enums.ActivityIdType.Class,
+  15: enums.ActivityIdType.ClassVo,
   16: enums.ActivityIdType.DaLesson,
   17: enums.ActivityIdType.Consult,
   18: enums.ActivityIdType.FinalExam,
@@ -405,13 +405,13 @@ const pattern1Selections: Record<number, enums.ActivityIdType> = {
 
 /**
  * パターン2: Vi重視スケジュール
- * 授業→授業→おでかけ→Viレッスン→おでかけ→休む→Viレッスン→相談
+ * Vi授業→Vi授業→おでかけ→Viレッスン→おでかけ→休む→Viレッスン→相談
  * →特別指導→中間試験→活動支給→Viレッスン→活動支給→Daレッスン
- * →授業→Daレッスン→相談→最終試験
+ * →Vi授業→Daレッスン→相談→最終試験
  */
 const pattern2Selections: Record<number, enums.ActivityIdType> = {
-  1: enums.ActivityIdType.Class,
-  2: enums.ActivityIdType.Class,
+  1: enums.ActivityIdType.ClassVi,
+  2: enums.ActivityIdType.ClassVi,
   3: enums.ActivityIdType.Outing,
   4: enums.ActivityIdType.ViLesson,
   5: enums.ActivityIdType.Outing,
@@ -424,7 +424,7 @@ const pattern2Selections: Record<number, enums.ActivityIdType> = {
   12: enums.ActivityIdType.ViLesson,
   13: enums.ActivityIdType.ActivitySupply,
   14: enums.ActivityIdType.DaLesson,
-  15: enums.ActivityIdType.Class,
+  15: enums.ActivityIdType.ClassVi,
   16: enums.ActivityIdType.DaLesson,
   17: enums.ActivityIdType.Consult,
   18: enums.ActivityIdType.FinalExam,
@@ -723,10 +723,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
 
 // --- モックサポートによるアビリティ網羅テスト ---
 
-/**
- * テスト用モックサポートを作成するヘルパー。
- * 未テストの *_card_acquire 系アビリティをカバーするために使用する。
- */
+// 未テストの *_card_acquire 系アビリティをカバーするテスト用モックサポートを作成する
 function createMockCard(overrides: Partial<SupportCard>): SupportCard {
   return {
     name: 'mock_card',

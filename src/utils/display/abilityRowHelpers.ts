@@ -7,12 +7,9 @@
 
 import type { TFunction } from 'i18next'
 import * as data from '../../data'
-import type { CardCalculationResult } from '../../types/card'
+import type { CardAbilityDetail } from '../../types/card'
 import { EffectSectionType } from '../../types/enums'
 import { getEffectLabelKey, getPItemEffectLabel } from './effectLabels'
-
-/** アビリティ詳細データの型エイリアス */
-type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]
 
 /**
  * アビリティの表示名を生成する
@@ -25,7 +22,7 @@ type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]
  * @param t - i18next の翻訳関数
  * @returns 表示用アビリティ名
  */
-export function getAbilityDisplayName(ab: AbilityDetail, t: TFunction): string {
+export function getAbilityDisplayName(ab: CardAbilityDetail, t: TFunction): string {
   const rawName = ab.nameKey
     ? t(getEffectLabelKey(EffectSectionType.AbilityName, ab.nameKey), {
         param: ab.parameterType ? t(data.getParamLabel(ab.parameterType)) : '',
@@ -48,7 +45,7 @@ export function getAbilityDisplayName(ab: AbilityDetail, t: TFunction): string {
  * @param t - i18next の翻訳関数
  * @returns 効果説明テキスト。通常アビリティの場合は undefined
  */
-export function getEffectDescription(ab: AbilityDetail, t: TFunction): string | undefined {
+export function getEffectDescription(ab: CardAbilityDetail, t: TFunction): string | undefined {
   // 通常アビリティはdisplayNameを持たない（Pアイテム由来のアビリティのみ持つ）
   if (!ab.displayName) return undefined
 

@@ -81,7 +81,11 @@ export default memo(function UserCardFormModal({
   }
 
   return (
-    <ModalOverlay onClose={handleCancel} panelClassName={constant.MODAL_PANEL_USER_CARD}>
+    <ModalOverlay
+      onClose={handleCancel}
+      panelClassName={constant.MODAL_PANEL_USER_CARD}
+      ariaLabel={t(editingCard ? 'user_support.edit_title' : 'user_support.create_title')}
+    >
       {/* サポートフォームのタイトルと操作ヘッダー */}
       <div className="sticky top-0 bg-white z-10 border-b border-slate-200 px-5 py-3">
         <div className="flex items-center justify-between">

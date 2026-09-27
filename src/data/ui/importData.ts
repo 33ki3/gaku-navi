@@ -4,8 +4,6 @@
  * 翻訳キー・配列フィールド名・エラー分類は表示と定義に関するデータとして管理し、
  * 値の検証や部分救出の処理はsrc/utilsへ置く。
  */
-import type { TranslationKey } from '../../i18n'
-import * as enums from '../../types/enums'
 import {
   APP_PREFERENCES_STORAGE_KEY,
   CARD_COUNT_CUSTOM_KEY,
@@ -18,6 +16,8 @@ import {
   UNIT_SIMULATOR_STORAGE_KEY,
   USER_SUPPORTS_STORAGE_KEY,
 } from '../../constant/common'
+import type { TranslationKey } from '../../i18n'
+import * as enums from '../../types/enums'
 import type { ExportKey } from './exportImport'
 
 /** オブジェクト内の配列フィールドに対応する静的メタデータ */

@@ -1,7 +1,8 @@
 /**
- * アプリのヘッダー、サポート一覧、フッターを表示する。
- * 変更履歴ではなく、各領域の責務が分かるコメントだけを残す。
- * モーダルと設定パネルは別コンポーネントへ分け、通常ページのレイアウトだけを担当する。
+ * アプリのヘッダー、サポート一覧、フッターを表示する
+ * 各領域の表示と操作は担当コンポーネントが受け持つ
+ * モーダルと設定パネルは別コンポーネントへ分ける
+ * このファイルでは通常ページのレイアウトだけを担当する
  */
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
@@ -13,10 +14,10 @@ import type { CardListModeController } from '../../types/app'
 import * as enums from '../../types/enums'
 import { getActiveFilterCount } from '../../utils/filterCount'
 import { hasAllScheduleSelections } from '../../utils/scoreSettings'
-import AppHeader from '../header/AppHeader'
 import CardList from '../cardList/CardList'
 import EmptyState from '../cardList/EmptyState'
 import SortControls from '../filterBar/SortControls'
+import AppHeader from '../header/AppHeader'
 import { CardListModeCompletionBarContent } from './CardListModeCompletionBar'
 
 interface AppPageContentProps {
@@ -30,6 +31,12 @@ interface AppPageContentProps {
   cardListMode: CardListModeController
   /** 外部操作から下部ナビを表示し直す関数を登録する */
   registerMobileNavigationShow?: (handler: (() => void) | null) => void
+  /** データ管理モーダルの開閉状態 */
+  dataManagementOpen: boolean
+  /** データ管理モーダルを開く関数 */
+  onOpenDataManagement: () => void
+  /** データ管理モーダルを閉じる関数 */
+  onCloseDataManagement: () => void
 }
 
 /**
@@ -44,8 +51,12 @@ export function AppPageContent({
   options,
   cardListMode,
   registerMobileNavigationShow,
+  dataManagementOpen,
+  onOpenDataManagement,
+  onCloseDataManagement,
 }: AppPageContentProps) {
   const { t } = useTranslation()
+  // ヘッダーと本文でデータ管理モーダルの状態を共有し、どちらから開いても同じ表示にする
   // 絞り込み件数と固定パネルの表示状態を、ヘッダー・本文・手動選択バーで共有する
   const activeFilterCount = getActiveFilterCount(state.filters)
   const contentOffset = state.ui.bothPanelsPinned
@@ -74,6 +85,9 @@ export function AppPageContent({
         sortReverse={state.filters.sortReverse}
         onOpenUserCardForm={() => state.ui.setUserCardFormOpen(true)}
         onOpenOptions={options.open}
+        dataManagementOpen={dataManagementOpen}
+        onOpenDataManagement={onOpenDataManagement}
+        onCloseDataManagement={onCloseDataManagement}
         showMobileBottomNav={options.preferences.showMobileBottomNav}
         keepMobileBottomNavFixed={options.preferences.keepMobileBottomNavFixed}
         registerMobileNavigationShow={registerMobileNavigationShow}

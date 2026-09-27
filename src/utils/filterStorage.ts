@@ -1,15 +1,22 @@
 /**
  * フィルター状態の永続化ユーティリティ
  *
- * サポート一覧のフィルター・ソート条件を localStorage に保存し、
- * 次回アクセス時に同じ条件で表示できるようにする。
+ * サポート一覧のフィルター・ソート条件をブラウザの保存領域に保存し、
+ * 次回アクセス時に同じ条件で表示できるようにする
  */
 import * as constant from '../constant'
 import type { PersistedFilterState } from '../types/app'
 import * as enums from '../types/enums'
 
-/** enum値の集合を作り、配列から有効な値だけを抽出する */
+/**
+ * 受け付ける選択肢の集合を作り、配列から有効な値だけを抽出する
+ *
+ * @param values - 抽出対象の値一覧
+ * @param valid - 受け付ける値の集合
+ * @returns 有効な値だけの配列
+ */
 function filterValid<T extends string | number>(values: unknown[], valid: Set<T>): T[] {
+  // 古い保存データや手編集で混入した選択肢外の値を、読み込み時に除去する
   return (values as T[]).filter((v) => valid.has(v))
 }
 
@@ -26,17 +33,19 @@ const VALID_CARD_EXCLUSION_FILTERS = new Set(Object.values(enums.CardExclusionFi
 const VALID_SORT_MODES = new Set(Object.values(enums.SortModeType))
 
 /**
- * localStorage からフィルター設定を読み込む
- * 保存されていなければ null を返す。不正な値はフィルタリングされる。
+ * ブラウザの保存領域からフィルター設定を読み込む
+ * 保存されていなければ null を返す。不正な値はフィルタリングされる
  *
  * @returns 保存されたフィルター設定、またはnull
  */
 export function loadFilterState(): PersistedFilterState | null {
   try {
+    // 保存なしは未設定として、呼び出し元で既定値を使えるようにする
     const raw = localStorage.getItem(constant.FILTER_STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as Record<string, unknown>
 
+    // 各フィールドを個別に正規化し、1項目の破損で全フィルターを捨てない
     return {
       searchTerm: typeof parsed.searchTerm === 'string' ? parsed.searchTerm : constant.DEFAULT_FILTER_STATE.searchTerm,
       rarities: Array.isArray(parsed.rarities) ? filterValid(parsed.rarities, VALID_RARITIES) : [],
@@ -65,14 +74,17 @@ export function loadFilterState(): PersistedFilterState | null {
 }
 
 /**
- * フィルター設定を localStorage に保存する
+ * フィルター設定をブラウザの保存領域に保存する
  *
  * @param state - 保存するフィルター設定
+ * @returns 保存できた場合はtrue
  */
-export function saveFilterState(state: PersistedFilterState): void {
+export function saveFilterState(state: PersistedFilterState): boolean {
   try {
+    // JSON化に失敗する環境でも、呼び出し元が保存できたか判断できるようにする
     localStorage.setItem(constant.FILTER_STORAGE_KEY, JSON.stringify(state))
+    return true
   } catch {
-    /* ストレージ容量超過等は無視する */
+    return false
   }
 }

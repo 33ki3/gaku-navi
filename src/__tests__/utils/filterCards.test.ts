@@ -13,7 +13,13 @@
 import { describe, expect, it } from 'vitest'
 import type { SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
-import { filterAndSortCards } from '../../utils/filterCards'
+import { filterSortedCards, sortCards } from '../../utils/filterCards'
+
+type FilterSortParams = Parameters<typeof sortCards>[1] & Parameters<typeof filterSortedCards>[1]
+
+function filterAndSortCards(cards: SupportCard[], params: FilterSortParams): SupportCard[] {
+  return filterSortedCards(sortCards(cards, params), params)
+}
 
 /** 最小限のサポートファクトリ */
 function makeCard(overrides: Partial<SupportCard> = {}): SupportCard {

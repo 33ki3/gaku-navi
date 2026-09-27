@@ -6,9 +6,12 @@
  */
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { PresetCommand } from '../../application/command'
 import type { ScoreSettings } from '../../types/card'
 import type { ScorePreset } from '../../utils/presetHelpers'
-import { deletePreset, loadPresets, savePreset } from '../../utils/presetHelpers'
+
+// UIではReactの反映確認を待たずに返し、保存・state更新と失敗時の復元はcommandに任せる
+const PRESET_UI_COMMAND_OPTIONS = { waitForStateSync: false }
 
 /** PresetSection コンポーネントに渡すプロパティ */
 interface PresetSectionProps {
@@ -16,6 +19,10 @@ interface PresetSectionProps {
   settings: ScoreSettings
   /** 設定値が変わったときに呼ばれる関数 */
   onSettingsChange: (settings: ScoreSettings) => void
+  /** 保存済みプリセット一覧 */
+  presets: readonly ScorePreset[]
+  /** プリセットの保存・削除を行う共通処理 */
+  presetCommand: PresetCommand
 }
 
 /**
@@ -23,9 +30,8 @@ interface PresetSectionProps {
  *
  * プリセットの選択・保存・上書き保存・削除を行う。
  */
-export function PresetSection({ settings, onSettingsChange }: PresetSectionProps) {
+export function PresetSection({ settings, onSettingsChange, presets, presetCommand }: PresetSectionProps) {
   const { t } = useTranslation()
-  const [presets, setPresets] = useState<ScorePreset[]>(loadPresets)
   const [presetName, setPresetName] = useState('')
   const [selectedPresetName, setSelectedPresetName] = useState('')
 
@@ -33,27 +39,28 @@ export function PresetSection({ settings, onSettingsChange }: PresetSectionProps
   const handleSave = useCallback(() => {
     const name = presetName.trim()
     if (!name) return
-    const updated = savePreset(name, settings)
-    setPresets(updated)
-    setSelectedPresetName(name)
-    setPresetName('')
-  }, [presetName, settings])
+    void presetCommand.save(name, settings, { ...PRESET_UI_COMMAND_OPTIONS, overwrite: false }).then((result) => {
+      if (!result.ok) return
+      setSelectedPresetName(name)
+      setPresetName('')
+    })
+  }, [presetCommand, presetName, settings])
 
   // 選択中のプリセットを上書き保存する
   const handleOverwrite = useCallback(() => {
     if (!selectedPresetName) return
-    const updated = savePreset(selectedPresetName, settings)
-    setPresets(updated)
-  }, [selectedPresetName, settings])
+    void presetCommand.save(selectedPresetName, settings, { ...PRESET_UI_COMMAND_OPTIONS, overwrite: true })
+  }, [presetCommand, selectedPresetName, settings])
 
   // 選択中のプリセットを削除する
   const handleDelete = useCallback(() => {
     if (!selectedPresetName) return
-    const updated = deletePreset(selectedPresetName)
-    setPresets(updated)
-    setSelectedPresetName('')
-    setPresetName('')
-  }, [selectedPresetName])
+    void presetCommand.remove(selectedPresetName, PRESET_UI_COMMAND_OPTIONS).then((result) => {
+      if (!result.ok) return
+      setSelectedPresetName('')
+      setPresetName('')
+    })
+  }, [presetCommand, selectedPresetName])
 
   // ドロップダウンでプリセットを選択する（設定値は読み込まない）
   const handleSelect = useCallback((name: string) => {

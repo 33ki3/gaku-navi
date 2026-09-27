@@ -1,10 +1,9 @@
 /**
  * サポート別カウント設定セクション
  *
- * 点数詳細モーダル内で、サポートのイベント・Pアイテムが提供するアクション回数と
- * Pアイテムの発動回数をサポート個別に回数調整できるUI。
- * 各項目に SpinnerInput を表示し、変更時に再計算をトリガーする。
- * アビリティやPアイテムに発動回数上限がある場合、SpinnerInput の最大値を制限する。
+ * 点数詳細モーダルで、サポートが提供するアクションとPアイテムの発動回数を
+ * サポートごとに調整できるようにする
+ * 発動回数に上限がある効果は、入力できる回数もその上限に合わせる
  */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,11 +14,11 @@ import { isActionId } from '../../utils/domainValueValidation'
 import { getProvidedActions } from '../../utils/supportSynergy'
 import { SpinnerInput } from '../ui/SpinnerInput'
 
-/** CountCustomSection コンポーネントに渡すプロパティ */
+/** サポート別の回数調整と表示データ */
 interface CountCustomSectionProps {
   /** サポートカードデータ */
   card: SupportCard
-  /** イベント提供アクション回数の回数調整値（スキルカード獲得、Pアイテム獲得等の回数を手動設定） */
+  /** イベント提供アクションの回数調整値（スキルカード・Pアイテム獲得など） */
   selfTriggerCustom: Partial<Record<ActionIdType, number>>
   /** Pアイテム発動回数の回数調整値 */
   pItemCountCustom: Partial<Record<ActionIdType, number>>
@@ -63,10 +62,10 @@ export function CountCustomSection({
   }, [card.abilities])
 
   // サポートが提供するアクション回数を取得する（イベント・Pアイテム由来）
-  // autoCounts にスケジュール由来のアクション回数が含まれるため、actionCounts として渡す
+  // スケジュール由来の回数も含めて、サポートが提供する回数を計算する
   const providedEntries = useMemo(() => {
     const provided = getProvidedActions(card, { actionCounts: autoCounts })
-    // 保存データ由来の未知IDをUIへ渡さず、既知のアクションだけ回数調整対象にする
+    // 保存データ由来の未知IDを画面へ渡さず、既知のアクションだけ回数調整対象にする
     return Object.entries(provided)
       .filter((entry): entry is [ActionIdType, number] => isActionId(entry[0]))
       .map(([actionId, autoCount]) => ({
@@ -76,7 +75,7 @@ export function CountCustomSection({
   }, [card, autoCounts])
 
   // 汎用アクションの提供回数を、特化アクションの上限として引き継ぐ
-  // 例: skill_enhance が提供されている場合、m_skill_enhance / a_skill_enhance の上限は skill_enhance の提供回数になる
+  // 例: skill_enhanceが3回なら、m_skill_enhanceとa_skill_enhanceの合計を3回以下にする
   const linkedGroupLimitMap = useMemo(() => {
     const map: Partial<Record<ActionIdType, number>> = {}
     const providedMap = Object.fromEntries(providedEntries.map((e) => [e.actionId, e.autoCount]))
@@ -99,7 +98,7 @@ export function CountCustomSection({
     if (!actionId) return null
     const rawAutoCount = autoCounts[actionId] ?? 0
     const maxCount = card.p_item.boost.max_count
-    // max_count がある場合、自動カウントの下限を max_count で保証する（PItem発動回数をデフォルトに反映）
+    // Pアイテムに発動回数の指定がある場合は自動カウントの下限にし、Pアイテムの発動回数を初期値として表示する
     const autoCount = maxCount !== undefined ? Math.max(rawAutoCount, maxCount) : rawAutoCount
     return { actionId, autoCount, maxCount, name: card.p_item.name }
   }, [card, autoCounts])
@@ -120,15 +119,15 @@ export function CountCustomSection({
             const abilityMax = abilityMaxCounts[actionId]
             const currentValue = selfTriggerCustom[actionId] ?? autoCount
             const isCustomized = actionId in selfTriggerCustom
-            // 上限計算: アビリティに発動回数上限がある場合、スケジュール由来の回数を差し引いた残り余地
-            // 例: abilityMax=5, autoTotal=3, currentValue=1 → scheduleBase=2, abilityLimit=3
-            // abilityMax を絶対上限としてキャップする（scheduleBase が負の場合に超過しないようにする）
+            // 発動回数の入力上限を計算する
+            // アビリティ上限からスケジュール分を差し引き、残りの範囲に収める
+            // 例: 上限5回・自動3回・個別1回なら、個別入力は3回までにする
             const autoTotal = autoCounts[actionId] ?? 0
             const scheduleBase = autoTotal - currentValue
             const abilityLimit =
               abilityMax !== undefined ? Math.min(abilityMax, Math.max(0, abilityMax - scheduleBase)) : undefined
-            // サブタイプは汎用（親）アクションの提供回数を超えられない
-            // 例: SkillEnhance=3回の場合、MSkillEnhance+ASkillEnhanceの合計が3以下になる
+            // 特化アクションは汎用アクションの提供回数を超えられない
+            // 例: 汎用が3回なら、特化2種の合計も3回以下にする
             const linkedGroupLimit = linkedGroupLimitMap[actionId]
             const maxCount =
               abilityLimit !== undefined && linkedGroupLimit !== undefined

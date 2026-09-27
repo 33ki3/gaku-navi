@@ -1,8 +1,7 @@
 /**
- * バッジスタイルマスタ。
+ * バッジのサイズと文字の太さに対応する表示設定
  *
- * Badge コンポーネントのサイズ・ウェイトバリアントに対応する
- * スタイルクラスを提供する。
+ * 表示側が共通の見た目を使えるようにする
  */
 import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
 
@@ -18,20 +17,20 @@ const badgeWeight: Record<BadgeWeightType, string> = {
 }
 
 /**
- * Badge サイズに対応する Tailwind CSS クラスを返す。
+ * バッジのサイズに対応する表示クラスを返す
  *
  * @param size - Badge のサイズ種別
- * @returns Tailwind CSS クラス文字列
+ * @returns 表示クラスの文字列
  */
 export function getBadgeSizeStyle(size: BadgeSizeType): string {
   return badgeSize[size]
 }
 
 /**
- * Badge ウェイトに対応するフォントクラスを返す。
+ * バッジの文字の太さに対応する表示クラスを返す
  *
  * @param weight - Badge のフォントウェイト種別
- * @returns Tailwind CSS フォントクラス文字列
+ * @returns 表示クラスの文字列
  */
 export function getBadgeWeightClass(weight: BadgeWeightType): string {
   return badgeWeight[weight]

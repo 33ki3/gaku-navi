@@ -4,6 +4,7 @@
  * ソートとフィルタの操作をタブ切り替えで提供するモーダル。
  * 縦幅が足りない画面でもスクロール可能なモーダル内で操作できるようにする。
  */
+import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import type { CardFiltersReturn } from '../../hooks'
 import * as enums from '../../types/enums'
@@ -41,10 +42,16 @@ export default function FilterSortModal({
   activeTab,
   onTabChange,
 }: FilterSortModalProps) {
+  const { t } = useTranslation()
   const activeFilterCount = getActiveFilterCount(filters)
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_FILTER} className={panelRightOffset}>
+    <ModalOverlay
+      onClose={onClose}
+      panelClassName={constant.MODAL_PANEL_FILTER}
+      className={panelRightOffset}
+      ariaLabel={`${t('ui.filter_sort.tab_filter')}・${t('ui.filter_sort.tab_sort')}`}
+    >
       {/* PC用フィルター・ソート操作ヘッダー */}
       <div className="z-10 hidden items-center gap-2 border-b border-slate-200/80 bg-white/95 px-5 py-3 backdrop-blur-xl md:flex">
         {/* PC用フィルター・ソートタブ */}

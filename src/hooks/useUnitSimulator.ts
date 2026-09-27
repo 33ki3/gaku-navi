@@ -1,22 +1,20 @@
 /**
- * 最適編成の設定・実行・結果を統合する公開フック。
+ * 最適編成の設定・実行・結果を統合する公開フック
  *
  * 永続化、手動評価、総当たり実行、設定同期は責務別フックと
- * ユーティリティへ委譲し、このファイルでは公開APIの組み立てだけを行う。
+ * 計算処理は別ファイルにまとめ、このファイルでは画面向けの状態と操作を組み立てる
  */
 import { useCallback, useMemo, useState } from 'react'
 
-import type { ScoreSettings, SupportCard } from '../types/card'
+import type { CardCountCustom, ScoreSettings, SupportCard } from '../types/card'
+import type { UncapType } from '../types/enums'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from '../types/unit'
 import type { OptimizeInput } from '../types/unitOptimizer'
-import { loadCardUncaps } from '../utils/uncapStorage'
 import { resolveSettingsAfterOptimization } from '../utils/unitOptimizedSettings'
 import { loadUnitResult, saveUnitResult } from '../utils/unitResultStorage'
-import type { CardCountCustom } from './useCardCountCustom'
-import { loadCardCountCustom } from './useCardCountCustom'
 import { useUnitExhaustiveOptimizer } from './useUnitExhaustiveOptimizer'
 import { useUnitManualEvaluation } from './useUnitManualEvaluation'
-import { useUnitSimulatorSettingsState } from './useUnitSimulatorSettingsState'
+import type { UnitSimulatorSettingsState } from './useUnitSimulatorSettingsState'
 
 /** useUnitSimulator の戻り値 */
 interface UseUnitSimulatorReturn {
@@ -35,19 +33,25 @@ interface UseUnitSimulatorReturn {
 }
 
 /**
- * 最適編成の状態と操作を管理する。
+ * 最適編成の状態と操作を管理する
  *
  * @param allCards - ユーザー追加分を含む全サポート
  * @param cardByName - サポート名とカードの対応表
  * @param scoreSettings - 現在の点数設定
+ * @param unitSettingsState - アプリで共有する最適編成設定を保持・更新する状態と操作
+ * @param cardUncaps - 現在のサポート凸数
+ * @param cardCountCustom - 現在のサポート別回数調整
  * @returns 設定、計算結果、手動計算と総当たり最適化の操作
  */
 export function useUnitSimulator(
   allCards: SupportCard[],
   cardByName: Map<string, SupportCard>,
   scoreSettings: ScoreSettings,
+  unitSettingsState: UnitSimulatorSettingsState,
+  cardUncaps: Record<string, UncapType>,
+  cardCountCustom: CardCountCustom,
 ): UseUnitSimulatorReturn {
-  const { settings, setSettings, settingsRef } = useUnitSimulatorSettingsState()
+  const { settings, setSettings, settingsRef } = unitSettingsState
   const [cachedResult] = useState(() => loadUnitResult(cardByName))
   const [result, setResult] = useState<UnitResult | null>(cachedResult.result)
   const [hasCalculated, setHasCalculated] = useState(cachedResult.hasCalculated)
@@ -57,13 +61,13 @@ export function useUnitSimulator(
     (nextSettings: UnitSimulatorSettings, customCardCount?: CardCountCustom): OptimizeInput => ({
       settings: nextSettings,
       scoreSettings,
-      cardUncaps: loadCardUncaps(),
-      cardCountCustom: customCardCount ?? loadCardCountCustom(),
+      cardUncaps,
+      cardCountCustom: customCardCount ?? cardCountCustom,
       allCards,
       cardByName,
       excludedCardNames: nextSettings.ignoreCardExclusions ? [] : nextSettings.excludedCardNames,
     }),
-    [allCards, cardByName, scoreSettings],
+    [allCards, cardByName, scoreSettings, cardUncaps, cardCountCustom],
   )
 
   const applyOptimizedResult = useCallback(

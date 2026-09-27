@@ -1,7 +1,8 @@
 /**
- * 最適編成パネルとサポート一覧の選択操作を接続する。
+ * 最適編成パネルとサポート一覧の選択操作を接続する
  *
- * パネル側の追加処理と最新の選択状態をrefで保持し、一覧から同期的に呼び出せるようにする。
+ * パネルから渡される選択処理と現在の選択状態を保持し、
+ * 一覧のクリックを正しい時点でパネルへ渡す
  */
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SupportCard } from '../types/card'
@@ -57,7 +58,7 @@ export function useUnitCardSelectionBridge({
   const selectionModeRef = useRef(selectionMode)
   const [eligibilityVersion, setEligibilityVersion] = useState(0)
 
-  // クリックイベントがstate反映直後の通常effectより先に届いても選択を取りこぼさない
+  // 画面の選択状態が通常の反映処理へ届く前のクリックでも、選択を取りこぼさない
   useLayoutEffect(() => {
     selectionModeRef.current = selectionMode
   }, [selectionMode])
@@ -74,7 +75,7 @@ export function useUnitCardSelectionBridge({
 
   const setSelectionMode = useCallback(
     (enabled: boolean) => {
-      // refを先に更新し、同じイベントループ内の一覧クリックにも新しい状態を使う
+      // 一覧クリックと同じ処理の中でも、更新後の選択状態を使えるようにする
       selectionModeRef.current = enabled
       setSelectionModeState(enabled)
     },

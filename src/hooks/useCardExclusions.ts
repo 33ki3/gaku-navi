@@ -1,11 +1,11 @@
 /**
- * 最適編成から除外するサポートを管理するフック。
+ * 最適編成から除外するサポートを管理するフック
  *
- * 除外状態は最適編成設定へ含め、カード一覧と最適編成の両方から同じ状態を参照する。
+ * 除外状態は最適編成設定へ含め、カード一覧と最適編成の両方から同じ状態を参照する
  */
 import { useCallback, useMemo } from 'react'
 
-import { useUnitSimulatorSettingsState } from './useUnitSimulatorSettingsState'
+import type { UnitSimulatorSettingsState } from './useUnitSimulatorSettingsState'
 
 /** useCardExclusions の返却型 */
 interface CardExclusionsState {
@@ -20,10 +20,14 @@ interface CardExclusionsState {
 /**
  * サポートの最適編成除外状態を管理する
  *
+ * @param params - 最適編成設定と更新操作を持つ共有状態
  * @returns 除外対象と更新操作
  */
-export function useCardExclusions(): CardExclusionsState {
-  const { settings, setSettings, settingsRef } = useUnitSimulatorSettingsState()
+export function useCardExclusions({
+  settings,
+  setSettings,
+  settingsRef,
+}: UnitSimulatorSettingsState): CardExclusionsState {
   const excludedCardNames = useMemo(() => new Set(settings.excludedCardNames), [settings.excludedCardNames])
 
   const isCardExcluded = useCallback((cardName: string) => excludedCardNames.has(cardName), [excludedCardNames])

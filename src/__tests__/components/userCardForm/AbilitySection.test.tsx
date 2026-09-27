@@ -7,8 +7,8 @@ import { render, screen } from '@testing-library/react'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it, vi } from 'vitest'
 import AbilitySection from '../../../components/userCardForm/AbilitySection'
-import { createInitialState } from '../../../hooks/formHelpers'
 import i18n from '../../../i18n'
+import { createInitialState } from '../../../utils/userCardForm'
 
 describe('AbilitySection', () => {
   it('アビリティ選択肢にi18nキーをそのまま表示しない', () => {

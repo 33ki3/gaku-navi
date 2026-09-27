@@ -15,13 +15,13 @@ const targetCard = data.AllCards[0]
 
 /**
  * 表示幅を切り替え、スマホでは選択開始時に一覧パネルを閉じる動作も
- * 検証できるようにする。
- * matchMediaが指定した表示幅を返すようにする
+ * 検証できるようにする
+ * テストでは指定した表示幅として判定させる
  *
  * @param desktop - PC幅として扱うか
  */
 function stubViewport(desktop: boolean): void {
-  // hookが参照するmatchMediaだけを差し替え、PC/スマホの分岐を決める
+  // テスト対象が参照する表示幅判定だけを差し替え、PC/スマホの分岐を決める
   vi.stubGlobal(
     'matchMedia',
     vi.fn(() => ({
@@ -38,7 +38,7 @@ function stubViewport(desktop: boolean): void {
 }
 
 /**
- * 手動選択テスト用に、6枠の空スロットを持つ設定を作る。
+ * 手動選択テスト用に、6枠の空スロットを持つ設定を作る
  * 既定値の配列を直接変更しないよう、入れ子の値もコピーする
  */
 function createInitialSettings(): UnitSimulatorSettings {
@@ -69,11 +69,11 @@ interface ManualSelectionHarness {
 }
 
 /**
- * ブリッジと手動選択フックを同じ状態で組み合わせる。
+ * ブリッジと手動選択フックを同じ状態で組み合わせる
  * 実画面の「最適編成パネル ↔ サポート一覧」接続をテストするために使う
  */
 function useManualSelectionHarness(onClosePanel: () => void, isMobileViewport = true): ManualSelectionHarness {
-  // 実画面と同じく、設定・選択モード・一覧パネルの開閉を同じhook内で保持する
+  // 実画面と同じく、設定・選択モード・一覧パネルの開閉をまとめて保持する
   const [settings, setSettings] = useState(createInitialSettings)
   const [unitCardSelectMode, setUnitCardSelectMode] = useState(false)
   const [panelOpen, setPanelOpen] = useState(true)
@@ -115,7 +115,8 @@ describe('useManualUnitSelection', () => {
       result.current.bridge.handleManualCardClick(targetCard)
     })
 
-    // クリックしたカードは指定スロットだけへ入り、選択モードと一覧クローズ通知も維持される
+    // クリックしたカードは指定スロットだけへ入り、選択モードと
+    // 一覧を閉じる通知も維持される
     expect(result.current.settings.manualCards[2]).toBe(targetCard.name)
     expect(result.current.settings.manualCards.filter((name) => name !== null)).toHaveLength(1)
     expect(result.current.unitCardSelectMode).toBe(true)
@@ -136,18 +137,21 @@ describe('useManualUnitSelection', () => {
   })
 
   it('PCで最適編成パネルだけ閉じても、一覧クリックで手動編成へ追加できる', () => {
-    // PCではスロット選択開始時にパネルを自動で閉じないため、利用者が閉じる操作を挟んでも選択モードと登録済みコールバックを維持する
+    // PCではスロット選択開始時にパネルを自動で閉じないため、
+    // 利用者が閉じる操作をしても選択モードとカードの登録先を維持する
     // 続けてカードをクリックし、対象スロットへ反映する
     stubViewport(true)
     const onClosePanel = vi.fn()
     const { result } = renderHook(() => useManualSelectionHarness(onClosePanel, false))
 
-    // PCではパネルを閉じる前に5番目のスロットを選択し、利用者の閉じる操作を再現する
+    // PCではパネルを閉じる前に5番目のスロットを選択し、
+    // 利用者が閉じる操作を行う流れを再現する
     act(() => result.current.manualSelection.startSlotSelection(4))
     act(() => result.current.closePanel())
     act(() => result.current.bridge.handleManualCardClick(targetCard))
 
-    // パネルが閉じた後も選択モードのコールバックが残り、クリックしたカードが指定位置へ入る
+    // パネルを閉じた後も選択モードを保ち、
+    // クリックしたカードを指定位置へ入れられる
     expect(result.current.panelOpen).toBe(false)
     expect(result.current.settings.manualCards[4]).toBe(targetCard.name)
     expect(result.current.unitCardSelectMode).toBe(true)

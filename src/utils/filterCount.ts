@@ -1,4 +1,4 @@
-import type { FilterState } from '../hooks/useFilterState'
+import type { FilterState } from '../types/filter'
 
 /**
  * 検索文字列を含む、現在適用中の絞り込み条件数を数える

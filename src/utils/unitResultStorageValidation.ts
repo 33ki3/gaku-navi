@@ -1,10 +1,10 @@
 /**
- * 最適編成の保存結果を復元する前に検証する型ガード。
+ * 最適編成の保存結果を復元する前に検証する型ガード
  *
- * localStorage 由来の値を unknown のまま受け取り、UI が参照する構造を
+ * ブラウザの保存領域から読み込んだ値を未検証のまま受け取り、画面が参照する構造を
  * 一段ずつ確認することで、不正なキャッシュを安全に破棄できるようにする
  */
-import type { CardCalculationResult, ParameterValues } from '../types/card'
+import type { CardAbilityBoost, CardAbilityDetail, CardCalculationResult, ParameterValues } from '../types/card'
 import * as enums from '../types/enums'
 import type { SupportSynergyDetail, SynergyProviderDetail } from '../types/unit'
 import { isActionCountRecord, isParameterValues } from './domainValueValidation'
@@ -22,7 +22,7 @@ interface StoredUnitMember {
   paramBonusPercent?: ParameterValues
 }
 
-/** localStorage に保存する最適編成結果 */
+/** ブラウザの保存領域に保存する最適編成結果 */
 interface StoredUnitResult {
   members: StoredUnitMember[]
   totalScore: number
@@ -31,9 +31,6 @@ interface StoredUnitResult {
   parameterBonusBase?: ParameterValues
   outsideParamBonusPercent?: ParameterValues
 }
-
-type AbilityBoost = CardCalculationResult['abilityBoosts'][number]
-type AbilityDetail = CardCalculationResult['allAbilityDetails'][number]
 
 /** 任意の文字列プロパティを検証する */
 function isOptionalString(value: unknown): boolean {
@@ -45,7 +42,7 @@ function isOptionalNumber(value: unknown): boolean {
   return isOptional(value, isFiniteNumber)
 }
 
-/** TriggerKeyTypeをキーに有限数だけを持つマップか判定する */
+/** アビリティの発動条件をキーに安全な数値だけを持つ対応表か判定する */
 function isNumberRecord(value: unknown): value is SupportSynergyDetail {
   return (
     isRecord(value) &&
@@ -70,16 +67,16 @@ function hasValidAbilityFields(value: Record<string, unknown>): boolean {
 }
 
 /** 表示対象のアビリティ計算内訳か判定する */
-function isAbilityBoost(value: unknown): value is AbilityBoost {
+function isAbilityBoost(value: unknown): value is CardAbilityBoost {
   return isRecord(value) && hasValidAbilityFields(value)
 }
 
 /** 全アビリティ計算内訳か判定する */
-function isAbilityDetail(value: unknown): value is AbilityDetail {
+function isAbilityDetail(value: unknown): value is CardAbilityDetail {
   return isRecord(value) && hasValidAbilityFields(value) && isOptional(value.effectData, isRecord)
 }
 
-/** カード計算結果として UI が安全に参照できるか判定する */
+/** カード計算結果として画面が安全に参照できるか判定する */
 function isCardCalculationResult(value: unknown): value is CardCalculationResult {
   if (!isRecord(value)) return false
 
@@ -132,7 +129,7 @@ export function isStoredUnitMember(value: unknown): value is StoredUnitMember {
 /**
  * 保存済み最適編成結果か判定する
  *
- * @param value - JSON.parse 後の未検証値
+ * @param value - JSONを読み込んだ後の未検証値
  * @returns 復元に必要な構造と値が揃っている場合に true
  */
 export function isStoredUnitResult(value: unknown): value is StoredUnitResult {

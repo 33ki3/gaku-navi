@@ -35,8 +35,11 @@ function gtagPlugin(gaId: string): Plugin {
 }
 
 /**
- * cards.jsonとja.jsonをJavaScriptへ結合せず、ハッシュ付きJSON assetとして出力する。
- * データ更新時もアプリ本体のJS・vendor・一覧画面用JSを再取得しない。
+ * cards.jsonとja.jsonをJavaScriptへ結合せず、ハッシュ付きJSON assetとして出力する
+ * データ更新時もアプリ本体のJS・vendor・一覧画面用JSを再取得しない
+ *
+ * @param basePath - asset URLの基準パス
+ * @returns JSON assetを提供するVite plugin
  */
 function jsonAssetPlugin(basePath: string): Plugin {
   const cardJsonPath = resolve(process.cwd(), 'src/data/json/cards.json')
@@ -132,6 +135,9 @@ export default defineConfig(({ mode }) => {
           skipWaiting: true,
           clientsClaim: true,
           navigateFallbackDenylist: [/\/(sitemap\.xml|robots\.txt)$/],
+          // 実験的なWebMCPコードは対応ブラウザが要求した場合だけ取得し、
+          // 通常のPWA利用では事前配信しない
+          globIgnores: ['**/webmcp-*.js'],
         },
       }),
     ],
@@ -150,7 +156,7 @@ export default defineConfig(({ mode }) => {
               {
                 name: 'app-list',
                 test: (id) =>
-                  (!id.endsWith('/src/main.tsx') && id.includes('/src/')) ||
+                  (!id.endsWith('/src/main.tsx') && id.includes('/src/') && !id.includes('/src/webmcp/')) ||
                   id.includes('virtual:pwa-register') ||
                   id.includes('workbox'),
               },

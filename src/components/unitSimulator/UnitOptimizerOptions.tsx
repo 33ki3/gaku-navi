@@ -1,12 +1,12 @@
 /**
- * 最適編成の共通オプション。
+ * 最適編成の共通オプション
  *
- * 最適編成パネルとオプションモーダルの両方から利用し、同じ設定項目と更新処理を提供する。
+ * 最適編成パネルとオプションモーダルで、同じ設定項目と更新処理を使う
  */
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
-import type { UnitSimulatorSettings } from '../../types/unit'
 import * as enums from '../../types/enums'
+import type { UnitSimulatorSettings } from '../../types/unit'
 import { CheckboxField } from '../ui/CheckboxField'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { SpinnerInput } from '../ui/SpinnerInput'

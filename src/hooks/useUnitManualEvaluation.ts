@@ -3,12 +3,12 @@
  */
 import { type Dispatch, type SetStateAction, useCallback } from 'react'
 
+import type { CardCountCustom } from '../types/card'
 import type { UnitResult, UnitSimulatorSettings } from '../types/unit'
 import type { BuildUnitRuntimeInput } from '../types/unitOptimizer'
 import { toOrderedUnitMemberNames } from '../utils/unitOptimizedSettings'
 import { saveUnitResult } from '../utils/unitResultStorage'
 import { evaluateManualUnit } from '../utils/unitSimulator'
-import type { CardCountCustom } from './useCardCountCustom'
 
 /** 手動編成評価フックの引数 */
 interface UseUnitManualEvaluationOptions {

@@ -1,18 +1,17 @@
 /**
  * スコア内訳モーダルコンポーネント
  *
- * サポートグリッドでスコアをクリックしたときに開くモーダル。
+ * サポートグリッドでスコアをクリックしたときに開くモーダル
  * イベントブースト・アビリティ・パラメータボーナス・Pアイテムの
- * 内訳を表示し、右側に合計スコアを表示する。
- * サポート別のアクション回数回数調整も設定できる。
+ * 内訳を表示し、右側に合計スコアを表示する
+ * サポート別のアクション回数調整も設定できる
  */
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
 import { useAccordionState } from '../../hooks'
-import type { CardCustomData } from '../../hooks/useCardCountCustom'
-import type { CardCalculationResult, SupportCard } from '../../types/card'
+import type { CardCalculationResult, CardCustomData, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import { getProvidedActions } from '../../utils/supportSynergy'
 import CloseButton from '../ui/CloseButton'
@@ -22,7 +21,7 @@ import ModalOverlay from '../ui/ModalOverlay'
 import { AbilityBreakdownList } from './AbilityBreakdownList'
 import { CountCustomSection } from './CountCustomSection'
 
-/** ScoreDetailModal コンポーネントに渡すプロパティ */
+/** スコア内訳と回数調整の表示に必要な値 */
 interface ScoreDetailModalProps {
   /** サポートカードデータ */
   card: SupportCard
@@ -45,7 +44,7 @@ interface ScoreDetailModalProps {
 }
 
 /**
- * サポートの点数内訳と回数調整を表示する。
+ * サポートの点数内訳と回数調整を表示する
  *
  * @param props - 対象サポート、計算結果、回数調整操作
  * @returns スコア内訳モーダル
@@ -95,7 +94,11 @@ export default function ScoreDetailModal({
   )
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_SCORE}>
+    <ModalOverlay
+      onClose={onClose}
+      panelClassName={constant.MODAL_PANEL_SCORE}
+      ariaLabel={t('ui.accessibility.open_score_detail', { name: card.name })}
+    >
       {/* サポート名と点数内訳モーダルの操作ヘッダー */}
       <div className={`${typeEntry.bg} border-b ${typeEntry.border} rounded-t-2xl px-5 py-3`}>
         <div className="flex items-center justify-between">

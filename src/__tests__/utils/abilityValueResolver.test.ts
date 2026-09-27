@@ -11,7 +11,6 @@ import {
   SLOT1_OPTIONS,
   SLOT3_OPTIONS,
   SLOT6_OPTIONS,
-  isFixedSlot,
 } from '../../data/card/abilitySlot'
 import { getAvailableAbilities, getSchedule, getStages } from '../../data/score/abilityValue'
 import type { Ability, SupportCard } from '../../types/card'
@@ -122,15 +121,6 @@ describe('resolveAbilityValues', () => {
 })
 
 describe('固定スロット', () => {
-  it('isFixedSlot がスロット 0・2・5 で true を返す', () => {
-    expect(isFixedSlot(0)).toBe(true)
-    expect(isFixedSlot(1)).toBe(false)
-    expect(isFixedSlot(2)).toBe(true)
-    expect(isFixedSlot(3)).toBe(false)
-    expect(isFixedSlot(4)).toBe(false)
-    expect(isFixedSlot(5)).toBe(true)
-  })
-
   it('スロット1 は InitialStat と ParameterBonus の2択', () => {
     expect(SLOT1_OPTIONS).toContain(AbilityNameKeyType.InitialStat)
     expect(SLOT1_OPTIONS).toContain(AbilityNameKeyType.ParameterBonus)

@@ -1,26 +1,26 @@
 /**
- * @file useUnitSimulator.test.ts
- * @description 最適化計算完了時における、通常枠およびレンタル枠ロック状態の自動入れ替え・引き継ぎ同期機能の単体テストです。
+ * 最適化後のレンタル枠・通常枠のロック状態を検証する
  *
- * unifyRentalLock 有効時に、レンタル枠と通常枠の間でカードが移動した場合に
- * ロック状態が正しく引き継がれ、ローカルストレージへ保存される挙動を検証します。
+ * レンタル枠と通常枠のカードが入れ替わった場合に、設定の有効・無効に応じて
+ * ロック状態を引き継ぎ、保存することを確認する
  */
 
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { runOptimizerAsync } from '../../application/unitOptimizerRunner'
 import * as constant from '../../constant'
-import { runOptimizerAsync } from '../../hooks/unitOptimizerRunner'
 import { useUnitSimulator } from '../../hooks/useUnitSimulator'
+import { useUnitSimulatorSettingsState } from '../../hooks/useUnitSimulatorSettingsState'
 import type { CardCalculationResult, ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitMember, UnitResult } from '../../types/unit'
 
-// 計算負荷を回避し決定的挙動を検査するため、非同期オプティマイザー実行関数をモック化
-vi.mock('../../hooks/unitOptimizerRunner', () => ({
+// 計算負荷を避け、ロック設定の結果だけを確認できるよう最適化処理を差し替える
+vi.mock('../../application/unitOptimizerRunner', () => ({
   runOptimizerAsync: vi.fn(),
 }))
 
-/** テスト用の最小フィールドを持つダミー UnitMember を作成する */
+// 最適化結果で使う最小限のサポート情報を作成する
 function makeMember(card: SupportCard, isRental: boolean): UnitMember {
   return {
     card,
@@ -64,9 +64,15 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
     actionCounts: {},
   }
 
+  const renderUnitSimulator = () =>
+    renderHook(() => {
+      const unitSettingsState = useUnitSimulatorSettingsState()
+      return useUnitSimulator(mockCards, cardByName, baseScoreSettings, unitSettingsState, {}, {})
+    })
+
   beforeEach(() => {
     localStorage.clear()
-    // requestAnimationFrame などのマクロタスクタイミングを同期的に実行可能にするスタブを設定
+    // 描画待ちをすぐ完了させ、非同期の表示更新をテスト内で確認できるようにする
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => cb(0))
   })
 
@@ -76,13 +82,11 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
   })
 
   /**
-   * シナリオ1: 相互ロック入れ替え
-   * - 初期状態: CardAをレンタルスロットでロック、CardBを通常スロットのロックとして設定。
-   * - 最適化結果: スロット構造が逆転（CardBがレンタルに、CardAが自前通常スロットとして編成される）。
-   * - 期待結果:
-   *    ユーザーは両方をロック固定したいため、CardBがレンタル枠に納まったことに追従して
-   *    「CardBをレンタルロック(manualRental: true & rentalCardName: 'CardB')」かつ
-   *    「CardAを通常ロック(lockedCards: ['CardA'])」へと、ロック状態が連動して相互に安全に入れ替わり保存されること。
+   * レンタルロックと通常ロックが入れ替わる場合
+   *
+   * CardAをレンタル枠、CardBを通常枠に固定した状態で、最適化結果の枠が入れ替わる
+   * 両方の固定を保ったまま、レンタル枠と通常枠の設定も入れ替えて保存する
+   * ことを確認する
    */
   it('unifyRentalLock = true 時、A(レンタルロック)とB(通常ロック)の状態で結果適用によりBがレンタル枠に納まったとき、ロック配置が安全に入れ替わること', async () => {
     const initialSettings = {
@@ -102,7 +106,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
     }
     localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(initialSettings))
 
-    // Optimizerのシミュレート: CardAが通常枠、CardBがレンタル枠にセットされた結果を返却
+    // 最適化処理を差し替え、CardAが通常枠、CardBがレンタル枠に入る結果を返す
     const finalResult: UnitResult = {
       members: [
         makeMember(mockCards[0], false), // CardA (通常へスライド)
@@ -121,18 +125,18 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
+    const { result } = renderUnitSimulator()
 
     await act(async () => {
       result.current.optimizeRemaining()
     })
 
-    // 結果適用後にローカルストレージへ即時同期保存された永続設定を抽出
+    // 結果適用後に保存された最適編成設定を確認する
     const savedRaw = localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)
     expect(savedRaw).not.toBeNull()
     const saved = JSON.parse(savedRaw!)
 
-    // ロック対象（CardA & CardB）は全員ロックが維持されるが、スロット上での通常・レンタル割当が逆転していること
+    // CardAとCardBの固定を保ったまま、通常枠とレンタル枠が入れ替わっていること
     expect(saved.manualRental).toBe(true)
     expect(saved.rentalCardName).toBe('CardB') // CardBが新しくレンタルでロック
     expect(saved.lockedCards).toContain('CardA') // CardAが通常でロック
@@ -140,13 +144,12 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
   })
 
   /**
-   * シナリオ2: 非固定カードがレンタルへ採用されるケースでの一過性ロック転送
-   * - 初期状態: CardAをレンタルロック設定、自前の通常ロックは一切なし。
-   * - 最適化結果: 元々レンタルだったCardAが通常スロットに移動し、枠の都合上、非固定のCardBがレンタルに収まる。
-   * - 期待結果:
-   *    元々CardAに対してのみロック意思があったため、CardAが通常枠に移るのに合わせて
-   *    「CardAが通常ロック(lockedCards: ['CardA'])」になり、
-   *    新レンタルとなったCardBは非ロック状態（manualRental: false）に変更され、不要なロックの波及を防ぐこと。
+   * 固定していないカードがレンタル枠へ選ばれる場合
+   *
+   * CardAだけをレンタル枠に固定した状態で、CardAが通常枠へ移り、
+   * CardBがレンタル枠へ入ることを確認する
+   * CardAの固定は通常枠へ移し、固定していないCardBへロックを引き継がない
+   * ことを確認する
    */
   it('unifyRentalLock = true 時、A(レンタルロック)のみ・B(通常ロックなし)の状態で結果適用によりBがレンタル枠に納まったとき、Aが通常スロットにロック移動し、Bはアンロック状態になること', async () => {
     const initialSettings = {
@@ -184,7 +187,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
+    const { result } = renderUnitSimulator()
 
     await act(async () => {
       result.current.optimizeRemaining()
@@ -192,7 +195,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
     const saved = JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)!)
 
-    // CardAのロック意思は通常枠へ引き継がれ、CardBはもともと非固定のため、レンタル枠はアンロック（manualRental: false）になること
+    // CardAの固定だけを通常枠へ移し、CardBにはレンタルロックを付けない
     expect(saved.manualRental).toBe(false)
     expect(saved.rentalCardName).toBe('CardB')
     expect(saved.lockedCards).toContain('CardA')
@@ -200,12 +203,11 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
   /**
    * シナリオ3: オプションが無効（標準動作）時の保護
-   * - 初期状態: unifyRentalLock=false、レンタル枠CardAにロック、通常枠CardBにロック。
-   * - 最適化結果: スロット上はCardBがレンタルに、CardAが通常に。
+   * - 初期状態: unifyRentalLock=false、レンタル枠CardAにロック、通常枠CardBにロック
+   * - 最適化結果: スロット上はCardBがレンタルに、CardAが通常に
    * - 期待結果:
-   *    オプション無効時は、いかなるロックの自動コンバート/入れ替え同期も発動せず、
-   *    当初設定した通常施錠配列（lockedCards: ['CardB']）およびレンタル有無設定が
-   *    そのまま変更されることなく残存維持（厳格な独立分離の担保）されること。
+   *   オプション無効時はロックの自動入れ替えを行わず、通常枠とレンタル枠の設定を
+   *   最適化前のまま保存すること
    */
   it('unifyRentalLock = false (デフォルト無効時) は、如何なる場合もレンタルロック設定や通常ロック配列を自動引き継ぎ・書き換えしないこと', async () => {
     const initialSettings = {
@@ -221,7 +223,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
-      unifyRentalLock: false, // ロック自動入れ替え機能をOFF
+      unifyRentalLock: false, // ロック自動入れ替えを無効にする
     }
     localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(initialSettings))
 
@@ -243,7 +245,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
+    const { result } = renderUnitSimulator()
 
     await act(async () => {
       result.current.optimizeRemaining()
@@ -251,20 +253,20 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
     const saved = JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)!)
 
-    // 無効時は引継ぎが発動せず、当初指定した manualRental / lockedCards 配列は完全に変化しないこと
+    // 無効時はロックの引き継ぎを行わず、通常枠の固定をそのまま保つ
     expect(saved.manualRental).toBe(true)
-    // レンタルサポート名は編成スロットに合わせてBへ更新されるが、ロック状態は引き継ぎ処理の対象外であることを確認する
+    // レンタル枠のカード名は結果に合わせるが、ロック状態は引き継がない
     expect(saved.rentalCardName).toBe('CardB')
     expect(saved.lockedCards).toEqual(['CardB']) // 通常ロック配列は上書き・反転されない
   })
 
   /**
    * シナリオ4: レンタルロックなし・通常ロックあり での通常→レンタル昇格
-   * - 初期状態: レンタルロックなし（manualRental=false）、CardBのみ通常枠に施錠。
-   * - 最適化結果: CardBがレンタル枠に収まる。
+   * - 初期状態: レンタルロックなし（manualRental=false）、CardBのみ通常枠に施錠
+   * - 最適化結果: CardBがレンタル枠に収まる
    * - 期待結果:
    *    unifyRentalLock=true の場合、通常ロックのCardBがレンタル枠に昇格するため
-   *    manualRental=true, rentalCardName='CardB', lockedCards=[] に更新されること。
+   *    manualRental=true, rentalCardName='CardB', lockedCards=[] に更新されること
    */
   it('unifyRentalLock = true 時、レンタルロックなし・B(通常ロック)の状態で結果適用によりBがレンタル枠に収まったとき、Bがレンタルでロック、通常ロックがオフになること', async () => {
     const initialSettings = {
@@ -302,7 +304,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       return null
     })
 
-    const { result } = renderHook(() => useUnitSimulator(mockCards, cardByName, baseScoreSettings))
+    const { result } = renderUnitSimulator()
 
     await act(async () => {
       result.current.optimizeRemaining()
@@ -310,7 +312,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
     const saved = JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)!)
 
-    // CardBが通常枠ロック → レンタル枠へ昇格したため、レンタルロック状態に変換されること
+    // CardBの固定をレンタル枠の固定へ移す
     expect(saved.manualRental).toBe(true)
     expect(saved.rentalCardName).toBe('CardB')
     expect(saved.lockedCards).toEqual([])

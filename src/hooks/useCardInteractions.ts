@@ -1,7 +1,7 @@
 /**
- * サポート一覧へ渡すContext値とユーザーサポート操作を組み立てる。
+ * サポート一覧で使うデータと操作を組み立てる
  *
- * 更新頻度の異なるデータ操作とUI状態を別々にメモ化し、一覧項目の不要な再描画を抑える。
+ * サポートの表示データと画面操作を分け、一覧で必要な操作だけを共有する
  */
 import { useCallback, useMemo } from 'react'
 import type { CardDataContextValue, CardUIContextValue } from '../contexts/CardContext'
@@ -27,6 +27,10 @@ interface UseCardInteractionsParams {
   state: AppState
   /** サポート一覧と最適編成パネルの接続状態 */
   selection: UnitCardSelectionBridge
+  /** ユーザーサポート削除の共通保存処理。省略時は状態フックの操作を使う */
+  deleteUserSupport?: (cardName: string) => void
+  /** 凸数変更の共通保存処理。省略時は状態フックの操作を使う */
+  updateCardUncap?: (cardName: string, uncap: enums.UncapType) => void
 }
 
 /**
@@ -35,7 +39,12 @@ interface UseCardInteractionsParams {
  * @param params - アプリ状態と編成選択の接続状態
  * @returns 2種類のContext値とユーザーサポート操作
  */
-export function useCardInteractions({ state, selection }: UseCardInteractionsParams): CardInteractions {
+export function useCardInteractions({
+  state,
+  selection,
+  deleteUserSupport,
+  updateCardUncap,
+}: UseCardInteractionsParams): CardInteractions {
   // Contextへ渡す操作と、ユーザー追加サポートの編集操作を状態から取り出す
   const { handleCardClick, handleScoreClick, handleUncapChange, handleToggleUncapEdit, handleToggleCardExcluded } =
     state.handlers
@@ -43,7 +52,7 @@ export function useCardInteractions({ state, selection }: UseCardInteractionsPar
   const { deleteUserCard: removeUserCard } = state.userCards
   const { handleManualCardClick } = selection
 
-  // 一覧のクリック入口は共通にし、現在の操作モードに応じた処理だけをここで振り分ける
+  // 一覧のクリック入口を共通にし、現在の操作モードに応じて処理を振り分ける
   const onCardClick = useCallback(
     (card: SupportCard) => {
       if (state.ui.cardListMode === enums.CardListInteractionModeType.CardExclusionEdit) {
@@ -59,6 +68,7 @@ export function useCardInteractions({ state, selection }: UseCardInteractionsPar
     [handleCardClick, handleManualCardClick, handleToggleCardExcluded, state.ui.cardListMode],
   )
 
+  // 編集対象を先に保持してから、ユーザーサポートフォームを開く
   const editUserCard = useCallback(
     (card: SupportCard) => {
       // 編集対象を先に保存してから、フォームモーダルを開く
@@ -68,12 +78,17 @@ export function useCardInteractions({ state, selection }: UseCardInteractionsPar
     [setEditingUserCard, setUserCardFormOpen],
   )
 
+  // 渡された共通commandを優先し、未指定時は状態hookへ委譲する
   const deleteUserCard = useCallback(
     (cardName: string) => {
-      // 削除処理はユーザーサポートhookへ委譲し、一覧側の状態を直接変更しない
+      // 一覧側で状態を直接変更せず、ユーザーサポートの更新処理に通す
+      if (deleteUserSupport) {
+        deleteUserSupport(cardName)
+        return
+      }
       removeUserCard(cardName)
     },
-    [removeUserCard],
+    [deleteUserSupport, removeUserCard],
   )
 
   // 一覧へ渡すカードデータ操作のContext値
@@ -82,10 +97,17 @@ export function useCardInteractions({ state, selection }: UseCardInteractionsPar
       getCardUncap: state.scores.getCardUncap,
       onCardClick,
       onScoreClick: handleScoreClick,
-      onUncapChange: handleUncapChange,
+      onUncapChange: updateCardUncap ?? handleUncapChange,
       isCardExcluded: state.exclusions.isCardExcluded,
     }),
-    [state.scores.getCardUncap, onCardClick, handleScoreClick, handleUncapChange, state.exclusions.isCardExcluded],
+    [
+      state.scores.getCardUncap,
+      onCardClick,
+      handleScoreClick,
+      handleUncapChange,
+      state.exclusions.isCardExcluded,
+      updateCardUncap,
+    ],
   )
 
   // 一覧へ渡す表示状態と選択可否のContext値

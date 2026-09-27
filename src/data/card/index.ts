@@ -1,10 +1,10 @@
 /**
- * サポート画面用マスタデータのバレルエクスポート。
+ * サポート画面で使うカード・イベント・表示設定をまとめて公開する入口
  */
 export { buildAbilityBadgeMap } from './abilityBadge'
 export { AbilityCategoryParam, AbilityEffectKeywords, AbilityKeywordMap, AbilityParamKeywords } from './abilityKeyword'
 export { getMemoryBadge, getPlanBadge, getSkillTypeBadge, SelectablePlanEntries } from './badge'
-export { AllCards, CardByName, inflateCards } from './cards'
+export { AllCards, inflateCards } from './cards'
 export {
   EventCategoryAcquire,
   EventFilterAcquireList,
@@ -34,6 +34,7 @@ export {
 } from './effectLabelResolver'
 export { EVENT_PARAM_VALUE, FIRST_EVENT_OPTIONS, THIRD_EVENT_OPTIONS } from './eventPattern'
 export { SpRateTriggers } from './filterTrigger'
+export { FORM_FIELD_KEYS } from './formFieldKeys'
 export {
   PLAN_SELECT_OPTIONS,
   RARITY_SELECT_OPTIONS,

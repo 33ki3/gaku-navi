@@ -9,10 +9,10 @@
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
-import type { AbilityFormNameKey, AbilityFormRow, UserCardFormState } from '../../hooks/formHelpers'
-import { cleanAbilityLabel, getRarityTier, getSlotOptions } from '../../hooks/formHelpers'
 import * as enums from '../../types/enums'
 import { getAbilityNameLabelKey } from '../../utils/display/effectLabels'
+import type { AbilityFormNameKey, AbilityFormRow, UserCardFormState } from '../../utils/userCardForm'
+import { cleanAbilityLabel, getRarityTier, getSlotOptions } from '../../utils/userCardForm'
 
 /** AbilitySection コンポーネントに渡すプロパティ */
 interface AbilitySectionProps {

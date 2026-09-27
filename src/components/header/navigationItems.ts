@@ -9,16 +9,18 @@ import { PrimaryNavigationKey } from '../../types/enums'
 import { CalculatorIcon, ScoreSettingsIcon, StarIcon } from '../ui/icons'
 import type { IconProps } from '../ui/icons/types'
 
-/** 主要ナビゲーション1項目の表示状態と操作 */
-interface PrimaryNavigationItem {
-  key: PrimaryNavigationKey
-  icon: ComponentType<IconProps>
+/** 主要ナビゲーションからkeyとiconを除いた画面側の表示状態と操作 */
+interface PrimaryNavigationInput {
   label: string
   action: () => void
   active: boolean
 }
 
-type PrimaryNavigationInput = Omit<PrimaryNavigationItem, 'key' | 'icon'>
+/** 主要ナビゲーション1項目の表示状態と操作 */
+interface PrimaryNavigationItem extends PrimaryNavigationInput {
+  key: PrimaryNavigationKey
+  icon: ComponentType<IconProps>
+}
 
 /** アイコンは実行時データでは変わらないため、共通ユーティリティで対応付ける */
 const PRIMARY_NAVIGATION_ICONS: Record<PrimaryNavigationKey, ComponentType<IconProps>> = {

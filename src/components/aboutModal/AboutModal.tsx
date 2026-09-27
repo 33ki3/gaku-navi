@@ -28,7 +28,7 @@ export default function AboutModal({ onClose }: AboutModalProps) {
   const { t } = useTranslation()
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL}>
+    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL} ariaLabel={t('ui.about.title')}>
       {/* Aboutモーダルのヘッダー */}
       <div className="sticky top-0 bg-white z-10 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
         <h2 className="text-sm font-black text-slate-800">{t('ui.about.title')}</h2>

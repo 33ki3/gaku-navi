@@ -1,10 +1,10 @@
 /**
- * サポートカードに関する型定義。
+ * サポートカードに関する型定義
  *
  * サポートの全情報（SupportCard）、アビリティ、イベント、Pアイテム、
  * スキルカード、そしてスコア計算結果など、アプリケーション全体の
- * データ構造をインターフェースとして定義するファイル。
- * cards.json から読み込んだデータはここの型で型付けされる。
+ * データ構造をインターフェースとして定義するファイル
+ * cards.json から読み込んだデータはここの型で型付けされる
  */
 import type {
   AbilityNameKeyType,
@@ -33,9 +33,9 @@ import type {
 } from './enums'
 
 /**
- * サポートカードの全情報を表すインターフェース。
+ * サポートカード1枚分の情報
  *
- * データフロー: cards.json → AllCards → コンポーネント
+ * cards.jsonから読み込み、一覧・計算画面で共有する
  */
 export interface SupportCard {
   /** サポート名（例: "いめーじとれーにんぐ"） */
@@ -46,11 +46,15 @@ export interface SupportCard {
   plan: PlanType
   /** パラメータタイプ（例: "vocal", "dance", "visual", "assist"） */
   type: CardType
-  /** パラメータタイプ（Vo/Da/Vi のいずれか。assist サポートでも abilities から決定済み。例: "vocal"） */
+  /** 実際に上昇するパラメータ（AssistでもVo/Da/Viのいずれか。例: "vocal"） */
   parameter_type: ParameterType
   /** 入手方法（例: "gacha", "event", "season_limited"） */
   source: SourceType
-  /** 配布系ソースか（イベント・ショップ・コインガチャ等。EventSSR判定に使用） */
+  /**
+   * 配布系の入手先か（イベント・ショップ・コインガチャなど）
+   *
+   * イベント配布の判定に使う
+   */
   is_event_source?: boolean
   /** 入手方法の詳細名（イベント名・ショップ名など。例: "夢よりも先の場所"） */
   source_detail?: string
@@ -66,15 +70,32 @@ export interface SupportCard {
   skill_card: SkillCardInfo | null
 }
 
+/** サポート1枚分の回数調整データ */
+export interface CardCustomData {
+  /** 自動発動アビリティの回数調整 */
+  selfTrigger?: Partial<Record<ActionIdType, number>>
+  /** Pアイテム発動回数の回数調整 */
+  pItemCount?: Partial<Record<ActionIdType, number>>
+}
+
+/** サポート名から回数調整データを探す表 */
+export type CardCountCustom = Record<string, CardCustomData>
+
 /** サポートアビリティ */
 export interface Ability {
-  /** i18n 表示名テンプレートのキー（card.abilityName.* に対応）（例: "parameter_bonus", "outing", "event_boost"） */
+  /**
+   * 表示名の種類を示すキー（card.abilityName.* に対応）
+   * 例: "parameter_bonus", "outing", "event_boost"
+   */
   name_key: AbilityNameKeyType
   /** 凸数(0〜4) → 効果量のマッピング（例: {}, {"0": "10", "4": "20"}） */
   values: Record<string, string>
   /** スコア計算時のトリガーキー（例: "parameter_bonus", "outing", "sp_lesson_end"） */
   trigger_key: TriggerKeyType
-  /** 効果対象のパラメータタイプ（該当なしの場合は省略）（例: "vocal", "dance", "visual"） */
+  /**
+   * 効果対象のパラメータ（対象がない場合は省略）
+   * 例: "vocal", "dance", "visual"
+   */
   parameter_type?: ParameterType
   /** プロデュース中の最大発動回数（制限なしの場合は省略）（例: 3） */
   max_count?: number
@@ -122,13 +143,19 @@ export interface PItemEffectPart {
   key: EffectTemplateKeyType
   /** パラメータ種別（vocal / dance / visual）（例: "vocal", "dance"） */
   param?: ParameterType
-  /** キーワード種別（good_condition / motivation 等）（例: "concentration", "good_condition", "vitality"） */
+  /**
+   * 効果の対象となるキーワード（好調・やる気など）
+   * 例: "concentration", "good_condition", "vitality"
+   */
   keyword?: EffectKeywordType
   /** 第2キーワード（例: "concentration"） */
   keyword2?: EffectKeywordType
   /** 第3キーワード */
   keyword3?: EffectKeywordType
-  /** 条件の閾値（「パラメータN以上」「キーワードN以上」のN部分）（例: 集中1以上→1, ビジュアル700以上→700） */
+  /**
+   * 条件の基準値（「パラメータN以上」「キーワードN以上」のN部分）
+   * 例: 集中1以上→1、ビジュアル700以上→700
+   */
   threshold?: number
   /** 回数・個数（1回発動あたりの操作枚数や獲得数）（例: 1, 2） */
   count?: number
@@ -136,13 +163,16 @@ export interface PItemEffectPart {
   value?: number
   /** ターン数（例: 3） */
   turns?: number
-  /** カード名（手札生成やカード獲得で使用）（例: "静かな意志+"） */
+  /** 手札生成やカード獲得で指定するカード名（例: "静かな意志+"） */
   card_name?: string
-  /** Pドリンク名（Pドリンク獲得効果で使用） */
+  /** Pドリンク獲得効果で指定するPドリンク名 */
   pdrink_name?: string
   /** 効果テンプレート固有の名称や補足値 */
   item_name?: string
-  /** 汎用テンプレートで使用するアクションID（ユーザー定義サポート用。表示時にアプリ側でi18nキーを解決する） */
+  /**
+   * ユーザー定義サポートが提供するアクションID
+   * 表示時にアプリ側で対応する文言へ変換する
+   */
   action_id?: ActionIdType
 }
 
@@ -154,7 +184,10 @@ export interface PItemEffect {
   trigger: PItemEffectPart
   /** 条件（任意）（例: { key: "keyword_gte", keyword: "concentration", threshold: 1 }） */
   condition?: PItemEffectPart
-  /** 効果本体（発動時に実行されるアクション群）（例: ボーカル+6→[{ key: "param_up", param: "vocal", value: 6 }]） */
+  /**
+   * 発動時に実行する効果の一覧
+   * 例: ボーカル+6→[{ key: "param_up", param: "vocal", value: 6 }]
+   */
   body: PItemEffectPart[]
   /** 回数制限（任意）（例: { key: "per_lesson", count: 1 }, { key: "per_produce", count: 2 }） */
   limit?: PItemEffectPart
@@ -180,9 +213,12 @@ export interface PItem {
   trigger_key?: TriggerKeyType
 }
 
-/** スキルカード効果のアクション部品（条件・時間修飾・トリガー・本体アクション共通）*/
+/** スキルカード効果を構成する条件・時間・発動条件・効果の部品 */
 export interface SkillCardEffectAction {
-  /** テンプレートキー（keyword_up: キーワード上昇, hp_recovery: 体力回復, param_up: パラメータ上昇, draw_card: カードを引く） */
+  /**
+   * 効果の種類を示すキー
+   * 例: keyword_up（キーワード上昇）、hp_recovery（体力回復）
+   */
   key: EffectTemplateKeyType
   /** 効果量（集中+3→3, 体力回復15→15） */
   value?: number
@@ -190,7 +226,10 @@ export interface SkillCardEffectAction {
   value2?: number
   /** ターン数（例: 2, 3） */
   turns?: number
-  /** キーワード種別（concentration: 集中, good_condition: 好調, motivation: やる気, vitality: 元気） */
+  /**
+   * 効果の対象となるキーワード
+   * 例: concentration（集中）、good_condition（好調）、vitality（元気）
+   */
   keyword?: EffectKeywordType
   /** パーセンテージ値（例: 50） */
   pct?: number
@@ -209,14 +248,17 @@ export interface SkillCardEffectAction {
 interface SkillCardActionGroup {
   /** 条件（任意）（例: { key: "hp_gte_pct", pct: 50 }） */
   condition?: SkillCardEffectAction
-  /** 時間修飾（「3ターンの間」→{ key: "ongoing", turns: 3 }、「次のターン」→{ key: "next_turn" }） */
+  /**
+   * 効果が続く時間
+   * 例: 「3ターンの間」→{ key: "ongoing", turns: 3 }
+   */
   temporal?: SkillCardEffectAction
   /** トリガー（任意）（例: { key: "turn_start" }） */
   trigger?: SkillCardEffectAction
   /** 本体アクション（「集中+2」→{ key: "keyword_up", value: 2, keyword: "concentration" }） */
   action?: SkillCardEffectAction
   /**
-   * temporal が action より先に出現したか。省略時は false。
+   * temporal が action より先に出現したか。省略時は false
    * 例: 「3ターンの間、集中+3」→ true（temporal が先）
    *      「集中+3（3ターン）」→ false（action が先）
    */
@@ -228,8 +270,9 @@ export interface SkillCardEffectStructured {
   /** 使用条件（任意）（例: { key: "keyword_state", keyword: "reserve" }） */
   use_condition?: SkillCardEffectAction
   /**
-   * 効果テキスト冒頭の前提条件（任意）。カード使用時の発動条件テキスト。
-   * 例: 「好印象6以上の場合、好印象+3」→ pre_modifier = { key: "keyword_state", keyword: "good_impression", value: 6 }
+   * 効果テキスト冒頭の前提条件（任意）。カード使用時の発動条件テキスト
+   * 例: 「好印象6以上の場合、好印象+3」
+   * → pre_modifier = { key: "keyword_state", keyword: "good_impression", value: 6 }
    *      「レッスン開始時手札にある場合、集中+2」→ pre_modifier = { key: "lesson_start_in_hand" }
    */
   pre_modifier?: SkillCardEffectAction
@@ -239,7 +282,10 @@ export interface SkillCardEffectStructured {
 
 /** カスタムスロット名の構造化データ（分解済み） */
 export interface CustomSlotNameStructured {
-  /** テンプレートキー（card.customSlotName.* に対応）（例: "keyword_plus", "keyword_add", "hp_cost_reduce_add"） */
+  /**
+   * 表示する効果の種類を示すキー（card.customSlotName.* に対応）
+   * 例: "keyword_plus", "keyword_add", "hp_cost_reduce_add"
+   */
   key: EffectTemplateKeyType
   /** キーワードID（common.keyword.* に対応）（例: "full_power_value", "reserve"） */
   keyword?: EffectKeywordType
@@ -247,18 +293,24 @@ export interface CustomSlotNameStructured {
 
 /** カスタムスロット効果の構造化データ（分解済み） */
 export interface CustomSlotEffectStructured {
-  /** テンプレートキー（card.customSlotEffect.* に対応）（例: "keyword_up", "change_policy", "cost_reduce_turns", "null"） */
+  /**
+   * 効果の種類を示すキー（card.customSlotEffect.* に対応）
+   * 例: "keyword_up", "change_policy", "cost_reduce_turns", "null"
+   */
   template: EffectTemplateKeyType
   /** テンプレート補間パラメータ（「全力値+4」→{ keyword: "full_power_value", value: "4" }） */
   params?: CustomSlotParams
 }
 
 /**
- * カスタムスロット効果のテンプレート補間パラメータ。
+ * カスタムスロット効果のテンプレート補間パラメータ
  * keyword/cond_keyword は EffectKeywordType
  */
 export interface CustomSlotParams {
-  /** 効果キーワード（集中・好調など）（例: "full_power_value", "reserve", "vitality", "motivation"） */
+  /**
+   * 効果の対象となるキーワード（集中・好調など）
+   * 例: "full_power_value", "reserve", "vitality", "motivation"
+   */
   keyword?: EffectKeywordType
   /** 条件キーワード（好調時・集中時など）（例: "motivation"） */
   cond_keyword?: EffectKeywordType
@@ -274,7 +326,7 @@ export interface CustomSlotParams {
   threshold?: string
   /** 補足説明テキスト（例: "2回目の元気を追加"） */
   note?: string
-  /** 指針段階番号（例: "2"）— 強気・温存などの指針変更時に使用 */
+  /** 指針段階番号（例: "2"）— 強気・温存などの指針変更段階 */
   stage?: string
 }
 
@@ -332,8 +384,8 @@ export interface ParameterValues {
 /**
  * レッスンごとの Vo/Da/Vi パラメータ値配列
  *
- * パラメータボーナスをレッスン1回ごとに切り捨て計算するために使う。
- * 各配列の要素が1回のレッスンでの上昇量に対応する。
+ * パラメータボーナスをレッスン1回ごとに切り捨て計算するために使う
+ * 各配列の要素が1回のレッスンでの上昇量に対応する
  */
 export interface PerLessonParameterValues {
   /** ボーカル値の配列（レッスンごと） */
@@ -344,10 +396,39 @@ export interface PerLessonParameterValues {
   visual: number[]
 }
 
+/** 表示対象のアビリティ計算内訳 */
+export interface CardAbilityBoost {
+  /** 表示名の種類を示すキー（アビリティ用） */
+  nameKey?: AbilityNameKeyType
+  /** 表示時に使うパラメータ */
+  parameterType?: ParameterType
+  /** 表示時に使う発動回数上限 */
+  maxCount?: number
+  /** 直接表示テキスト（Pアイテム用） */
+  displayName?: string
+  /** トリガーキー */
+  trigger: TriggerKeyType
+  /** 発動回数 */
+  count: number
+  /** 1回あたりの上昇量 */
+  valuePerTrigger: number
+  /** 合計上昇量 */
+  total: number
+}
+
+/** 点数計算対象となった全アビリティの内訳 */
+export interface CardAbilityDetail extends CardAbilityBoost {
+  /** Pアイテム効果の構造化データ（表示用の全文テキストを作るための情報） */
+  effectData?: PItemEffect
+}
+
+/** ActionIdTypeごとの回数 */
+export type ActionCounts = Partial<Record<ActionIdType, number>>
+
 /**
- * サポート計算結果。
+ * サポート1枚の計算結果
  *
- * calculateCardParameter() の戻り値。ScoreBreakdownModal で内訳表示に使う。
+ * 点数内訳画面で表示し、同じ条件で再計算するときにも使う
  */
 export interface CardCalculationResult {
   /** サポート名 */
@@ -357,45 +438,9 @@ export interface CardCalculationResult {
   /** サポートイベントによるパラメータ上昇量 */
   eventBoost: number
   /** アビリティごとの上昇量内訳 */
-  abilityBoosts: {
-    /** i18n テンプレートキー（アビリティ用） */
-    nameKey?: AbilityNameKeyType
-    /** パラメータタイプ（i18n 補間用） */
-    parameterType?: ParameterType
-    /** 回数上限（i18n 補間用） */
-    maxCount?: number
-    /** 直接表示テキスト（Pアイテム用） */
-    displayName?: string
-    /** トリガーキー */
-    trigger: TriggerKeyType
-    /** 発動回数 */
-    count: number
-    /** 1回あたりの上昇量 */
-    valuePerTrigger: number
-    /** 合計上昇量 */
-    total: number
-  }[]
+  abilityBoosts: CardAbilityBoost[]
   /** 全点数上昇系アビリティの内訳（0点のものも含む） */
-  allAbilityDetails: {
-    /** i18n テンプレートキー（アビリティ用） */
-    nameKey?: AbilityNameKeyType
-    /** パラメータタイプ（i18n 補間用） */
-    parameterType?: ParameterType
-    /** 回数上限（i18n 補間用） */
-    maxCount?: number
-    /** 直接表示テキスト（Pアイテム用） */
-    displayName?: string
-    /** 発動トリガーキー */
-    trigger: TriggerKeyType
-    /** Pアイテム効果の構造化データ（UIで全文テキストを生成する用） */
-    effectData?: PItemEffect
-    /** 発動回数 */
-    count: number
-    /** 1回あたりの上昇量 */
-    valuePerTrigger: number
-    /** 合計上昇量（0点の場合は 0） */
-    total: number
-  }[]
+  allAbilityDetails: CardAbilityDetail[]
   /** パラメータボーナスによる上昇量 */
   parameterBonus: number
   /** パラメータボーナスの倍率（%）— 0 ならボーナスアビリティ無し */
@@ -408,26 +453,20 @@ export interface CardCalculationResult {
   eventBoostPercent: number
   /** 総パラメータ上昇量 */
   totalIncrease: number
-  /** アクション別の自動カウント回数（maxCount制限前。カウント設定UI用） */
-  autoCounts: Partial<Record<ActionIdType, number>>
+  /** アクション別の自動カウント回数（上限適用前。回数調整画面で表示するため） */
+  autoCounts: ActionCounts
 }
 
-/**
- * スコア設定（ローカル保存用）。
- *
- * ScoreSettingsPanel で編集し、useCardScores で消費する。localStorage に永続化。
- */
-export interface ScoreSettings {
+/** 保存・計算で共通して使うスコア設定項目 */
+export interface ScoreSettingsBase {
   /** 設定名（プリセット保存用） */
   name: string
   /** シナリオ */
   scenario: ScenarioType
   /** 難易度 */
   difficulty: DifficultyType
-  /** パラメータボーナス対象値（Vo/Da/Vi別） */
-  parameterBonusBase: ParameterValues
   /** 各アクションカテゴリの回数 */
-  actionCounts: Partial<Record<ActionIdType, number>>
+  actionCounts: ActionCounts
   /** スケジュール選択（週番号 → 選択した活動ID） */
   scheduleSelections: Record<number, ActivityIdType>
   /** スケジュールに基づく上限を有効にするか */
@@ -438,7 +477,7 @@ export interface ScoreSettings {
   includePItem: boolean
   /** 凸数設定を無視して4凸で点数を表示するか */
   useFixedUncap: boolean
-  /** カスタムモードを使用するか（スケジュール週選択を使わない場合に true） */
+  /** カスタムモードを使うか（スケジュール週選択を使わない場合に true） */
   useCustomMode: boolean
   /** カスタムモードでのパラメータボーナス複数行入力 */
   customParamBonusRows: ParameterValues[]
@@ -450,4 +489,14 @@ export interface ScoreSettings {
   hifExamRatios: ParameterValues[]
   /** HIFレッスンのサブ値を残り2属性に半分ずつ割り振るか */
   hifLessonSplitSub: boolean
+}
+
+/**
+ * スコア設定（保存・計算用）
+ *
+ * 点数設定画面で編集し、サポート点数と最適編成の計算に使う
+ */
+export interface ScoreSettings extends ScoreSettingsBase {
+  /** パラメータボーナス対象値（Vo/Da/Vi別） */
+  parameterBonusBase: ParameterValues
 }

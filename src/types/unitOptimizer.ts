@@ -1,10 +1,9 @@
 /**
- * 最適編成計算の実行入力と入力構築関数の型。
+ * 最適編成計算の実行入力と入力構築関数の型
  *
- * 計算ユーティリティ・Worker・状態hookで共有するため、実装層ではなくtypesへ置く。
+ * 画面側・バックグラウンド計算・比較処理で同じ入力を使えるようにする
  */
-import type { CardCountCustom } from '../hooks/useCardCountCustom'
-import type { ScoreSettings, SupportCard } from './card'
+import type { CardCountCustom, ScoreSettings, SupportCard } from './card'
 import type { UncapType } from './enums'
 import type { UnitSimulatorSettings } from './unit'
 
@@ -20,7 +19,7 @@ export interface OptimizeInput {
   cardCountCustom?: CardCountCustom
   /** ユーザー追加分を含む全サポート */
   allCards: SupportCard[]
-  /** サポート名からサポートを引くマップ */
+  /** サポート名からサポートを探す表 */
   cardByName: Map<string, SupportCard>
   /** 最適編成から除外するサポート名 */
   excludedCardNames: readonly string[]

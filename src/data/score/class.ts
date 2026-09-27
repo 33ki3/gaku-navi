@@ -1,15 +1,16 @@
 /**
- * 授業マスタデータ。
+ * 授業の週別パラメータ上昇量
  *
- * シナリオ×難易度×週番号ごとの授業パラメータ上昇量を定義する。
+ * シナリオ・難易度・週番号ごとの授業の上昇量を定義する
  */
 import { ActivityIdType, DifficultyType, ParameterType, ScenarioType } from '../../types/enums'
 import type { ParameterValues } from '../../types/unit'
+import { getScheduleData, isScheduleActivityAllowed } from './schedule'
 
-/** 週番号 → パラメータ上昇量 */
+/** 週番号から授業のパラメータ上昇量を探す表 */
 type WeekMap = Record<string, number>
 
-/** 難易度 → 週マップ */
+/** 難易度から週ごとの授業上昇量を探す表 */
 type DifficultyMap = Partial<Record<DifficultyType, WeekMap>>
 
 const data: Record<ScenarioType, DifficultyMap> = {
@@ -25,7 +26,7 @@ const data: Record<ScenarioType, DifficultyMap> = {
     },
   },
   [ScenarioType.Hif]: {
-    // HIF は難易度の概念がないため None キーのみ使用する
+    // HIFは難易度を持たないため、難易度なしの項目だけを定義する
     [DifficultyType.None]: {
       '3': 120,
       '6': 120,
@@ -43,7 +44,7 @@ const data: Record<ScenarioType, DifficultyMap> = {
   },
 }
 
-/** 授業活動IDから上昇対象パラメータを判定するマップ */
+/** 授業活動IDから上昇対象のパラメータを探す表 */
 const CLASS_PARAM_MAP: Partial<Record<ActivityIdType, ParameterType>> = {
   [ActivityIdType.ClassVo]: ParameterType.Vocal,
   [ActivityIdType.ClassDa]: ParameterType.Dance,
@@ -58,10 +59,10 @@ interface ClassBreakdownRow {
 }
 
 /**
- * getClassParameterTotal はスケジュール選択に基づく授業のVoDaVi上昇量を返す。
+ * スケジュール選択に基づく授業のVoDaVi上昇量を返す
  *
- * HIFのように授業属性を選ぶシナリオでは、選んだ属性に値を加算する。
- * 従来シナリオの `class` は属性指定がないため 0 として扱う。
+ * HIFのように授業属性を選ぶシナリオでは、選んだ属性に値を加算する
+ * 従来シナリオの `class` は属性指定がないため 0 として扱う
  *
  * @param scenario - シナリオ種別
  * @param difficulty - 難易度
@@ -83,7 +84,7 @@ export function getClassParameterTotal(
 }
 
 /**
- * getClassBreakdown は授業週ごとの上昇内訳を返す。
+ * getClassBreakdown は授業週ごとの上昇内訳を返す
  *
  * @param scenario - シナリオ種別
  * @param difficulty - 難易度
@@ -95,12 +96,24 @@ export function getClassBreakdown(
   difficulty: DifficultyType,
   scheduleSelections: Record<number, ActivityIdType>,
 ): ClassBreakdownRow[] {
+  // 授業の週ごとの上昇量とスケジュール候補を照合する
+  // 実際に選べる週だけを内訳へ出す
   const weekMap = data[scenario][difficulty] ?? {}
+  const scheduleByWeek = new Map(getScheduleData(scenario, difficulty).map((week) => [week.week, week]))
   const rows: ClassBreakdownRow[] = []
 
   for (const [weekStr, value] of Object.entries(weekMap)) {
     const week = Number(weekStr)
     const selection = scheduleSelections[week]
+    const scheduleWeek = scheduleByWeek.get(week)
+    // 保存値に残った存在しない活動や未選択週は、授業ボーナスを発生させない
+    if (
+      selection === undefined ||
+      scheduleWeek === undefined ||
+      !isScheduleActivityAllowed(scheduleWeek, selection, scenario)
+    ) {
+      continue
+    }
     const targetParam = selection ? CLASS_PARAM_MAP[selection] : undefined
     if (!targetParam) continue
 

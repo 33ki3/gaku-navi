@@ -2,12 +2,12 @@
  * パラメータボーナス計算ロジック
  *
  * スケジュールのレッスン選択（ボーカル/ダンス/ビジュアル）から、
- * パラメータボーナスの対象となる値（Vo/Da/Vi）を推定する。
+ * パラメータボーナスの対象となる値（Vo/Da/Vi）を推定する
  */
 
 import * as data from '../../data'
-import { getHifSelectionExamData } from '../../data/score/exam'
-import { LESSON_MAIN_PARAM_MAP, LESSON_SUB_PARAM_MAP } from '../../data/score/hifScheduleMaster'
+import * as examData from '../../data/score/exam'
+import * as hifScheduleMaster from '../../data/score/hifScheduleMaster'
 import type { ParameterValues, PerLessonParameterValues } from '../../types/card'
 import * as enums from '../../types/enums'
 import { getHifExamWeeks, normalizeHifLessonActivityForPairMode } from '../hifScheduleHelpers'
@@ -15,8 +15,8 @@ import { getHifExamWeeks, normalizeHifLessonActivityForPairMode } from '../hifSc
 /**
  * レッスン週ごとの解析結果
  *
- * iterateLessonWeeks が返すデータ。
- * 各レッスン週で「何を選んだか」「メイン・サブでどれだけ上がるか」を保持する。
+ * iterateLessonWeeksが返すデータ
+ * 各レッスン週で「何を選んだか」「メイン・サブでどれだけ上がるか」を保持する
  */
 interface LessonWeekResult {
   /** 何週目か（スケジュール上の週番号） */
@@ -35,18 +35,21 @@ interface LessonWeekResult {
  * @param selections - 週番号 → 選んだ活動ID のマッピング
  * @param scenario - シナリオ名（はじめ/ノクチル等）
  * @param difficulty - 難易度（レジェンド等）
+ * @param hifLessonSplitSub - HIFのサブ値を分割するか
  * @returns 有効なレッスン週の解析結果配列
  */
 function iterateLessonWeeks(
   selections: Record<number, enums.ActivityIdType>,
   scenario: enums.ScenarioType,
   difficulty: enums.DifficultyType,
+  hifLessonSplitSub = true,
 ): LessonWeekResult[] {
   const results: LessonWeekResult[] = []
 
   // マスターデータからレッスン一覧を取得する
   const lessonList = data.getLessonData(scenario, difficulty)
   if (lessonList.length === 0) return results
+  const scheduleByWeek = new Map(data.getScheduleData(scenario, difficulty).map((week) => [week.week, week]))
 
   // レッスンとして定義された週を順番に処理する
   let lessonIndex = 0
@@ -57,9 +60,18 @@ function iterateLessonWeeks(
       lessonIndex++
       continue
     }
+    // 現在の週で選択できる活動だけをレッスンとして加算する
+    const scheduleWeek = scheduleByWeek.get(week)
+    if (
+      scheduleWeek === undefined ||
+      !data.isScheduleActivityAllowed(scheduleWeek, selectedActivity, scenario, hifLessonSplitSub)
+    ) {
+      lessonIndex++
+      continue
+    }
 
     // レッスン活動IDでない選択（休み、授業など）はスキップ
-    if (!LESSON_MAIN_PARAM_MAP[selectedActivity]) {
+    if (!hifScheduleMaster.LESSON_MAIN_PARAM_MAP[selectedActivity]) {
       lessonIndex++
       continue
     }
@@ -106,7 +118,7 @@ function distributeIncrease(
   subIncrease: number,
   splitSub = false,
 ): ParameterValues {
-  const mainParam = LESSON_MAIN_PARAM_MAP[activity]
+  const mainParam = hifScheduleMaster.LESSON_MAIN_PARAM_MAP[activity]
   if (mainParam == null) return { vocal: 0, dance: 0, visual: 0 }
 
   const result: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
@@ -121,9 +133,9 @@ function distributeIncrease(
     return result
   }
 
-  const subParam = LESSON_SUB_PARAM_MAP[activity]
+  const subParam = hifScheduleMaster.LESSON_SUB_PARAM_MAP[activity]
 
-  // HIFの組み合わせ活動はサブ1軸のみ。従来活動はサブ2軸同時。
+  // HIFの組み合わせ活動はサブ1軸のみ。従来活動はサブ2軸同時
   if (subParam != null) {
     result[subParam] = subIncrease
   } else {
@@ -142,6 +154,7 @@ function distributeIncrease(
  * @param scenario - シナリオ名
  * @param difficulty - 難易度
  * @param splitSub - HIFサブ半分割り振りモードか
+ * @param hifExamRatios - HIF選抜試験のパラメータ配分比率
  * @returns Vo/Da/Vi の合計上昇量
  */
 export function calculateParameterBonusFromSchedule(
@@ -155,7 +168,13 @@ export function calculateParameterBonusFromSchedule(
   const result: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
 
   // 各レッスン週の上昇量を Vo/Da/Vi に振り分けて積算する
-  for (const { activity, mainIncrease, subIncrease } of iterateLessonWeeks(selections, scenario, difficulty)) {
+  for (const { activity, mainIncrease, subIncrease } of iterateLessonWeeks(
+    selections,
+    scenario,
+    difficulty,
+    splitSub,
+  )) {
+    // HIFの表示モードに応じて、サブ属性を分割するかペアのメイン属性へ寄せる
     const effectiveActivity =
       scenario === enums.ScenarioType.Hif && !shouldSplitSub
         ? normalizeHifLessonActivityForPairMode(activity)
@@ -168,7 +187,7 @@ export function calculateParameterBonusFromSchedule(
 
   // HIF の選抜試験上昇はパラメータボーナス対象値に含める
   if (scenario === enums.ScenarioType.Hif) {
-    for (const exam of getHifSelectionExamData(hifExamRatios)) {
+    for (const exam of examData.getHifSelectionExamData(hifExamRatios)) {
       result.vocal += exam.vocal
       result.dance += exam.dance
       result.visual += exam.visual
@@ -181,13 +200,14 @@ export function calculateParameterBonusFromSchedule(
 /**
  * スケジュールのレッスン選択からレッスンごとの Vo/Da/Vi 上昇量を返す
  *
- * パラメータボーナスをレッスン1回ごとに切り捨て計算するために使う。
- * 各配列の i 番目の要素が i 番目のレッスンでの上昇量に対応する。
+ * パラメータボーナスをレッスン1回ごとに切り捨て計算するために使う
+ * 各配列の i 番目の要素が i 番目のレッスンでの上昇量に対応する
  *
  * @param selections - 週番号 → 選んだ活動ID のマッピング
  * @param scenario - シナリオ名
  * @param difficulty - 難易度
  * @param splitSub - HIFサブ半分割り振りモードか
+ * @param hifExamRatios - HIF選抜試験のパラメータ配分比率
  * @returns レッスンごとの Vo/Da/Vi 上昇量配列
  */
 export function getPerLessonParameterValues(
@@ -200,7 +220,12 @@ export function getPerLessonParameterValues(
   const shouldSplitSub = scenario === enums.ScenarioType.Hif && splitSub
   const result: PerLessonParameterValues = { vocal: [], dance: [], visual: [] }
 
-  for (const { activity, mainIncrease, subIncrease } of iterateLessonWeeks(selections, scenario, difficulty)) {
+  for (const { activity, mainIncrease, subIncrease } of iterateLessonWeeks(
+    selections,
+    scenario,
+    difficulty,
+    splitSub,
+  )) {
     const effectiveActivity =
       scenario === enums.ScenarioType.Hif && !shouldSplitSub
         ? normalizeHifLessonActivityForPairMode(activity)
@@ -213,7 +238,7 @@ export function getPerLessonParameterValues(
 
   // HIF の選抜試験は1回ごとに切り捨て計算できるよう配列へ個別に追加する
   if (scenario === enums.ScenarioType.Hif) {
-    for (const exam of getHifSelectionExamData(hifExamRatios)) {
+    for (const exam of examData.getHifSelectionExamData(hifExamRatios)) {
       result.vocal.push(exam.vocal)
       result.dance.push(exam.dance)
       result.visual.push(exam.visual)
@@ -224,10 +249,10 @@ export function getPerLessonParameterValues(
 }
 
 /**
- * パラメータボーナス内訳行のラベル種別。
+ * パラメータボーナス内訳行のラベル種別
  *
- * discriminated union で行の種類を区別する。
- * 未指定（undefined）の場合は通常のレッスン行として扱う。
+ * discriminated unionで行の種類を区別する
+ * 未指定（undefined）の場合は通常のレッスン行として扱う
  */
 export type BreakdownRowKind =
   | { kind: typeof enums.BreakdownRowKindType.Class }
@@ -236,7 +261,7 @@ export type BreakdownRowKind =
 /**
  * パラメータボーナスの週ごとの内訳データ（1行分）
  *
- * UIでパラメータボーナスの計算過程を表として表示する際に使う。
+ * パラメータボーナスの計算過程を表示用の表にする際に使う
  */
 export interface ParameterBonusBreakdownRow {
   /** 何週目か */
@@ -262,7 +287,7 @@ export interface ParameterBonusBreakdownRow {
  *
  * calculateParameterBonusFromSchedule は合計だけを返すが、
  * この関数は各週の内訳（どの属性を選んだか、各パラメータへの上昇量）
- * をテーブル表示用に返す。
+ * をテーブル表示用に返す
  *
  * @param selections - 週番号 → 選んだ活動ID のマッピング
  * @param scenario - シナリオ名
@@ -279,16 +304,16 @@ export function getParameterBonusBreakdown(
   splitSub = false,
 ): ParameterBonusBreakdownRow[] {
   const shouldSplitSub = scenario === enums.ScenarioType.Hif && splitSub
-  const lessonRows = iterateLessonWeeks(selections, scenario, difficulty).map(
+  const lessonRows = iterateLessonWeeks(selections, scenario, difficulty, splitSub).map(
     ({ week, activity, mainIncrease, subIncrease }) => {
       const effectiveActivity =
         scenario === enums.ScenarioType.Hif && !shouldSplitSub
           ? normalizeHifLessonActivityForPairMode(activity)
           : activity
       const dist = distributeIncrease(effectiveActivity, mainIncrease, subIncrease, shouldSplitSub)
-      const attribute = LESSON_MAIN_PARAM_MAP[effectiveActivity] ?? enums.ParameterType.Vocal
+      const attribute = hifScheduleMaster.LESSON_MAIN_PARAM_MAP[effectiveActivity] ?? enums.ParameterType.Vocal
       // HIFのsplitSubモードではサブ属性は表示不要
-      const subAttribute = shouldSplitSub ? undefined : LESSON_SUB_PARAM_MAP[effectiveActivity]
+      const subAttribute = shouldSplitSub ? undefined : hifScheduleMaster.LESSON_SUB_PARAM_MAP[effectiveActivity]
       return { week, attribute, subAttribute, ...dist }
     },
   )
@@ -314,7 +339,7 @@ export function getParameterBonusBreakdown(
   }
 
   const selectionWeeks = getHifExamWeeks(scheduleData)
-  const selectionRows = getHifSelectionExamData(hifExamRatios).map((values, index) => ({
+  const selectionRows = examData.getHifSelectionExamData(hifExamRatios).map((values, index) => ({
     week: selectionWeeks[index],
     attribute: enums.ParameterType.Vocal,
     rowKind: { kind: enums.BreakdownRowKindType.Exam, examIndex: index },

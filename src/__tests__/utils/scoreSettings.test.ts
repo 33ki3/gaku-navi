@@ -2,10 +2,12 @@
  * 点数設定ユーティリティのテスト
  *
  * 点数設定パネルのスケジュール選択判定・アクション回数集計・
- * 手動入力とスケジュール算出のマージ・localStorage への保存/読み込みを検証する。
- * スケジュールモード（useScheduleLimits=true）ではユーザーが各週の活動を選択し、
+ * 手動入力とスケジュール算出のマージ、
+ * ブラウザの保存領域への保存と読み込みを検証する
+ * スケジュール上限を使うモードではユーザーが各週の活動を選択し、
  * そこからアクション回数が自動算出される。スケジュール制御外のアクション
- * （スキル獲得等）は手動入力値がそのまま使われる。レッスン合計はSP/通常の内訳から算出される。
+ * （スキル獲得など）は手動入力値がそのまま使われる
+ * レッスン合計はSPと通常レッスンの内訳から算出される
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as constant from '../../constant'
@@ -16,16 +18,16 @@ import * as enums from '../../types/enums'
 import {
   calculateCountsFromSchedule,
   createDefaultSettings,
+  getEffectiveScheduleSelections,
   hasAllScheduleSelections,
   loadScheduleSelections,
   loadScoreSettings,
   mergeScheduleCounts,
   normalizeScoreSettingsDerived,
-  resetScheduleSelectionsOnly,
   saveScoreSettings,
 } from '../../utils/scoreSettings'
 
-/** createDefaultSettings のデフォルト選択仕様テスト */
+/** 既定の点数設定が選ばれることを検証するテスト */
 describe('createDefaultSettings', () => {
   it('Hajime は空選択から開始する', () => {
     const defaults = createDefaultSettings(enums.ScenarioType.Hajime)
@@ -37,19 +39,6 @@ describe('createDefaultSettings', () => {
     expect(defaults.scheduleSelections).toEqual({})
   })
 
-  it('resetScheduleSelectionsOnly は scheduleSelections のみ初期化する', () => {
-    const base = createDefaultSettings(enums.ScenarioType.Hif)
-    const next = resetScheduleSelectionsOnly({
-      ...base,
-      name: 'preset',
-      scheduleSelections: { 7: enums.ActivityIdType.MidExam },
-      actionCounts: { [enums.ActionIdType.ClassWork]: 2 },
-    })
-
-    expect(next.scheduleSelections).toEqual({})
-    expect(next.name).toBe('preset')
-    expect(next.actionCounts[enums.ActionIdType.ClassWork]).toBe(2)
-  })
 })
 
 /** スケジュール由来の派生値同期テスト */
@@ -228,6 +217,26 @@ describe('calculateCountsFromSchedule', () => {
     expect(Object.keys(result)).toHaveLength(0)
   })
 
+  it('実際の週にない活動は自動カウントしない', () => {
+    const actualSchedule = data.getScheduleData(enums.ScenarioType.Hajime, enums.DifficultyType.Legend)
+    const result = calculateCountsFromSchedule(
+      { 1: enums.ActivityIdType.ViLesson },
+      actualSchedule,
+      enums.ScenarioType.Hajime,
+    )
+    expect(result[enums.ActionIdType.SpLessonVi] ?? 0).toBe(0)
+  })
+
+  it('現在の授業週に残った旧汎用classは自動カウントしない', () => {
+    const actualSchedule = data.getScheduleData(enums.ScenarioType.Hajime, enums.DifficultyType.Legend)
+    const result = calculateCountsFromSchedule(
+      { 1: enums.ActivityIdType.Class },
+      actualSchedule,
+      enums.ScenarioType.Hajime,
+    )
+    expect(result[enums.ActionIdType.ClassWork] ?? 0).toBe(0)
+  })
+
   it('HIFのように複数のMidExam/FinalExam試験が混在していても、ExamPItemAcquireは指定されたMidExamのみで発動（1回など）になる', () => {
     const hifLikeSchedule: ScheduleWeekData[] = [
       {
@@ -261,6 +270,26 @@ describe('calculateCountsFromSchedule', () => {
     // 通常は3回分入るが、MidExamが1つだけで他がFinalExamのため上限が1回になる
     expect(result[enums.ActionIdType.ExamEnd]).toBe(3)
     expect(result[enums.ActionIdType.ExamPItemAcquire]).toBe(1)
+  })
+})
+
+describe('getEffectiveScheduleSelections', () => {
+  it('固定かつ休めない週の活動を選択へ補う', () => {
+    const schedule: ScheduleWeekData[] = [
+      {
+        week: 1,
+        fixed: true,
+        canRest: false,
+        activities: [{ id: enums.ActivityIdType.FinalExam, label: '' as never }],
+      },
+      {
+        week: 2,
+        fixed: false,
+        canRest: false,
+        activities: [{ id: enums.ActivityIdType.VoLesson, label: '' as never }],
+      },
+    ]
+    expect(getEffectiveScheduleSelections({}, schedule)).toEqual({ 1: enums.ActivityIdType.FinalExam })
   })
 })
 
@@ -364,9 +393,9 @@ describe('mergeScheduleCounts', () => {
   })
 })
 
-// --- loadScoreSettings / saveScoreSettings ---
+// --- 点数設定の保存と読み込み ---
 
-/** 点数設定の localStorage 保存・読み込みテスト */
+/** 点数設定の保存・読み込みテスト */
 describe('loadScoreSettings / saveScoreSettings', () => {
   const mockStorage: Record<string, string> = {}
 
@@ -410,6 +439,38 @@ describe('loadScoreSettings / saveScoreSettings', () => {
     expect(loaded.actionCounts[enums.ActionIdType.SkillAcquire]).toBe(42)
   })
 
+  it('複数キー保存の途中で失敗した場合は変更前へ戻す', () => {
+    const beforeShared = createDefaultSettings(enums.ScenarioType.Hajime)
+    const beforeSchedules = {
+      [enums.ScenarioType.Hif]: { 2: enums.ActivityIdType.MidExam },
+    }
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify(beforeShared)
+    mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify(beforeSchedules)
+
+    const originalSetItem = localStorage.setItem
+    let writeCount = 0
+    localStorage.setItem = vi.fn((key: string, value: string) => {
+      writeCount += 1
+      if (writeCount === 2) throw new Error('storage quota exceeded')
+      mockStorage[key] = value
+    })
+
+    try {
+      const settings = {
+        ...beforeShared,
+        scenario: enums.ScenarioType.Hif,
+        difficulty: enums.DifficultyType.None,
+        scheduleSelections: { 7: enums.ActivityIdType.MidExam },
+      }
+
+      expect(saveScoreSettings(settings)).toBe(false)
+      expect(mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY]).toBe(JSON.stringify(beforeShared))
+      expect(mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY]).toBe(JSON.stringify(beforeSchedules))
+    } finally {
+      localStorage.setItem = originalSetItem
+    }
+  })
+
   it('自動計算が有効な保存値は読み込み時にスケジュールから再計算する', () => {
     const staleSettings = {
       ...createDefaultSettings(enums.ScenarioType.Hajime),
@@ -419,6 +480,27 @@ describe('loadScoreSettings / saveScoreSettings', () => {
     mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify(staleSettings)
 
     expect(loadScoreSettings().parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+  })
+
+  it('保存値にUIにない活動があっても読み込み後の自動集計へ渡さない', () => {
+    const storedSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      scheduleSelections: {
+        1: enums.ActivityIdType.ViLesson,
+        4: enums.ActivityIdType.VoLesson,
+      },
+    }
+    mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify(storedSettings)
+
+    const loaded = loadScoreSettings()
+    const counts = mergeScheduleCounts(
+      loaded,
+      data.getScheduleData(enums.ScenarioType.Hajime, enums.DifficultyType.Legend),
+    )
+
+    expect(loaded.scheduleSelections).toEqual({ 4: enums.ActivityIdType.VoLesson })
+    expect(counts[enums.ActionIdType.SpLessonVo]).toBe(1)
+    expect(counts[enums.ActionIdType.SpLessonVi] ?? 0).toBe(0)
   })
 
   it('自動計算のパラボ対象値は読み込み時に再計算し、次回保存で記録しない', () => {
@@ -728,21 +810,17 @@ describe('loadScoreSettings / saveScoreSettings', () => {
     expect(loadScheduleSelections(enums.ScenarioType.Hajime)).toEqual({})
   })
 
-  it('Hajime以外はシナリオ別キーのscheduleSelectionsを優先する', () => {
+  it('スケジュールマスタが空のNiaは保存済みの週選択を読み込まない', () => {
     const base = loadScoreSettings()
-    const niaSchedule = data.getScheduleData(enums.ScenarioType.Nia, enums.DifficultyType.Legend)
-    const niaWeek = niaSchedule.find((week) => week.activities.length > 0)
-    const niaWeekNumber = niaWeek?.week ?? 1
-    const niaActivity = niaWeek?.activities[0]?.id ?? enums.ActivityIdType.MidExam
     mockStorage[constant.SCORE_SETTINGS_STORAGE_KEY] = JSON.stringify({
       ...base,
       scenario: enums.ScenarioType.Hajime,
       scheduleSelections: { 4: enums.ActivityIdType.DaLesson },
     })
     mockStorage[constant.SCHEDULE_SELECTIONS_STORAGE_KEY] = JSON.stringify({
-      [enums.ScenarioType.Nia]: { [niaWeekNumber]: niaActivity },
+      [enums.ScenarioType.Nia]: { 1: enums.ActivityIdType.MidExam },
     })
 
-    expect(loadScheduleSelections(enums.ScenarioType.Nia)).toEqual({ [niaWeekNumber]: niaActivity })
+    expect(loadScheduleSelections(enums.ScenarioType.Nia)).toEqual({})
   })
 })

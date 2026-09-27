@@ -1,15 +1,14 @@
 /**
- * 総当たり最適化Workerで使用するメッセージ型
+ * バックグラウンド総当たり計算で使うメッセージ型
  *
- * フックとWorker間の通信フォーマットを1箇所に集約し、
- * 型の重複とインライン定義の複雑化を防ぐ。
+ * 画面とバックグラウンド計算の間で同じ形式を使い、
+ * 計算開始・進捗・完了の通知を取り違えないようにする
  */
-import type { CardCountCustom } from '../hooks/useCardCountCustom'
-import type { ScoreSettings, SupportCard } from './card'
+import type { CardCountCustom, ScoreSettings, SupportCard } from './card'
 import type { UncapType } from './enums'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from './unit'
 
-/** Workerへ渡す最適化入力（カード配列からWorker内でMapを再構築する） */
+/** バックグラウンド計算へ渡す最適化入力。カード一覧は名前から探せる形に整える */
 export interface UnitOptimizerWorkerInput {
   settings: UnitSimulatorSettings
   scoreSettings: ScoreSettings
@@ -20,7 +19,7 @@ export interface UnitOptimizerWorkerInput {
   excludedCardNames: readonly string[]
 }
 
-/** Worker通信メッセージ種別 */
+/** バックグラウンド計算との通信メッセージ種別 */
 export const UnitOptimizerWorkerMessageType = {
   Start: 'start',
   Progress: 'progress',
@@ -29,7 +28,7 @@ export const UnitOptimizerWorkerMessageType = {
   Error: 'error',
 } as const
 
-/** Worker開始要求 */
+/** バックグラウンド計算の開始要求 */
 export interface UnitOptimizerWorkerStartRequest {
   type: (typeof UnitOptimizerWorkerMessageType)['Start']
   payload: {
@@ -37,13 +36,13 @@ export interface UnitOptimizerWorkerStartRequest {
   }
 }
 
-/** Worker進捗通知 */
+/** バックグラウンド計算の進捗通知 */
 export interface UnitOptimizerWorkerProgressResponse {
   type: (typeof UnitOptimizerWorkerMessageType)['Progress']
   payload: ExhaustiveProgress
 }
 
-/** Worker中間最良結果通知 */
+/** バックグラウンド計算中に見つかった最良結果の通知 */
 export interface UnitOptimizerWorkerBetterResponse {
   type: (typeof UnitOptimizerWorkerMessageType)['Better']
   payload: {
@@ -51,7 +50,7 @@ export interface UnitOptimizerWorkerBetterResponse {
   }
 }
 
-/** Worker完了通知 */
+/** バックグラウンド計算の完了通知 */
 export interface UnitOptimizerWorkerDoneResponse {
   type: (typeof UnitOptimizerWorkerMessageType)['Done']
   payload: {
@@ -59,7 +58,7 @@ export interface UnitOptimizerWorkerDoneResponse {
   }
 }
 
-/** Worker異常通知 */
+/** バックグラウンド計算の異常通知 */
 export interface UnitOptimizerWorkerErrorResponse {
   type: (typeof UnitOptimizerWorkerMessageType)['Error']
   payload: {
@@ -67,10 +66,10 @@ export interface UnitOptimizerWorkerErrorResponse {
   }
 }
 
-/** Worker要求メッセージ */
+/** バックグラウンド計算へ送るメッセージ */
 export type UnitOptimizerWorkerRequestMessage = UnitOptimizerWorkerStartRequest
 
-/** Worker応答メッセージ */
+/** バックグラウンド計算から受け取るメッセージ */
 export type UnitOptimizerWorkerResponseMessage =
   | UnitOptimizerWorkerProgressResponse
   | UnitOptimizerWorkerBetterResponse

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import * as constant from '../../constant'
-import { AllCards, CardByName, TriggerActionMap, getScheduleData } from '../../data'
+import { AllCards, TriggerActionMap, getScheduleData } from '../../data'
 import { resolveParamCap } from '../../data/score/paramCap'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
@@ -15,6 +15,9 @@ import { getSelfAcquisitionBonus } from '../../utils/calculator/events'
 import { mergeScheduleCounts } from '../../utils/scoreSettings'
 import { computeUnitSupportSynergy, getProvidedActions } from '../../utils/supportSynergy'
 import { evaluateManualUnit, exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
+import { createTestCardByName } from '../fixtures/cards'
+
+const cardByName = createTestCardByName()
 
 /** デフォルトのスコア設定を作る */
 function makeScoreSettings(overrides: Partial<ScoreSettings> = {}): ScoreSettings {
@@ -104,7 +107,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
 
       if (!result) return
@@ -162,7 +165,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
 
       if (!result) return
@@ -203,7 +206,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
       const customResult = evaluateManualUnit({
         settings: builderSettings,
@@ -211,7 +214,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
 
       if (!baseResult || !customResult) return
@@ -249,7 +252,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
       const classVoResult = evaluateManualUnit({
         settings: builderSettings,
@@ -257,7 +260,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
 
       if (!baseResult || !classVoResult) return
@@ -300,7 +303,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
 
       if (!result) return
@@ -426,7 +429,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
       // 回数調整で自動ボーナスを 0 にして計算
       const customCounts = { [providerCard.name]: { selfTrigger: { [commonAction]: 0 } } }
@@ -437,7 +440,7 @@ describe('最適編成', () => {
         cardCountCustom: customCounts,
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
 
       if (!baseResult || !customResult) return
@@ -540,7 +543,7 @@ describe('最適編成', () => {
         cardUncaps: {},
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       })
       if (!result) return
 

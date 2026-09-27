@@ -1,5 +1,5 @@
 /**
- * 最適編成パネルとサポート一覧をつなぐ手動選択フック。
+ * 最適編成パネルとサポート一覧をつなぐ手動選択フック
  *
  * 選択対象スロット、一覧からのカード追加、選択可能カードの判定を
  * 1か所で管理し、パネル本体から複雑な分岐を分離する
@@ -65,40 +65,40 @@ export function useManualUnitSelection({
   const targetSlotIndexRef = useRef<number | null>(null)
   const [targetSlotIndex, setTargetSlotIndex] = useState<number | null>(null)
 
-  /**
-   * コールバック登録先から常に最新状態を参照できるようrefへ同期する。
-   *
-   * パネルの再マウント直後に一覧クリックが先に処理される可能性があるため、通常のeffectではなくレイアウト確定時に同期する。
-   */
+  // 描画前に最新の編成設定をrefへ同期する
   useLayoutEffect(() => {
     // パネルの開閉をまたぐクリックでも、一覧側から最新設定を参照できるようにする
     settingsRef.current = settings
   }, [settings])
+  // 描画前に最新の設定更新関数をrefへ同期する
   useLayoutEffect(() => {
-    // 親から渡されたsetterも、登録済みコールバックから最新のものを参照する
+    // 親から渡された更新処理も、登録済みの処理から最新のものを参照する
     setSettingsRef.current = setSettings
   }, [setSettings])
+  // 描画前に最新の凸数を選択可否判定用refへ同期する
   useLayoutEffect(() => {
     // 凸数変更を選択可否判定へ即時反映する
     cardUncapsRef.current = cardUncaps
   }, [cardUncaps])
+  // 描画前に完了通知の最新関数をrefへ同期する
   useLayoutEffect(() => {
     // 6枠が埋まった後に呼ぶ処理を、再登録せず最新値へ更新する
     onSelectionCompleteRef.current = onSelectionComplete
   }, [onSelectionComplete])
 
-  /** 選択対象スロットをrefとstateの両方から解除する */
+  /** 選択対象のスロットを解除する */
   const clearTargetSlot = useCallback(() => {
-    // refとstateの両方を消して、次のカードを空き枠へ入れる
+    // 次のカードを空き枠へ入れられるよう、選択対象を消す
     targetSlotIndexRef.current = null
     setTargetSlotIndex(null)
   }, [])
 
   /**
-   * サポート一覧から受け取ったカードを、対象スロットまたは最初の空きへ入れる。
+   * サポート一覧から受け取ったカードを、対象スロットまたは最初の空きへ入れる
    *
-   * この登録もレイアウト確定時に行い、パネルの表示切り替え直後の最初のクリックを取りこぼさない。
-   * 完了時コールバックはref経由で参照し、画面の開閉だけで登録を解除・再登録しない
+   * パネルの表示切替直後のクリックを取りこぼさないよう、
+   * 画面の配置が確定したタイミングで一覧側の登録先を更新する
+   * 6枠が埋まった後の処理は最新のものを使い、画面の開閉だけで登録し直さない
    */
   useLayoutEffect(() => {
     const addCard = (cardName: string) => {
@@ -137,7 +137,7 @@ export function useManualUnitSelection({
     return () => registerAddManualCard(null)
   }, [clearTargetSlot, registerAddManualCard, setUnitCardSelectMode])
 
-  /** 現在の設定と対象スロットから、一覧上で選択可能なカードを判定する */
+  // 一覧で選択可能なカードを判定する処理を登録する
   useLayoutEffect(() => {
     const isEligible = (card: SupportCard) => {
       // プラン・重複・凸数の条件を一覧側のクリック前に判定する
@@ -157,7 +157,7 @@ export function useManualUnitSelection({
     return () => registerIsCardEligible(null)
   }, [registerIsCardEligible, settings.manualCards, settings.plan, targetSlotIndex, useFixedUncap])
 
-  /** 指定したスロットを選択対象にして、スマホでは一覧へ戻る */
+  // 指定したスロットを選択対象にして、スマホでは一覧へ戻る
   const startSlotSelection = useCallback(
     (slotIndex: number) => {
       // 選択対象を保存してから一覧選択モードへ切り替える

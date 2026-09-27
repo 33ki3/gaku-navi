@@ -1,33 +1,33 @@
 /**
  * 編成最適化の候補準備ユーティリティ
  *
- * 候補の事前計算、SP/タイプ別分類、レンタル枝の前計算をまとめる。
- * 最適化本体から候補準備の責務を分離し、探索ロジックを読みやすくする。
+ * 候補の事前計算、SP/タイプ別分類、レンタル枝の前計算をまとめる
+ * 最適化本体から候補準備の責務を分離し、探索ロジックを読みやすくする
  */
 import * as constant from '../../constant'
 import * as data from '../../data'
-import type { CardCustomData } from '../../hooks/useCardCountCustom'
 import type {
   CardCalculationResult,
+  CardCustomData,
   ParameterValues,
   PerLessonParameterValues,
   ScoreSettings,
   SupportCard,
 } from '../../types/card'
-import type { OptimizeInput } from '../../types/unitOptimizer'
 import type { UncapType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import type { TypeCountValues, UnitSimulatorSettings } from '../../types/unit'
+import type { OptimizeInput } from '../../types/unitOptimizer'
 import { calculateCardParameter } from '../calculator/calculateCard'
 import { parseAbility } from '../calculator/helpers'
 import { isActionId } from '../domainValueValidation'
 import { getPItemBodyActionCounts, getProvidedActions } from '../supportSynergy'
 
-/** ActionIdType の全値（インデックス参照用） */
+/** アクション種別を配列位置で参照するための一覧 */
 const ACTION_ID_VALUES = Object.values(enums.ActionIdType) as enums.ActionIdType[]
-/** ActionIdType のエントリ数 */
+/** アクション種別の総数 */
 const ACTION_ID_COUNT = ACTION_ID_VALUES.length
-/** ActionIdType → インデックスのマップ */
+/** アクション種別から配列位置を引く表 */
 const ACTION_ID_TO_IDX: Partial<Record<enums.ActionIdType, number>> = {}
 for (let i = 0; i < ACTION_ID_COUNT; i++) {
   ACTION_ID_TO_IDX[ACTION_ID_VALUES[i]] = i
@@ -43,15 +43,14 @@ export interface CandidateCard {
   spCategory: enums.SpCategoryType
   paramIndex: number
   paramBonusPercent: ParameterValues
-  /** 提供アクションベクトル（ACTION_ID_COUNT 要素、evaluateUnit 高速化用） */
+  /** 編成全体の計算で使う、アクション種別ごとの提供回数 */
   providedActionsVec: Float64Array
-  /** 非ゼロ提供アクション一覧（evaluateUnit 高速化用） */
+  /** 提供回数が0より大きいアクションの一覧 */
   providedActionEntries: { actionIdx: number; count: number }[]
-  /** シナジー対象アビリティ情報（evaluateUnit 高速化用） */
+  /** 他のカードから回数を受け取れるアビリティの情報 */
   synergyAbilities: SynergyAbilityInfo[]
 }
 
-/** Pアイテムの行動提供を持つ候補か判定する */
 function isPItemActionProvider(candidate: CandidateCard): boolean {
   if ((candidate.card.p_item?.actions?.length ?? 0) > 0) return true
   if (Object.keys(candidate.card.p_item?.provided_action_ids ?? {}).length > 0) return true
@@ -60,8 +59,12 @@ function isPItemActionProvider(candidate: CandidateCard): boolean {
 }
 
 /**
- * 候補が実際の編成枠で他カードへ提供するアクションの相乗効果を概算する。
- * 自身の baseScore は含めず、候補に残すべき提供元を決める補助スコアとして使う。
+ * 候補が実際の編成枠で他カードへ提供するアクションの相乗効果を概算する
+ * 自身の baseScore は含めず、候補に残すべき提供元を決める補助スコアとして使う
+ *
+ * @param provider - 提供元として評価する候補
+ * @param receivers - 提供先として評価する候補一覧
+ * @returns 最大5枚の受け手へ与える相乗効果の概算値
  */
 function calculateReceiverSynergyPotential(provider: CandidateCard, receivers: readonly CandidateCard[]): number {
   const receiverScores: number[] = []
@@ -81,19 +84,24 @@ function calculateReceiverSynergyPotential(provider: CandidateCard, receivers: r
     if (receiverTotal > 0) receiverScores.push(receiverTotal)
   }
 
-  // 候補30枚全体ではなく、提供元を除く最大5枠の受け手だけを上限評価する
+  // 候補30枚全体ではなく、提供元を除く最大5枠の受け手だけを上限として評価する
   receiverScores.sort((a, b) => b - a)
   return receiverScores.slice(0, Math.max(0, constant.UNIT_SIZE - 1)).reduce((total, score) => total + score, 0)
 }
 
 /**
- * Pアイテム行動提供元のうち、他カードへの寄与が大きい候補を取得する。
- * 最終編成を決める処理ではなく、候補プールから落とさないカードを選ぶ処理。
+ * Pアイテム行動提供元のうち、他カードへの寄与が大きい候補を取得する
+ * 最終編成を決める処理ではなく、候補プールから落とさないカードを選ぶ処理
+ *
+ * @param candidates - 基礎点順に作られた候補一覧
+ * @param candidateLimit - 残す候補数の上限
+ * @returns 保護対象にするPアイテム行動提供元
  */
 function getTopPItemActionProviders(candidates: readonly CandidateCard[], candidateLimit: number): CandidateCard[] {
   const providerLimit = Math.min(candidateLimit, constant.P_ITEM_ACTION_PROVIDER_LIMIT)
   if (providerLimit <= 0) return []
 
+  // 各候補が他カードへ与えられる相乗効果を先に見積もる
   const potentialByName = new Map(
     candidates.map((candidate) => [candidate.card.name, calculateReceiverSynergyPotential(candidate, candidates)]),
   )
@@ -106,7 +114,14 @@ function getTopPItemActionProviders(candidates: readonly CandidateCard[], candid
     .slice(0, providerLimit)
 }
 
-/** 保護候補を残しながら基礎点順で候補上限に収める */
+/**
+ * 保護候補を残しながら基礎点順で候補上限に収める
+ *
+ * @param candidates - 元の候補一覧
+ * @param candidateLimit - 残す候補数の上限
+ * @param protectedCandidates - 上限を超えても優先して残す候補
+ * @returns 上限内へ整理した候補一覧
+ */
 function trimCandidatePool(
   candidates: readonly CandidateCard[],
   candidateLimit: number,
@@ -114,12 +129,14 @@ function trimCandidatePool(
 ): CandidateCard[] {
   if (candidateLimit <= 0) return []
 
+  // まず基礎点の上位候補を残し、保護候補を追加する
   const selected = new Map<string, CandidateCard>()
   for (const candidate of [...candidates].sort((a, b) => b.baseScore - a.baseScore).slice(0, candidateLimit)) {
     selected.set(candidate.card.name, candidate)
   }
   for (const candidate of protectedCandidates) selected.set(candidate.card.name, candidate)
 
+  // 上限を超えた場合は保護対象でない点数の低い候補から外す
   if (selected.size > candidateLimit) {
     const protectedNames = new Set(protectedCandidates.map((candidate) => candidate.card.name))
     const removable = [...selected.values()]
@@ -134,8 +151,12 @@ function trimCandidatePool(
 }
 
 /**
- * 基礎点上位に加えて、Pアイテム行動の相乗効果が大きい候補を残す。
- * 保護候補は最終編成に確定採用されず、後続の実スコア評価で選別される。
+ * 基礎点上位に加えて、Pアイテム行動の相乗効果が大きい候補を残す
+ * 保護候補は最終編成に確定採用されず、後続の実スコア評価で選別される
+ *
+ * @param candidates - 基礎点順に作られた候補一覧
+ * @param candidateLimit - 残す候補数の上限
+ * @returns 相乗効果の候補を含めた候補一覧
  */
 export function selectSynergyAwareCandidates(
   candidates: readonly CandidateCard[],
@@ -157,7 +178,7 @@ interface CategorizedCandidatePools {
   genAsPool: CandidateCard[]
 }
 
-/** manualRental=false のレンタル枝ごとの前計算結果 */
+/** 自動レンタルの各探索枝で使う前計算結果 */
 interface RentalBranchContext {
   rental: CandidateCard
   rentalInput: OptimizeInput
@@ -177,7 +198,7 @@ interface RentalBranchContext {
 /**
  * コンテスト編成で避けたい獲得物を持つサポートか判定する
  *
- * スキルカードとメモリ化Pアイテムは個別に除外できる。
+ * スキルカードとメモリ化Pアイテムは個別に除外できる
  *
  * @param settings - 現在のユニット設定
  * @param card - 判定するサポート
@@ -192,15 +213,15 @@ function shouldExcludeForContest(settings: UnitSimulatorSettings, card: SupportC
   )
 }
 
-/** evaluateUnit 高速化用のアビリティシナジー情報 */
+/** サポート間連携の計算で使うアビリティ情報 */
 interface SynergyAbilityInfo {
-  /** アクションインデックス（ACTION_ID_TO_IDX でのインデックス） */
+  /** 提供アクションの配列位置 */
   actionIdx: number
-  /** アビリティ発動 1 回あたりのスコア */
+  /** アビリティ1回あたりの点数 */
   parsedValue: number
-  /** アビリティの max_count（undefined = 無制限） */
+  /** アビリティの発動回数上限 */
   maxCount: number | undefined
-  /** ベース計算での使用済み回数 */
+  /** 通常計算で使った発動回数 */
   usedCount: number
 }
 
@@ -230,7 +251,7 @@ const PARAMETER_TYPE_TO_INDEX: Record<enums.ParameterType, number> = {
 /**
  * サポートのSP種別を判定する
  *
- * VoSP / DaSP / ViSP / AllSP / なし を分類する。
+ * VoSP / DaSP / ViSP / AllSP / なし を分類する
  *
  * @param card - 対象のサポート
  * @returns SP種別（vocal / dance / visual / none）
@@ -267,25 +288,26 @@ function getParamBonusPercent(card: SupportCard, uncap: UncapType): ParameterVal
 }
 
 /**
- * parameter_type を評価用インデックスへ変換する
+ * サポートの得意パラメータを提供回数配列の位置へ変換する
  *
- * @param parameterType - サポートの parameter_type
- * @returns vocal=0, dance=1, visual=2, 対象外=-1
+ * Vo・Da・Viを固定位置へ対応づけ、組み合わせ計算で同じ位置を参照できるようにする
+ *
+ * @param parameterType - サポートの得意パラメータ
+ * @returns 対応する配列位置
  */
 function toParamIndex(parameterType: enums.ParameterType): number {
   return PARAMETER_TYPE_TO_INDEX[parameterType]
 }
 
 /**
- * サポートの提供アクションベクトルを構築する
+ * サポートの提供回数と回数調整を、共通の配列へ変換する
  *
- * getProvidedActions の出力と cardCountCustom による調整を
- * ACTION_ID_COUNT サイズの Float64Array に変換する。
+ * すべてのアクションを同じ順番で保持し、組み合わせ計算で再検索しない
  *
  * @param card - 対象サポート
- * @param scoreSettings - 点数設定（includeSelfTrigger / includePItem 参照用）
- * @param effectiveCounts - アクション別発動回数マップ
- * @param customSelfTrigger - 回数調整（cardCountCustom[card.name].selfTrigger）
+ * @param scoreSettings - 自身の効果とPアイテムを点数へ含めるかの設定
+ * @param effectiveCounts - アクション別発動回数の対応表
+ * @param customSelfTrigger - サポート自身が提供するアクションの回数調整
  * @returns 提供アクションベクトル
  */
 function buildProvidedActionsVec(
@@ -322,7 +344,8 @@ function buildProvidedActionsVec(
     }
   }
 
-  // 最後に疎なマップ形式を固定長ベクトルへ詰め直して評価処理を高速化する
+  // アクションIDを決まった位置に置き、組み合わせ計算で
+  // 同じ場所を参照できる配列へ変換する
   const vec = new Float64Array(ACTION_ID_COUNT)
   for (const [actionId, count] of Object.entries(provided)) {
     if (!isActionId(actionId)) continue
@@ -339,7 +362,7 @@ function buildProvidedActionsVec(
  * @returns 非ゼロの提供アクション一覧
  */
 function buildProvidedActionEntries(providedActionsVec: Float64Array): { actionIdx: number; count: number }[] {
-  // ベクトルをそのまま全走査するより、非ゼロ成分だけを持つ配列を作って以降のループを軽くする
+  // 0回のアクションを後続の探索で調べずに済むよう、提供されるものだけを記録する
   const entries: { actionIdx: number; count: number }[] = []
   for (let i = 0; i < providedActionsVec.length; i++) {
     const count = providedActionsVec[i]
@@ -486,18 +509,18 @@ function categorizeCandidatePools(pool: CandidateCard[], excludedName?: string):
 }
 
 /**
- * 全サポートから 4凸レンタル候補を最大 candidateLimit 枚取得する
+ * 全サポートから4凸レンタル候補を作る
  *
- * 実アクション回数でのスコア上位と、カウントゼロでのスコア上位に加えて、
- * Pアイテムの行動提供による相乗効果が大きい候補を返す。
- * これにより、アクション回数依存型（m_skill_enhance 等）と非依存型のどちらも
- * 漏れなく候補に含め、Phase 0 マルチスタートでの評価バイアスを解消する。
+ * 実際のアクション回数を使った点数と、回数を0にした点数の両方を確認する
+ * Pアイテムが他のカードへ与える回数も、候補に残す判断へ加える
+ * 回数に依存するカードと依存しないカードのどちらも、
+ * レンタル候補から落としにくくする
  *
  * @param input - 最適化入力
  * @param schedule - スケジュール解析結果
  * @param excludedNames - 除外するサポート名（固定カード等）
- * @param candidateLimit - 候補上限枚数（exhaustiveCandidateLimit と統一）
- * @returns 4凸レンタル候補配列（baseScore降順・最大 candidateLimit 枚）
+ * @param candidateLimit - 候補として残す最大枚数
+ * @returns 点数と他カードへの貢献を考慮したレンタル候補配列
  */
 function buildRentalPool(
   input: OptimizeInput,
@@ -518,7 +541,7 @@ function buildRentalPool(
     assist: 0,
   }
 
-  // ロック済みカードのタイプ別枚数を集計する（typeCountMax と比較して除外判定に使用）
+  // ロック済みカードのタイプ別枚数を集計し、追加できるタイプかを判断する
   for (const lockedName of input.settings.lockedCards) {
     const card = input.cardByName.get(lockedName)
     if (card) {
@@ -526,7 +549,8 @@ function buildRentalPool(
     }
   }
 
-  // すでに特定タイプが最大編成枠に達している場合、そのタイプは追加できないためフラグを立てる
+  // ロック済みカードだけでタイプ別上限に達した場合は、
+  // そのタイプの追加候補を除外する
   const isTypeFull = {
     vocal: lockedConfigCount.vocal >= (input.settings.typeCountMax.vocal ?? 6),
     dance: lockedConfigCount.dance >= (input.settings.typeCountMax.dance ?? 6),
@@ -540,8 +564,8 @@ function buildRentalPool(
     if (card.plan !== input.settings.plan && card.plan !== enums.PlanType.Free) continue
     if (input.settings.allowedTypes.length > 0 && !input.settings.allowedTypes.includes(card.type)) continue
 
-    // typeCountMax に達したタイプは除外する（候補が偏っても typeCountMin 保険補充で必要タイプは確保される）
-    // 編成可能な枠に空きがないタイプは候補から除外する（ただし、ロック済みの現物カード自体は除く）
+    // 追加枠のないタイプを除外する
+    // ロック済みのカード自身は候補から消さない
     if (isTypeFull[card.type] && !input.settings.lockedCards.includes(card.name)) {
       continue
     }
@@ -593,7 +617,8 @@ function buildRentalPool(
     })
   }
 
-  // byActual/byZero を candidateLimit 枚ずつ取り Map で重複をマージする
+  // 実際の回数あり・回数ゼロの2通りで点数順の候補を作る
+  // どちらかで上位に入ったカードを、重複なく1つの候補一覧へまとめる
   const byActual = [...scoredCards].sort((a, b) => b.candidate.baseScore - a.candidate.baseScore)
   const byZero = [...scoredCards].sort((a, b) => b.zeroCountScore - a.zeroCountScore)
 
@@ -606,7 +631,8 @@ function buildRentalPool(
   }
 
   // SP制約を満たすために必要なSPカードをプールに補充する
-  // 自由枠とレンタル枠の計算は別関数で独立して行うため、このプールは自由枠専用（所持凸で評価済み）
+  // 自由枠とレンタル枠は別に計算するため、このプールは自由枠専用にする
+  // 候補の点数は所持状況の凸数で評価済み
   for (const [spCat, needed] of [
     [enums.SpCategoryType.Vocal, input.settings.spConstraint.vocal] as const,
     [enums.SpCategoryType.Dance, input.settings.spConstraint.dance] as const,
@@ -627,7 +653,7 @@ function buildRentalPool(
     }
   }
 
-  // 各タイプ最小数制約を満たすために必要な枚数（minNeeded）分だけタイプ別カードを補充する
+  // 各タイプの最低枚数を満たせるよう、必要なタイプのカードを補充する
   for (const paramType of [enums.ParameterType.Vocal, enums.ParameterType.Dance, enums.ParameterType.Visual]) {
     const minNeeded = input.settings.typeCountMin[paramType]
     if (minNeeded <= 0) continue
@@ -679,6 +705,7 @@ function buildRentalBranchContexts(
   const contexts: RentalBranchContext[] = []
 
   for (const rental of rentalPool) {
+    // レンタル候補を1枚ずつ仮採用し、SP・タイプ条件が成立する枝だけを残す
     const rentalType = rental.card.type as enums.ParameterType
     if (
       Object.values(enums.ParameterType).includes(rentalType) &&
@@ -689,6 +716,7 @@ function buildRentalBranchContexts(
 
     const rentalForcedTypeCount = { ...forcedTypeCount }
     if (Object.values(enums.ParameterType).includes(rentalType)) rentalForcedTypeCount[rentalType]++
+    // 固定カードとレンタルを含むタイプ数を数え、追加後の上限を決める
     const rentalAdjMax: TypeCountValues = {
       [enums.ParameterType.Vocal]: Math.max(
         settings.typeCountMax[enums.ParameterType.Vocal],
@@ -710,10 +738,12 @@ function buildRentalBranchContexts(
       rental.spCategory === enums.SpCategoryType.Dance || rental.spCategory === enums.SpCategoryType.All ? 1 : 0
     const rentalViAdd =
       rental.spCategory === enums.SpCategoryType.Visual || rental.spCategory === enums.SpCategoryType.All ? 1 : 0
+    // 固定カードとレンタルで足りないSP枚数を、自由枠へ求める
     const neededVo = Math.max(0, settings.spConstraint.vocal - fixedVoSp - rentalVoAdd)
     const neededDa = Math.max(0, settings.spConstraint.dance - fixedDaSp - rentalDaAdd)
     const neededVi = Math.max(0, settings.spConstraint.visual - fixedViSp - rentalViAdd)
 
+    // レンタルを除いた自由枠から、必要なSP枚数を満たせない枝は除外する
     const pools = categorizeCandidatePools(freePool, rental.card.name)
     if (pools.voSpPool.length < neededVo || pools.daSpPool.length < neededDa || pools.viSpPool.length < neededVi) {
       continue
@@ -761,7 +791,7 @@ function buildRentalBranchContexts(
  * 候補サポートをフィルタリング・事前計算する
  *
  * @param input - 最適化入力
- * @param schedule - スケジュール解析結果（resolveSchedule の戻り値）
+ * @param schedule - スケジュール解析結果
  * @returns 候補サポート配列
  */
 export function prepareCandidates(input: OptimizeInput, schedule: ResolvedScheduleLike): CandidateCard[] {
@@ -774,11 +804,14 @@ export function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedu
   for (const card of allCards) {
     const isLocked = lockedNameSet.has(card.name)
     const effectiveLocked = isLocked && (card.plan === settings.plan || card.plan === enums.PlanType.Free)
+    // 有効な固定カードは候補から外さず、
+    // それ以外には除外・プラン・タイプ・オプション条件を適用する
     if (!effectiveLocked && excludedNameSet.has(card.name)) continue
     if (!effectiveLocked && card.plan !== settings.plan && card.plan !== enums.PlanType.Free) continue
     if (!effectiveLocked && settings.allowedTypes.length > 0 && !settings.allowedTypes.includes(card.type)) continue
     if (!effectiveLocked && shouldExcludeForContest(settings, card)) continue
 
+    // 固定カードは未所持でも4凸として残し、それ以外は設定凸数で未所持を除外する
     let uncap = scoreSettings.useFixedUncap ? enums.UncapType.Four : (cardUncaps[card.name] ?? constant.DEFAULT_UNCAP)
     if (effectiveLocked && uncap === enums.UncapType.NotOwned) {
       uncap = enums.UncapType.Four
@@ -786,6 +819,7 @@ export function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedu
     if (!scoreSettings.useFixedUncap && uncap === enums.UncapType.NotOwned) continue
 
     const customData = cardCountCustom?.[card.name]
+    // 各候補の点数と、編成条件で使うSP・提供回数の情報を先に計算する
     const baseResult = calculateCardParameter(
       card,
       uncap,
@@ -828,7 +862,7 @@ export function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedu
  * @param input - 最適化入力
  * @param schedule - スケジュール解析結果
  * @param excludedNames - 除外するサポート名
- * @param candidateLimit - 候補上限枚数（exhaustiveCandidateLimit と統一）
+ * @param candidateLimit - 候補として残す最大枚数
  * @returns レンタル候補配列
  */
 export function createRentalPool(

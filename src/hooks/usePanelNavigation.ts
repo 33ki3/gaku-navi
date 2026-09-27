@@ -1,5 +1,5 @@
 /**
- * 点数設定・最適編成・凸数編集の画面遷移を管理する。
+ * 点数設定・最適編成・凸数編集の画面遷移を管理する
  *
  * PCではパネルの同時固定を許可し、スマホでは対象画面を
  * 排他的に開くという表示幅ごとの差を1か所へ集約する
@@ -27,7 +27,7 @@ export interface PanelNavigationActions {
 }
 
 interface UsePanelNavigationParams {
-  /** アプリ全体のUI状態 */
+  /** アプリ全体の表示状態 */
   ui: AppState['ui']
   /** 凸数編集状態を切り替える既存操作 */
   toggleUncapEdit: () => void
@@ -36,7 +36,7 @@ interface UsePanelNavigationParams {
 /**
  * PCとスマホで異なる設定パネルの開閉規則を提供する
  *
- * @param params - UI状態と凸数編集操作
+ * @param params - 表示状態と凸数編集操作
  * @returns 設定パネル間を移動する操作
  */
 export function usePanelNavigation({ ui, toggleUncapEdit }: UsePanelNavigationParams): PanelNavigationActions {
@@ -44,7 +44,8 @@ export function usePanelNavigation({ ui, toggleUncapEdit }: UsePanelNavigationPa
   const isMobileViewport = useCallback(() => !window.matchMedia(constant.DESKTOP_MEDIA_QUERY).matches, [])
 
   const openScoreSettings = useCallback(() => {
-    // スマホでは同じボタンを再度押すと閉じ、別パネルと凸数編集を閉じて1枚だけ表示する
+    // スマホでは同じボタンを再度押すと閉じる
+    // 別パネルと凸数編集を閉じて、1枚だけ表示する
     if (isMobileViewport()) {
       if (ui.scoreSettingsOpen) {
         ui.setScoreSettingsOpen(false)
@@ -72,7 +73,7 @@ export function usePanelNavigation({ ui, toggleUncapEdit }: UsePanelNavigationPa
   }, [isMobileViewport, ui])
 
   const openScoreSettingsFromList = useCallback(() => {
-    // 一覧からの操作はPCでは固定、スマホでは通常の開閉へ委譲する
+    // 一覧からの操作はPCでは固定表示、スマホでは通常の開閉として扱う
     if (isMobileViewport()) {
       openScoreSettings()
       return

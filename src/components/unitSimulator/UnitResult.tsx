@@ -1,15 +1,15 @@
 /**
  * 最適編成計算結果の表示コンポーネント
  *
- * 最適編成の合計スコア、6枚のサポート一覧、パラメータボーナス内訳を表示する。
+ * 最適編成の合計スコア、6枚のサポート一覧、パラメータボーナス内訳を表示する
  */
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import * as constant from '../../constant'
-import { getClassParameterTotal, getExamData, getHifSelectionExamData, getSpLessonTotal } from '../../data/score'
-import { resolveParamCap } from '../../data/score/paramCap'
-import type { CardCountCustom } from '../../hooks/useCardCountCustom'
+import * as scoreData from '../../data/score'
+import * as paramCapData from '../../data/score/paramCap'
+import type { CardCountCustom } from '../../types/card'
 import type { ActionIdType, ActivityIdType, DifficultyType, ScenarioType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import type { ParameterValues, UnitResult as UnitResultType } from '../../types/unit'
@@ -17,39 +17,41 @@ import { PlusIcon } from '../ui/icons'
 import UnitCardItem from './UnitCardItem'
 import { UnitResultBreakdown } from './UnitResultBreakdown'
 
-/** UnitResult に渡すプロパティ */
+/** 最適編成結果の表示と操作 */
 interface UnitResultProps {
   /** 計算結果 */
   result: UnitResultType
-  /** 固定サポート名リスト */
+  /** 固定するサポート名一覧 */
   lockedCards: string[]
   /** 回数調整が設定されているサポート名 */
   customizedCardNames: ReadonlySet<string>
-  /** 固定トグルコールバック */
+  /** 固定状態を切り替える操作 */
   onToggleLock: (cardName: string) => void
-  /** サポート削除コールバック */
+  /** 編成からサポートを外す操作 */
   onRemove: (cardName: string) => void
   /** サポート別回数調整 */
   cardCountCustom: CardCountCustom
-  /** 自動カウント（selfBonus）の回数調整を設定する */
+  /** サポート自身が提供するアクションの回数を変更する操作 */
   onSelfTriggerChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** 自動カウントの回数調整を個別に削除する */
+  /** サポート自身が提供するアクションの回数設定を削除する操作 */
   onRemoveSelfTrigger: (cardName: string, actionId: ActionIdType) => void
-  /** Pアイテム発動回数の回数調整を設定する */
+  /** Pアイテムの発動回数を変更する操作 */
   onPItemCountChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数の回数調整を個別に削除する */
+  /** Pアイテムの発動回数設定を削除する操作 */
   onRemovePItemCount: (cardName: string, actionId: ActionIdType) => void
-  /** サポート別の回数調整をリセットする */
+  /** サポートの回数設定をすべて戻す操作 */
   onClearCardCustom: (cardName: string) => void
-  /** シナリオ種別（試験上昇量の算出に使用） */
+  /** シナリオ種別（試験の上昇量を計算するために使う） */
   scenario: ScenarioType
-  /** 難易度（試験上昇量の算出に使用） */
+  /** 難易度（試験の上昇量を計算するために使う） */
   difficulty: DifficultyType
-  /** スケジュール選択（SPレッスン計算に使用） */
+  /** スケジュール選択（SPレッスンの計算に使う） */
   scheduleSelections: Record<number, ActivityIdType>
   /** HIF選抜試験3回分のVo:Da:Vi配分比率（x:y:z） */
   hifExamRatios?: ParameterValues[]
-  /** カスタムモードか（true の場合は classTotal の代わりに customClassBonus を使う） */
+  /** HIF公開レッスンをメイン属性だけで選ぶか */
+  hifLessonSplitSub?: boolean
+  /** カスタムモードか（有効ならカスタムの授業上昇量を使う） */
   useCustomMode: boolean
   /** カスタムモードでの授業パラメータ上昇量 */
   customClassBonus: ParameterValues
@@ -59,20 +61,20 @@ interface UnitResultProps {
   initialParams: ParameterValues
   /** パラメータ上限の上書き設定 */
   paramCapOverride: number | null | undefined
-  /** スロットごとのサポート名（null = 空き枠） */
+  /** 手動編成の各枠に入っているサポート名（空き枠はnull） */
   manualCards: (string | null)[]
-  /** 一覧選択モードの開始コールバック（空き枠のスロットインデックスを渡す） */
+  /** 一覧から手動編成へ追加する対象スロットを指定する操作 */
   onStartSelect: (slotIndex: number) => void
-  /** 一覧選択モード中か */
+  /** 一覧からサポートを選択中か */
   selectMode: boolean
-  /** 最適化計算中か（計算中は表示順をレンタル末尾で固定する） */
+  /** 最適化中か（計算結果の表示順をレンタル枠に合わせる） */
   isCalculating: boolean
 }
 
 /**
  * ユニット計算結果を表示する
  *
- * @param props - コンポーネントプロパティ
+ * @param props - 編成結果、表示条件、固定・削除・回数調整の操作
  * @returns 結果表示要素
  */
 export default function UnitResult({
@@ -91,6 +93,7 @@ export default function UnitResult({
   difficulty,
   scheduleSelections,
   hifExamRatios,
+  hifLessonSplitSub = true,
   useCustomMode,
   customClassBonus,
   customNonBonusGain,
@@ -153,7 +156,7 @@ export default function UnitResult({
   const [showBreakdown, setShowBreakdown] = useState(false)
   const handleToggleBreakdown = useCallback(() => setShowBreakdown((prev) => !prev), [])
 
-  // サポート点数合計（VoDaVi別）: サポートパラボを含む全効果 + サポート間連携を parameter_type で集計
+  // サポートの全効果とサポート間連携を、カードの担当パラメータ別に合計する
   const supportScore = useMemo(() => {
     const sum = { vocal: 0, dance: 0, visual: 0 }
     for (const m of result.members) {
@@ -167,11 +170,13 @@ export default function UnitResult({
 
   // SPレッスン上昇量（VoDaVi別）
   const spLesson = useMemo(
-    () => getSpLessonTotal(scenario, difficulty, scheduleSelections),
-    [scenario, difficulty, scheduleSelections],
+    // HIFのレッスン分割設定を含め、点数設定パネルと同じSPレッスン値を使う
+    () => scoreData.getSpLessonTotal(scenario, difficulty, scheduleSelections, hifLessonSplitSub),
+    [scenario, difficulty, scheduleSelections, hifLessonSplitSub],
   )
 
-  // カスタムモードでは手入力した対象上昇値、通常モードではSPレッスン上昇値を内訳表示に使う
+  // カスタムモードでは手入力した上昇値を使う
+  // 通常モードではSPレッスンの上昇値を内訳に使う
   const targetGain = useMemo(
     () => (useCustomMode ? result.parameterBonusBase : spLesson),
     [useCustomMode, result.parameterBonusBase, spLesson],
@@ -182,7 +187,7 @@ export default function UnitResult({
     () =>
       useCustomMode
         ? { vocal: 0, dance: 0, visual: 0 }
-        : getClassParameterTotal(scenario, difficulty, scheduleSelections),
+        : scoreData.getClassParameterTotal(scenario, difficulty, scheduleSelections),
     [useCustomMode, scenario, difficulty, scheduleSelections],
   )
 
@@ -194,17 +199,18 @@ export default function UnitResult({
             mid: { vocal: 0, dance: 0, visual: 0 },
             final: { vocal: 0, dance: 0, visual: 0 },
           }
-        : getExamData(scenario, difficulty),
+        : scoreData.getExamData(scenario, difficulty),
     [useCustomMode, scenario, difficulty],
   )
 
   // HIF選抜試験（3回分）は通常試験と別表示するため、専用配列で合算用に保持する
   const hifSelectionExams = useMemo(
-    () => (useCustomMode || scenario !== enums.ScenarioType.Hif ? [] : getHifSelectionExamData(hifExamRatios)),
+    () =>
+      useCustomMode || scenario !== enums.ScenarioType.Hif ? [] : scoreData.getHifSelectionExamData(hifExamRatios),
     [useCustomMode, scenario, hifExamRatios],
   )
 
-  /** VoDaVi 3軸の合計を返す */
+  // VoDaVi 3軸の合計を返す
   const pvSum = (a: ParameterValues, ...rest: ParameterValues[]): ParameterValues => {
     const r = { ...a }
     for (const v of rest) {
@@ -250,7 +256,7 @@ export default function UnitResult({
 
   // シナリオ×難易度に応じたパラメータ上限キャップ
   const paramCap = useMemo(
-    () => resolveParamCap(scenario, difficulty, paramCapOverride),
+    () => paramCapData.resolveParamCap(scenario, difficulty, paramCapOverride),
     [scenario, difficulty, paramCapOverride],
   )
   const cappedTotal = useMemo(() => {

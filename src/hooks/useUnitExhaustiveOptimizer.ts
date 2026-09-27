@@ -1,14 +1,15 @@
 /**
- * 総当たり最適化の実行、進捗、キャンセルを管理する。
+ * 総当たり最適化の実行、進捗、キャンセルを管理する
  *
- * Workerのライフサイクルと実行IDをこのフックへ閉じ込め、最適編成全体の状態フックから非同期制御を分離する。
+ * 重い最適編成計算の起動・終了と、古い結果を無効にする制御をまとめる
+ * 最適編成の表示内容と計算の進行管理を分ける
  */
 import { type Dispatch, type SetStateAction, useCallback, useRef, useState } from 'react'
 
+import { runOptimizerAsync } from '../application/unitOptimizerRunner'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from '../types/unit'
 import type { BuildUnitRuntimeInput } from '../types/unitOptimizer'
 import { createExhaustiveOptimizationSettings } from '../utils/unitOptimizedSettings'
-import { runOptimizerAsync } from './unitOptimizerRunner'
 
 /** 総当たり最適化フックの引数 */
 interface UseUnitExhaustiveOptimizerOptions {
@@ -29,7 +30,7 @@ interface UnitExhaustiveOptimizerState {
 }
 
 /**
- * Worker または main thread で行う総当たり最適化を管理する
+ * 補助スレッドまたは画面側で行う総当たり最適化を管理する
  *
  * @param options - 実行設定、入力構築関数、結果適用関数、状態更新関数
  * @returns 実行・キャンセル操作と進捗状態
@@ -45,7 +46,7 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
 
   const applyBetterResultPreview = useCallback(
     (betterResult: UnitResult) => {
-      // 計算途中でも最良結果を表示し、長い計算で画面が停止したように見えないようにする
+      // 計算途中でも最良結果を表示し、長い計算で画面が停止したように見せない
       bestResultDuringRunRef.current = betterResult
       setResult(betterResult)
     },
@@ -53,7 +54,7 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
   )
 
   const terminateOptimizeWorker = useCallback(() => {
-    // 新しい計算を始める前に、前回のWorkerを停止して結果の競合を防ぐ
+    // 新しい計算を始める前に、前回の補助スレッドを停止して結果の競合を防ぐ
     optimizeWorkerRef.current?.terminate()
     optimizeWorkerRef.current = null
   }, [])
@@ -75,7 +76,7 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
   }, [applyOptimizedResult, terminateOptimizeWorker, setResult, setHasCalculated, setIsCalculating])
 
   const optimizeRemaining = useCallback(() => {
-    // 実行IDを更新し、古いWorkerからのコールバックを無効にする
+    // 実行番号を更新し、古い補助スレッドから届く通知を無効にする
     const currentRunId = exhaustiveRunIdRef.current + 1
     exhaustiveRunIdRef.current = currentRunId
     bestResultDuringRunRef.current = null
@@ -84,7 +85,7 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
     latestProgressRef.current = null
     terminateOptimizeWorker()
 
-    // 計算用設定をコピーしてから入力を構築し、UI状態を計算中に変更しない
+    // 計算用設定をコピーしてから入力を構築し、表示中の設定を計算中に変更しない
     const input = buildRuntimeInput(createExhaustiveOptimizationSettings(settings))
 
     requestAnimationFrame(() => {
@@ -107,7 +108,7 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
       }
 
       const worker = runOptimizerAsync({
-        // Workerが使えない環境でも同じコールバック契約で実行できる
+        // 補助スレッドが使えない環境でも同じ通知の形で実行できる
         input,
         isCancelled: () => exhaustiveRunIdRef.current !== currentRunId,
         onProgress: (done, total) => {
@@ -117,9 +118,9 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
         },
         onBetter: applyBetterResultPreview,
         onDone: (result) => {
-          // Worker は完了時に自己終了するため、外部キャンセル用参照だけ破棄する
+          // 補助スレッドは完了時に終了するため、外部キャンセル用の参照だけ破棄する
           optimizeWorkerRef.current = null
-          // 最終進捗を満タンで描画し、スマホでも描画を確認してから結果表示へ切り替える
+          // 最終進捗を満タンで表示し、スマホでも表示を確認してから結果へ切り替える
           const latestProgress = latestProgressRef.current
           if (latestProgress) setExhaustiveProgress({ ...latestProgress, done: latestProgress.total })
           requestAnimationFrame(() => {

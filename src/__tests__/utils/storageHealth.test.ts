@@ -2,15 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import * as constant from '../../constant'
 import * as enums from '../../types/enums'
 import { createDefaultSettings } from '../../utils/scoreSettings'
-import {
-  discardStoredData,
-  discardStoredDataBatch,
-  inspectStoredData,
-  repairStoredData,
-} from '../../utils/storageHealth'
+import { inspectStoredData, repairStoredDataBatch } from '../../utils/storageHealth'
 
 // 保存データの検出結果を確認し、配列要素単位の修復と
-// 対象キーだけの破棄ができることを検証する
+// 対象キーだけを修復できることを検証する
 describe('storageHealth', () => {
   beforeEach(() => {
     // 保存データの検査・修復結果をケース間で共有しない
@@ -83,7 +78,7 @@ describe('storageHealth', () => {
     const raw = JSON.stringify({ テストカード: enums.UncapType.Four })
     localStorage.setItem(constant.UNCAP_STORAGE_KEY, raw)
 
-    expect(repairStoredData(constant.UNCAP_STORAGE_KEY)).toBe(true)
+    expect(repairStoredDataBatch([constant.UNCAP_STORAGE_KEY])).toBe(true)
     expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(raw)
   })
 
@@ -105,7 +100,7 @@ describe('storageHealth', () => {
     localStorage.setItem(constant.USER_SUPPORTS_STORAGE_KEY, JSON.stringify([validSupport, null]))
 
     // 修復処理は対象キーを更新できたことをtrueで返す
-    expect(repairStoredData(constant.USER_SUPPORTS_STORAGE_KEY)).toBe(true)
+    expect(repairStoredDataBatch([constant.USER_SUPPORTS_STORAGE_KEY])).toBe(true)
     // 正常なサポートは残り、壊れたnull要素だけが除外される
     expect(JSON.parse(localStorage.getItem(constant.USER_SUPPORTS_STORAGE_KEY) ?? 'null')).toEqual([validSupport])
   })
@@ -164,9 +159,9 @@ describe('storageHealth', () => {
     )
 
     // 検出した3キーを個別に修復し、各処理が成功することを確認する
-    expect(repairStoredData(constant.SCORE_SETTINGS_STORAGE_KEY)).toBe(true)
-    expect(repairStoredData(constant.FILTER_STORAGE_KEY)).toBe(true)
-    expect(repairStoredData(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(true)
+    expect(repairStoredDataBatch([constant.SCORE_SETTINGS_STORAGE_KEY])).toBe(true)
+    expect(repairStoredDataBatch([constant.FILTER_STORAGE_KEY])).toBe(true)
+    expect(repairStoredDataBatch([constant.SCORE_PRESETS_STORAGE_KEY])).toBe(true)
     // 点数設定ではnullのカスタム行だけが除外される
     expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).toEqual({
       ...scoreSettings,
@@ -225,35 +220,11 @@ describe('storageHealth', () => {
     )
 
     // 修復成功後はnullメンバーだけを除外し、正常なメンバーを残す
-    expect(repairStoredData(constant.UNIT_RESULT_STORAGE_KEY)).toBe(true)
+    expect(repairStoredDataBatch([constant.UNIT_RESULT_STORAGE_KEY])).toBe(true)
     expect(JSON.parse(localStorage.getItem(constant.UNIT_RESULT_STORAGE_KEY) ?? 'null')).toEqual({
       ...unitResult,
       members: [validMember],
     })
   })
 
-  it('検証対象外のキーを削除せず、対象キーだけを破棄する', () => {
-    // 管理対象キーと未知キーを同時に保存し、破棄対象の境界を確認する
-    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ テストカード: '4' }))
-    localStorage.setItem('gaku-navi-unknown-data', 'keep')
-
-    // 管理対象の凸数キーは破棄できる
-    expect(discardStoredData(constant.UNCAP_STORAGE_KEY)).toBe(true)
-    // 未知キーは保護し、discardStoredDataがfalseを返す
-    expect(discardStoredData('gaku-navi-unknown-data')).toBe(false)
-    // 対象キーだけが削除され、未知キーの値は残る
-    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBeNull()
-    expect(localStorage.getItem('gaku-navi-unknown-data')).toBe('keep')
-  })
-
-  it('検出済みのキーをまとめて破棄する', () => {
-    // 構文エラーのある2キーを用意し、画面の「すべて破棄」操作を再現する
-    localStorage.setItem(constant.UNCAP_STORAGE_KEY, '{')
-    localStorage.setItem(constant.FILTER_STORAGE_KEY, '{')
-
-    // バッチ破棄が成功し、指定した2キーだけが削除される
-    expect(discardStoredDataBatch([constant.UNCAP_STORAGE_KEY, constant.FILTER_STORAGE_KEY])).toBe(true)
-    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBeNull()
-    expect(localStorage.getItem(constant.FILTER_STORAGE_KEY)).toBeNull()
-  })
 })

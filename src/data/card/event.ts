@@ -1,9 +1,9 @@
 /**
- * イベントマスタ。
+ * イベントの絞り込みと表示に使うデータ
  *
- * サポートイベントのフィルター定義とサマリ表示ラベルを管理する。
- * フィルター: サポート一覧のフィルターエリアで、イベント種類で絞り込むボタンの一覧。
- * サマリ: イベント効果タイプからサポート一覧に表示するラベルを取得する。
+ * サポートイベントの絞り込み条件と一覧表示用ラベルを管理する
+ * 絞り込み条件は、サポート一覧でイベントの種類を選ぶボタンに使う
+ * 表示用ラベルは、イベント効果の種類から一覧に表示する文字を選ぶために使う
  */
 
 import type { TranslationKey } from '../../i18n'
@@ -60,11 +60,11 @@ const filterEntries: {
   },
 ]
 
-/** イベントフィルター → 効果タイプのルックアップマップ */
+/** イベントフィルターから対応する効果タイプを探す表 */
 const EVENT_FILTER_EFFECT_MAP = new Map(filterEntries.map((e) => [e.value, e.effects as readonly EventEffectType[]]))
 
 /**
- * イベントフィルター種別に対応するイベント効果タイプ配列を返す。
+ * イベントフィルター種別に対応するイベント効果タイプ配列を返す
  *
  * @param filter - イベントフィルター種別
  * @returns マッチするイベント効果タイプの配列
@@ -77,7 +77,7 @@ export function getEventFilterEffects(filter: EventFilterType): readonly EventEf
 export const EventFilterAcquireList = filterEntries.filter((e) => e.category === EventFilterCategoryType.Acquire)
 /** 操作系フィルター一覧 */
 export const EventFilterModifyList = filterEntries.filter((e) => e.category === EventFilterCategoryType.Modify)
-/** 獲得系カテゴリの値 Set（フィルタリング判定用） */
+/** 獲得系イベントかを判定するための一覧 */
 export const EventCategoryAcquire = new Set<string>(EventFilterAcquireList.map((e) => e.value))
 
 const summaryEntries: { id: EventEffectType; label: TranslationKey }[] = [
@@ -94,10 +94,10 @@ const summaryEntries: { id: EventEffectType; label: TranslationKey }[] = [
 const summaryMap = new Map(summaryEntries.map((e) => [e.id, e.label]))
 
 /**
- * イベント効果タイプからサマリ表示ラベルを取得する。
+ * イベント効果タイプから一覧表示ラベルを取得する
  *
  * @param effectType - イベント効果タイプ
- * @returns i18n キー。マップに含まれない効果タイプは undefined
+ * @returns 翻訳キー。対応するラベルがなければ undefined
  */
 export function getEventSummaryLabel(effectType: EventEffectType): TranslationKey | undefined {
   return summaryMap.get(effectType)

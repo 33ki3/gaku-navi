@@ -5,19 +5,20 @@
  * このファイルへ集約する
  */
 import * as constant from '../constant'
-import { EXPORT_KEYS } from '../data/ui'
 import type { ExportKey } from '../data/ui'
+import { EXPORT_KEYS } from '../data/ui'
+import type { ImportArrayFieldMetadata, ImportValueMetadata } from '../data/ui/importData'
 import {
   FILTER_ARRAY_FIELD_METADATA,
   IMPORT_VALUE_METADATA,
   SCORE_SETTINGS_ARRAY_FIELD_METADATA,
   UNIT_SETTINGS_ARRAY_FIELD_METADATA,
 } from '../data/ui/importData'
-import type { ImportArrayFieldMetadata, ImportValueMetadata } from '../data/ui/importData'
 import type { TranslationKey } from '../i18n'
 import i18n from '../i18n'
 import * as enums from '../types/enums'
 import { isParameterValues } from './domainValueValidation'
+import { fillScoreSettingsDefaults } from './scoreSettings'
 import { isScorePreset, isScorePresetArray, isScoreSettings } from './scoreSettingsValidation'
 import { isAppPreferences, isUnitSimulatorSettings } from './settingsValidation'
 import {
@@ -27,7 +28,6 @@ import {
   isUncapRecord,
 } from './storageCollectionValidation'
 import { isSupportCard, isSupportCardArray } from './supportCardValidation'
-import { fillScoreSettingsDefaults } from './scoreSettings'
 import { isEnumValue, isRecord } from './valueValidation'
 
 /** 既存のutility利用者へ公開するエクスポート対象キーの型 */

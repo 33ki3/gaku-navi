@@ -23,7 +23,7 @@ interface StorageHealthDefinition {
   validate: (value: unknown) => boolean
   /** 検証に失敗したときの理由の翻訳キー */
   invalidReasonKey: TranslationKey
-  /** 旧保存データの不足項目を検証前に補完する処理 */
+  /** 保存データの不足項目を検証前に補完する処理 */
   fillDefaults?: (value: unknown) => unknown
   /** 配列要素単位で救出できる場合の検証処理 */
   salvage?: (value: unknown) => ImportSalvageResult | null
@@ -41,7 +41,7 @@ export interface StorageHealthIssueDetail {
 
 /** 保存データの健全性に関する問題 */
 export interface StorageHealthIssue {
-  /** 破棄対象のlocalStorageキー */
+  /** 修復対象のlocalStorageキー */
   key: string
   /** 画面表示用の項目名 */
   item: string
@@ -56,7 +56,7 @@ export interface StorageHealthIssue {
 /**
  * エクスポート対象データに、最適編成結果キャッシュを加えた検証一覧。
  * 結果キャッシュはエクスポート対象外だが、壊れていても再計算で復旧できるため
- * エラー画面から個別に破棄できるようにする
+ * エラー画面から修復できるようにする
  */
 const STORAGE_HEALTH_DEFINITIONS: StorageHealthDefinition[] = [
   ...EXPORT_KEYS.map((key): StorageHealthDefinition => {
@@ -166,36 +166,8 @@ export function inspectStoredData(): StorageHealthIssue[] {
   return issues
 }
 
-/**
- * 指定した保存データを破棄する
- *
- * @param key - 破棄するlocalStorageキー
- * @returns 破棄できた場合に true
- */
-export function discardStoredData(key: string): boolean {
-  if (!STORAGE_HEALTH_DEFINITIONS.some((definition) => definition.key === key)) return false
-
-  try {
-    localStorage.removeItem(key)
-    return true
-  } catch {
-    return false
-  }
-}
-
-/**
- * 検出済みの保存データをまとめて破棄する
- *
- * @param keys - 破棄対象のキー一覧
- * @returns すべて破棄できた場合に true
- */
-export function discardStoredDataBatch(keys: string[]): boolean {
-  const results = keys.map(discardStoredData)
-  return results.every(Boolean)
-}
-
 /** 壊れた保存データを可能な範囲で修復し、復旧できない場合は削除する */
-export function repairStoredData(key: string): boolean {
+function repairStoredData(key: string): boolean {
   const definition = STORAGE_HEALTH_DEFINITIONS.find((candidate) => candidate.key === key)
   if (!definition) return false
 

@@ -6,14 +6,14 @@
  * extraCount を指定するとサポート間連携の追加回数を緑色で表示する。
  */
 import { useTranslation } from 'react-i18next'
-import type { CardCalculationResult } from '../../types/card'
+import type { CardAbilityDetail } from '../../types/card'
 import { getAbilityDisplayName, getEffectDescription } from '../../utils/display/abilityRowHelpers'
 import { getScoreStyles } from '../../utils/display/scoreStyles'
 
 /** AbilityRow コンポーネントに渡すプロパティ */
 interface AbilityRowProps {
   /** アビリティ詳細データ */
-  ab: CardCalculationResult['allAbilityDetails'][number]
+  ab: CardAbilityDetail
   /** サポート間連携による追加回数（0 の場合は表示しない） */
   extraCount?: number
 }

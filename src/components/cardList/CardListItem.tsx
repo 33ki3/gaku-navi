@@ -2,8 +2,8 @@
  * サポートリストの個別サポートコンポーネント
  *
  * 1枚のサポートカードを表示する。
- * サポート名・レアリティ・タイプ・プラン・イベント概要・スコアなどを
- * まとめて表示し、クリックで詳細モーダルを開く。除外中のカードは右上のバッジで示す。
+ * サポート名・レアリティ・タイプ・プラン・イベント概要・スコアを表示する
+ * クリックで詳細モーダルを開き、除外中のカードは右上のバッジで示す
  * memoでラップして、不要な再描画を防ぐ。
  */
 import { memo, useCallback } from 'react'
@@ -61,7 +61,7 @@ export const CardListItem = memo(function CardListItem({
   const sourceEntry = data.getSourceEntry(card.source)
   const typeLabel = t(typeEntry.label)
 
-  // クリックハンドラをメモ化して再描画を減らす
+  // カード本体と点数内訳を独立した操作として扱う
   const handleClick = useCallback(() => {
     // サポート選択モード中で対象外のサポートはクリック不可
     if (isUnitCardSelectMode && !eligible) return

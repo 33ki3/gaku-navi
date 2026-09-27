@@ -24,50 +24,6 @@ import * as enums from '../types/enums'
 import { hasAbilityKeyword, hasSPAbility } from './cardQuery'
 
 /**
- * フィルタリングとソートに必要な全パラメータをまとめた型
- *
- * UIコンポーネントから渡される検索条件やソート設定を1つにまとめている。
- */
-interface FilterSortParams {
-  /** ユーザーが入力したテキスト検索語（サポート名等で部分一致検索） */
-  searchTerm: string
-  /** 選択されているレアリティ（SSR、SR、R）のセット */
-  selectedRarities: Set<RarityType>
-  /** 選択されているタイプ（ボーカル、ダンス、ビジュアル、アシスト）のセット */
-  selectedTypes: Set<CardType>
-  /** 選択されているプラン（センス、ロジック）のセット */
-  selectedPlans: Set<PlanType>
-  /** SPアビリティ持ちのみ表示するフラグ */
-  spOnly: boolean
-  /** 選択されているアビリティキーワードのセット */
-  selectedAbilityKeywords: Set<AbilityKeywordType>
-  /** 選択されているイベント種別フィルターのセット */
-  selectedEventFilters: Set<EventFilterType>
-  /** 選択されている入手種別フィルターのセット */
-  selectedSources: Set<SourceType>
-  /** 選択されている凸数のセット */
-  selectedUncaps: Set<UncapType>
-  /** 選択されている回数調整フィルターのセット */
-  selectedCountCustom: Set<CountCustomFilter>
-  /** 回数調整済みサポート名のセット */
-  countCustomCardNames: Set<string>
-  /** サポート名 → 現在の凸数のマッピング（フィルタリング用） */
-  cardUncaps: Record<string, UncapType>
-  /** サポート名 → ソート用凸数のマッピング（ソート条件変更時のみ更新） */
-  sortCardUncaps: Record<string, UncapType>
-  /** 現在のソートモード（レアリティ順、スコア順、日付順、凸数順） */
-  sortMode: SortModeType
-  /** ソートを逆順にするかどうか */
-  sortReverse: boolean
-  /** サポート名 → 計算スコアのマッピング（スコアソート用） */
-  cardScores: Map<string, number>
-  /** 選択中の最適編成除外状態フィルター */
-  selectedCardExclusionFilters: ReadonlySet<CardExclusionFilterType>
-  /** 最適編成から除外するサポート名の集合 */
-  excludedCardNames: ReadonlySet<string>
-}
-
-/**
  * ソートのみに必要なパラメータ
  *
  * useFilteredCards でソート結果をキャッシュするために
@@ -352,20 +308,4 @@ export function filterSortedCards(sortedCards: readonly SupportCard[], params: F
     if (selectedUncaps.size > 0 && !selectedUncaps.has(cardUncap)) return false
     return true
   })
-}
-
-/**
- * サポート一覧に対してフィルタリングとソートを行う
- *
- * sortCards でソート → filterSortedCards でフィルタリングの順に処理する。
- * useFilteredCards では sortCards と filterSortedCards を個別に useMemo で
- * キャッシュするが、テスト等では一度に呼び出せるこの関数を使う。
- *
- * @param cards - フィルター前の全サポート一覧
- * @param params - フィルター＆ソートの条件パラメータ
- * @returns フィルター＆ソート後のサポート配列
- */
-export function filterAndSortCards(cards: SupportCard[], params: FilterSortParams): SupportCard[] {
-  const sorted = sortCards(cards, params)
-  return filterSortedCards(sorted, params)
 }

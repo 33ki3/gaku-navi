@@ -1,18 +1,24 @@
 /**
  * 点数設定の中身コンポーネント
  *
- * シナリオ/難易度・スケジュール・アクション回数・パラメータボーナス・
- * オプションの各セクションを含む設定フォーム本体。
- * レイアウトラッパー（SidePanelLayout）なしで使える。
+ * シナリオ、難易度、スケジュール、アクション回数、
+ * パラメータボーナス、オプションの各セクションを含む設定フォーム本体
+ * 設定フォーム単体でも表示できるよう、パネルの枠は親コンポーネントで管理する
  */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { PresetCommand } from '../../application/command'
 import * as constant from '../../constant'
 import * as data from '../../data'
 import { useAccordionState } from '../../hooks'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
-import { calculateCountsFromSchedule, resolveScoreSettingsDifficulty } from '../../utils/scoreSettings'
+import type { ScorePreset } from '../../utils/presetHelpers'
+import {
+  calculateCountsFromSchedule,
+  getEffectiveScheduleSelections,
+  resolveScoreSettingsDifficulty,
+} from '../../utils/scoreSettings'
 import CollapsibleSection from '../ui/CollapsibleSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { ActionCountsSection } from './ActionCountsSection'
@@ -22,21 +28,36 @@ import { ScenarioDifficultySection } from './ScenarioDifficultySection'
 import { ScheduleSection } from './ScheduleSection'
 import { SettingsOptionToggles } from './SettingsOptionToggles'
 
-/** ScoreSettingsContent コンポーネントに渡すプロパティ */
+/** 点数設定フォームの値と更新操作 */
 interface ScoreSettingsContentProps {
   /** 現在の設定値 */
   settings: ScoreSettings
+  /** 保存待ち入力と外部更新を区別する保存済み設定 */
+  persistedSettings: ScoreSettings
+  /** アクション回数入力時に計算結果だけを即時更新する関数 */
+  onSettingsPreviewChange: (settings: ScoreSettings) => void
   /** 設定値が変わったときに呼ばれる関数 */
   onSettingsChange: (settings: ScoreSettings) => void
+  /** 保存済みプリセット一覧 */
+  presets: readonly ScorePreset[]
+  /** プリセットの保存・削除を行う共通処理 */
+  presetCommand: PresetCommand
 }
 
 /**
- * 点数設定を責務別の折りたたみセクションとして表示する。
+ * 点数設定を責務別の折りたたみセクションとして表示する
  *
  * @param props - 現在の点数設定と更新操作
- * @returns レイアウトラッパーを含まない点数設定フォーム
+ * @returns 点数設定フォーム
  */
-export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettingsContentProps) {
+export function ScoreSettingsContent({
+  settings,
+  persistedSettings,
+  onSettingsPreviewChange,
+  onSettingsChange,
+  presets,
+  presetCommand,
+}: ScoreSettingsContentProps) {
   const { t } = useTranslation()
 
   const { state: sections, toggle } = useAccordionState({
@@ -48,18 +69,40 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
     [enums.ScoreSettingsSectionKey.Options]: false,
   })
 
-  // 固定難易度シナリオ（HIF/Custom）は None、それ以外は有効な難易度を使う
+  // HIFとカスタムでは難易度を選ばず、それ以外では設定した難易度を使う
   const resolvedDifficulty = resolveScoreSettingsDifficulty(settings.scenario, settings.difficulty)
 
   const scheduleData = useMemo(
     () => data.getScheduleData(settings.scenario, resolvedDifficulty),
     [settings.scenario, resolvedDifficulty],
   )
+  // 固定週の補完値を設定画面と計算処理で共通化する
+  const effectiveSettings = useMemo(
+    () => ({
+      ...settings,
+      scheduleSelections: getEffectiveScheduleSelections(settings.scheduleSelections, scheduleData),
+    }),
+    [scheduleData, settings],
+  )
 
   const scheduleCounts = useMemo(() => {
+    // 自動計算が無効、またはカスタムモードではスケジュール由来の回数を表示しない
     if (!settings.useScheduleLimits || settings.useCustomMode) return null
-    return calculateCountsFromSchedule(settings.scheduleSelections, scheduleData)
-  }, [scheduleData, settings.scheduleSelections, settings.useScheduleLimits, settings.useCustomMode])
+    // シナリオとHIF表示モードに合わせ、選べない活動を集計から除外する
+    return calculateCountsFromSchedule(
+      settings.scheduleSelections,
+      scheduleData,
+      settings.scenario,
+      settings.hifLessonSplitSub,
+    )
+  }, [
+    scheduleData,
+    settings.scheduleSelections,
+    settings.scenario,
+    settings.hifLessonSplitSub,
+    settings.useScheduleLimits,
+    settings.useCustomMode,
+  ])
 
   return (
     <div className="space-y-5 px-5 pb-5 pt-0">
@@ -78,7 +121,12 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
         >
           <div className="mt-2">
             {/* 点数設定のプリセット */}
-            <PresetSection settings={settings} onSettingsChange={onSettingsChange} />
+            <PresetSection
+              settings={settings}
+              onSettingsChange={onSettingsChange}
+              presets={presets}
+              presetCommand={presetCommand}
+            />
           </div>
         </CollapsibleSection>
       </div>
@@ -105,7 +153,7 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
       <div className={constant.SECTION_DIVIDER}>
         {/* スケジュール設定セクション */}
         <ScheduleSection
-          settings={settings}
+          settings={effectiveSettings}
           onSettingsChange={onSettingsChange}
           resolvedDifficulty={resolvedDifficulty}
           scheduleData={scheduleData}
@@ -159,6 +207,8 @@ export function ScoreSettingsContent({ settings, onSettingsChange }: ScoreSettin
           {/* アクション回数の入力欄 */}
           <ActionCountsSection
             settings={settings}
+            persistedSettings={persistedSettings}
+            onSettingsPreviewChange={onSettingsPreviewChange}
             onSettingsChange={onSettingsChange}
             scheduleCounts={scheduleCounts}
             scheduleData={scheduleData}

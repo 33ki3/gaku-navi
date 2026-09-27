@@ -1,7 +1,7 @@
 /**
- * unitOptimizerRunner のテスト
+ * 最適編成のバックグラウンド計算の動作を検証する
  *
- * Worker 利用時/非利用時の制御フローと、フォールバック挙動を検証する。
+ * バックグラウンド計算を使う経路と画面側へ切り替える経路、失敗時の復帰を検証する
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -9,14 +9,14 @@ vi.mock('../../utils/unitSimulator', () => ({
   exhaustiveOptimizeAsync: vi.fn(),
 }))
 
-import { runOptimizerAsync } from '../../hooks/unitOptimizerRunner'
+import { runOptimizerAsync } from '../../application/unitOptimizerRunner'
 import * as enums from '../../types/enums'
 import type { UnitOptimizerWorkerResponseMessage } from '../../types/unitOptimizerWorker'
 import { UnitOptimizerWorkerMessageType } from '../../types/unitOptimizerWorker'
 import type { OptimizeInput } from '../../utils/unitSimulator'
 import { exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
 
-/** テスト用最適化入力を作成する */
+// テスト用最適化入力を作成する
 function makeInput(): OptimizeInput {
   return {
     settings: {
@@ -71,24 +71,24 @@ function makeInput(): OptimizeInput {
   }
 }
 
-/** テスト用 Worker モック */
+/** テスト用のバックグラウンド計算モック */
 class MockWorker {
   onmessage: ((event: MessageEvent<UnitOptimizerWorkerResponseMessage>) => void) | null = null
   onerror: ((event: Event) => void) | null = null
   terminate = vi.fn()
   postMessage = vi.fn()
 
-  /** Worker メッセージを疑似受信させる */
+  // バックグラウンド計算の通知を疑似的に受け取らせる
   emitMessage(message: UnitOptimizerWorkerResponseMessage): void {
     this.onmessage?.({ data: message } as MessageEvent<UnitOptimizerWorkerResponseMessage>)
   }
 }
 
 /**
- * new Worker(...) で呼び出せる constructor モックを作る
+ * ブラウザのバックグラウンド計算機能を差し替えるテスト用の生成関数を作る
  *
- * @param workerInstance - new 時に返す Worker インスタンス
- * @returns Worker constructor として使える関数
+ * @param workerInstance - 差し替え先として返すバックグラウンド計算のインスタンス
+ * @returns バックグラウンド計算の生成関数として使える関数
  */
 function createWorkerConstructor(workerInstance: MockWorker): typeof Worker {
   return function WorkerConstructor() {
@@ -115,7 +115,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('Worker 未対応環境では main thread 実行にフォールバックする', async () => {
-    // Worker を無効化して main thread パスを通す
+    // バックグラウンド計算を無効化して、画面側で実行する経路を通す
     Reflect.deleteProperty(globalThis, 'Worker')
     mockedExhaustive.mockResolvedValueOnce(null)
 
@@ -129,7 +129,7 @@ describe('runOptimizerAsync', () => {
     })
 
     expect(worker).toBeNull()
-    // then チェーンの完了を待つ
+    // 非同期処理の後続処理が終わるまで待つ
     await Promise.resolve()
 
     expect(mockedExhaustive).toHaveBeenCalledTimes(1)
@@ -157,7 +157,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('Worker メッセージに応じて progress/better/done を通知する', () => {
-    // Worker をモック差し替えし、受信イベントを手動で流し込む
+    // バックグラウンド計算を差し替え、受信イベントを手動で流し込む
     const workerInstance = new MockWorker()
     vi.stubGlobal('Worker', createWorkerConstructor(workerInstance))
 
@@ -199,7 +199,7 @@ describe('runOptimizerAsync', () => {
     })
     expect(onBetter).toHaveBeenCalledTimes(1)
 
-    // 完了イベントで Worker 終了と onDone 通知が行われる
+    // 完了通知でバックグラウンド計算の終了と完了通知が行われる
     workerInstance.emitMessage({
       type: UnitOptimizerWorkerMessageType.Done,
       payload: { result: null },
@@ -209,7 +209,7 @@ describe('runOptimizerAsync', () => {
   })
 
   it('Worker が Error を返した場合は main thread へフォールバックする', async () => {
-    // Worker 側失敗時に main thread 実行へ切り替わることを確認する
+    // バックグラウンド計算側の失敗時に画面側へ切り替わることを確認する
     const workerInstance = new MockWorker()
     vi.stubGlobal('Worker', createWorkerConstructor(workerInstance))
 

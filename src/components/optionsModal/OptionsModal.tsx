@@ -62,7 +62,7 @@ export default function OptionsModal({
   }
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_OPTIONS}>
+    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_OPTIONS} ariaLabel={t('ui.options.title')}>
       {/* モーダル見出しは固定し、セクション本文だけをスクロールさせる */}
       <div className="flex min-h-12 shrink-0 items-center justify-between border-b border-slate-200 px-4">
         <h2 className="text-base font-black text-slate-900">{t('ui.options.title')}</h2>

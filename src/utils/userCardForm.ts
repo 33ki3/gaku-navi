@@ -1,14 +1,14 @@
 /**
  * ユーザー定義サポートフォームのヘルパー関数・型定義
  *
- * フォーム状態の初期化・復元・正規化を担当する。
- * useUserCardForm フックから分離した純粋関数群。
+ * フォーム状態の初期化・復元・正規化を担当する
+ * useUserCardFormから分離した入力処理
  */
 import * as constant from '../constant'
 import * as data from '../data'
 import type { SupportCard } from '../types/card'
 import * as enums from '../types/enums'
-import { isActionId } from '../utils/domainValueValidation'
+import { isActionId } from './domainValueValidation'
 
 /** アビリティ入力行の状態。未選択だけは保存対象外のフォーム専用値を許可する。 */
 export type AbilityFormNameKey = enums.AbilityNameKeyType | enums.AbilityFormValueType
@@ -42,6 +42,9 @@ export interface PItemEffectRow {
   count: string
 }
 
+/** イベント欄は初期・Lv20・Lv40の3行で構成する */
+export type UserCardFormEvents = [EventFormRow, EventFormRow, EventFormRow]
+
 /** フォーム全体の状態 */
 export interface UserCardFormState {
   /** カード名 */
@@ -57,7 +60,7 @@ export interface UserCardFormState {
   /** アビリティ一覧 */
   abilities: AbilityFormRow[]
   /** イベント一覧（initial, lv20, lv40） */
-  events: [EventFormRow, EventFormRow, EventFormRow]
+  events: UserCardFormEvents
   /** Pアイテムあり */
   hasPItem: boolean
   /** Pアイテム：トリガーキー */
@@ -93,20 +96,20 @@ export function emptyEventRow(): EventFormRow {
 /** emptyAbilityRow は空のアビリティ行を生成する */
 function emptyAbilityRow(): AbilityFormRow {
   return {
-    // 未選択値はドメインのenumへ混ぜず、フォームから保存前に除外する
+    // 未選択値は保存データの選択肢へ混ぜず、フォームから保存する前に除外する
     nameKey: enums.AbilityFormValueType.None,
     maxCount: '',
   }
 }
 
-/** createDefaultAbilities は固定スロットのデフォルト値を含むアビリティ配列を生成する */
+/** 固定スロットの初期値を含むアビリティ配列を生成する */
 export function createDefaultAbilities(): AbilityFormRow[] {
   return Array.from({ length: constant.SLOT_COUNT }, (_, i) => {
-    // スロット3（idx 2）: SupportRate 固定
+    // 3番目のスロットはSupportRate固定
     if (i === 2) {
       return { nameKey: enums.AbilityNameKeyType.SupportRate, maxCount: '' }
     }
-    // スロット6（idx 5）: EventBoost 固定
+    // 6番目のスロットはEventBoost固定
     if (i === 5) {
       return { nameKey: enums.AbilityNameKeyType.EventBoost, maxCount: '' }
     }

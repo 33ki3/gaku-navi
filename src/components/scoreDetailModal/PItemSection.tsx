@@ -6,11 +6,11 @@
  */
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
-import type { CardCalculationResult } from '../../types/card'
+import type { CardAbilityDetail } from '../../types/card'
 import { AbilityRow } from './AbilityRow'
 
 /** Pアイテムセクション */
-export function PItemSection({ pItems }: { pItems: CardCalculationResult['allAbilityDetails'] }) {
+export function PItemSection({ pItems }: { pItems: CardAbilityDetail[] }) {
   const { t } = useTranslation()
 
   return (

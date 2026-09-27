@@ -1,17 +1,16 @@
 /**
  * サポートフィルタリングフック
  *
- * useFilterState で管理しているフィルター条件を使って
- * サポート一覧を絞り込み・並び替えした結果を返す。
- * 各サポートが持つアビリティバッジ（「スコア上昇」「パラメータ上昇」等）も計算する。
+ * サポート一覧を、現在の絞り込み条件と並び順に合わせて返す
+ * 各サポートが持つアビリティバッジ（「スコア上昇」「パラメータ上昇」など）も計算する
  */
 import { useDeferredValue, useMemo, useRef } from 'react'
 import * as data from '../data'
 import type { TranslationKey } from '../i18n'
 import type { ScoreSettings, SupportCard } from '../types/card'
 import type { UncapType } from '../types/enums'
+import type { FilterState } from '../types/filter'
 import { filterSortedCards, sortCards } from '../utils/filterCards'
-import type { FilterState } from './useFilterState'
 import { useFilterState } from './useFilterState'
 
 /** useFilteredCards の戻り値型。FilterState の全フィールドに加え、絞り込み結果を含む */
@@ -25,16 +24,16 @@ export interface CardFiltersReturn extends FilterState {
 /**
  * サポートの絞り込み・並び替えを行うフック
  *
- * 内部で useFilterState() を呼び出してフィルター条件を取得し、
- * サポート一覧に対してフィルタリング → ソート → バッジ計算を行う。
- * スコアソートは scoreSettings 変更時のみ並び替えを行い、
- * 凸数変更によるスコア変化では並び順を維持する。
+ * サポート一覧に対して絞り込み・並び替え・バッジ計算を行う
+ * スコア順は点数設定の変更時のみ並び替えを行い、
+ * 凸数変更によるスコア変化では並び順を維持する
  *
  * @param cards - 全サポートの配列（マスターデータ）
- * @param cardScores - サポート名 → スコアのマップ（点数順ソートに使う）
- * @param cardUncaps - サポート名 → 凸数のマップ
- * @param scoreSettings - スコア設定（ソート再計算のトリガー判定に使う）
- * @param countCustomCardNames - 回数調整済みサポート名のセット
+ * @param cardScores - 点数順の並び替えに使うサポート別スコア
+ * @param cardUncaps - サポート別の凸数
+ * @param scoreSettings - 点数順の並びを更新する基準
+ * @param countCustomCardNames - 回数調整を設定したサポート名
+ * @param excludedCardNames - 最適編成から除外するサポート名
  * @returns フィルター状態 + 絞り込み結果 + アビリティバッジ
  */
 export function useFilteredCards(
@@ -45,15 +44,14 @@ export function useFilteredCards(
   countCustomCardNames: Set<string>,
   excludedCardNames: ReadonlySet<string>,
 ): CardFiltersReturn {
-  // フィルター条件の状態を取得する
+  // 一覧の絞り込み条件を取得する
   const state = useFilterState()
 
-  // テキスト検索のフィルタリングを低優先度にして入力のレスポンス性を維持する
+  // 文字入力中の画面応答を優先し、検索結果の更新を後から行う
   const deferredSearchTerm = useDeferredValue(state.searchTerm)
 
-  // ソート用スコアの管理:
-  // 凸数変更ではソート順を維持し、scoreSettings・ソートモード・ソート方向の
-  // 変更時のみソート順を更新する。表示用スコアは cardScores（常に最新）を使う。
+  // 点数設定・並び順が変わったときだけ、一覧の並び順を決める値を更新する
+  // 凸数変更では表示用の点数だけを更新し、一覧の並び順は維持する
   const sortScoresRef = useRef(cardScores)
   const sortUncapsRef = useRef(cardUncaps)
   const prevScoreSettingsRef = useRef(scoreSettings)
@@ -71,11 +69,7 @@ export function useFilteredCards(
     sortUncapsRef.current = cardUncaps
   }
 
-  // フィルター条件が変わったときだけサポート一覧を再計算する
-  // ソートとフィルタリングを分離して、ソート結果をキャッシュする
-  // フィルター条件のみの変更ではソートを再実行せず、O(n)のフィルタリングだけで済ませる
-
-  // ソート: ソート条件（モード・方向・スコア設定）が変わったときだけ再計算する
+  // ソート条件（モード・方向・点数設定）が変わったときだけ並び順を作り直す
   const sortedCards = useMemo(
     () =>
       sortCards(cards, {
@@ -84,7 +78,7 @@ export function useFilteredCards(
         sortCardUncaps: sortUncapsRef.current,
         cardScores: sortScoresRef.current,
       }),
-    // ソート用refはscoreSettings変更時だけ更新し、依存配列へ直接入れない
+    // 凸数変更で並び順を変えない仕様のため、最新の凸数は再計算条件に含めない
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cards, state.sortMode, state.sortReverse, scoreSettings],
   )

@@ -1,5 +1,5 @@
 /**
- * ヘルプモーダル本文のセクション配置。
+ * ヘルプモーダル本文のセクション配置
  *
  * 各機能の説明順を一か所にまとめ、固有表示を持つセクションと
  * 文章形式のセクションを組み合わせる
@@ -10,7 +10,7 @@ import { CountTargetHelpSection } from './CountTargetHelpSection'
 import { DescriptionHelpSection } from './DescriptionHelpSection'
 import { FilterHelpSection } from './FilterHelpSection'
 
-/** HelpSections に渡すプロパティ */
+/** ヘルプセクションの開閉状態と操作 */
 interface HelpSectionsProps {
   /** 各セクションの開閉状態 */
   sections: Record<enums.HelpSectionKey, boolean>
@@ -66,6 +66,20 @@ export function HelpSections({ sections, onToggle }: HelpSectionsProps) {
         description={t('ui.help.data_desc')}
         isOpen={sections[enums.HelpSectionKey.Data]}
         onToggle={() => onToggle(enums.HelpSectionKey.Data)}
+      />
+      {/* WebMCPの利用条件と操作範囲 */}
+      <DescriptionHelpSection
+        title={t('ui.help.webmcp_title')}
+        description={t('ui.help.webmcp_desc')}
+        isOpen={sections[enums.HelpSectionKey.WebMcp]}
+        onToggle={() => onToggle(enums.HelpSectionKey.WebMcp)}
+      />
+      {/* PWAのインストール方法 */}
+      <DescriptionHelpSection
+        title={t('ui.help.pwa_title')}
+        description={t('ui.help.pwa_desc')}
+        isOpen={sections[enums.HelpSectionKey.Pwa]}
+        onToggle={() => onToggle(enums.HelpSectionKey.Pwa)}
       />
       {/* 最適編成の操作と結果表示を文章形式で説明する */}
       <DescriptionHelpSection

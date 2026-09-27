@@ -1,11 +1,12 @@
 /**
- * レッスンマスタデータ。
+ * レッスンの週別情報
  *
- * シナリオ×難易度×週番号ごとのレッスン情報（SP / 追い込み）を定義する。
- * 通常レッスンは計算に不要のため含まない。
+ * シナリオ・難易度・週番号ごとのSPレッスンと追い込みの情報を定義する
+ * 通常レッスンは点数計算に使わないため含めない
  */
 import { ActivityIdType, DifficultyType, LessonType, ParameterType, ScenarioType } from '../../types/enums'
 import type { ParameterValues } from '../../types/unit'
+import { getScheduleData, isScheduleActivityAllowed } from './schedule'
 
 /** 1レッスンのデータ */
 interface LessonEntry {
@@ -14,10 +15,10 @@ interface LessonEntry {
   sub: number
 }
 
-/** 週ごとのレッスン集合 */
+/** 週番号からレッスン情報を探す表 */
 type WeekMap = Record<string, LessonEntry[]>
 
-/** 難易度→週マップ */
+/** 難易度から週ごとのレッスン情報を探す表 */
 type DifficultyMap = Partial<Record<DifficultyType, WeekMap>>
 
 const data: Record<ScenarioType, DifficultyMap> = {
@@ -34,7 +35,7 @@ const data: Record<ScenarioType, DifficultyMap> = {
     },
   },
   [ScenarioType.Hif]: {
-    // HIF は難易度の概念がないため None キーのみ使用する
+    // HIFは難易度を持たないため、難易度なしの項目だけを定義する
     [DifficultyType.None]: {
       '2': [{ type: LessonType.Sp, main: 60, sub: 20 }],
       '4': [{ type: LessonType.Sp, main: 80, sub: 50 }],
@@ -54,14 +55,14 @@ const data: Record<ScenarioType, DifficultyMap> = {
   },
 }
 
-/** 1週分のレッスン情報（コンパイル済み構造） */
+/** 1週分のレッスン情報 */
 interface LessonData {
   week: number
   lessonTypes: LessonEntry[]
 }
 
 /**
- * シナリオ × 難易度 → レッスン一覧を取得する。
+ * シナリオ × 難易度 → レッスン一覧を取得する
  *
  * @param scenario - シナリオ種別
  * @param difficulty - 難易度
@@ -77,7 +78,7 @@ export function getLessonData(scenario: ScenarioType, difficulty: DifficultyType
   }))
 }
 
-/** 活動IDからメインパラメータを判定するマップ */
+/** 活動IDからメインパラメータを探す表 */
 const LESSON_MAIN_PARAM: Partial<Record<ActivityIdType, keyof ParameterValues>> = {
   [ActivityIdType.VoLesson]: ParameterType.Vocal,
   [ActivityIdType.DaLesson]: ParameterType.Dance,
@@ -90,7 +91,7 @@ const LESSON_MAIN_PARAM: Partial<Record<ActivityIdType, keyof ParameterValues>> 
   [ActivityIdType.ViLessonDa]: ParameterType.Visual,
 }
 
-/** 活動IDからサブパラメータを判定するマップ（指定がない場合は2軸同時扱い） */
+/** 活動IDからサブパラメータを探す表。指定がない場合は2軸同時として扱う */
 const LESSON_SUB_PARAM: Partial<Record<ActivityIdType, keyof ParameterValues>> = {
   [ActivityIdType.VoLessonDa]: ParameterType.Dance,
   [ActivityIdType.VoLessonVi]: ParameterType.Visual,
@@ -101,23 +102,37 @@ const LESSON_SUB_PARAM: Partial<Record<ActivityIdType, keyof ParameterValues>> =
 }
 
 /**
- * getSpLessonTotal はスケジュール選択に基づくSPレッスンのVoDaVi合計上昇量を返す。
+ * getSpLessonTotal はスケジュール選択に基づくSPレッスンのVoDaVi合計上昇量を返す
  *
  * @param scenario - シナリオ種別
  * @param difficulty - 難易度
  * @param scheduleSelections - 各週の選択活動ID
+ * @param hifLessonSplitSub - HIF公開レッスンをメイン属性だけで選ぶか
  * @returns VoDaVi の合計上昇量
  */
 export function getSpLessonTotal(
   scenario: ScenarioType,
   difficulty: DifficultyType,
   scheduleSelections: Record<number, ActivityIdType>,
+  hifLessonSplitSub = true,
 ): ParameterValues {
+  // レッスンデータの各週を、現在のスケジュール候補と照合してから集計する
   const lessons = getLessonData(scenario, difficulty)
+  const scheduleByWeek = new Map(getScheduleData(scenario, difficulty).map((week) => [week.week, week]))
   const total: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
 
   for (const lesson of lessons) {
     const selection = scheduleSelections[lesson.week]
+    const scheduleWeek = scheduleByWeek.get(lesson.week)
+    // 別の活動が直接指定されていても、レッスン週として表示される選択だけを
+    // パラメータ上昇量へ加える
+    if (
+      selection === undefined ||
+      scheduleWeek === undefined ||
+      !isScheduleActivityAllowed(scheduleWeek, selection, scenario, hifLessonSplitSub)
+    ) {
+      continue
+    }
     const mainKey = selection ? LESSON_MAIN_PARAM[selection] : undefined
     if (!mainKey) continue
 

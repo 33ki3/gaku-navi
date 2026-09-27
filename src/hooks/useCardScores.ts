@@ -1,20 +1,20 @@
 /**
- * スコア計算カスタムフック
+ * サポートの点数を計算して一覧表示へ渡す
  *
- * ユーザーが設定した点数設定（シナリオ・難易度・アクション回数など）を使って、
- * 全サポートの「パラメータ上昇量」を計算する。
- * 計算結果はサポート一覧の並び替えや、スコア内訳モーダルの表示に使われる。
+ * 画面の設定変更に合わせた再計算と、個別カードの計算だけを担当し、
+ * 計算入力の生成と全カード計算を分け、
+ * このファイルでは一覧表示に必要な状態を組み立てる
  */
 import { useCallback, useMemo } from 'react'
-import * as constant from '../constant'
-import * as data from '../data'
-import type { CardCalculationResult, ScoreSettings, SupportCard } from '../types/card'
+import type { CardCalculationResult, CardCountCustom, CardCustomData, ScoreSettings, SupportCard } from '../types/card'
 import type { UncapType } from '../types/enums'
-import * as enums from '../types/enums'
-import { calculateCardParameter } from '../utils/calculator/calculateCard'
-import { getPerLessonParameterValues } from '../utils/calculator/parameterBonus'
-import { customRowsToPerLessonValues, mergeScheduleCounts } from '../utils/scoreSettings'
-import type { CardCountCustom, CardCustomData } from './useCardCountCustom'
+import { sanitizeCardCountCustomForCalculation } from '../utils/calculationSnapshot'
+import {
+  calculateBaseCardResults,
+  calculateCardScores,
+  calculateCardWithSettings,
+  createCardScoreCalculationContext,
+} from '../utils/calculator/calculateCardScores'
 
 /** useCardScores の戻り値 */
 interface ScoreCalculationResult {
@@ -29,14 +29,11 @@ interface ScoreCalculationResult {
 /**
  * 全サポートのスコアを計算するフック
  *
- * 点数設定や凸数が変わるたびに再計算する。
- * ただし、アクション回数もパラメータボーナスもゼロなら計算をスキップする。
- *
  * @param allCards - 全サポートの配列（マスターデータ + ユーザー定義）
- * @param allCardByName - サポート名 → サポートの Map
- * @param scoreSettings - ユーザーの点数設定（シナリオ・難易度・アクション回数など）
- * @param cardUncaps - サポート名 → 凸数のマップ
- * @param cardCountCustom - サポート名 → アクション回数回数調整のマップ
+ * @param allCardByName - サポート名からカードを探す表
+ * @param scoreSettings - ユーザーの点数設定
+ * @param cardUncaps - サポート名から凸数を探す表
+ * @param cardCountCustom - サポート名からアクションごとの回数調整を探す表
  * @returns 全サポートの計算結果と合計スコア
  */
 export function useCardScores(
@@ -46,195 +43,38 @@ export function useCardScores(
   cardUncaps: Record<string, UncapType>,
   cardCountCustom: CardCountCustom = {},
 ): ScoreCalculationResult {
-  // スコア設定から共有の計算入力を導出する（scoreSettings のみに依存）
-  const calcContext = useMemo(() => {
-    // 固定難易度シナリオ（HIF/Custom）では difficulty=null のため None を使う
-    const resolvedDifficulty =
-      scoreSettings.difficulty ??
-      (scoreSettings.scenario === enums.ScenarioType.Hif || scoreSettings.scenario === enums.ScenarioType.Custom
-        ? enums.DifficultyType.None
-        : constant.DEFAULT_DIFFICULTY)
-    const schedule = data.getScheduleData(scoreSettings.scenario, resolvedDifficulty)
-    // カスタムモード時はスケジュール自動計算を無効にしてすべて手動入力値を使う
-    const settingsForCount = scoreSettings.useCustomMode
-      ? { ...scoreSettings, useScheduleLimits: false }
-      : scoreSettings
-    const mergedCounts = mergeScheduleCounts(settingsForCount, schedule)
+  // 点数設定が変わるたびに計算条件を作り直し、現在の条件を固定する
+  const calculationContext = useMemo(() => createCardScoreCalculationContext(scoreSettings), [scoreSettings])
+  const safeCardCountCustom = useMemo(
+    // 保存データや外部入力由来の回数調整を、カードごとの表示可能項目へ絞る
+    () => sanitizeCardCountCustomForCalculation(cardCountCustom, allCardByName),
+    [allCardByName, cardCountCustom],
+  )
+  // 各カードの基準計算結果をまとめて作り、一覧全体の計算で再利用する
+  const baseResults = useMemo(
+    () => calculateBaseCardResults(allCards, scoreSettings, calculationContext),
+    [allCards, calculationContext, scoreSettings],
+  )
+  const { cardResults, cardScores } = useMemo(
+    // 検証済みの回数調整だけを使い、全カードの点数と並び替え用の値を一括計算する
+    () =>
+      calculateCardScores({
+        allCards,
+        cardByName: allCardByName,
+        scoreSettings,
+        cardUncaps,
+        cardCountCustom: safeCardCountCustom,
+        calculationContext,
+        baseResults,
+      }),
+    [allCards, allCardByName, scoreSettings, cardUncaps, safeCardCountCustom, calculationContext, baseResults],
+  )
 
-    // 試験後Pアイテム獲得の回数を通常のPアイテム獲得に合算する
-    const examPItemCount = mergedCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
-    const effectiveCounts =
-      examPItemCount > 0
-        ? {
-            ...mergedCounts,
-            [enums.ActionIdType.PItemAcquire]: (mergedCounts[enums.ActionIdType.PItemAcquire] ?? 0) + examPItemCount,
-          }
-        : { ...mergedCounts }
-
-    const hasAnyAction = Object.values(effectiveCounts).some((v) => v > 0)
-    const hasAnyBonus =
-      scoreSettings.parameterBonusBase.vocal > 0 ||
-      scoreSettings.parameterBonusBase.dance > 0 ||
-      scoreSettings.parameterBonusBase.visual > 0
-
-    const perLessonValues = scoreSettings.useCustomMode
-      ? customRowsToPerLessonValues(scoreSettings.customParamBonusRows)
-      : scoreSettings.useScheduleLimits
-        ? getPerLessonParameterValues(
-            scoreSettings.scheduleSelections,
-            scoreSettings.scenario,
-            resolvedDifficulty,
-            scoreSettings.hifLessonSplitSub,
-            scoreSettings.hifExamRatios,
-          )
-        : undefined
-
-    return { effectiveCounts, hasAnyAction, hasAnyBonus, perLessonValues }
-  }, [scoreSettings])
-
-  // ベース計算: 全サポートをデフォルト凸（4凸）で計算する
-  // scoreSettings が変わったときだけ再計算し、凸数変更では再計算しない
-  const baseResults = useMemo(() => {
-    if (!calcContext.hasAnyAction && !calcContext.hasAnyBonus) {
-      return new Map<string, CardCalculationResult>()
-    }
-
-    const results = new Map<string, CardCalculationResult>()
-    for (const card of allCards) {
-      results.set(
-        card.name,
-        calculateCardParameter(
-          card,
-          constant.DEFAULT_UNCAP,
-          calcContext.effectiveCounts,
-          {},
-          scoreSettings.parameterBonusBase,
-          scoreSettings.includeSelfTrigger,
-          scoreSettings.includePItem,
-          calcContext.perLessonValues,
-        ),
-      )
-    }
-    return results
-  }, [allCards, calcContext, scoreSettings])
-
-  // 凸数・回数調整: デフォルト凸以外のサポートや回数調整があるサポートだけ再計算して上書きする
-  const cardResults = useMemo(() => {
-    if (baseResults.size === 0) return baseResults
-
-    // 4凸固定モードでも回数調整は適用する
-    const hasCountCustom = Object.keys(cardCountCustom).length > 0
-
-    // デフォルト凸以外のエントリを抽出する（未所持は計算をスキップ）
-    const fixedUncapEntries = scoreSettings.useFixedUncap
-      ? []
-      : Object.entries(cardUncaps).filter(
-          ([, uncap]) => uncap !== constant.DEFAULT_UNCAP && uncap !== enums.UncapType.NotOwned,
-        )
-
-    // 全サポートがデフォルト凸で回数調整もなければベース結果をそのまま返す
-    const hasNotOwned =
-      !scoreSettings.useFixedUncap && Object.values(cardUncaps).some((u) => u === enums.UncapType.NotOwned)
-    if (fixedUncapEntries.length === 0 && !hasNotOwned && !hasCountCustom) return baseResults
-
-    // ベースをコピーして、変更サポートだけ再計算で差し替える
-    const results = new Map(baseResults)
-
-    // 未所持サポートの結果を削除する
-    if (!scoreSettings.useFixedUncap) {
-      for (const [cardName, uncap] of Object.entries(cardUncaps)) {
-        if (uncap === enums.UncapType.NotOwned) {
-          results.delete(cardName)
-        }
-      }
-    }
-
-    // 凸数変更サポートを再計算する（回数調整も適用）
-    for (const [cardName, uncap] of fixedUncapEntries) {
-      const card = allCardByName.get(cardName)
-      if (card) {
-        const ovr = cardCountCustom[cardName]
-        results.set(
-          cardName,
-          calculateCardParameter(
-            card,
-            uncap,
-            calcContext.effectiveCounts,
-            {},
-            scoreSettings.parameterBonusBase,
-            scoreSettings.includeSelfTrigger,
-            scoreSettings.includePItem,
-            calcContext.perLessonValues,
-            ovr?.selfTrigger,
-            ovr?.pItemCount,
-          ),
-        )
-      }
-    }
-
-    // 回数調整のみのサポート（凸数はデフォルト）を再計算する
-    const alreadyRecalculated = new Set(fixedUncapEntries.map(([name]) => name))
-    for (const cardName of Object.keys(cardCountCustom)) {
-      if (alreadyRecalculated.has(cardName)) continue
-      const card = allCardByName.get(cardName)
-      if (!card) continue
-      // 未所持サポートはスキップ
-      if (!scoreSettings.useFixedUncap && cardUncaps[cardName] === enums.UncapType.NotOwned) continue
-      const ovr = cardCountCustom[cardName]
-      results.set(
-        cardName,
-        calculateCardParameter(
-          card,
-          constant.DEFAULT_UNCAP,
-          calcContext.effectiveCounts,
-          {},
-          scoreSettings.parameterBonusBase,
-          scoreSettings.includeSelfTrigger,
-          scoreSettings.includePItem,
-          calcContext.perLessonValues,
-          ovr?.selfTrigger,
-          ovr?.pItemCount,
-        ),
-      )
-    }
-
-    return results
-  }, [baseResults, allCardByName, cardUncaps, cardCountCustom, calcContext, scoreSettings])
-
-  // cardResults から合計スコアだけ取り出した簡易マップ（表示・ソート用）
-  // 未所持サポートは 0 点として扱う
-  const cardScores = useMemo(() => {
-    const scores = new Map<string, number>()
-    for (const card of allCards) {
-      const result = cardResults.get(card.name)
-      scores.set(card.name, result ? result.totalIncrease : 0)
-    }
-    return scores
-  }, [allCards, cardResults])
-
-  /**
-   * 任意のサポート・凸数でスコアを個別計算する
-   *
-   * サポート詳細モーダルで凸数を切り替えたときの再計算に使う。
-   * 計算入力（アクション回数等）が無い場合は undefined を返す。
-   */
+  /** サポート詳細モーダルで凸数を切り替えたときの再計算 */
   const calculateForCard = useCallback(
-    (card: SupportCard, uncap: UncapType, custom?: CardCustomData): CardCalculationResult | undefined => {
-      if (!calcContext.hasAnyAction && !calcContext.hasAnyBonus) return undefined
-      return calculateCardParameter(
-        card,
-        uncap,
-        calcContext.effectiveCounts,
-        {},
-        scoreSettings.parameterBonusBase,
-        scoreSettings.includeSelfTrigger,
-        scoreSettings.includePItem,
-        calcContext.perLessonValues,
-        custom?.selfTrigger,
-        custom?.pItemCount,
-      )
-    },
-    [calcContext, scoreSettings],
+    (card: SupportCard, uncap: UncapType, custom?: CardCustomData) =>
+      calculateCardWithSettings(card, uncap, scoreSettings, custom, calculationContext),
+    [calculationContext, scoreSettings],
   )
 
   return { cardResults, cardScores, calculateForCard }

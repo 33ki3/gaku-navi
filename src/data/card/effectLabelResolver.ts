@@ -1,9 +1,10 @@
 /**
- * エフェクトラベルリゾルバ。
+ * カード効果を画面に表示するためのラベルを解決する処理
  *
- * カード効果テンプレートで使う i18n キーを一元管理する。
+ * カード効果テンプレートで使う翻訳キーを一元管理する
  * パラメータタイプ・カードゾーン・スキル種別・イベント効果・
- * イベント解放条件・コスト種別のラベルと、エフェクトテンプレートセクションのプレフィックスを提供する。
+ * イベント解放条件・コスト種別のラベルを提供する
+ * 効果テンプレートの種類から、対応する翻訳キーの先頭部分も提供する
  */
 import type { TranslationKey } from '../../i18n'
 import type { AbilityNameKeyType, EffectTemplateKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
@@ -19,7 +20,7 @@ import { TypeDisplayEntries } from './typeDisplay'
 
 const PARAM_LABEL_MAP = new Map(TypeDisplayEntries.map((e) => [e.cardType, e.displayLabel]))
 
-/** enum値→i18nキーのエントリ型 */
+/** 選択肢と翻訳キーの組み合わせ */
 interface LabelEntry<T> {
   id: T
   label: TranslationKey
@@ -89,79 +90,80 @@ const costTypeMap = new Map(costTypeEntries.map((e) => [e.id, e.label]))
 const effectSectionPrefixMap = new Map(effectSectionPrefixEntries.map((e) => [e.id, e.prefix] as const))
 
 /**
- * パラメータタイプの i18n ラベルキーを返す。
+ * パラメータタイプの翻訳キーを返す
  *
  * @param param - パラメータ識別子（例: "vocal"）
- * @returns i18n キー（例: "common.type.vocal"）
+ * @returns 翻訳キー（例: "common.type.vocal"）
  */
 export function getParamLabel(param: ParameterType): TranslationKey {
   return PARAM_LABEL_MAP.get(param)!
 }
 
 /**
- * カードゾーンの i18n ラベルキーを返す。
+ * カードゾーンの翻訳キーを返す
  *
  * @param zone - ゾーン識別子（"hand" | "discard"）
- * @returns i18n キー
+ * @returns 翻訳キー
  */
 export function getCardZoneLabel(zone: CardZoneType): TranslationKey {
   return cardZoneMap.get(zone)!
 }
 
 /**
- * スキル種別の i18n ラベルキーを返す。
+ * スキル種別の翻訳キーを返す
  *
  * @param skillType - スキル種別（"mental" | "active"）
- * @returns i18n キー
+ * @returns 翻訳キー
  */
 export function getSkillTypeLabel(skillType: SkillCardType): TranslationKey {
   return skillTypeMap.get(skillType)!
 }
 
 /**
- * イベント効果種別の i18n ラベルキーを返す。
+ * イベント効果種別の翻訳キーを返す
  *
  * @param effectType - 効果種別（例: "param_boost"）
- * @returns i18n キー
+ * @returns 翻訳キー
  */
 export function getEventEffectLabelKey(effectType: EventEffectType): TranslationKey {
   return eventEffectMap.get(effectType)!
 }
 
 /**
- * イベント解放条件の i18n ラベルキーを返す。
+ * イベント解放条件の翻訳キーを返す
  *
  * @param release - 解放条件（"initial" | "lv20" | "lv40"）
- * @returns i18n キー
+ * @returns 翻訳キー
  */
 export function getEventReleaseLabelKey(release: ReleaseConditionType): TranslationKey {
   return eventReleaseMap.get(release)!
 }
 
 /**
- * コスト種別の i18n ラベルキーを返す。
+ * コスト種別の翻訳キーを返す
  *
  * @param costType - コスト種別（例: "vitality"）
- * @returns i18n キー
+ * @returns 翻訳キー
  */
 export function getCostTypeLabelKey(costType: CostType): TranslationKey {
   return costTypeMap.get(costType)!
 }
 
 /**
- * エフェクトセクション種別の i18n キープレフィックスを返す。
+ * 効果セクション種別の翻訳キーの先頭部分を返す
  *
  * @param section - セクション種別（例: EffectSectionType.SkillAction）
- * @returns i18n プレフィックス（例: "card.skill_effect.action"）
+ * @returns 翻訳キーの先頭部分（例: "card.skill_effect.action"）
  */
 function getEffectSectionPrefix(section: EffectSectionType): string {
   return effectSectionPrefixMap.get(section)!
 }
 
 /**
- * エフェクトセクションとテンプレートキーから、表示用のi18nキーを返す。
+ * 効果セクションとテンプレートキーから、表示用の翻訳キーを返す
  *
- * カードデータに保持されたキーの組み立てはこの関数に集約し、監査テストからも同じ処理を検証できるようにする。
+ * カードデータに保持されたキーの組み立てをこの関数に集約する
+ * 表示用キーの作り方を一つにそろえ、テストでも同じ処理を確認できるようにする
  */
 export function getEffectLabelKey(
   section: EffectSectionType,

@@ -1,30 +1,30 @@
 /**
- * アビリティ名 → トリガーキー・フラグの自動導出設定
+ * アビリティ名から、表示・計算に必要な項目を決める設定
  *
- * ユーザー定義カードのフォームで、アビリティ種別を選択すると
- * trigger_key やフラグ（is_percentage 等）を自動でセットするための設定。
+ * ユーザー定義カードのフォームでアビリティ種別を選択したとき、
+ * 発動条件やパラメータ上昇の扱いを自動で補うために使う
  */
 import { AbilityNameKeyType, ParameterType, TriggerKeyType } from '../../types/enums'
 
 /** アビリティの自動導出設定 */
 interface AbilityAutoConfig {
-  /** パラメータ種別でトリガーキーが変わるか */
+  /** パラメータ種別に応じて発動条件を選ぶか */
   needsParameterType: boolean
-  /** パラメータ修飾なしの場合のトリガーキー */
+  /** パラメータ補正なしで使う発動条件 */
   baseTriggerKey: TriggerKeyType
-  /** is_percentage フラグを自動でセットするか */
+  /** 割合として扱う設定を自動で付けるか */
   isPercentage?: boolean
-  /** is_parameter_bonus フラグを自動でセットするか */
+  /** パラメータボーナスとして扱う設定を自動で付けるか */
   isParameterBonus?: boolean
-  /** is_initial_stat フラグを自動でセットするか */
+  /** 初期パラメータとして扱う設定を自動で付けるか */
   isInitialStat?: boolean
-  /** is_event_boost フラグを自動でセットするか */
+  /** イベント上昇として扱う設定を自動で付けるか */
   isEventBoost?: boolean
-  /** skip_calculation フラグを自動でセットするか */
+  /** 通常の点数計算から外す設定を自動で付けるか */
   skipCalculation?: boolean
 }
 
-/** パラメータ修飾付きトリガーキーの解決テーブル（baseTriggerKey → paramType → resolvedKey） */
+/** 基本の発動条件とパラメータ種別から、実際に使う発動条件を探す表 */
 export const PARAM_TRIGGER_MAP: Partial<Record<TriggerKeyType, Record<ParameterType, TriggerKeyType>>> = {
   [TriggerKeyType.ParameterBonus]: {
     [ParameterType.Vocal]: TriggerKeyType.VoParameterBonus,
@@ -68,7 +68,7 @@ export const PARAM_TRIGGER_MAP: Partial<Record<TriggerKeyType, Record<ParameterT
   },
 }
 export const ABILITY_CONFIG: Partial<Record<AbilityNameKeyType, AbilityAutoConfig>> = {
-  // パラメータ特化型（parameter_type で trigger_key が変わる）
+  // パラメータ特化型は、得意パラメータに応じて発動条件が変わる
   [AbilityNameKeyType.ParameterBonus]: {
     needsParameterType: true,
     baseTriggerKey: TriggerKeyType.ParameterBonus,
@@ -113,7 +113,7 @@ export const ABILITY_CONFIG: Partial<Record<AbilityNameKeyType, AbilityAutoConfi
     needsParameterType: true,
     baseTriggerKey: TriggerKeyType.Exam15,
   },
-  // パラメータなし（trigger_key = name_key と同一）
+  // パラメータ種別がないアビリティは、名前と同じ発動条件を使う
   [AbilityNameKeyType.EventBoost]: {
     needsParameterType: false,
     baseTriggerKey: TriggerKeyType.EventBoost,
@@ -130,5 +130,30 @@ export const ABILITY_CONFIG: Partial<Record<AbilityNameKeyType, AbilityAutoConfi
     needsParameterType: false,
     baseTriggerKey: TriggerKeyType.InitialPp,
     skipCalculation: true,
+  },
+  // アビリティ名と、登録・計算に使う発動条件名が異なるもの
+  [AbilityNameKeyType.ActivitySupplyGiftHp]: {
+    needsParameterType: false,
+    baseTriggerKey: TriggerKeyType.ActivitySupplyGift,
+  },
+  [AbilityNameKeyType.Discount]: {
+    needsParameterType: false,
+    baseTriggerKey: TriggerKeyType.Nothing,
+  },
+  [AbilityNameKeyType.EventPpBoost]: {
+    needsParameterType: false,
+    baseTriggerKey: TriggerKeyType.Nothing,
+  },
+  [AbilityNameKeyType.EventRecoveryBoost]: {
+    needsParameterType: false,
+    baseTriggerKey: TriggerKeyType.Nothing,
+  },
+  [AbilityNameKeyType.LessonPpBoost]: {
+    needsParameterType: false,
+    baseTriggerKey: TriggerKeyType.Nothing,
+  },
+  [AbilityNameKeyType.SpLessonRateAllHigh]: {
+    needsParameterType: false,
+    baseTriggerKey: TriggerKeyType.SpLessonRateAll,
   },
 }

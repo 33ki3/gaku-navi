@@ -1,18 +1,21 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { createPresetCommand } from '../../application/command'
+import { DomainStateStore } from '../../application/domainStateStore'
 import * as constant from '../../constant'
 import { EXPORT_KEYS } from '../../data/ui'
+import { ApplicationDomain } from '../../types/application'
+import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
 import { loadAppPreferences } from '../../utils/appPreferences'
 import {
   applyImportPreview,
   filterImportJsonText,
   getUserDataJson,
-  importUserDataText,
   mergeImportJsonText,
   prepareImportText,
 } from '../../utils/exportImport'
 import { loadFilterState } from '../../utils/filterStorage'
-import { loadPresets, savePreset } from '../../utils/presetHelpers'
+import { loadPresets } from '../../utils/presetHelpers'
 import {
   createDefaultSettings,
   loadScoreSettings,
@@ -21,7 +24,18 @@ import {
   saveScoreSettings,
 } from '../../utils/scoreSettings'
 import { loadUnitSimulatorSettings } from '../../utils/unitSimulatorSettings'
+import { createTestCommandStatePort } from '../fixtures/application'
 import { createCompleteExportValues } from '../fixtures/exportData'
+import { importUserDataText } from './importHelpers'
+
+async function savePresetThroughCommand(name: string, settings: ScoreSettings) {
+  const store = new DomainStateStore({
+    domain: ApplicationDomain.Presets,
+    initialValue: loadPresets(),
+  })
+  const command = createPresetCommand({ state: createTestCommandStatePort(store) })
+  return command.save(name, settings, { overwrite: true })
+}
 
 /**
  * テスト用のエクスポートJSONを作る
@@ -45,7 +59,7 @@ describe('importUserDataText', () => {
     { useScheduleLimits: true, useCustomMode: false },
     { useScheduleLimits: false, useCustomMode: false },
     { useScheduleLimits: true, useCustomMode: true },
-  ])('旧合算値を含むJSONの入力値と計算結果を保存後も維持する: %o', (mode) => {
+  ])('旧合算値を含むJSONの入力値と計算結果を保存後も維持する: %o', async (mode) => {
     const settings = {
       ...createDefaultSettings(),
       ...mode,
@@ -72,7 +86,7 @@ describe('importUserDataText', () => {
     const before = effectiveCounts(loaded)
     expect(before[enums.ActionIdType.LessonVo]).toBe(mode.useScheduleLimits && !mode.useCustomMode ? 2 : 5)
     saveScoreSettings(loaded)
-    savePreset('旧形式', loadPresets()[0].settings)
+    expect((await savePresetThroughCommand('旧形式', loadPresets()[0].settings)).ok).toBe(true)
     const saved = JSON.parse(getUserDataJson())
     for (const value of [
       saved.data[constant.SCORE_SETTINGS_STORAGE_KEY],
@@ -89,7 +103,7 @@ describe('importUserDataText', () => {
   })
 
   beforeEach(() => {
-    // 各ケースを空のlocalStorageから始め、前のインポート結果を持ち越さない
+    // 各ケースを空の保存領域から始め、前のインポート結果を持ち越さない
     localStorage.clear()
   })
 
@@ -102,7 +116,7 @@ describe('importUserDataText', () => {
       }),
     )
 
-    // プレビューは読み込み可能と判定するが、この時点ではlocalStorageを変更しない
+    // プレビューは読み込み可能と判定するが、この時点では保存領域を変更しない
     expect(preview.canImport).toBe(true)
     expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ 既存カード: 2 }))
 
@@ -274,7 +288,10 @@ describe('importUserDataText', () => {
 
     expect(loadScoreSettings()).toEqual({
       ...JSON.parse(JSON.stringify(values[constant.SCORE_SETTINGS_STORAGE_KEY])),
-      scheduleSelections: JSON.parse(JSON.stringify(values[constant.SCHEDULE_SELECTIONS_STORAGE_KEY])).hif,
+      scheduleSelections: {
+        ...JSON.parse(JSON.stringify(values[constant.SCHEDULE_SELECTIONS_STORAGE_KEY])).hif,
+        2: enums.ActivityIdType.VoLessonDa,
+      },
     })
     expect(loadAppPreferences()).toEqual({
       showMobileBottomNav: false,
@@ -630,7 +647,7 @@ describe('importUserDataText', () => {
   })
 
   it('不足項目がある点数設定プリセットを初期値補完して保存する', () => {
-    // 後から追加されたキーがない保存データを作り、インポート時の既定値補完を確認する
+    // 後から追加されたキーがない保存データを作り、インポート時に既定値で補えることを確認する
     const partialSettings = {
       name: '一部項目欠落プリセット',
       scenario: enums.ScenarioType.Hajime,
@@ -680,7 +697,7 @@ describe('importUserDataText', () => {
     expect(loadPresets()[0]?.settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
   })
 
-  it('自動計算中の既存プリセットは次回保存でパラボ対象値を記録しない', () => {
+  it('自動計算中の既存プリセットは次回保存でパラボ対象値を記録しない', async () => {
     const staleSettings = {
       ...createDefaultSettings(enums.ScenarioType.Hajime),
       scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
@@ -700,7 +717,7 @@ describe('importUserDataText', () => {
     const loaded = loadPresets()[0]
     expect(loaded?.settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
 
-    savePreset('古い対象値', loaded!.settings)
+    expect((await savePresetThroughCommand('古い対象値', loaded!.settings)).ok).toBe(true)
 
     const stored = JSON.parse(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY) ?? 'null')
     expect(stored[0].settings).not.toHaveProperty('parameterBonusBase')
@@ -710,7 +727,7 @@ describe('importUserDataText', () => {
   })
 
   it('全項目が揃った点数設定プリセットには補完警告を出さない', () => {
-    // 現行の既定値をすべて持つプリセットを作り、誤って不足扱いされないことを確認する
+    // 現行の既定値をすべて持つプリセットを作り、不足データとして扱われないことを確認する
     const settings = createDefaultSettings(enums.ScenarioType.Hif)
     const rawPresets = JSON.stringify([{ name: '完全なプリセット', settings }])
 
@@ -941,7 +958,7 @@ describe('getUserDataJson', () => {
   })
 
   it('未保存キーと壊れたキーを除外し、救出できる配列要素だけを出力する', () => {
-    // 正常な凸数、正常・不正が混在するプリセット、未知キーをlocalStorageへ用意する
+    // 正常な凸数、正常・不正が混在するプリセット、未知キーを保存領域へ用意する
     const validPreset = { name: '正常プリセット', settings: createDefaultSettings() }
     const rawPresets = JSON.stringify([validPreset, { name: '壊れたプリセット', settings: null }])
     localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ テストカード: enums.UncapType.Four }))
@@ -957,18 +974,18 @@ describe('getUserDataJson', () => {
     expect(exported.data[constant.UNCAP_STORAGE_KEY]).toEqual({ テストカード: enums.UncapType.Four })
     // プリセットは正常な要素だけを残し、不正な要素を出力しない
     expect(exported.data[constant.SCORE_PRESETS_STORAGE_KEY]).toEqual([validPreset])
-    // エクスポート時の検証では、元のlocalStorage文字列を変更しない
+    // エクスポート時の検証では、元の保存文字列を変更しない
     expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(rawPresets)
   })
 
   it('救出できない壊れたキーをJSONから省略する', () => {
-    // 配列としてパースできないプリセットをlocalStorageへ保存する
+    // 配列として読み込めないプリセットを保存領域へ保存する
     const brokenPresets = '[{"name":"壊れたプリセット"'
     localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, brokenPresets)
 
     const exported = JSON.parse(getUserDataJson()) as { data: Record<string, unknown> }
 
-    // 救出できないキーは出力せず、既存の壊れた文字列もlocalStorageに残す
+    // 救出できないキーは出力せず、既存の壊れた文字列も保存領域に残す
     expect(exported.data[constant.SCORE_PRESETS_STORAGE_KEY]).toBeUndefined()
     expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(brokenPresets)
   })

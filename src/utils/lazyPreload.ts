@@ -4,7 +4,7 @@
  * 実際に表示する処理と先読みで同じPromiseを使い、同一チャンクの二重取得を避ける。
  */
 
-/** 先読み完了状態を表示側から参照できる遅延モジュールローダー */
+/** 読み込み済み状態を表示側から参照できる遅延モジュールローダー */
 export type LazyModuleLoader<T> = (() => Promise<T>) & {
   getResolved: () => T | undefined
 }
@@ -36,7 +36,7 @@ export function createLazyModuleLoader<T>(importer: () => Promise<T>): LazyModul
 /**
  * 登録済みの遅延モジュールを起動直後にまとめて取得・評価する。
  *
- * Promiseを待たずに呼び出せるため、Reactのroot作成と並行して進む。
+ * Promiseを待たずに呼び出せるため、root描画の開始後に並行して進む。
  * dynamic importのチャンク構成は維持し、メインJSへは結合しない。
  */
 export function preloadAllLazyModules(loaders: readonly (() => Promise<unknown>)[]): Promise<void> {

@@ -1,4 +1,7 @@
 /// <reference types="vitest" />
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { type Plugin, defineConfig, loadEnv } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -31,6 +34,84 @@ function gtagPlugin(gaId: string): Plugin {
   }
 }
 
+/**
+ * cards.jsonとja.jsonをJavaScriptへ結合せず、ハッシュ付きJSON assetとして出力する。
+ * データ更新時もアプリ本体のJS・vendor・一覧画面用JSを再取得しない。
+ */
+function jsonAssetPlugin(basePath: string): Plugin {
+  const cardJsonPath = resolve(process.cwd(), 'src/data/json/cards.json')
+  const localeJsonPath = resolve(process.cwd(), 'src/i18n/locales/ja.json')
+  const readJsonAsset = (filePath: string) => JSON.stringify(JSON.parse(readFileSync(filePath, 'utf8')))
+  const cardJson = readJsonAsset(cardJsonPath)
+  const localeJson = readJsonAsset(localeJsonPath)
+  const cardAssetFileName = `assets/cards-${createHash('sha256').update(cardJson).digest('hex').slice(0, 8)}.json`
+  const localeAssetFileName = `assets/ja-${createHash('sha256').update(localeJson).digest('hex').slice(0, 8)}.json`
+
+  return {
+    name: 'json-assets',
+    configureServer(server) {
+      server.watcher.add([cardJsonPath, localeJsonPath])
+      server.middlewares.use((request, response, next) => {
+        const pathname = request.url?.split('?')[0]
+        if (request.method !== 'GET') {
+          next()
+          return
+        }
+
+        const assetPath =
+          pathname?.endsWith(cardAssetFileName) || pathname?.endsWith('/cards.json')
+            ? cardJsonPath
+            : pathname?.endsWith(localeAssetFileName) || pathname?.endsWith('/ja.json')
+              ? localeJsonPath
+              : undefined
+        if (assetPath === undefined) {
+          next()
+          return
+        }
+
+        try {
+          response.statusCode = 200
+          response.setHeader('Content-Type', 'application/json; charset=utf-8')
+          response.setHeader('Cache-Control', 'no-store')
+          response.end(readJsonAsset(assetPath))
+        } catch (error) {
+          next(error)
+        }
+      })
+    },
+    hotUpdate({ file }) {
+      if (file !== cardJsonPath && file !== localeJsonPath) return
+
+      try {
+        readJsonAsset(file)
+      } catch {
+        return []
+      }
+
+      if (this.environment.name === 'client') {
+        this.environment.hot.send({ type: 'full-reload' })
+      }
+      return []
+    },
+    transformIndexHtml: (html) =>
+      html
+        .replace('__CARD_ASSET_URL__', `${basePath}${cardAssetFileName}`)
+        .replace('__LOCALE_ASSET_URL__', `${basePath}${localeAssetFileName}`),
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: cardAssetFileName,
+        source: cardJson,
+      })
+      this.emitFile({
+        type: 'asset',
+        fileName: localeAssetFileName,
+        source: localeJson,
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
@@ -40,6 +121,7 @@ export default defineConfig(({ mode }) => {
     base: basePath,
     plugins: [
       react(),
+      jsonAssetPlugin(basePath),
       gtagPlugin(env.VITE_GA_ID || ''),
       VitePWA({
         manifest: false,
@@ -56,19 +138,23 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            // React / React DOM（react-dom/client 含む）を vendor チャンクに分離
-            if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/')) {
-              return 'vendor'
-            }
-            // i18next ランタイムを別チャンクに分離
-            if (id.includes('node_modules/i18next/') || id.includes('node_modules/react-i18next/')) {
-              return 'i18n'
-            }
-            // 仮想スクロールライブラリを別チャンクに分離
-            if (id.includes('node_modules/@tanstack/')) {
-              return 'virtual'
-            }
+          codeSplitting: {
+            // 指定したアプリ・vendorだけをまとめ、起動用の動的import補助はentry側に残す
+            includeDependenciesRecursively: false,
+            groups: [
+              {
+                name: 'vendor',
+                test: /[\\/]node_modules[\\/]/,
+                priority: 1,
+              },
+              {
+                name: 'app-list',
+                test: (id) =>
+                  (!id.endsWith('/src/main.tsx') && id.includes('/src/')) ||
+                  id.includes('virtual:pwa-register') ||
+                  id.includes('workbox'),
+              },
+            ],
           },
         },
       },
@@ -76,6 +162,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       include: ['src/__tests__/**/*.test.{ts,tsx}'],
+      setupFiles: ['./src/__tests__/setup.ts'],
     },
   }
 })

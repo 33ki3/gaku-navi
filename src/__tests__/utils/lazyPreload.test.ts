@@ -27,6 +27,16 @@ describe('lazyPreload', () => {
     expect(load.getResolved()).toEqual({ default: 'loaded' })
   })
 
+  it('登録した遅延モジュールをまとめて先読みする', async () => {
+    const firstLoader = vi.fn(() => Promise.resolve('first'))
+    const secondLoader = vi.fn(() => Promise.resolve('second'))
+
+    await expect(lazyPreload.preloadAllLazyModules([firstLoader, secondLoader])).resolves.toBeUndefined()
+
+    expect(firstLoader).toHaveBeenCalledOnce()
+    expect(secondLoader).toHaveBeenCalledOnce()
+  })
+
   it('先読み完了済みなら初回表示でSuspenseのフォールバックを経由しない', async () => {
     const importer = vi.fn(() => Promise.resolve({ default: () => createElement('span', null, 'ready') }))
     const load = lazyPreload.createLazyModuleLoader(importer)

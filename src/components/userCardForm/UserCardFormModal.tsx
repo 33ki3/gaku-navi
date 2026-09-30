@@ -86,7 +86,7 @@ export default memo(function UserCardFormModal({
       <div className="sticky top-0 bg-white z-10 border-b border-slate-200 px-5 py-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-black text-slate-800">
-            {t(editingCard ? 'userSupport.edit_title' : 'userSupport.create_title')}
+            {t(editingCard ? 'user_support.edit_title' : 'user_support.create_title')}
           </h2>
           {/* サポートフォームを閉じるボタン */}
           <CloseButton onClick={handleCancel} size={enums.ButtonSizeType.Sm} />
@@ -109,7 +109,7 @@ export default memo(function UserCardFormModal({
         <div className={constant.USER_FORM_SECTION_DIVIDER}>
           {/* アビリティ入力セクション */}
           <CollapsibleSection
-            title={<span className="text-xs font-black text-slate-700">{t('userSupport.tab_abilities')}</span>}
+            title={<span className="text-xs font-black text-slate-700">{t('user_support.tab_abilities')}</span>}
             isOpen={accordion[enums.UserFormSectionKey.Abilities]}
             onToggle={() => toggle(enums.UserFormSectionKey.Abilities)}
           >
@@ -130,7 +130,7 @@ export default memo(function UserCardFormModal({
         <div className={constant.USER_FORM_SECTION_DIVIDER}>
           {/* イベント入力セクション */}
           <CollapsibleSection
-            title={<span className="text-xs font-black text-slate-700">{t('userSupport.tab_events')}</span>}
+            title={<span className="text-xs font-black text-slate-700">{t('user_support.tab_events')}</span>}
             isOpen={accordion[enums.UserFormSectionKey.Events]}
             onToggle={() => toggle(enums.UserFormSectionKey.Events)}
           >
@@ -150,7 +150,7 @@ export default memo(function UserCardFormModal({
           <div className={constant.USER_FORM_SECTION_DIVIDER}>
             {/* Pアイテム入力セクション */}
             <CollapsibleSection
-              title={<span className="text-xs font-black text-slate-700">{t('userSupport.tab_pitem')}</span>}
+              title={<span className="text-xs font-black text-slate-700">{t('user_support.tab_pitem')}</span>}
               isOpen={accordion[enums.UserFormSectionKey.PItem]}
               onToggle={() => toggle(enums.UserFormSectionKey.PItem)}
             >
@@ -171,7 +171,7 @@ export default memo(function UserCardFormModal({
           <div className={constant.USER_FORM_SECTION_DIVIDER}>
             {/* スキルカード入力セクション */}
             <CollapsibleSection
-              title={<span className="text-xs font-black text-slate-700">{t('userSupport.tab_skillcard')}</span>}
+              title={<span className="text-xs font-black text-slate-700">{t('user_support.tab_skillcard')}</span>}
               isOpen={accordion[enums.UserFormSectionKey.SkillCard]}
               onToggle={() => toggle(enums.UserFormSectionKey.SkillCard)}
             >
@@ -190,7 +190,7 @@ export default memo(function UserCardFormModal({
           onClick={handleCancel}
           className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
         >
-          {t('userSupport.cancel')}
+          {t('user_support.cancel')}
         </button>
         <button
           onClick={handleSave}
@@ -199,7 +199,7 @@ export default memo(function UserCardFormModal({
             formHook.isValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'
           }`}
         >
-          {t('userSupport.save')}
+          {t('user_support.save')}
         </button>
       </div>
     </ModalOverlay>

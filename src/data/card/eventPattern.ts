@@ -12,16 +12,16 @@ import { EventEffectType, RarityType as RarityEnum } from '../../types/enums'
 
 /** 初回イベントの選択肢 */
 export const FIRST_EVENT_OPTIONS: { value: EventEffectType; labelKey: TranslationKey }[] = [
-  { value: EventEffectType.PItem, labelKey: 'userSupport.event_option.p_item' },
-  { value: EventEffectType.SkillCard, labelKey: 'userSupport.event_option.skill_card' },
+  { value: EventEffectType.PItem, labelKey: 'user_support.event_option.p_item' },
+  { value: EventEffectType.SkillCard, labelKey: 'user_support.event_option.skill_card' },
 ]
 
 /** 追加イベント（3番目）の選択肢 */
 export const THIRD_EVENT_OPTIONS: { value: EventEffectType | ''; labelKey: TranslationKey }[] = [
-  { value: '', labelKey: 'userSupport.event_option.none' },
-  { value: EventEffectType.CardEnhance, labelKey: 'userSupport.event_option.card_enhance' },
-  { value: EventEffectType.CardChange, labelKey: 'userSupport.event_option.card_change' },
-  { value: EventEffectType.TroubleDelete, labelKey: 'userSupport.event_option.trouble_delete' },
+  { value: '', labelKey: 'user_support.event_option.none' },
+  { value: EventEffectType.CardEnhance, labelKey: 'user_support.event_option.card_enhance' },
+  { value: EventEffectType.CardChange, labelKey: 'user_support.event_option.card_change' },
+  { value: EventEffectType.TroubleDelete, labelKey: 'user_support.event_option.trouble_delete' },
 ]
 
 /** レアリティ別パラメータ上昇値 */

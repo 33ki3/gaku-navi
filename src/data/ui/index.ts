@@ -17,3 +17,4 @@ export {
 export { getModalAlignClass } from './modalStyle'
 export { getParameterTextColor } from './parameterStyle'
 export { getCollapsibleVariantClass, getUncapSelectorVariantStyle } from './sectionStyle'
+export { FORM_ERROR_TYPES, FormErrorType, getFormErrorTranslationKey } from './formError'

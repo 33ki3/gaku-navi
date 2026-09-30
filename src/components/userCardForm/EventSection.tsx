@@ -93,7 +93,7 @@ export default function EventSection({ form, updateEvent, onFirstEventChange }: 
           className={`${constant.USER_FORM_SELECT} flex-1 bg-slate-100 text-slate-500 cursor-not-allowed`}
         >
           <option>
-            {t('userSupport.event_param_boost')} ({t(data.getParamLabel(paramType))}) +
+            {t('user_support.event_param_boost')} ({t(data.getParamLabel(paramType))}) +
             {data.EVENT_PARAM_VALUE[form.rarity]}
           </option>
         </select>
@@ -107,7 +107,7 @@ export default function EventSection({ form, updateEvent, onFirstEventChange }: 
             disabled
             className={`${constant.USER_FORM_SELECT} flex-1 bg-slate-100 text-slate-500 cursor-not-allowed`}
           >
-            <option>{t('userSupport.event_pp_gain')}</option>
+            <option>{t('user_support.event_pp_gain')}</option>
           </select>
         </div>
       )}

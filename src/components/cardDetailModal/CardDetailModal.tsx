@@ -128,12 +128,12 @@ export default function CardDetailModal({
               }}
               className="flex-1 px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
             >
-              {t('userSupport.edit_button')}
+              {t('user_support.edit_button')}
             </button>
           )}
           {showDeleteConfirm && (
             <div className="flex-1 flex items-center gap-2">
-              <span className="text-xs text-red-600 font-bold">{t('userSupport.delete_confirm')}</span>
+              <span className="text-xs text-red-600 font-bold">{t('user_support.delete_confirm')}</span>
               <button
                 onClick={() => {
                   onDeleteUserCard?.(card.name)
@@ -141,13 +141,13 @@ export default function CardDetailModal({
                 }}
                 className="px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
               >
-                {t('userSupport.delete_confirm_yes')}
+                {t('user_support.delete_confirm_yes')}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
               >
-                {t('userSupport.delete_confirm_no')}
+                {t('user_support.delete_confirm_no')}
               </button>
             </div>
           )}
@@ -157,7 +157,7 @@ export default function CardDetailModal({
               onClick={() => setShowDeleteConfirm(true)}
               className="flex-1 px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
             >
-              {t('userSupport.delete_button')}
+              {t('user_support.delete_button')}
             </button>
           )}
         </div>

@@ -7395,8 +7395,7 @@
           "effect": {
             "use_condition": {
               "key": "clear_rate_lte",
-              "value": 100,
-              "value2": 1000
+              "value": 100
             },
             "groups": [
               {
@@ -7431,8 +7430,7 @@
           "effect": {
             "use_condition": {
               "key": "clear_rate_lte",
-              "value": 100,
-              "value2": 1000
+              "value": 100
             },
             "groups": [
               {

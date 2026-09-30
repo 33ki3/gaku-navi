@@ -186,8 +186,9 @@ export function getRarityTier(rarity: enums.RarityType, isEventSource: boolean):
 /** cleanAbilityLabel はアビリティ名のテンプレートから値プレースホルダを除去する */
 export function cleanAbilityLabel(raw: string): string {
   return raw
-    .replace(/\+\{v\}/g, '')
-    .replace(/\{v\}/g, '')
+    .replace(/\+\{\{value\}\}/g, '')
+    .replace(/\{\{value\}\}/g, '')
+    .replace(/\+(?=（|$)/g, '')
     .replace(/\+N/g, '')
     .replace(/、\s*上昇/g, '')
     .trim()

@@ -11,8 +11,8 @@ import * as constant from '../../constant'
 import * as data from '../../data'
 import type { AbilityFormNameKey, AbilityFormRow, UserCardFormState } from '../../hooks/formHelpers'
 import { cleanAbilityLabel, getRarityTier, getSlotOptions } from '../../hooks/formHelpers'
-import type { TranslationKey } from '../../i18n'
 import * as enums from '../../types/enums'
+import { getAbilityNameLabelKey } from '../../utils/display/effectLabels'
 
 /** AbilitySection コンポーネントに渡すプロパティ */
 interface AbilitySectionProps {
@@ -24,8 +24,8 @@ interface AbilitySectionProps {
   updateAbility: (index: number, row: AbilityFormRow) => void
   /** アビリティ削除（未使用だが互換性のため保持） */
   removeAbility: (index: number) => void
-  /** アビリティバリデーションエラーの i18n キー */
-  abilityError?: TranslationKey
+  /** アビリティバリデーションエラー */
+  abilityError?: data.FormErrorType
 }
 /** アビリティ入力セクション（6スロット固定） */
 export default function AbilitySection({ form, updateAbility, abilityError }: AbilitySectionProps) {
@@ -45,12 +45,12 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
     const paramType = inferredParamType ?? form.parameterType
     const param = t(data.getParamLabel(paramType))
     const count = data.ABILITY_MAX_COUNT[nameKey] ?? 0
-    return cleanAbilityLabel(t(`card.ability_name.${nameKey}` as TranslationKey, { param, v: '', count }))
+    return cleanAbilityLabel(t(getAbilityNameLabelKey(nameKey), { param, value: '', count }))
   }
 
   // アシストタイプの場合はアビリティ設定不可
   if (form.type === enums.CardType.Assist) {
-    return <p className="text-xs text-slate-400">{t('userSupport.assist_no_ability')}</p>
+    return <p className="text-xs text-slate-400">{t('user_support.assist_no_ability')}</p>
   }
 
   // レアリティに応じた選択可能アビリティを取得
@@ -109,7 +109,7 @@ export default function AbilitySection({ form, updateAbility, abilityError }: Ab
           </div>
         )
       })}
-      {abilityError && <p className="text-xs text-red-500 mt-2">{t(abilityError)}</p>}
+      {abilityError && <p className="text-xs text-red-500 mt-2">{t(data.getFormErrorTranslationKey(abilityError))}</p>}
     </div>
   )
 }

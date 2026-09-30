@@ -68,7 +68,9 @@ export const EXPORT_FILE_EXT = '.json'
 /** エクスポートデータのMIMEタイプ。ブラウザのダウンロードダイアログで使う。 */
 export const EXPORT_MIME_TYPE = 'application/json'
 /** エクスポートデータのバージョン。インポート時の互換性チェックに使う。 */
-export const EXPORT_VERSION = 1
+export const EXPORT_VERSION = 2
+/** インポートで受け付ける最小のエクスポートデータバージョン */
+export const MIN_SUPPORTED_EXPORT_VERSION = 1
 
 /** パーセント記号（アビリティ値文字列から数値を抽出する際に取り除く） */
 export const PERCENT_SIGN = '%'

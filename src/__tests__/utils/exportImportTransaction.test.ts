@@ -8,7 +8,7 @@ import { importUserDataText } from '../../utils/exportImport'
 /**
  * テスト用のエクスポートJSONを作る
  *
- * @param data - localStorage キーと保存文字列
+ * @param data - エクスポート対象キーとJSON値
  * @returns インポートへ渡すJSON文字列
  */
 function makeImportData(data: Record<string, unknown>): string {

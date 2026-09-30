@@ -43,8 +43,10 @@ export function ToggleButton({
   const stateClass = disabled ? constant.BTN_DISABLED : isActive ? activeClass : inactiveClass
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={isActive}
       className={`${getToggleButtonSizeStyle(size)} rounded-lg font-bold transition-colors ${stateClass} ${className}`}
     >
       {children}

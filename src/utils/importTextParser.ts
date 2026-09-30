@@ -4,6 +4,8 @@
  * JSON構文、外側の形式、各 localStorage 値の順に確認し、保存処理へ渡せるデータだけを返す。
  */
 import * as constant from '../constant'
+import { EXPORT_KEYS } from '../data/ui'
+import type { ExportKey } from '../data/ui'
 import i18n from '../i18n'
 import { hasMissingAppPreferencesDefaults } from './appPreferences'
 import type { ImportSalvageResult, ValidatedStorageEntry } from './importDataValidation'
@@ -26,6 +28,21 @@ interface ImportParseResult {
   error: string | null
   /** 一部補完・スキップが発生した警告 */
   warnings: string[]
+  /** JSONには存在するが、画面で選択されていない保存キー */
+  excludedKeys: ExportKey[]
+  /** 画面では選択されているが、JSONに存在しない保存キー */
+  missingKeys: ExportKey[]
+}
+
+/** JSONの選択状態と入力内容から、確認画面へ渡すキーの差分を作る */
+function getSelectionSummary(data: Record<string, unknown>, selectedKeys: readonly ExportKey[]) {
+  const selectedKeySet = new Set(selectedKeys)
+  const hasDataKey = (key: string) => Object.prototype.hasOwnProperty.call(data, key)
+
+  return {
+    excludedKeys: EXPORT_KEYS.filter((key) => hasDataKey(key) && !selectedKeySet.has(key)),
+    missingKeys: EXPORT_KEYS.filter((key) => selectedKeySet.has(key) && !hasDataKey(key)),
+  }
 }
 
 /**
@@ -103,7 +120,7 @@ function createPartialValidationWarning(item: string, salvageIssue: ImportSalvag
  * @param text - ファイルまたはテキスト欄から受け取ったJSON文字列
  * @returns 検証済みデータ、または既存データを変更しないエラー
  */
-export function parseImportText(text: string): ImportParseResult {
+export function parseImportText(text: string, selectedKeys: readonly ExportKey[] = EXPORT_KEYS): ImportParseResult {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
@@ -114,46 +131,63 @@ export function parseImportText(text: string): ImportParseResult {
         location: getJsonErrorLocation(text, error),
       }),
       warnings: [],
+      excludedKeys: [],
+      missingKeys: [],
     }
   }
 
   if (!isExportData(parsed)) {
-    return { entries: null, error: i18n.t('ui.message.import_invalid_format'), warnings: [] }
+    return {
+      entries: null,
+      error: i18n.t('ui.message.import_invalid_format'),
+      warnings: [],
+      excludedKeys: [],
+      missingKeys: [],
+    }
   }
 
+  const selectionSummary = getSelectionSummary(parsed.data, selectedKeys)
   const rawEntries = Object.entries(parsed.data)
   if (rawEntries.length === 0) {
-    return { entries: null, error: i18n.t('ui.message.import_no_data'), warnings: [] }
+    return {
+      entries: null,
+      error: i18n.t('ui.message.import_no_data'),
+      warnings: [],
+      ...selectionSummary,
+    }
   }
 
   const entries: ValidatedStorageEntry[] = []
   const warnings: string[] = []
+  const selectedKeySet = new Set(selectedKeys)
   for (const [key, rawValue] of rawEntries) {
     if (!isExportKey(key)) {
       warnings.push(createValidationWarning(key, i18n.t('ui.message.import_reason_unsupported')))
       continue
     }
+    if (!selectedKeySet.has(key)) continue
 
     const definition = getImportValueDefinition(key)
     const itemLabel = i18n.t(definition.labelKey)
-    if (typeof rawValue !== 'string') {
-      warnings.push(createValidationWarning(itemLabel, i18n.t('ui.message.import_reason_json_string')))
-      continue
-    }
-
     let value: unknown
-    try {
-      value = JSON.parse(rawValue)
-    } catch (error) {
-      warnings.push(
-        createValidationWarning(
-          itemLabel,
-          i18n.t('ui.message.import_reason_json_syntax', {
-            location: getJsonErrorLocation(rawValue, error),
-          }),
-        ),
-      )
-      continue
+    if (typeof rawValue === 'string') {
+      // 旧形式はdata内の値がJSON文字列なので、読み込み時にJSON値へ戻す
+      try {
+        value = JSON.parse(rawValue)
+      } catch (error) {
+        warnings.push(
+          createValidationWarning(
+            itemLabel,
+            i18n.t('ui.message.import_reason_json_syntax', {
+              location: getJsonErrorLocation(rawValue, error),
+            }),
+          ),
+        )
+        continue
+      }
+    } else {
+      // 新形式はdata内にオブジェクト・配列・真偽値などのJSON値を直接持つ
+      value = rawValue
     }
 
     let isValid = false
@@ -201,12 +235,22 @@ export function parseImportText(text: string): ImportParseResult {
         )
       }
     }
-    entries.push([key, salvageResult ? JSON.stringify(value) : rawValue])
+    // Web Storageへ保存するときだけ、値をコンパクトなJSON文字列へ戻す
+    entries.push([key, JSON.stringify(value)])
   }
 
   if (entries.length === 0) {
-    return { entries: null, error: i18n.t('ui.message.import_no_valid_data'), warnings }
+    return {
+      entries: null,
+      error:
+        selectionSummary.excludedKeys.length > 0 &&
+        rawEntries.every(([key]) => !isExportKey(key) || !selectedKeySet.has(key))
+          ? i18n.t('ui.message.import_no_selected_data')
+          : i18n.t('ui.message.import_no_valid_data'),
+      warnings,
+      ...selectionSummary,
+    }
   }
 
-  return { entries, error: null, warnings }
+  return { entries, error: null, warnings, ...selectionSummary }
 }

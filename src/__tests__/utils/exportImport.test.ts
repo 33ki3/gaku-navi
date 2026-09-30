@@ -2,14 +2,21 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import * as constant from '../../constant'
 import * as enums from '../../types/enums'
 import { loadAppPreferences } from '../../utils/appPreferences'
-import { applyImportPreview, getUserDataJson, importUserDataText, prepareImportText } from '../../utils/exportImport'
+import {
+  applyImportPreview,
+  filterImportJsonText,
+  getUserDataJson,
+  importUserDataText,
+  mergeImportJsonText,
+  prepareImportText,
+} from '../../utils/exportImport'
 import { loadPresets } from '../../utils/presetHelpers'
 import { createDefaultSettings } from '../../utils/scoreSettings'
 
 /**
  * テスト用のエクスポートJSONを作る
  *
- * @param data - localStorage キーと保存文字列
+ * @param data - エクスポート対象キーとJSON値
  * @param version - エクスポート形式のバージョン
  * @returns インポートへ渡すJSON文字列
  */
@@ -86,6 +93,28 @@ describe('importUserDataText', () => {
     expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ 既存カード: 2 }))
   })
 
+  it('対応範囲内の過去バージョンを受け入れ、将来バージョンを拒否する', () => {
+    const legacyPreview = prepareImportText(
+      makeImportData(
+        {
+          [constant.UNCAP_STORAGE_KEY]: JSON.stringify({ 旧形式カード: enums.UncapType.Four }),
+        },
+        constant.MIN_SUPPORTED_EXPORT_VERSION,
+      ),
+    )
+    const futurePreview = prepareImportText(
+      makeImportData(
+        {
+          [constant.UNCAP_STORAGE_KEY]: { 将来形式カード: enums.UncapType.Four },
+        },
+        constant.EXPORT_VERSION + 1,
+      ),
+    )
+
+    expect(legacyPreview.canImport).toBe(true)
+    expect(futurePreview.canImport).toBe(false)
+  })
+
   it('正しい項目はまとめて反映する', () => {
     // 凸数と空のプリセット配列という、検証を通る2キーをまとめて作る
     const result = importUserDataText(
@@ -100,6 +129,31 @@ describe('importUserDataText', () => {
     expect(result.importedKeys).toBe(2)
     expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ テストカード: 4 }))
     expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(JSON.stringify([]))
+  })
+
+  it('凸数が定義外なら読み込まない', () => {
+    const preview = prepareImportText(
+      makeImportData({
+        [constant.UNCAP_STORAGE_KEY]: { テストカード: enums.UncapType.Four + 1 },
+      }),
+    )
+
+    expect(preview.canImport).toBe(false)
+    expect(preview.message).toContain('凸数設定')
+    expect(preview.message).toContain('読み込めるデータがありませんでした')
+  })
+
+  it('新形式のJSON値を読み込み、localStorageへコンパクトに保存する', () => {
+    const result = importUserDataText(
+      makeImportData({
+        [constant.UNCAP_STORAGE_KEY]: { テストカード: 4 },
+        [constant.SETTINGS_PINNED_KEY]: true,
+      }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe('{"テストカード":4}')
+    expect(localStorage.getItem(constant.SETTINGS_PINNED_KEY)).toBe('true')
   })
 
   it('一部の保存値が壊れていても、正しい項目は反映して警告する', () => {
@@ -511,6 +565,15 @@ describe('getUserDataJson', () => {
     expect(exported.exportedAt).toBe('2026-08-05T01:03:24.673+09:00')
   })
 
+  it('エクスポートJSONは整形済み文字列で出力する', () => {
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ テストカード: 4 }))
+
+    const exportedText = getUserDataJson(new Date('2026-08-04T00:00:00.000Z'), [constant.UNCAP_STORAGE_KEY])
+
+    expect(exportedText).toContain('\n  "version": 2,')
+    expect(exportedText).toContain(`\n    "${constant.UNCAP_STORAGE_KEY}": {`)
+  })
+
   it('未保存キーと壊れたキーを除外し、救出できる配列要素だけを出力する', () => {
     // 正常な凸数、正常・不正が混在するプリセット、未知キーをlocalStorageへ用意する
     const validPreset = { name: '正常プリセット', settings: createDefaultSettings() }
@@ -519,15 +582,15 @@ describe('getUserDataJson', () => {
     localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, rawPresets)
     localStorage.setItem('gaku-navi-unknown-data', JSON.stringify({ value: true }))
 
-    const exported = JSON.parse(getUserDataJson()) as { data: Record<string, string> }
+    const exported = JSON.parse(getUserDataJson()) as { data: Record<string, unknown> }
 
     // 存在しないキーとEXPORT_KEYSにない未知キーは、JSONのdataへ含めない
     expect(Object.keys(exported.data)).toEqual([constant.UNCAP_STORAGE_KEY, constant.SCORE_PRESETS_STORAGE_KEY])
     expect(exported.data['gaku-navi-unknown-data']).toBeUndefined()
-    // 正常な凸数は元の文字列を維持して出力する
-    expect(exported.data[constant.UNCAP_STORAGE_KEY]).toBe(JSON.stringify({ テストカード: enums.UncapType.Four }))
+    // 正常な凸数はJSON値として出力する
+    expect(exported.data[constant.UNCAP_STORAGE_KEY]).toEqual({ テストカード: enums.UncapType.Four })
     // プリセットは正常な要素だけを残し、不正な要素を出力しない
-    expect(JSON.parse(exported.data[constant.SCORE_PRESETS_STORAGE_KEY])).toEqual([validPreset])
+    expect(exported.data[constant.SCORE_PRESETS_STORAGE_KEY]).toEqual([validPreset])
     // エクスポート時の検証では、元のlocalStorage文字列を変更しない
     expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(rawPresets)
   })
@@ -537,10 +600,186 @@ describe('getUserDataJson', () => {
     const brokenPresets = '[{"name":"壊れたプリセット"'
     localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, brokenPresets)
 
-    const exported = JSON.parse(getUserDataJson()) as { data: Record<string, string> }
+    const exported = JSON.parse(getUserDataJson()) as { data: Record<string, unknown> }
 
     // 救出できないキーは出力せず、既存の壊れた文字列もlocalStorageに残す
     expect(exported.data[constant.SCORE_PRESETS_STORAGE_KEY]).toBeUndefined()
     expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(brokenPresets)
+  })
+
+  it('選択したキーだけをエクスポートする', () => {
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ 選択カード: 4 }))
+    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, JSON.stringify([]))
+
+    const exported = JSON.parse(
+      getUserDataJson(new Date('2026-08-04T00:00:00.000Z'), [constant.UNCAP_STORAGE_KEY]),
+    ) as { data: Record<string, unknown> }
+
+    expect(Object.keys(exported.data)).toEqual([constant.UNCAP_STORAGE_KEY])
+    expect(exported.data[constant.UNCAP_STORAGE_KEY]).toEqual({ 選択カード: 4 })
+  })
+
+  it('選択されていないJSONのキーは既存値を変更しない', () => {
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ 既存カード: 1 }))
+    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, JSON.stringify([{ name: '既存' }]))
+    const text = makeImportData({
+      [constant.UNCAP_STORAGE_KEY]: JSON.stringify({ 新しいカード: 4 }),
+      [constant.SCORE_PRESETS_STORAGE_KEY]: JSON.stringify([]),
+    })
+
+    const preview = prepareImportText(text, [constant.UNCAP_STORAGE_KEY])
+    expect(preview.canImport).toBe(true)
+    expect(preview.excludedKeys).toEqual([constant.SCORE_PRESETS_STORAGE_KEY])
+    expect(applyImportPreview(preview).success).toBe(true)
+    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ 新しいカード: 4 }))
+    expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(JSON.stringify([{ name: '既存' }]))
+  })
+
+  it('選択状態による案内とデータ検証の警告を分けて返す', () => {
+    const preview = prepareImportText(
+      makeImportData({
+        [constant.UNCAP_STORAGE_KEY]: JSON.stringify({ カード: 4 }),
+        [constant.SCORE_PRESETS_STORAGE_KEY]: JSON.stringify([]),
+      }),
+      [constant.UNCAP_STORAGE_KEY, constant.USER_SUPPORTS_STORAGE_KEY],
+    )
+
+    expect(preview.canImport).toBe(true)
+    expect(preview.selectionWarnings).toHaveLength(2)
+    expect(preview.validationWarnings).toEqual([])
+    expect(preview.warnings).toEqual(preview.selectionWarnings)
+  })
+
+  it('選択されているがJSONにないキーは既存値を変更しない', () => {
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ 既存カード: 1 }))
+    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, JSON.stringify([{ name: '既存' }]))
+
+    const preview = prepareImportText(
+      makeImportData({ [constant.UNCAP_STORAGE_KEY]: JSON.stringify({ 新しいカード: 4 }) }),
+      [constant.UNCAP_STORAGE_KEY, constant.SCORE_PRESETS_STORAGE_KEY],
+    )
+
+    expect(preview.missingKeys).toEqual([constant.SCORE_PRESETS_STORAGE_KEY])
+    expect(applyImportPreview(preview).success).toBe(true)
+    expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(JSON.stringify([{ name: '既存' }]))
+  })
+
+  it('JSON入力欄を選択キーだけに絞り込む', () => {
+    const text = makeImportData({
+      [constant.UNCAP_STORAGE_KEY]: JSON.stringify({ カード: 4 }),
+      [constant.SCORE_PRESETS_STORAGE_KEY]: JSON.stringify([]),
+    })
+
+    const filtered = JSON.parse(filterImportJsonText(text, [constant.UNCAP_STORAGE_KEY])) as {
+      data: Record<string, unknown>
+    }
+
+    expect(Object.keys(filtered.data)).toEqual([constant.UNCAP_STORAGE_KEY])
+    expect(filtered.data[constant.UNCAP_STORAGE_KEY]).toEqual({ カード: 4 })
+  })
+
+  it('外側の形式を編集中でもdata内の未選択キーを表示から除外する', () => {
+    const text = makeImportData(
+      {
+        [constant.UNCAP_STORAGE_KEY]: JSON.stringify({ カード: 4 }),
+        [constant.SCORE_PRESETS_STORAGE_KEY]: JSON.stringify([]),
+      },
+      999,
+    )
+
+    const filtered = JSON.parse(filterImportJsonText(text, [constant.UNCAP_STORAGE_KEY])) as {
+      data: Record<string, unknown>
+    }
+
+    expect(Object.keys(filtered.data)).toEqual([constant.UNCAP_STORAGE_KEY])
+  })
+
+  it('選択状態を変更しても表示対象外の編集内容を保持する', () => {
+    const source = makeImportData({
+      [constant.UNCAP_STORAGE_KEY]: { カード: enums.UncapType.Three },
+      [constant.SCORE_PRESETS_STORAGE_KEY]: [],
+    })
+    const edited = filterImportJsonText(source, [constant.UNCAP_STORAGE_KEY])
+    // 選択中の凸数を編集したあと、プリセットを再選択した表示を作る
+    const mergedSource = mergeImportJsonText(
+      source,
+      edited.replace(`"カード": ${enums.UncapType.Three}`, `"カード": ${enums.UncapType.Four}`),
+      [constant.UNCAP_STORAGE_KEY],
+    )
+    expect(mergedSource).not.toBeNull()
+    const merged = filterImportJsonText(mergedSource ?? source, [
+      constant.UNCAP_STORAGE_KEY,
+      constant.SCORE_PRESETS_STORAGE_KEY,
+    ])
+
+    const data = JSON.parse(merged).data
+    expect(data[constant.UNCAP_STORAGE_KEY]).toEqual({ カード: enums.UncapType.Four })
+    expect(data[constant.SCORE_PRESETS_STORAGE_KEY]).toEqual([])
+  })
+})
+
+describe('選択したデータのインポート・エクスポート', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('選択中のキーだけをエクスポートし、他の保存データを変更しない', () => {
+    const selectedKeys = [constant.UNCAP_STORAGE_KEY, constant.SETTINGS_PINNED_KEY] as const
+    const untouchedPresets = JSON.stringify([{ name: '既存プリセット', settings: createDefaultSettings() }])
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ 選択カード: 4 }))
+    localStorage.setItem(constant.SETTINGS_PINNED_KEY, JSON.stringify(true))
+    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, untouchedPresets)
+    localStorage.setItem('gaku-navi-unknown-data', JSON.stringify({ value: '既存値' }))
+
+    const exported = JSON.parse(getUserDataJson(new Date('2026-08-16T00:00:00.000Z'), selectedKeys)) as {
+      data: Record<string, unknown>
+    }
+
+    expect(Object.keys(exported.data)).toEqual([...selectedKeys])
+    expect(exported.data[constant.UNCAP_STORAGE_KEY]).toEqual({ 選択カード: 4 })
+    expect(exported.data[constant.SETTINGS_PINNED_KEY]).toBe(true)
+    expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(untouchedPresets)
+    expect(localStorage.getItem('gaku-navi-unknown-data')).toBe(JSON.stringify({ value: '既存値' }))
+  })
+
+  it('選択中のキーだけをインポートし、未選択キーと未知キーを変更しない', () => {
+    const selectedKeys = [constant.UNCAP_STORAGE_KEY, constant.SETTINGS_PINNED_KEY] as const
+    const existingPresets = JSON.stringify([{ name: '既存プリセット', settings: createDefaultSettings() }])
+    const existingUnknownData = JSON.stringify({ value: '既存値' })
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, JSON.stringify({ 既存カード: 1 }))
+    localStorage.setItem(constant.SETTINGS_PINNED_KEY, JSON.stringify(false))
+    localStorage.setItem(constant.SCORE_PRESETS_STORAGE_KEY, existingPresets)
+    localStorage.setItem('gaku-navi-unknown-data', existingUnknownData)
+
+    const result = importUserDataText(
+      makeImportData({
+        [constant.UNCAP_STORAGE_KEY]: { 新しいカード: 4 },
+        [constant.SETTINGS_PINNED_KEY]: true,
+        [constant.SCORE_PRESETS_STORAGE_KEY]: [{ name: 'インポート側' }],
+        'gaku-navi-unknown-data': { value: 'インポート側' },
+      }),
+      selectedKeys,
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.importedKeys).toBe(selectedKeys.length)
+    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(JSON.stringify({ 新しいカード: 4 }))
+    expect(localStorage.getItem(constant.SETTINGS_PINNED_KEY)).toBe(JSON.stringify(true))
+    expect(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY)).toBe(existingPresets)
+    expect(localStorage.getItem('gaku-navi-unknown-data')).toBe(existingUnknownData)
+  })
+
+  it('全項目を未選択にすると空のエクスポートになり、インポートでも既存値を変更しない', () => {
+    const existingUncaps = JSON.stringify({ 既存カード: 2 })
+    localStorage.setItem(constant.UNCAP_STORAGE_KEY, existingUncaps)
+
+    const exported = JSON.parse(getUserDataJson(new Date('2026-08-16T00:00:00.000Z'), [])) as {
+      data: Record<string, unknown>
+    }
+    const result = importUserDataText(makeImportData({ [constant.UNCAP_STORAGE_KEY]: { 新しいカード: 4 } }), [])
+
+    expect(exported.data).toEqual({})
+    expect(result.success).toBe(false)
+    expect(localStorage.getItem(constant.UNCAP_STORAGE_KEY)).toBe(existingUncaps)
   })
 })

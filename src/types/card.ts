@@ -136,9 +136,11 @@ export interface PItemEffectPart {
   value?: number
   /** ターン数（例: 3） */
   turns?: number
-  /** カード名（手札生成で使用）（例: "静かな意志+"） */
+  /** カード名（手札生成やカード獲得で使用）（例: "静かな意志+"） */
   card_name?: string
-  /** 獲得対象のPアイテム名（例: Pアイテム「ハッピー♪」獲得→"ハッピー♪"） */
+  /** Pドリンク名（Pドリンク獲得効果で使用） */
+  pdrink_name?: string
+  /** 効果テンプレート固有の名称や補足値 */
   item_name?: string
   /** 汎用テンプレートで使用するアクションID（ユーザー定義サポート用。表示時にアプリ側でi18nキーを解決する） */
   action_id?: ActionIdType

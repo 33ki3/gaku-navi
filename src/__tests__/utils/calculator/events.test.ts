@@ -413,6 +413,68 @@ describe('getSelfAcquisitionBonus', () => {
     expect(bonus[enums.ActionIdType.PDrinkAcquire]).toBe(1)
   })
 
+  it('Pアイテム本文のPドリンク獲得 → PDrinkAcquire + 発動回数分', () => {
+    const card = makeCard({
+      p_item: {
+        name: 'テスト',
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
+        actions: [],
+        effect: {
+          trigger: { key: enums.EffectTemplateKeyType.ClassWorkEnd },
+          body: [{ key: enums.EffectTemplateKeyType.AcquirePdrinkPp }],
+          limit: { key: enums.EffectTemplateKeyType.PerProduce, count: 2 },
+        },
+      },
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.PDrinkAcquire,
+          trigger_key: enums.TriggerKeyType.PDrinkAcquire,
+          values: { '0': '5' },
+        },
+      ],
+    })
+
+    const bonus = getSelfAcquisitionBonus(card)
+
+    expect(bonus[enums.ActionIdType.PDrinkAcquire]).toBe(2)
+    expect(bonus[enums.ActionIdType.PItemAcquire]).toBeUndefined()
+  })
+
+  it('Pアイテム本文のメンタルスキルカード獲得 → 汎用・メンタル獲得回数を加算する', () => {
+    const card = makeCard({
+      p_item: {
+        name: 'テスト',
+        rarity: enums.PItemRarityType.SR,
+        memory: enums.PItemMemoryType.Memorizable,
+        actions: [enums.PItemActionType.Delete],
+        effect: {
+          trigger: { key: enums.EffectTemplateKeyType.ClassWorkEnd },
+          body: [{ key: enums.EffectTemplateKeyType.SelectDeleteAcquireMentalCard }],
+          limit: { key: enums.EffectTemplateKeyType.PerProduce, count: 2 },
+        },
+      },
+      abilities: [
+        {
+          name_key: enums.AbilityNameKeyType.SkillAcquire,
+          trigger_key: enums.TriggerKeyType.SkillAcquire,
+          values: { '0': '5' },
+        },
+        {
+          name_key: enums.AbilityNameKeyType.MSkillAcquire,
+          trigger_key: enums.TriggerKeyType.MSkillAcquire,
+          values: { '0': '5' },
+        },
+      ],
+    })
+
+    const bonus = getSelfAcquisitionBonus(card)
+
+    expect(bonus[enums.ActionIdType.SkillAcquire]).toBe(2)
+    expect(bonus[enums.ActionIdType.MSkillAcquire]).toBe(2)
+    expect(bonus[enums.ActionIdType.PItemAcquire]).toBeUndefined()
+  })
+
   it('アクティブスキルカード提供 + a_skill_acquire トリガー → ASkillAcquire +1', () => {
     const card = makeCard({
       events: [

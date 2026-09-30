@@ -14384,8 +14384,8 @@
         },
         "body": [
           {
-            "key": "select_delete_acquire_item",
-            "item_name": "ハッピー♪"
+            "key": "select_delete_acquire_mental_card",
+            "card_name": "ハッピー♪"
           }
         ],
         "limit": {
@@ -21676,9 +21676,9 @@
         },
         "body": [
           {
-            "key": "acquire_item_pp",
+            "key": "acquire_pdrink_pp",
             "value": 40,
-            "item_name": "初星ホエイプロテイン"
+            "pdrink_name": "初星ホエイプロテイン"
           }
         ],
         "limit": {

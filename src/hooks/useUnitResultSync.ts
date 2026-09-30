@@ -72,9 +72,11 @@ export function useUnitResultSync({
     previousManualCardsRef.current = manualCards
 
     if (!cardsChanged && !resultWasStaleOnMount) return
+    // 最適化完了時は結果と手動編成が同時に更新されるため、同じ編成をもう一度main側で評価しない
+    if (result !== null && isUnitResultSynchronized(result, manualCards)) return
     const filledCount = manualCards.filter((name) => name !== null).length
     if (filledCount > 0 && filledCount <= constant.UNIT_SIZE) evaluateCurrentCards()
-  }, [evaluateCurrentCards, manualCards])
+  }, [evaluateCurrentCards, manualCards, result])
 
   return useMemo(() => new Set(Object.keys(cardCountCustom)), [cardCountCustom])
 }

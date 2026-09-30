@@ -59,4 +59,33 @@ describe('useUnitResultSync', () => {
     // 初回effectで現在の2枚構成を再評価する処理が、重複なく1回だけ呼ばれる
     expect(evaluateCurrentCards).toHaveBeenCalledOnce()
   })
+
+  it('計算結果と手動編成が一致している場合は再評価しない', () => {
+    const first = data.AllCards[0].name
+    const second = data.AllCards[1].name
+    const evaluateCurrentCards = vi.fn()
+    const initialResult = makeResult(first)
+
+    const { rerender } = renderHook(
+      ({ result, manualCards }: { result: UnitResult; manualCards: (string | null)[] }) =>
+        useUnitResultSync({
+          result,
+          manualCards,
+          cardCountCustom: {},
+          scoreSettings,
+          recalculateScores: vi.fn(),
+          evaluateCurrentCards,
+        }),
+      { initialProps: { result: initialResult, manualCards: [first] } },
+    )
+
+    // 最適化結果と手動編成が同時に反映された場合は、同じ編成を再評価しない
+    const optimizedResult = makeResult(second)
+    rerender({ result: optimizedResult, manualCards: [second] })
+    expect(evaluateCurrentCards).not.toHaveBeenCalled()
+
+    // 手動編成だけが結果とずれた場合は、古い結果なので再評価する
+    rerender({ result: optimizedResult, manualCards: [first] })
+    expect(evaluateCurrentCards).toHaveBeenCalledOnce()
+  })
 })

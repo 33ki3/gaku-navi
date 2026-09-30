@@ -26,6 +26,7 @@ function isEffectPart(value: unknown): boolean {
     isOptional(value.value, isFiniteNumber) &&
     isOptional(value.turns, isFiniteNumber) &&
     isOptional(value.card_name, (item) => typeof item === 'string') &&
+    isOptional(value.pdrink_name, (item) => typeof item === 'string') &&
     isOptional(value.item_name, (item) => typeof item === 'string')
   )
 }

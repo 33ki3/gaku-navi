@@ -22,6 +22,7 @@ import { calculateCardParameter } from '../calculator/calculateCard'
 import { parseAbility } from '../calculator/helpers'
 import { isActionId } from '../domainValueValidation'
 import { getPItemBodyActionCounts, getProvidedActions } from '../supportSynergy'
+import type { OptimizeInput } from '../../types/unitOptimizer'
 
 /** ActionIdType の全値（インデックス参照用） */
 const ACTION_ID_VALUES = Object.values(enums.ActionIdType) as enums.ActionIdType[]

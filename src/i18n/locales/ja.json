@@ -169,7 +169,7 @@
       "event_boost": "このサポートカードのイベントによるパラメータ上昇を{v}増加",
       "event_pp_boost": "このサポートカードのイベントによる獲得Pポイント{v}を増加",
       "event_recovery_boost": "このサポートカードのイベントによる体力回復量{v}を増加",
-      "support_rate": "このサポートカードのレッスンサポート発生率を{v}増加"
+      "support_rate": "このサポートカードのスキルカードサポート発生率を{v}増加"
     },
     "badge": {
       "initial_param": "初期パラ",
@@ -235,6 +235,7 @@
       "vitality": "-{{value}}",
       "hp": "体力消費{{value}}",
       "motivation": "やる気消費{{value}}",
+      "concentration": "集中消費{{value}}",
       "good_condition": "好調消費{{value}}ターン"
     },
     "skill_card_notes": {
@@ -349,6 +350,7 @@
       "keyword_turns_hp_cost": "{{keyword}}{{turns}}ターン体力消費{{value}}",
       "keyword_pct_param_up": "{{keyword}}の{{value}}％分パラメータ上昇",
       "keyword_increase_boost": "{{keyword}}増加量増加+{{value}}％（{{turns}}ターン）",
+      "keyword_increase_add": "{{keyword}}増加量追加+{{value}}（{{turns}}ターン）",
       "keyword_turns_keyword_up": "{{keyword}}{{turns}}ターン{{keyword2}}+{{value}}",
       "param_up_boost": "パラメータ上昇量増加{{value}}％（{{turns}}ターン）",
       "param_up_boost_keyword": "パラメータ上昇量増加{{value}}％（{{turns}}ターン）{{keyword}}+{{count}}",
@@ -429,6 +431,7 @@
         "keyword_pct_param_up": "{{keyword}}の{{pct}}%分パラメータ上昇",
         "param_boost": "パラメータ上昇量増加{{pct}}％（{{turns}}ターン）",
         "keyword_increase_boost": "{{keyword}}増加量増加+{{pct}}%（{{turns}}ターン）",
+        "keyword_increase_add": "{{keyword}}増加量追加+{{value}}（{{turns}}ターン）",
         "keyword_enhance_boost": "{{keyword}}強化+{{pct}}%（{{turns}}ターン）",
         "enthusiasm_boost": "熱意増加+{{pct}}%（{{turns}}ターン）",
         "keyword_up": "{{keyword}}+{{value}}",

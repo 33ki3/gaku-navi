@@ -256,6 +256,7 @@ describe('Pアイテム相乗効果を考慮した候補選定', () => {
       scoreSettings,
       cardUncaps: {},
       cardCountCustom: {},
+      excludedCardNames: [],
       allCards: AllCards,
       cardByName: new Map(AllCards.map((card) => [card.name, card])),
     }

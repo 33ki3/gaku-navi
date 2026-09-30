@@ -60,6 +60,7 @@ const costTypeEntries: LabelEntry<CostType>[] = [
   { id: CostType.Vitality, label: 'card.cost_type.vitality' },
   { id: CostType.Hp, label: 'card.cost_type.hp' },
   { id: CostType.Motivation, label: 'card.cost_type.motivation' },
+  { id: CostType.Concentration, label: 'card.cost_type.concentration' },
   { id: CostType.GoodCondition, label: 'card.cost_type.good_condition' },
 ]
 

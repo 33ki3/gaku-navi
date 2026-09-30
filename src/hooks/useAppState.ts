@@ -74,6 +74,12 @@ export function useAppState() {
       ...normalizedSettings,
       parameterBonusBase: { ...normalizedSettings.parameterBonusBase },
       actionCounts: { ...normalizedSettings.actionCounts },
+      ...(normalizedSettings.manualParameterBonusBase === undefined
+        ? {}
+        : { manualParameterBonusBase: { ...normalizedSettings.manualParameterBonusBase } }),
+      ...(normalizedSettings.manualScheduleActionCounts === undefined
+        ? {}
+        : { manualScheduleActionCounts: { ...normalizedSettings.manualScheduleActionCounts } }),
       scheduleSelections: { ...normalizedSettings.scheduleSelections },
       customParamBonusRows: normalizedSettings.customParamBonusRows.map((row) => ({ ...row })),
       customClassBonus: { ...normalizedSettings.customClassBonus },

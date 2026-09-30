@@ -10,8 +10,11 @@ import type { ScoreSettings } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
 import { getParameterBonusBreakdown } from '../../../utils/calculator/parameterBonus'
-import { normalizeHifLessonActivityForPairMode } from '../../../utils/hifScheduleHelpers'
-import { normalizeScoreSettingsDerived } from '../../../utils/scoreSettings'
+import {
+  normalizeHifLessonActivityForMainMode,
+  normalizeHifLessonActivityForPairMode,
+} from '../../../utils/hifScheduleHelpers'
+import { normalizeScoreSettingsDerived, setScoreSettingsScheduleLimits } from '../../../utils/scoreSettings'
 import { CheckboxField } from '../../ui/CheckboxField'
 import { ScheduleSummary } from '../ScheduleSummary'
 import { HifScheduleWeekSelector } from './HifScheduleWeekSelector'
@@ -56,28 +59,22 @@ export function HifScheduleContent({
       <CheckboxField
         label={t('ui.settings.schedule_auto')}
         checked={settings.useScheduleLimits}
-        onChange={(checked) =>
-          onSettingsChange(
-            normalizeScoreSettingsDerived({
-              ...settings,
-              useScheduleLimits: checked,
-            }),
-          )
-        }
+        onChange={(checked) => onSettingsChange(setScoreSettingsScheduleLimits(settings, checked))}
       />
       {/* HIF: サブを半分ずつ割り振るチェックボックス */}
       <CheckboxField
         label={t('ui.settings.hif_lesson_split_sub')}
         checked={hifLessonSplitSub}
         onChange={(value) => {
-          const normalizedSelections = !value
-            ? Object.fromEntries(
-                Object.entries(settings.scheduleSelections).map(([week, activityId]) => [
-                  Number(week),
-                  normalizeHifLessonActivityForPairMode(activityId),
-                ]),
-              )
-            : settings.scheduleSelections
+          const normalizeActivity = value
+            ? normalizeHifLessonActivityForMainMode
+            : normalizeHifLessonActivityForPairMode
+          const normalizedSelections = Object.fromEntries(
+            Object.entries(settings.scheduleSelections).map(([week, activityId]) => [
+              Number(week),
+              normalizeActivity(activityId),
+            ]),
+          )
           onSettingsChange(
             normalizeScoreSettingsDerived({
               ...settings,

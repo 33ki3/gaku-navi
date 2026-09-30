@@ -54,7 +54,7 @@ export function ScenarioDifficultySection({ settings, onSettingsChange }: Scenar
                 const useCustomMode = opt.value === enums.ScenarioType.Custom
                 // 難易度なしシナリオ（HIF/カスタム）は None、それ以外は切替先の既定値を解決する
                 const newDifficulty = resolveScoreSettingsDifficulty(opt.value, sharedSettings.difficulty)
-                const scheduleSelections = loadScheduleSelections(opt.value)
+                const scheduleSelections = loadScheduleSelections(opt.value, sharedSettings.hifLessonSplitSub)
 
                 onSettingsChange(
                   normalizeScoreSettingsDerived({

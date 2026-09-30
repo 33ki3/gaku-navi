@@ -52,7 +52,9 @@ export function createDefaultSettings(scenario: enums.ScenarioType = constant.DE
     scenario,
     difficulty: scheduleDifficulty,
     parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
+    manualParameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
     actionCounts,
+    manualScheduleActionCounts: createManualScheduleActionCountsSnapshot(actionCounts),
     scheduleSelections,
     useScheduleLimits: true,
     includeSelfTrigger: true,
@@ -69,6 +71,24 @@ export function createDefaultSettings(scenario: enums.ScenarioType = constant.DE
     ],
     hifLessonSplitSub: true,
   }
+}
+
+/**
+ * 手動モードへ戻すためのアクション回数をスナップショットする
+ *
+ * 週選択から自動計算せず、現在のアクション回数からスケジュール連動対象だけを取り出す。
+ * @param actionCounts - スナップショット元のアクション回数
+ * @returns 手動入力値として復元する対象だけを含む回数マップ
+ */
+function createManualScheduleActionCountsSnapshot(actionCounts: unknown): ActionCounts {
+  if (!isRecord(actionCounts)) return {}
+
+  const counts: ActionCounts = {}
+  for (const id of data.ScheduleControlledIds) {
+    const count = actionCounts[id]
+    if (typeof count === 'number') counts[id] = count
+  }
+  return counts
 }
 
 /**
@@ -91,12 +111,21 @@ export function fillScoreSettingsDefaults(value: unknown): unknown {
       : isRecord(value.actionCounts)
         ? { ...defaults.actionCounts, ...value.actionCounts }
         : value.actionCounts
+  const manualScheduleActionCounts =
+    value.manualScheduleActionCounts === undefined
+      ? createManualScheduleActionCountsSnapshot(actionCounts)
+      : value.manualScheduleActionCounts
 
-  // 明示された既知値を優先しつつ、アクション回数だけは既定の0回と組み合わせる
+  // 既定値を先に置き、保存値にある項目はfalseや0を含めてそのまま優先する
   return {
     ...defaults,
     ...value,
     actionCounts,
+    manualParameterBonusBase:
+      value.manualParameterBonusBase === undefined
+        ? (value.parameterBonusBase ?? defaults.parameterBonusBase)
+        : value.manualParameterBonusBase,
+    manualScheduleActionCounts,
   }
 }
 
@@ -112,9 +141,9 @@ export function normalizeScoreSettings(value: unknown): ScoreSettings | null {
   return isScoreSettings(normalized) ? normalized : null
 }
 
-/** 保存時に自動計算値を任意項目として扱う型 */
+/** 派生値と手動復元用の入力値を含む保存形式 */
 type PersistedScoreSettings = ScoreSettingsBase & {
-  parameterBonusBase?: ParameterValues
+  parameterBonusBase: ParameterValues
 }
 
 /**
@@ -146,12 +175,24 @@ export function normalizeScoreSettingsDerived(settings: ScoreSettings): ScoreSet
   // シナリオに合わせて難易度をそろえ、スケジュール連動時だけパラメータボーナスを再計算する
   const difficulty = resolveScoreSettingsDifficulty(settings.scenario, settings.difficulty)
   if (!settings.useScheduleLimits || settings.useCustomMode) {
-    return { ...settings, difficulty }
+    return {
+      ...settings,
+      difficulty,
+      manualParameterBonusBase: settings.useCustomMode
+        ? (settings.manualParameterBonusBase ?? settings.parameterBonusBase)
+        : settings.parameterBonusBase,
+      manualScheduleActionCounts: settings.useCustomMode
+        ? (settings.manualScheduleActionCounts ?? createManualScheduleActionCountsSnapshot(settings.actionCounts))
+        : createManualScheduleActionCountsSnapshot(settings.actionCounts),
+    }
   }
 
   return {
     ...settings,
     difficulty,
+    manualParameterBonusBase: settings.manualParameterBonusBase ?? settings.parameterBonusBase,
+    manualScheduleActionCounts:
+      settings.manualScheduleActionCounts ?? createManualScheduleActionCountsSnapshot(settings.actionCounts),
     parameterBonusBase: calculateParameterBonusFromSchedule(
       settings.scheduleSelections,
       settings.scenario,
@@ -163,32 +204,57 @@ export function normalizeScoreSettingsDerived(settings: ScoreSettings): ScoreSet
 }
 
 /**
- * 自動計算される値を保存せず、設定を保存形式へ変換する
+ * スケジュール連動と手動入力を切り替え、切り替え前の手動値を保持して反映する
+ *
+ * @param settings - 切り替え前の点数設定
+ * @param enabled - スケジュール連動を有効にする場合はtrue
+ * @returns 切り替え後の点数設定
+ */
+export function setScoreSettingsScheduleLimits(settings: ScoreSettings, enabled: boolean): ScoreSettings {
+  if (enabled === settings.useScheduleLimits) return normalizeScoreSettingsDerived(settings)
+
+  if (enabled) {
+    return normalizeScoreSettingsDerived({
+      ...settings,
+      useScheduleLimits: true,
+      manualParameterBonusBase: { ...settings.parameterBonusBase },
+      manualScheduleActionCounts: createManualScheduleActionCountsSnapshot(settings.actionCounts),
+    })
+  }
+
+  return normalizeScoreSettingsDerived({
+    ...settings,
+    useScheduleLimits: false,
+    parameterBonusBase: { ...(settings.manualParameterBonusBase ?? settings.parameterBonusBase) },
+    actionCounts: {
+      ...settings.actionCounts,
+      ...(settings.manualScheduleActionCounts ?? createManualScheduleActionCountsSnapshot(settings.actionCounts)),
+    },
+  })
+}
+
+/**
+ * 派生値を再計算し、手動モードへ戻すための入力値も含めて保存する
  *
  * @param settings - 保存するスコア設定
  * @returns ブラウザの保存領域へ保存する形式のスコア設定
  */
 export function getScoreSettingsForStorage(settings: ScoreSettings): PersistedScoreSettings {
-  // 画面表示用の派生値とスケジュール連動アクションを、保存に必要な最小形式へ変換する
+  // 表示・計算で使う派生値と、手動モードへ戻すための値を保存する
   const normalizedSettings = normalizeScoreSettingsDerived(settings)
   const useSchedule = normalizedSettings.useScheduleLimits && !normalizedSettings.useCustomMode
+
   const actionCounts: ActionCounts = {}
   for (const { id } of data.ActionCategoryList) {
-    // スケジュールで自動計算する項目は保存せず、読み込み時に現在の予定から再構成する
-    if (useSchedule && data.ScheduleControlledIds.has(id)) continue
-    const count = normalizedSettings.actionCounts[id]
+    // 自動制御中も手動値を残し、属性別レッスンから算出する合算値は保存しない
+    const count =
+      useSchedule && data.ScheduleControlledIds.has(id)
+        ? (normalizedSettings.manualScheduleActionCounts?.[id] ?? normalizedSettings.actionCounts[id])
+        : normalizedSettings.actionCounts[id]
     if (count !== undefined) actionCounts[id] = count
   }
 
-  if (!useSchedule) {
-    // 手動・カスタムモードでは、アクション回数とパラメータボーナスを
-    // 入力した内容のまま保存する
-    return { ...normalizedSettings, actionCounts }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { parameterBonusBase: _parameterBonusBase, ...persistedSettings } = normalizedSettings
-  return { ...persistedSettings, actionCounts }
+  return { ...normalizedSettings, actionCounts }
 }
 
 /**
@@ -296,9 +362,8 @@ export function loadScheduleSelections(
     // Niaは現行のスケジュール定義が空で、保存済みの週選択を計算へ使わない
     if (scenario === enums.ScenarioType.Nia) return {}
 
-    // Hajime は共有キーの scheduleSelections を使用する
+    // Hajimeは点数設定キーに、それ以外はシナリオ別キーに週選択を保存する
     if (scenario === enums.ScenarioType.Hajime) {
-      // Hajimeの週選択は、点数設定と同じ保存データから読み込む
       const parsed = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
       if (parsed?.scheduleSelections && Object.keys(parsed.scheduleSelections).length > 0) {
         return sanitizeScheduleSelections(scenario, constant.DEFAULT_DIFFICULTY, parsed.scheduleSelections)
@@ -511,16 +576,9 @@ export function loadScoreSettings(): ScoreSettings {
     const parsed = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
     if (!parsed) return createDefaultSettings()
     const scheduleSelections =
-      parsed.scenario === enums.ScenarioType.Hajime
-        ? sanitizeScheduleSelections(
-            parsed.scenario,
-            resolveScoreSettingsDifficulty(parsed.scenario, parsed.difficulty),
-            parsed.scheduleSelections,
-            parsed.hifLessonSplitSub,
-          )
-        : parsed.scenario === enums.ScenarioType.Custom
-          ? {}
-          : loadScheduleSelections(parsed.scenario, parsed.hifLessonSplitSub)
+      parsed.scenario === enums.ScenarioType.Custom
+        ? {}
+        : loadScheduleSelections(parsed.scenario, parsed.hifLessonSplitSub)
 
     return normalizeScoreSettingsDerived({
       ...parsed,
@@ -614,31 +672,27 @@ function createScoreSettingsStorageEntries(settings: ScoreSettings): readonly [s
     const persistedSettings = getScoreSettingsForStorage(settings)
     const entries: [string, string][] = []
 
-    // Hajime 以外（カスタム除く）の scheduleSelections はシナリオ別キーに保存する
+    const previousShared = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
     if (
       persistedSettings.scenario !== enums.ScenarioType.Custom &&
       persistedSettings.scenario !== enums.ScenarioType.Hajime
     ) {
+      // Hajime以外の選択は、保存済みの他シナリオを残してシナリオ別キーへ保存する
       const rawSchedules = localStorage.getItem(constant.SCHEDULE_SELECTIONS_STORAGE_KEY)
-      // 他シナリオの選択は残し、現在のシナリオ分だけ差し替える
-      const allSchedules: ScenarioScheduleSelections = {}
-      if (rawSchedules) {
-        const parsed: unknown = JSON.parse(rawSchedules)
-        if (isScenarioScheduleSelections(parsed)) Object.assign(allSchedules, parsed)
-      }
+      const allSchedules: ScenarioScheduleSelections = rawSchedules
+        ? (JSON.parse(rawSchedules) as ScenarioScheduleSelections)
+        : {}
       allSchedules[persistedSettings.scenario] = { ...persistedSettings.scheduleSelections }
       entries.push([constant.SCHEDULE_SELECTIONS_STORAGE_KEY, JSON.stringify(allSchedules)])
     }
 
     if (persistedSettings.scenario === enums.ScenarioType.Hajime) {
-      // Hajime は scheduleSelections を含めて共有キーに保存する
+      // Hajimeの週選択は点数設定と同じキーに保存する
       entries.push([constant.SCORE_SETTINGS_STORAGE_KEY, JSON.stringify(persistedSettings)])
     } else {
-      // 他シナリオの選択を別に保存し、共通設定に残るHajimeの選択は保持する
+      // 他シナリオの週選択を除き、共通設定キーに保存済みの週選択を保持する
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { scheduleSelections: _omit, ...settingsWithoutSchedule } = persistedSettings
-      const previousShared = parseStoredScoreSettings(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY))
-      // 共通設定に残っているHajimeの週選択を、他シナリオ保存時も失わない
       const preservedHajimeSchedules = previousShared?.scheduleSelections
       const sharedPayload = preservedHajimeSchedules
         ? { ...settingsWithoutSchedule, scheduleSelections: preservedHajimeSchedules }

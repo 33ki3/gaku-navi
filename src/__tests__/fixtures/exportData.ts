@@ -10,6 +10,16 @@ export function createCompleteExportValues(includeV2Settings: boolean): Record<E
     ...createDefaultSettings(enums.ScenarioType.Hif),
     name: '互換テスト設定',
     parameterBonusBase: { vocal: 100, dance: 200, visual: 300 },
+    ...(includeV2Settings
+      ? {
+          manualParameterBonusBase: { vocal: 100, dance: 200, visual: 300 },
+          manualScheduleActionCounts: {
+            [enums.ActionIdType.SpLessonVo]: 1,
+            [enums.ActionIdType.SpLessonDa]: 2,
+            [enums.ActionIdType.SpLessonVi]: 3,
+          },
+        }
+      : {}),
     actionCounts: Object.fromEntries(Object.values(enums.ActionIdType).map((actionId, index) => [actionId, index])),
     scheduleSelections: {
       1: enums.ActivityIdType.ClassVo,
@@ -30,6 +40,10 @@ export function createCompleteExportValues(includeV2Settings: boolean): Record<E
       { vocal: 7, dance: 8, visual: 9 },
     ],
     hifLessonSplitSub: false,
+  }
+  if (!includeV2Settings) {
+    delete scoreSettings.manualParameterBonusBase
+    delete scoreSettings.manualScheduleActionCounts
   }
   const filterState = {
     searchTerm: '互換テスト',

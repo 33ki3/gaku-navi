@@ -142,8 +142,14 @@ export function getSpLessonTotal(
       // メインパラメータに main を加算する
       total[mainKey] += entry.main
 
-      // サブパラメータが明示的に選択されている場合はその1軸のみに sub を加算する
-      if (selectedSub) {
+      if (scenario === ScenarioType.Hif && hifLessonSplitSub) {
+        // HIFのMainのみ表示では、サブ値を残り2属性へ半分ずつ配分する
+        const halfSub = Math.floor(entry.sub / 2)
+        for (const key of Object.values(ParameterType)) {
+          if (key !== mainKey) total[key] += halfSub
+        }
+      } else if (selectedSub) {
+        // サブ属性が明示的に選択されている場合はその1軸のみに sub を加算する
         total[selectedSub] += entry.sub
       } else {
         // 従来シナリオはサブ2軸同時上昇として扱う

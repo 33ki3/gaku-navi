@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import * as constant from '../../constant'
 import { AllCards, TriggerActionMap, getScheduleData } from '../../data'
+import * as scoreData from '../../data/score'
 import { resolveParamCap } from '../../data/score/paramCap'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
@@ -267,6 +268,120 @@ describe('最適編成', () => {
 
       // HIF 3週目の ClassVo は +120
       expect(classVoResult.totalScore - baseResult.totalScore).toBe(120)
+    })
+
+    it('HIFのSPサブ値と選抜試験を配分モードどおりtotalScoreへ反映する', () => {
+      const card = AllCards.find(
+        (candidate) =>
+          (candidate.plan === enums.PlanType.Anomaly || candidate.plan === enums.PlanType.Free) &&
+          !candidate.abilities.some((ability) => ability.is_parameter_bonus),
+      )
+      if (!card) throw new Error('テスト用のパラボなしサポートがありません')
+
+      const lessonWeeks = [2, 4, 9, 11, 15, 18, 22, 25]
+      const cases: {
+        hifLessonSplitSub: boolean
+        activityId: enums.ActivityIdType
+        expectedSpLesson: Record<enums.ParameterType, number>
+      }[] = [
+        {
+          hifLessonSplitSub: true,
+          activityId: enums.ActivityIdType.VoLesson,
+          expectedSpLesson: {
+            [enums.ParameterType.Vocal]: 800,
+            [enums.ParameterType.Dance]: 170,
+            [enums.ParameterType.Visual]: 170,
+          },
+        },
+        {
+          hifLessonSplitSub: false,
+          activityId: enums.ActivityIdType.VoLessonDa,
+          expectedSpLesson: {
+            [enums.ParameterType.Vocal]: 800,
+            [enums.ParameterType.Dance]: 340,
+            [enums.ParameterType.Visual]: 0,
+          },
+        },
+      ]
+
+      for (const testCase of cases) {
+        const scheduleSelections: Record<number, enums.ActivityIdType> = {}
+        for (const week of lessonWeeks) scheduleSelections[week] = testCase.activityId
+
+        const scoreSettings = makeScoreSettings({
+          scenario: enums.ScenarioType.Hif,
+          difficulty: enums.DifficultyType.None,
+          useScheduleLimits: false,
+          scheduleSelections,
+          hifLessonSplitSub: testCase.hifLessonSplitSub,
+          parameterBonusBase: {
+            [enums.ParameterType.Vocal]: 0,
+            [enums.ParameterType.Dance]: 0,
+            [enums.ParameterType.Visual]: 0,
+          },
+        })
+        const result = evaluateManualUnit({
+          settings: makeSimulatorSettings([card.name]),
+          scoreSettings,
+          cardUncaps: {},
+          excludedCardNames: [],
+          allCards: AllCards,
+          cardByName,
+        })
+        if (!result) throw new Error('HIFのSPレッスン合計を計算できませんでした')
+
+        const spLesson = scoreData.getSpLessonTotal(
+          scoreSettings.scenario,
+          scoreSettings.difficulty,
+          scheduleSelections,
+          scoreSettings.hifLessonSplitSub,
+        )
+        expect(spLesson).toEqual(testCase.expectedSpLesson)
+
+        const supportScores: Record<enums.ParameterType, number> = {
+          [enums.ParameterType.Vocal]: 0,
+          [enums.ParameterType.Dance]: 0,
+          [enums.ParameterType.Visual]: 0,
+        }
+        for (const member of result.members) {
+          const score = member.result.totalIncrease - member.result.parameterBonus + member.supportSynergy
+          if (member.card.parameter_type === enums.ParameterType.Vocal) {
+            supportScores[enums.ParameterType.Vocal] += score
+          }
+          if (member.card.parameter_type === enums.ParameterType.Dance) {
+            supportScores[enums.ParameterType.Dance] += score
+          }
+          if (member.card.parameter_type === enums.ParameterType.Visual) {
+            supportScores[enums.ParameterType.Visual] += score
+          }
+        }
+
+        const examTotal: Record<enums.ParameterType, number> = {
+          [enums.ParameterType.Vocal]: 365,
+          [enums.ParameterType.Dance]: 365,
+          [enums.ParameterType.Visual]: 370,
+        }
+        expect(scoreData.getHifExamTotalData()).toEqual(examTotal)
+        const cap = resolveParamCap(scoreSettings.scenario, scoreSettings.difficulty, null)
+        const expectedTotal = Object.values(enums.ParameterType).reduce((total, parameterType) => {
+          const raw =
+            supportScores[parameterType] +
+            testCase.expectedSpLesson[parameterType] +
+            examTotal[parameterType] +
+            result.parameterBonus[parameterType]
+          return total + (cap === null ? raw : Math.min(cap, raw))
+        }, 0)
+
+        expect(result.totalScore).toBe(expectedTotal)
+      }
+    })
+
+    it('初編のSPサブ値は従来どおり残り2属性に加算する', () => {
+      expect(
+        scoreData.getSpLessonTotal(enums.ScenarioType.Hajime, enums.DifficultyType.Legend, {
+          4: enums.ActivityIdType.VoLesson,
+        }),
+      ).toEqual({ vocal: 140, dance: 55, visual: 55 })
     })
   })
 

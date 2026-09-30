@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPresetCommand } from '../../application/command'
 import { DomainStateStore } from '../../application/domainStateStore'
 import * as constant from '../../constant'
+import * as masterData from '../../data'
 import { EXPORT_KEYS } from '../../data/ui'
 import { ApplicationDomain } from '../../types/application'
 import type { ScoreSettings } from '../../types/card'
@@ -35,6 +36,19 @@ async function savePresetThroughCommand(name: string, settings: ScoreSettings) {
   })
   const command = createPresetCommand({ state: createTestCommandStatePort(store) })
   return command.save(name, settings, { overwrite: true })
+}
+
+function addManualScoreSettingsDefaults(settings: Record<string, unknown>): Record<string, unknown> {
+  const actionCounts = settings.actionCounts as Record<string, number>
+  return {
+    ...settings,
+    manualParameterBonusBase: settings.parameterBonusBase,
+    manualScheduleActionCounts: Object.fromEntries(
+      Object.entries(actionCounts).filter(([actionId]) =>
+        masterData.ScheduleControlledIds.has(actionId as enums.ActionIdType),
+      ),
+    ),
+  }
 }
 
 /**
@@ -71,6 +85,8 @@ describe('importUserDataText', () => {
         [enums.ActionIdType.SpLesson20]: 1,
       },
     }
+    delete settings.manualParameterBonusBase
+    delete settings.manualScheduleActionCounts
     const imported = importUserDataText(
       makeImportData({
         [constant.SCORE_SETTINGS_STORAGE_KEY]: settings,
@@ -92,6 +108,10 @@ describe('importUserDataText', () => {
       saved.data[constant.SCORE_SETTINGS_STORAGE_KEY],
       saved.data[constant.SCORE_PRESETS_STORAGE_KEY][0].settings,
     ]) {
+      expect(value.parameterBonusBase).toEqual(
+        expect.objectContaining({ vocal: expect.any(Number), dance: expect.any(Number), visual: expect.any(Number) }),
+      )
+      expect(value.actionCounts[enums.ActionIdType.SpLessonVo]).toBe(3)
       expect(value.actionCounts).not.toHaveProperty(enums.ActionIdType.LessonVo)
       expect(value.actionCounts).not.toHaveProperty(enums.ActionIdType.Lesson)
       expect(value.actionCounts[enums.ActionIdType.NormalLessonVo]).toBe(2)
@@ -272,7 +292,16 @@ describe('importUserDataText', () => {
     expect(result.importedKeys).toBe(EXPORT_KEYS.length)
 
     for (const key of EXPORT_KEYS) {
-      const expected = JSON.parse(JSON.stringify(values[key]))
+      let expected = JSON.parse(JSON.stringify(values[key]))
+      if (!includeV2Settings && key === constant.SCORE_SETTINGS_STORAGE_KEY) {
+        expected = addManualScoreSettingsDefaults(expected)
+      }
+      if (!includeV2Settings && key === constant.SCORE_PRESETS_STORAGE_KEY) {
+        expected = expected.map((preset: Record<string, unknown>) => ({
+          ...preset,
+          settings: addManualScoreSettingsDefaults(preset.settings as Record<string, unknown>),
+        }))
+      }
       if (key === constant.UNIT_SIMULATOR_STORAGE_KEY && !includeV2Settings) {
         expected.excludedCardNames = []
         expected.ignoreCardExclusions = false
@@ -286,8 +315,13 @@ describe('importUserDataText', () => {
       expect(JSON.parse(localStorage.getItem(key) ?? 'null')).toEqual(expected)
     }
 
+    const expectedScoreSettings = JSON.parse(JSON.stringify(values[constant.SCORE_SETTINGS_STORAGE_KEY]))
+    if (!includeV2Settings) {
+      Object.assign(expectedScoreSettings, addManualScoreSettingsDefaults(expectedScoreSettings))
+    }
+    expect(loadScoreSettings().hifLessonSplitSub).toBe(false)
     expect(loadScoreSettings()).toEqual({
-      ...JSON.parse(JSON.stringify(values[constant.SCORE_SETTINGS_STORAGE_KEY])),
+      ...expectedScoreSettings,
       scheduleSelections: {
         ...JSON.parse(JSON.stringify(values[constant.SCHEDULE_SELECTIONS_STORAGE_KEY])).hif,
         2: enums.ActivityIdType.VoLessonDa,
@@ -446,16 +480,19 @@ describe('importUserDataText', () => {
     expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).toEqual(expectedSettings)
   })
 
-  it('既存エクスポートの自動計算パラボ対象値はエラーにせず保存し、実行時は再計算する', () => {
-    const oldSettings = {
-      ...createDefaultSettings(enums.ScenarioType.Hajime),
+  it('手動復元用フィールドがない点数設定でも、自動計算値を読み込み時に再計算する', () => {
+    const settingsWithoutManualSnapshots = createDefaultSettings(enums.ScenarioType.Hajime)
+    delete settingsWithoutManualSnapshots.manualParameterBonusBase
+    delete settingsWithoutManualSnapshots.manualScheduleActionCounts
+    const importedSettings = {
+      ...settingsWithoutManualSnapshots,
       scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
       parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
     }
 
     const result = importUserDataText(
       makeImportData({
-        [constant.SCORE_SETTINGS_STORAGE_KEY]: oldSettings,
+        [constant.SCORE_SETTINGS_STORAGE_KEY]: importedSettings,
       }),
     )
 
@@ -468,9 +505,9 @@ describe('importUserDataText', () => {
     expect(loadScoreSettings().parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
 
     saveScoreSettings(loadScoreSettings())
-    expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')).not.toHaveProperty(
-      'parameterBonusBase',
-    )
+    const resaved = JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY) ?? 'null')
+    expect(resaved.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+    expect(resaved.manualParameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
   })
 
   it('一覧フィルターの配列内の不正要素だけを除外する', () => {
@@ -691,15 +728,18 @@ describe('importUserDataText', () => {
     }
     localStorage.setItem(
       constant.SCORE_PRESETS_STORAGE_KEY,
-      JSON.stringify([{ name: '古い対象値', settings: staleSettings }]),
+      JSON.stringify([{ name: '未再計算の対象値', settings: staleSettings }]),
     )
 
     expect(loadPresets()[0]?.settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
   })
 
-  it('自動計算中の既存プリセットは次回保存でパラボ対象値を記録しない', async () => {
+  it('手動復元用フィールドがない自動計算プリセットでも手動回数を保持する', async () => {
+    const settingsWithoutManualSnapshots = createDefaultSettings(enums.ScenarioType.Hajime)
+    delete settingsWithoutManualSnapshots.manualParameterBonusBase
+    delete settingsWithoutManualSnapshots.manualScheduleActionCounts
     const staleSettings = {
-      ...createDefaultSettings(enums.ScenarioType.Hajime),
+      ...settingsWithoutManualSnapshots,
       scheduleSelections: { 4: enums.ActivityIdType.VoLesson },
       parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
       actionCounts: {
@@ -711,17 +751,17 @@ describe('importUserDataText', () => {
     }
     localStorage.setItem(
       constant.SCORE_PRESETS_STORAGE_KEY,
-      JSON.stringify([{ name: '古い対象値', settings: staleSettings }]),
+      JSON.stringify([{ name: '未再計算の対象値', settings: staleSettings }]),
     )
 
     const loaded = loadPresets()[0]
     expect(loaded?.settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
 
-    expect((await savePresetThroughCommand('古い対象値', loaded!.settings)).ok).toBe(true)
+    expect((await savePresetThroughCommand('未再計算の対象値', loaded!.settings)).ok).toBe(true)
 
     const stored = JSON.parse(localStorage.getItem(constant.SCORE_PRESETS_STORAGE_KEY) ?? 'null')
-    expect(stored[0].settings).not.toHaveProperty('parameterBonusBase')
-    expect(stored[0].settings.actionCounts).not.toHaveProperty(enums.ActionIdType.ActivitySupplyGift)
+    expect(stored[0].settings.parameterBonusBase).toEqual({ vocal: 140, dance: 55, visual: 55 })
+    expect(stored[0].settings.actionCounts[enums.ActionIdType.ActivitySupplyGift]).toBe(88)
     expect(stored[0].settings.actionCounts).not.toHaveProperty(enums.ActionIdType.LessonVo)
     expect(stored[0].settings.actionCounts[enums.ActionIdType.NormalLessonVo]).toBe(5)
   })

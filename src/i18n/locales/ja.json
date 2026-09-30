@@ -168,7 +168,7 @@
       "event_boost": "このサポートカードのイベントによるパラメータ上昇を{{value}}増加",
       "event_pp_boost": "このサポートカードのイベントによる獲得Pポイントを{{value}}増加",
       "event_recovery_boost": "このサポートカードのイベントによる体力回復量を{{value}}増加",
-      "support_rate": "このサポートカードのレッスンサポート発生率を{{value}}増加"
+      "support_rate": "このサポートカードのスキルカードサポート発生率を{{value}}増加"
     },
     "badge": {
       "initial_param": "初期パラ",
@@ -234,6 +234,7 @@
       "vitality": "-{{value}}",
       "hp": "体力消費{{value}}",
       "motivation": "やる気消費{{value}}",
+      "concentration": "集中消費{{value}}",
       "good_condition": "好調消費{{value}}ターン"
     },
     "skill_card_notes": {
@@ -346,7 +347,7 @@
       "keyword_turns_keyword_decrease": "{{keyword}}{{turns}}ターン\n・{{keyword2}}減少{{value}}",
       "keyword_turns_hp_cost": "{{keyword}}{{turns}}ターン\n・体力消費{{value}}",
       "keyword_pct_param_up": "{{keyword}}の{{value}}％分パラメータ上昇",
-      "keyword_increase_boost": "{{keyword}}増加量増加+{{value}}％\n（{{turns}}ターン）",
+      "keyword_increase_boost": "{{keyword}}増加量増加+{{value}}％（{{turns}}ターン）",
       "keyword_turns_keyword_up": "{{keyword}}{{turns}}ターン\n・{{keyword2}}+{{value}}",
       "param_up_boost": "パラメータ上昇量増加{{value}}％（{{turns}}ターン）",
       "param_up_boost_keyword": "パラメータ上昇量増加{{value}}％（{{turns}}ターン）\n・{{keyword}}+{{count}}",
@@ -419,10 +420,12 @@
         "param_up": "パラメータ+{{value}}",
         "param_up_multi": "パラメータ+{{value}}（{{count}}回）",
         "param_up_cumulative_keyword_pct_boost": "パラメータ+{{value}}（累積{{keyword}}の{{pct}}％分、パラメータ上昇量増加）",
+        "all_card_param_boost": "手札のパラメータ値増加+{{value}}",
         "growth_policy_change_param_boost": "成長：直接効果で指針を{{count}}回変更するたび、自身のパラメータ値増加+{{value}}（{{value2}}回まで）",
         "param_up_keyword_multiply": "パラメータ+{{value}}（{{keyword}}効果を{{rate}}倍適用）",
         "keyword_pct_param_up": "{{keyword}}の{{pct}}％分パラメータ上昇",
         "keyword_increase_boost": "{{keyword}}増加量増加+{{pct}}％（{{turns}}ターン）",
+        "keyword_increase_add": "{{keyword}}増加量追加+{{value}}（{{turns}}ターン）",
         "keyword_enhance_boost": "{{keyword}}強化+{{pct}}％（{{turns}}ターン）",
         "enthusiasm_boost": "熱意増加+{{pct}}％（{{turns}}ターン）",
         "keyword_up": "{{keyword}}+{{value}}",
@@ -533,6 +536,9 @@
       "interval": "インターバル"
     },
     "action": {
+      "lesson_vo": "レッスン(Vo)",
+      "lesson_da": "レッスン(Da)",
+      "lesson_vi": "レッスン(Vi)",
       "normal_lesson_vo": "通常レッスン(Vo)",
       "normal_lesson_da": "通常レッスン(Da)",
       "normal_lesson_vi": "通常レッスン(Vi)",

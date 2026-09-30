@@ -338,7 +338,7 @@ export type AbilityFormValueType = (typeof AbilityFormValueType)[keyof typeof Ab
 /**
  * スキルカードのコストタイプ定数。
  * スキルカードを使うときに消費するリソースの種類。
- * None はコストなし、残りは元気・体力・やる気・好調。
+ * None はコストなし、残りは元気・体力・やる気・集中・好調。
  */
 export const CostType = {
   /** コストなし */
@@ -349,6 +349,8 @@ export const CostType = {
   Hp: 'hp',
   /** やる気消費 */
   Motivation: 'motivation',
+  /** 集中消費 */
+  Concentration: 'concentration',
   /** 好調消費 */
   GoodCondition: 'good_condition',
 } as const
@@ -1487,6 +1489,8 @@ export const EffectTemplateKeyType = {
   KeywordLte: 'keyword_lte',
   /** キーワード増加量ブースト */
   KeywordIncreaseBoost: 'keyword_increase_boost',
+  /** キーワード増加量追加 */
+  KeywordIncreaseAdd: 'keyword_increase_add',
   /** キーワード%パラメータ追加 */
   KeywordPctParamAdd: 'keyword_pct_param_add',
   /** キーワード%パラメータ加算 */

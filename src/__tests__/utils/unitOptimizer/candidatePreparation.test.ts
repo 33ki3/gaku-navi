@@ -243,37 +243,3 @@ describe('Pアイテム相乗効果を考慮した候補選定', () => {
     expect(rentalPool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
   })
 })
-
-describe('Pアイテム相乗効果を考慮した候補選定', () => {
-  it('基礎点が低いPアイテム行動提供元を候補に残す', () => {
-    const settings = makeSettings({
-      plan: enums.PlanType.Sense,
-      allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual, enums.CardType.Assist],
-    })
-    const scoreSettings = { ...createDefaultSettings(), useFixedUncap: true }
-    const input = {
-      settings,
-      scoreSettings,
-      cardUncaps: {},
-      cardCountCustom: {},
-      excludedCardNames: [],
-      allCards: AllCards,
-      cardByName: new Map(AllCards.map((card) => [card.name, card])),
-    }
-    const schedule = {
-      effectiveCounts: {
-        [enums.ActionIdType.SpLessonDa]: 3,
-        [enums.ActionIdType.SpLessonVo]: 3,
-      },
-      perLessonValues: undefined,
-    }
-
-    const candidates = prepareCandidates(input, schedule)
-    const pool = selectSynergyAwareCandidates(candidates, 30)
-    const rentalPool = createRentalPool(input, schedule, new Set(), 30)
-    const expectedNames = ['ふわふわでワクワク', '今はあえて、背を向けて']
-
-    expect(pool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
-    expect(rentalPool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
-  })
-})

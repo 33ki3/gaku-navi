@@ -10,8 +10,13 @@ import * as data from '../../data'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
 import { ButtonSizeType } from '../../types/enums'
-import { calculateParameterBonusFromSchedule } from '../../utils/calculator/parameterBonus'
-import { loadScheduleSelections, loadScoreSettings, sumCustomParamBonusRows } from '../../utils/scoreSettings'
+import {
+  loadScheduleSelections,
+  loadScoreSettings,
+  normalizeScoreSettingsDerived,
+  resolveScoreSettingsDifficulty,
+  sumCustomParamBonusRows,
+} from '../../utils/scoreSettings'
 import { ToggleButton } from '../ui/ToggleButton'
 
 /** ScenarioDifficultySection コンポーネントに渡すプロパティ */
@@ -25,21 +30,6 @@ interface ScenarioDifficultySectionProps {
 /** シナリオ・難易度選択 */
 export function ScenarioDifficultySection({ settings, onSettingsChange }: ScenarioDifficultySectionProps) {
   const { t } = useTranslation()
-
-  const resolveParameterBonusBase = (
-    scenario: enums.ScenarioType,
-    difficulty: enums.DifficultyType,
-    useCustomMode: boolean,
-  ) =>
-    useCustomMode
-      ? sumCustomParamBonusRows(settings.customParamBonusRows)
-      : calculateParameterBonusFromSchedule(
-          settings.scheduleSelections,
-          scenario,
-          difficulty,
-          settings.hifLessonSplitSub,
-          settings.hifExamRatios,
-        )
 
   const difficultyOptions = data.getDifficultyOptionList(settings.scenario)
 
@@ -62,29 +52,22 @@ export function ScenarioDifficultySection({ settings, onSettingsChange }: Scenar
               onClick={() => {
                 const sharedSettings = loadScoreSettings()
                 const useCustomMode = opt.value === enums.ScenarioType.Custom
-                // 難易度なしシナリオ（HIF/カスタム）は DifficultyType.None、それ以外は共有設定の難易度を引き継ぐ
-                const newDifficulty: enums.DifficultyType =
-                  opt.value === enums.ScenarioType.Hif || opt.value === enums.ScenarioType.Custom
-                    ? enums.DifficultyType.None
-                    : sharedSettings.difficulty
+                // 難易度なしシナリオ（HIF/カスタム）は None、それ以外は切替先の既定値を解決する
+                const newDifficulty = resolveScoreSettingsDifficulty(opt.value, sharedSettings.difficulty)
                 const scheduleSelections = loadScheduleSelections(opt.value)
 
-                onSettingsChange({
-                  ...sharedSettings,
-                  scenario: opt.value,
-                  useCustomMode,
-                  difficulty: newDifficulty,
-                  scheduleSelections,
-                  parameterBonusBase: useCustomMode
-                    ? sumCustomParamBonusRows(sharedSettings.customParamBonusRows)
-                    : calculateParameterBonusFromSchedule(
-                        scheduleSelections,
-                        opt.value,
-                        newDifficulty,
-                        sharedSettings.hifLessonSplitSub,
-                        sharedSettings.hifExamRatios,
-                      ),
-                })
+                onSettingsChange(
+                  normalizeScoreSettingsDerived({
+                    ...sharedSettings,
+                    scenario: opt.value,
+                    useCustomMode,
+                    difficulty: newDifficulty,
+                    scheduleSelections,
+                    parameterBonusBase: useCustomMode
+                      ? sumCustomParamBonusRows(sharedSettings.customParamBonusRows)
+                      : sharedSettings.parameterBonusBase,
+                  }),
+                )
               }}
               activeClass={constant.BTN_TOGGLE_ACTIVE}
               inactiveClass={constant.BTN_TOGGLE_INACTIVE}
@@ -112,11 +95,12 @@ export function ScenarioDifficultySection({ settings, onSettingsChange }: Scenar
                 key={opt.value}
                 isActive={settings.difficulty === opt.value}
                 onClick={() =>
-                  onSettingsChange({
-                    ...settings,
-                    difficulty: opt.value,
-                    parameterBonusBase: resolveParameterBonusBase(settings.scenario, opt.value, settings.useCustomMode),
-                  })
+                  onSettingsChange(
+                    normalizeScoreSettingsDerived({
+                      ...settings,
+                      difficulty: opt.value,
+                    }),
+                  )
                 }
                 activeClass={constant.BTN_TOGGLE_ACTIVE}
                 inactiveClass={constant.BTN_TOGGLE_INACTIVE}

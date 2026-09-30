@@ -2,7 +2,7 @@
  * アクション回数カテゴリのマスタデータ。
  *
  * 点数計算の「アクション回数設定」セクションに表示する
- * 全アクションの一覧・グループ分類・グループラベルを統合的に定義する。
+ * 入力可能なアクションの一覧・グループ分類・グループラベルを統合的に定義する。
  */
 import type { TranslationKey } from '../../i18n'
 import { ActionGroupType, ActionIdType } from '../../types/enums'
@@ -41,9 +41,6 @@ const data: ActionGroupEntry[] = [
         label: 'score.action.exam_p_item',
         summaryLabel: 'score.summary.exam_p_item',
       },
-      { id: ActionIdType.LessonVo, label: 'score.action.lesson_vo' },
-      { id: ActionIdType.LessonDa, label: 'score.action.lesson_da' },
-      { id: ActionIdType.LessonVi, label: 'score.action.lesson_vi' },
       { id: ActionIdType.NormalLessonVo, label: 'score.action.normal_lesson_vo' },
       { id: ActionIdType.NormalLessonDa, label: 'score.action.normal_lesson_da' },
       { id: ActionIdType.NormalLessonVi, label: 'score.action.normal_lesson_vi' },

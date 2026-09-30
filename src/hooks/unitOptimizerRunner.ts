@@ -111,6 +111,7 @@ export function runOptimizerAsync(options: RunOptimizerOptions): Worker | null {
       cardUncaps: input.cardUncaps,
       cardCountCustom: input.cardCountCustom,
       allCards: input.allCards,
+      excludedCardNames: input.excludedCardNames,
     }
     const workerInput: UnitOptimizerWorkerRequestMessage = {
       type: UnitOptimizerWorkerMessageType.Start,

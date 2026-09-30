@@ -5,6 +5,8 @@
  * このファイルへ集約する
  */
 import * as constant from '../constant'
+import { EXPORT_KEYS } from '../data/ui'
+import type { ExportKey } from '../data/ui'
 import {
   FILTER_ARRAY_FIELD_METADATA,
   IMPORT_VALUE_METADATA,
@@ -12,18 +14,12 @@ import {
   UNIT_SETTINGS_ARRAY_FIELD_METADATA,
 } from '../data/ui/importData'
 import type { ImportArrayFieldMetadata, ImportValueMetadata } from '../data/ui/importData'
-import { EXPORT_KEYS } from '../data/ui'
-import type { ExportKey } from '../data/ui'
 import type { TranslationKey } from '../i18n'
 import i18n from '../i18n'
 import * as enums from '../types/enums'
 import { isParameterValues } from './domainValueValidation'
-import {
-  isImportableScorePreset,
-  isImportableScorePresetArray,
-  isImportableScoreSettings,
-} from './scoreSettingsValidation'
-import { isImportableAppPreferences, isUnitSimulatorSettings } from './settingsValidation'
+import { isScorePreset, isScorePresetArray, isScoreSettings } from './scoreSettingsValidation'
+import { isAppPreferences, isUnitSimulatorSettings } from './settingsValidation'
 import {
   isCardCountCustom,
   isPersistedFilterState,
@@ -31,6 +27,7 @@ import {
   isUncapRecord,
 } from './storageCollectionValidation'
 import { isSupportCard, isSupportCardArray } from './supportCardValidation'
+import { fillScoreSettingsDefaults } from './scoreSettings'
 import { isEnumValue, isRecord } from './valueValidation'
 
 /** 既存のutility利用者へ公開するエクスポート対象キーの型 */
@@ -186,6 +183,7 @@ const FILTER_ARRAY_FIELDS = withValidators(FILTER_ARRAY_FIELD_METADATA, {
   [enums.ImportArrayFieldKeyType.Sources]: (item) => isEnumValue(item, enums.SourceType),
   [enums.ImportArrayFieldKeyType.Uncaps]: (item) => isEnumValue(item, enums.UncapType),
   [enums.ImportArrayFieldKeyType.CountCustom]: (item) => isEnumValue(item, enums.CountCustomFilter),
+  [enums.ImportArrayFieldKeyType.CardExclusionFilters]: (item) => isEnumValue(item, enums.CardExclusionFilterType),
 })
 
 /** 最適編成設定の配列フィールドへ、項目ごとの型検証を割り当てる */
@@ -193,12 +191,15 @@ const UNIT_SETTINGS_ARRAY_FIELDS = withValidators(UNIT_SETTINGS_ARRAY_FIELD_META
   [enums.ImportArrayFieldKeyType.AllowedTypes]: (item) => isEnumValue(item, enums.CardType),
   [enums.ImportArrayFieldKeyType.LockedCards]: (item) => typeof item === 'string',
   [enums.ImportArrayFieldKeyType.ManualCards]: (item) => typeof item === 'string' || item === null,
+  [enums.ImportArrayFieldKeyType.ExcludedCardNames]: (item) => typeof item === 'string' && item.trim() !== '',
 })
 
 /** キーごとの検証方法とエラー表示情報 */
 interface ImportValueDefinition extends ImportValueMetadata {
   /** 保存値を検証する関数 */
   validate: (value: unknown) => boolean
+  /** 保存値で欠けた設定項目へ現在の既定値を補完する処理 */
+  fillDefaults: (value: unknown) => unknown
   /** 配列要素単位で救出できる場合の検証処理 */
   salvage?: (value: unknown) => ImportSalvageResult | null
 }
@@ -206,53 +207,84 @@ interface ImportValueDefinition extends ImportValueMetadata {
 /** キー判定を型ガードとして利用するための集合 */
 const EXPORT_KEY_SET = new Set<string>(EXPORT_KEYS)
 
+/** 固定項目を持たない保存値は変更せず返す */
+const keepStoredValue = (value: unknown): unknown => value
+
+/** 保存オブジェクトへ、値に応じた既定値を先に入れてから保存値を重ねる */
+function fillObjectDefaults(
+  value: unknown,
+  defaults: object | ((storedValue: Record<string, unknown>) => object),
+): unknown {
+  if (!isRecord(value)) return value
+  const resolvedDefaults = typeof defaults === 'function' ? defaults(value) : defaults
+  return { ...resolvedDefaults, ...value }
+}
+
+/** 点数設定プリセット内の各設定へ、点数設定と同じ既定値を補完する */
+function fillScorePresetDefaults(value: unknown): unknown {
+  if (!Array.isArray(value)) return value
+  return value.map((preset) =>
+    isRecord(preset) ? { ...preset, settings: fillScoreSettingsDefaults(preset.settings) } : preset,
+  )
+}
+
 /** localStorageキーごとの検証ルールと表示情報 */
 const IMPORT_VALUE_DEFINITIONS: Record<ExportKey, ImportValueDefinition> = {
   // 各保存キーを個別に検証し、壊れた項目だけを読み飛ばせるようにする
   [constant.UNCAP_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.UNCAP_STORAGE_KEY],
     validate: isUncapRecord,
+    fillDefaults: keepStoredValue,
   },
   [constant.SETTINGS_PINNED_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.SETTINGS_PINNED_KEY],
     validate: (value) => typeof value === 'boolean',
+    fillDefaults: keepStoredValue,
   },
   [constant.SCORE_SETTINGS_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.SCORE_SETTINGS_STORAGE_KEY],
-    validate: isImportableScoreSettings,
-    salvage: (value) => salvageObjectArrayFields(value, SCORE_SETTINGS_ARRAY_FIELDS, isImportableScoreSettings),
+    validate: isScoreSettings,
+    fillDefaults: fillScoreSettingsDefaults,
+    salvage: (value) => salvageObjectArrayFields(value, SCORE_SETTINGS_ARRAY_FIELDS, isScoreSettings),
   },
   [constant.SCHEDULE_SELECTIONS_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.SCHEDULE_SELECTIONS_STORAGE_KEY],
     validate: isScenarioScheduleSelections,
+    fillDefaults: keepStoredValue,
   },
   [constant.SCORE_PRESETS_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.SCORE_PRESETS_STORAGE_KEY],
-    validate: isImportableScorePresetArray,
-    salvage: (value) => salvageArrayItems(value, isImportableScorePreset),
+    validate: isScorePresetArray,
+    fillDefaults: fillScorePresetDefaults,
+    salvage: (value) => salvageArrayItems(value, isScorePreset),
   },
   [constant.FILTER_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.FILTER_STORAGE_KEY],
     validate: isPersistedFilterState,
+    fillDefaults: (value) => fillObjectDefaults(value, constant.DEFAULT_FILTER_STATE),
     salvage: (value) => salvageObjectArrayFields(value, FILTER_ARRAY_FIELDS, isPersistedFilterState),
   },
   [constant.CARD_COUNT_CUSTOM_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.CARD_COUNT_CUSTOM_KEY],
     validate: isCardCountCustom,
+    fillDefaults: keepStoredValue,
   },
   [constant.UNIT_SIMULATOR_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.UNIT_SIMULATOR_STORAGE_KEY],
     validate: isUnitSimulatorSettings,
+    fillDefaults: (value) => fillObjectDefaults(value, constant.DEFAULT_UNIT_SIMULATOR_SETTINGS),
     salvage: (value) => salvageObjectArrayFields(value, UNIT_SETTINGS_ARRAY_FIELDS, isUnitSimulatorSettings),
   },
   [constant.USER_SUPPORTS_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.USER_SUPPORTS_STORAGE_KEY],
     validate: isSupportCardArray,
+    fillDefaults: keepStoredValue,
     salvage: (value) => salvageArrayItems(value, isSupportCard),
   },
   [constant.APP_PREFERENCES_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.APP_PREFERENCES_STORAGE_KEY],
-    validate: isImportableAppPreferences,
+    validate: isAppPreferences,
+    fillDefaults: (value) => fillObjectDefaults(value, constant.DEFAULT_APP_PREFERENCES),
   },
 }
 
@@ -292,4 +324,9 @@ export function isExportData(value: unknown): value is ExportData {
  */
 export function getImportValueDefinition(key: ExportKey): ImportValueDefinition {
   return IMPORT_VALUE_DEFINITIONS[key]
+}
+
+/** 選択された保存カテゴリの不足項目へ、カテゴリごとの現在の既定値を補完する */
+export function fillImportValueDefaults(key: ExportKey, value: unknown): unknown {
+  return getImportValueDefinition(key).fillDefaults(value)
 }

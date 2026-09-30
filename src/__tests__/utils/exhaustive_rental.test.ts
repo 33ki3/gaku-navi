@@ -186,12 +186,14 @@ function getManualScore(pDrinkAcquire = 10): number {
     rentalCardName: 'いつまでも続けばいいのに',
     lockedCards: [],
     manualCards,
+    excludedCardNames: [],
     initialParams: { vocal: 125, dance: 169, visual: 210 },
   }
   const result = evaluateManualUnit({
     settings,
     scoreSettings: makeUserScoreSettings(pDrinkAcquire),
     cardUncaps: fullCardUncaps,
+    excludedCardNames: [],
     allCards: AllCards,
     cardByName: CardByName,
   })
@@ -227,12 +229,14 @@ function getManualScorePDrink12(): number {
     rentalCardName: 'いつまでも続けばいいのに',
     lockedCards: [],
     manualCards,
+    excludedCardNames: [],
     initialParams: { vocal: 125, dance: 169, visual: 210 },
   }
   const result = evaluateManualUnit({
     settings,
     scoreSettings: makeUserScoreSettings(12),
     cardUncaps: fullCardUncaps,
+    excludedCardNames: [],
     allCards: AllCards,
     cardByName: CardByName,
   })
@@ -265,6 +269,7 @@ describe('総当たり最適化', () => {
         rentalCardName: null,
         lockedCards: [],
         manualCards: [],
+        excludedCardNames: [],
         initialParams: { vocal: 125, dance: 169, visual: 210 },
       }
 
@@ -274,6 +279,7 @@ describe('総当たり最適化', () => {
           settings,
           scoreSettings: makeUserScoreSettings(10),
           cardUncaps: fullCardUncaps,
+          excludedCardNames: [],
           allCards: AllCards,
           cardByName: CardByName,
         },
@@ -315,6 +321,7 @@ describe('総当たり最適化', () => {
       rentalCardName: null,
       lockedCards: [],
       manualCards: [],
+      excludedCardNames: [],
       initialParams: { vocal: 125, dance: 169, visual: 210 },
       exhaustiveCandidateLimit: 100,
     }
@@ -324,6 +331,7 @@ describe('総当たり最適化', () => {
         settings,
         scoreSettings: makeUserScoreSettings(12),
         cardUncaps: fullCardUncaps,
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       },
@@ -362,6 +370,7 @@ describe('総当たり最適化', () => {
         rentalCardName: 'いつまでも続けばいいのに',
         lockedCards: [],
         manualCards: [],
+        excludedCardNames: [],
         initialParams: { vocal: 125, dance: 169, visual: 210 },
         unifyRentalLock: true,
         exhaustiveCandidateLimit: 30, // 探索範囲を狭めてテストを軽量化
@@ -376,6 +385,7 @@ describe('総当たり最適化', () => {
           settings,
           scoreSettings: makeUserScoreSettings(12),
           cardUncaps: fullCardUncaps,
+          excludedCardNames: [],
           allCards: AllCards,
           cardByName: CardByName,
         },
@@ -456,6 +466,7 @@ describe('総当たり最適化', () => {
       rentalCardName: null,
       lockedCards,
       manualCards: [],
+      excludedCardNames: [],
       initialParams: { vocal: 150, dance: 150, visual: 150 },
     }
 
@@ -465,6 +476,7 @@ describe('総当たり最適化', () => {
         settings,
         scoreSettings: skewedScoreSettings,
         cardUncaps: fullCardUncaps,
+        excludedCardNames: [],
         allCards: AllCards,
         cardByName: CardByName,
       },

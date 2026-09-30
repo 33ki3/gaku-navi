@@ -5,8 +5,8 @@
  * 安定したアクション関数（データ層）と変化する UI 状態（UI層）を分離し、
  * 不要な再レンダリングを抑制する。
  *
- * - CardDataContext: getCardUncap, onCardClick, onScoreClick, onUncapChange
- * - CardUIContext: uncapEditMode, onToggleUncapEdit, unitCardSelectMode, isCardEligible
+ * - CardDataContext: getCardUncap, onCardClick, onScoreClick, onUncapChange, isCardExcluded
+ * - CardUIContext: cardListMode, uncapEditMode, onToggleUncapEdit, isCardEligible
  *
  * App.tsx で両方の Provider を使って値を渡し、
  * 子コンポーネントでは useCardDataContext() / useCardUIContext() で取得する。
@@ -14,32 +14,30 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from 'react'
 import type { SupportCard } from '../types/card'
-import type { UncapType } from '../types/enums'
+import type { CardListInteractionModeType, UncapType } from '../types/enums'
 
 /** CardDataContext が提供する値の型（安定したアクション関数） */
 export interface CardDataContextValue {
   /** サポート名から現在の凸数を取得する関数 */
   getCardUncap: (cardName: string) => UncapType
-  /** サポートをクリックしたときのハンドラ（詳細モーダルを開く） */
+  /** サポートをクリックしたときの共通ハンドラ（通常時は詳細表示、選択時は選択処理、除外設定時は除外切り替え） */
   onCardClick: (card: SupportCard) => void
   /** スコアをクリックしたときのハンドラ（スコア内訳モーダルを開く） */
   onScoreClick: (card: SupportCard, e: React.MouseEvent) => void
   /** サポートの凸数を変更するハンドラ */
   onUncapChange: (cardName: string, uncap: UncapType) => void
-  /** ユーザー定義カードを編集するハンドラ */
-  onEditUserCard?: (card: SupportCard) => void
-  /** ユーザー定義カードを削除するハンドラ */
-  onDeleteUserCard?: (cardName: string) => void
+  /** サポートが最適編成から除外されているか判定する */
+  isCardExcluded: (cardName: string) => boolean
 }
 
 /** CardUIContext が提供する値の型（変化する UI 状態） */
 export interface CardUIContextValue {
-  /** 凸数編集モードがONかどうか */
+  /** サポート一覧で現在有効な選択系操作モード */
+  cardListMode: CardListInteractionModeType
+  /** 凸数セレクターを表示する編集モードか */
   uncapEditMode: boolean
   /** 凸数編集モードのON/OFFを切り替える関数 */
   onToggleUncapEdit: () => void
-  /** 手動編成のサポート一覧選択モード */
-  unitCardSelectMode?: boolean
   /** サポート選択モード中にサポートが選択可能かどうか判定する関数 */
   isCardEligible?: (card: SupportCard) => boolean
   /** isCardEligible の更新バージョン（変化時に CardListItem を強制再レンダリングするため） */

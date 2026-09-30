@@ -14,6 +14,7 @@ import type {
   ScoreSettings,
   SupportCard,
 } from '../../types/card'
+import type { OptimizeInput } from '../../types/unitOptimizer'
 import type { UncapType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import type { TypeCountValues, UnitSimulatorSettings } from '../../types/unit'
@@ -21,7 +22,6 @@ import { calculateCardParameter } from '../calculator/calculateCard'
 import { parseAbility } from '../calculator/helpers'
 import { isActionId } from '../domainValueValidation'
 import { getPItemBodyActionCounts, getProvidedActions } from '../supportSynergy'
-import type { OptimizeInput } from '../../types/unitOptimizer'
 
 /** ActionIdType の全値（インデックス参照用） */
 const ACTION_ID_VALUES = Object.values(enums.ActionIdType) as enums.ActionIdType[]
@@ -507,6 +507,7 @@ function buildRentalPool(
 ): CandidateCard[] {
   const { scoreSettings } = input
   const { effectiveCounts, perLessonValues } = schedule
+  const allExcludedNames = new Set([...excludedNames, ...input.excludedCardNames])
   const scoredCards: { candidate: CandidateCard; zeroCountScore: number }[] = []
 
   // ロックされているカードのタイプ数を集計する
@@ -534,7 +535,7 @@ function buildRentalPool(
   }
 
   for (const card of input.allCards) {
-    if (excludedNames.has(card.name)) continue
+    if (allExcludedNames.has(card.name)) continue
     if (shouldExcludeForContest(input.settings, card)) continue
     if (card.plan !== input.settings.plan && card.plan !== enums.PlanType.Free) continue
     if (input.settings.allowedTypes.length > 0 && !input.settings.allowedTypes.includes(card.type)) continue
@@ -768,10 +769,12 @@ export function prepareCandidates(input: OptimizeInput, schedule: ResolvedSchedu
   const { effectiveCounts, perLessonValues } = schedule
   const candidates: CandidateCard[] = []
   const lockedNameSet = new Set(settings.lockedCards)
+  const excludedNameSet = new Set(input.excludedCardNames)
 
   for (const card of allCards) {
     const isLocked = lockedNameSet.has(card.name)
     const effectiveLocked = isLocked && (card.plan === settings.plan || card.plan === enums.PlanType.Free)
+    if (!effectiveLocked && excludedNameSet.has(card.name)) continue
     if (!effectiveLocked && card.plan !== settings.plan && card.plan !== enums.PlanType.Free) continue
     if (!effectiveLocked && settings.allowedTypes.length > 0 && !settings.allowedTypes.includes(card.type)) continue
     if (!effectiveLocked && shouldExcludeForContest(settings, card)) continue

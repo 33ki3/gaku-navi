@@ -16,6 +16,8 @@ export interface UnitOptimizerWorkerInput {
   cardUncaps: Record<string, UncapType>
   cardCountCustom?: CardCountCustom
   allCards: SupportCard[]
+  /** 最適編成から除外するサポート名 */
+  excludedCardNames: readonly string[]
 }
 
 /** Worker通信メッセージ種別 */

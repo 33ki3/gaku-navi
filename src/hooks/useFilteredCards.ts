@@ -43,6 +43,7 @@ export function useFilteredCards(
   cardUncaps: Record<string, UncapType>,
   scoreSettings: ScoreSettings,
   countCustomCardNames: Set<string>,
+  excludedCardNames: ReadonlySet<string>,
 ): CardFiltersReturn {
   // フィルター条件の状態を取得する
   const state = useFilterState()
@@ -104,6 +105,8 @@ export function useFilteredCards(
         selectedCountCustom: state.selectedCountCustom,
         countCustomCardNames,
         cardUncaps,
+        excludedCardNames,
+        selectedCardExclusionFilters: state.selectedCardExclusionFilters,
       }),
     [
       sortedCards,
@@ -119,6 +122,8 @@ export function useFilteredCards(
       state.selectedCountCustom,
       countCustomCardNames,
       cardUncaps,
+      excludedCardNames,
+      state.selectedCardExclusionFilters,
     ],
   )
 

@@ -9,13 +9,15 @@ import * as data from '../../data'
 import type { AppOptionsState } from '../../hooks/useAppOptions'
 import type { AppState } from '../../hooks/useAppState'
 import type { PanelNavigationActions } from '../../hooks/usePanelNavigation'
-import type { UnitCardSelectionBridge } from '../../hooks/useUnitCardSelectionBridge'
+import type { CardListModeController } from '../../types/app'
+import * as enums from '../../types/enums'
 import { getActiveFilterCount } from '../../utils/filterCount'
 import { hasAllScheduleSelections } from '../../utils/scoreSettings'
+import AppHeader from '../header/AppHeader'
 import CardList from '../cardList/CardList'
 import EmptyState from '../cardList/EmptyState'
 import SortControls from '../filterBar/SortControls'
-import AppHeader from '../header/AppHeader'
+import { CardListModeCompletionBarContent } from './CardListModeCompletionBar'
 
 interface AppPageContentProps {
   /** アプリ全体の統合状態 */
@@ -24,8 +26,8 @@ interface AppPageContentProps {
   navigation: PanelNavigationActions
   /** 保存対象の表示設定とオプション画面操作 */
   options: AppOptionsState
-  /** 手動編成の選択操作 */
-  selection: UnitCardSelectionBridge
+  /** サポート一覧の操作モードと切り替え操作 */
+  cardListMode: CardListModeController
   /** 外部操作から下部ナビを表示し直す関数を登録する */
   registerMobileNavigationShow?: (handler: (() => void) | null) => void
 }
@@ -40,7 +42,7 @@ export function AppPageContent({
   state,
   navigation,
   options,
-  selection,
+  cardListMode,
   registerMobileNavigationShow,
 }: AppPageContentProps) {
   const { t } = useTranslation()
@@ -114,24 +116,22 @@ export function AppPageContent({
         </footer>
       </div>
 
-      {/* 手動選択中の完了操作バー */}
-      {state.ui.unitCardSelectMode && (
-        <div
-          className={`${constant.MANUAL_SELECTION_BAR} ${
-            options.preferences.showMobileBottomNav
-              ? constant.MANUAL_SELECTION_WITH_NAV
-              : constant.MANUAL_SELECTION_WITHOUT_NAV
-          }`}
-        >
-          <span className="text-xs font-bold">{t('unit.manual_select_bar')}</span>
-          <button
-            type="button"
-            onClick={selection.finishSelection}
-            className="rounded-lg bg-white px-3 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-50"
-          >
-            {t('unit.manual_select_done')}
-          </button>
-        </div>
+      {/* 手動選択・除外設定中の完了操作バー */}
+      {cardListMode.mode === enums.CardListInteractionModeType.CardExclusionEdit && (
+        <CardListModeCompletionBarContent
+          label="unit.card_exclusion_select_bar"
+          doneLabel="unit.manual_select_done"
+          onDone={cardListMode.toggleExclusion}
+          showMobileBottomNav={options.preferences.showMobileBottomNav}
+        />
+      )}
+      {cardListMode.mode === enums.CardListInteractionModeType.UnitCardSelect && (
+        <CardListModeCompletionBarContent
+          label="unit.manual_select_bar"
+          doneLabel="unit.manual_select_done"
+          onDone={cardListMode.finishManualSelection}
+          showMobileBottomNav={options.preferences.showMobileBottomNav}
+        />
       )}
     </>
   )

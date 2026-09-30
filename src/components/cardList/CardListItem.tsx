@@ -3,7 +3,7 @@
  *
  * 1枚のサポートカードを表示する。
  * サポート名・レアリティ・タイプ・プラン・イベント概要・スコアなどを
- * まとめて表示し、クリックで詳細モーダルを開く。
+ * まとめて表示し、クリックで詳細モーダルを開く。除外中のカードは右上のバッジで示す。
  * memoでラップして、不要な再描画を防ぐ。
  */
 import { memo, useCallback } from 'react'
@@ -14,7 +14,7 @@ import * as data from '../../data'
 import type { TranslationKey } from '../../i18n'
 import type { SupportCard } from '../../types/card'
 import type { UncapType } from '../../types/enums'
-import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
+import { BadgeSizeType, BadgeWeightType, CardListInteractionModeType } from '../../types/enums'
 import { getEventSummaryParts, hasSPAbility } from '../../utils/cardQuery'
 import { Badge } from '../ui/Badge'
 import { UncapSelector } from '../ui/UncapSelector'
@@ -43,11 +43,14 @@ export const CardListItem = memo(function CardListItem({
   hasCountCustom,
 }: CardListItemProps) {
   const { t } = useTranslation()
-  const { onCardClick, onScoreClick, onUncapChange } = useCardDataContext()
-  const { uncapEditMode, unitCardSelectMode, isCardEligible } = useCardUIContext()
+  const { onCardClick, onScoreClick, onUncapChange, isCardExcluded } = useCardDataContext()
+  const { cardListMode, uncapEditMode, isCardEligible } = useCardUIContext()
+  const isUnitCardSelectMode = cardListMode === CardListInteractionModeType.UnitCardSelect
+  const excluded = isCardExcluded(card.name)
+  const isCardExclusionEditMode = cardListMode === CardListInteractionModeType.CardExclusionEdit
 
   // サポート選択モード中の選択可否判定
-  const eligible = !unitCardSelectMode || (isCardEligible ? isCardEligible(card) : true)
+  const eligible = !isUnitCardSelectMode || (isCardEligible ? isCardEligible(card) : true)
 
   // サポートの見た目に必要な色やラベルを準備する
   const typeEntry = data.getTypeEntry(card.type)
@@ -61,42 +64,45 @@ export const CardListItem = memo(function CardListItem({
   // クリックハンドラをメモ化して再描画を減らす
   const handleClick = useCallback(() => {
     // サポート選択モード中で対象外のサポートはクリック不可
-    if (unitCardSelectMode && !eligible) return
+    if (isUnitCardSelectMode && !eligible) return
     onCardClick(card)
-  }, [onCardClick, card, unitCardSelectMode, eligible])
+  }, [eligible, onCardClick, card, isUnitCardSelectMode])
   const handleScoreClick = useCallback(
     (e: React.MouseEvent) => {
-      // 手動編成中はスコア行もカード選択として扱う
+      // 手動編成・除外設定中はスコア行も共通のカード選択処理として扱う
       // スコア詳細を開かず、親カードのクリック処理との二重実行も止める
-      if (unitCardSelectMode) {
+      if (isCardExclusionEditMode || isUnitCardSelectMode) {
         e.stopPropagation()
-        if (eligible) onCardClick(card)
+        if (!isUnitCardSelectMode || eligible) onCardClick(card)
         return
       }
       onScoreClick(card, e)
     },
-    [onScoreClick, onCardClick, card, unitCardSelectMode, eligible],
+    [onScoreClick, onCardClick, card, isUnitCardSelectMode, eligible, isCardExclusionEditMode],
   )
   const handleUncapChange = useCallback((u: UncapType) => onUncapChange(card.name, u), [onUncapChange, card.name])
-
   return (
     <div
       onClick={handleClick}
-      className={`${constant.CARD_ITEM_CONTAINER} ${typeEntry.stripe} ${unitCardSelectMode ? (eligible ? 'ring-2 ring-blue-300 cursor-copy' : 'opacity-40 grayscale cursor-not-allowed') : ''}`}
+      className={`${constant.CARD_ITEM_CONTAINER} ${typeEntry.stripe} ${isUnitCardSelectMode ? (eligible ? 'ring-2 ring-blue-300 cursor-copy' : 'opacity-40 grayscale cursor-not-allowed') : ''} ${isCardExclusionEditMode ? 'cursor-pointer' : ''}`}
     >
-      {/* SPアビリティがあるサポートは右上にSPバッジを表示 */}
-      {hasSP && (
-        <Badge
-          size={BadgeSizeType.Sm}
-          weight={BadgeWeightType.Black}
-          color="bg-amber-400 text-amber-900"
-          className="absolute top-2 right-2 z-[1] pointer-events-none"
-        >
-          {t('card.sp_badge')}
-        </Badge>
+      {/* バッジは同じ高さで右揃えにし、除外中を右端、SPをその左隣に表示する */}
+      {(excluded || hasSP) && (
+        <div className="pointer-events-none absolute top-2 right-2 z-[2] flex items-center gap-1">
+          {hasSP && (
+            <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color="bg-amber-400 text-amber-900">
+              {t('card.sp_badge')}
+            </Badge>
+          )}
+          {excluded && (
+            <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color="bg-slate-700 text-white">
+              {t('card.excluded_from_optimizer')}
+            </Badge>
+          )}
+        </div>
       )}
       <div className="p-2 flex-1 flex flex-col gap-1 min-w-0">
-        <div className={hasSP ? 'pr-8' : ''}>
+        <div className={excluded ? 'pr-12' : hasSP ? 'pr-8' : ''}>
           {/* サポート名 */}
           <div className="mb-1.5 overflow-x-auto scrollbar-none">
             <h2 className="text-[13px] font-black text-slate-800 leading-tight whitespace-nowrap group-hover:text-slate-900">
@@ -154,10 +160,11 @@ export const CardListItem = memo(function CardListItem({
         </div>
         {/* 凸数編集モードのときは凸数セレクターを表示 */}
         {uncapEditMode && (
-          <div className="pt-1 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+          <div className="pt-1 border-t border-slate-100 space-y-1.5" onClick={(e) => e.stopPropagation()}>
             <UncapSelector
               value={uncap}
               onChange={handleUncapChange}
+              disabled={isUnitCardSelectMode || isCardExclusionEditMode}
               activeClass="bg-amber-400 text-amber-900"
               inactiveClass="bg-slate-100 text-slate-400 hover:bg-slate-200"
             />

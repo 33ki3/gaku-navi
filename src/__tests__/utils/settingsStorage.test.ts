@@ -72,6 +72,25 @@ describe('最適編成設定の永続化', () => {
     expect(loadUnitSimulatorSettings()).toEqual(settings)
   })
 
+  it('保存値にない設定項目は現在の既定値を補完して読み戻す', () => {
+    const legacySettings = {
+      ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
+      manualRental: true,
+      rentalCardName: '旧設定のサポート',
+      excludedCardNames: undefined,
+      initialParams: undefined,
+    }
+    localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(legacySettings))
+
+    expect(loadUnitSimulatorSettings()).toEqual({
+      ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
+      manualRental: true,
+      rentalCardName: '旧設定のサポート',
+      excludedCardNames: [],
+      initialParams: constant.DEFAULT_UNIT_SIMULATOR_SETTINGS.initialParams,
+    })
+  })
+
   it('入れ子が壊れた設定は既定値へ戻す', () => {
     // typeCountMinのdanceだけをnullにして、設定全体の形を壊す
     localStorage.setItem(

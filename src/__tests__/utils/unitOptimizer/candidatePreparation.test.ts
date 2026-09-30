@@ -74,6 +74,7 @@ function makeSettings(overrides: Partial<UnitSimulatorSettings> = {}): UnitSimul
     rentalCardName: null,
     lockedCards: [],
     manualCards: [],
+    excludedCardNames: [],
     initialParams: { vocal: 0, dance: 0, visual: 0 },
     excludeContestSkillCards: true,
     excludeContestPItems: true,
@@ -107,6 +108,7 @@ describe('候補準備のコンテスト用除外', () => {
       scoreSettings: createDefaultSettings(),
       cardUncaps: {},
       cardCountCustom: {},
+      excludedCardNames: [],
       allCards,
       cardByName: new Map(allCards.map((card) => [card.name, card])),
     }
@@ -165,6 +167,7 @@ describe('候補準備のコンテスト用除外', () => {
       scoreSettings: createDefaultSettings(),
       cardUncaps: {},
       cardCountCustom: {},
+      excludedCardNames: [],
       allCards: [skillCard],
       cardByName: new Map([[skillCard.name, skillCard]]),
     }
@@ -173,6 +176,37 @@ describe('候補準備のコンテスト用除外', () => {
     const candidates = prepareCandidates(input, schedule)
 
     expect(candidates.map((candidate) => candidate.card.name)).toEqual([skillCard.name])
+  })
+
+  it('指定除外したサポートを通常候補と自動レンタル候補から除外する', () => {
+    const input = {
+      ...makeInput(makeSettings()),
+      excludedCardNames: ['通常サポート'],
+    }
+
+    const candidates = prepareCandidates(input, schedule)
+    const rentalPool = createRentalPool(input, schedule, new Set(), 10)
+
+    expect(candidates.map((candidate) => candidate.card.name)).not.toContain('通常サポート')
+    expect(rentalPool.map((candidate) => candidate.card.name)).not.toContain('通常サポート')
+  })
+
+  it('指定除外しても通常ロックされたサポートは固定候補として残す', () => {
+    const lockedName = '固定対象'
+    const lockedCard = makeCard(lockedName)
+    const input = {
+      settings: makeSettings({ lockedCards: [lockedName] }),
+      scoreSettings: createDefaultSettings(),
+      cardUncaps: {},
+      cardCountCustom: {},
+      allCards: [lockedCard],
+      cardByName: new Map([[lockedName, lockedCard]]),
+      excludedCardNames: [lockedName],
+    }
+
+    const candidates = prepareCandidates(input, schedule)
+
+    expect(candidates.map((candidate) => candidate.card.name)).toEqual([lockedName])
   })
 })
 
@@ -188,6 +222,41 @@ describe('Pアイテム相乗効果を考慮した候補選定', () => {
       scoreSettings,
       cardUncaps: {},
       cardCountCustom: {},
+      excludedCardNames: [],
+      allCards: AllCards,
+      cardByName: new Map(AllCards.map((card) => [card.name, card])),
+    }
+    const schedule = {
+      effectiveCounts: {
+        [enums.ActionIdType.SpLessonDa]: 3,
+        [enums.ActionIdType.SpLessonVo]: 3,
+      },
+      perLessonValues: undefined,
+    }
+
+    const candidates = prepareCandidates(input, schedule)
+    const pool = selectSynergyAwareCandidates(candidates, 30)
+    const rentalPool = createRentalPool(input, schedule, new Set(), 30)
+    const expectedNames = ['ふわふわでワクワク', '今はあえて、背を向けて']
+
+    expect(pool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
+    expect(rentalPool.map((candidate) => candidate.card.name)).toEqual(expect.arrayContaining(expectedNames))
+  })
+})
+
+describe('Pアイテム相乗効果を考慮した候補選定', () => {
+  it('基礎点が低いPアイテム行動提供元を候補に残す', () => {
+    const settings = makeSettings({
+      plan: enums.PlanType.Sense,
+      allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual, enums.CardType.Assist],
+    })
+    const scoreSettings = { ...createDefaultSettings(), useFixedUncap: true }
+    const input = {
+      settings,
+      scoreSettings,
+      cardUncaps: {},
+      cardCountCustom: {},
+      excludedCardNames: [],
       allCards: AllCards,
       cardByName: new Map(AllCards.map((card) => [card.name, card])),
     }

@@ -6,6 +6,7 @@
 import * as enums from '../types/enums'
 import { isActionCountRecord, isEnumArray, isScheduleSelectionRecord } from './domainValueValidation'
 import { isEnumValue, isOptional, isRecord } from './valueValidation'
+
 /**
  * サポート名から凸数へのマップか判定する
  *
@@ -50,6 +51,7 @@ export function isPersistedFilterState(value: unknown): boolean {
     isEnumArray(value.sources, enums.SourceType) &&
     isEnumArray(value.uncaps, enums.UncapType) &&
     isEnumArray(value.countCustom, enums.CountCustomFilter) &&
+    isEnumArray(value.cardExclusionFilters, enums.CardExclusionFilterType) &&
     isEnumValue(value.sortMode, enums.SortModeType) &&
     typeof value.sortReverse === 'boolean'
   )

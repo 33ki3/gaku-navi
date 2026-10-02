@@ -165,6 +165,9 @@ export function parseCardDetailSections(value: unknown): WebMcpCardDetailSection
 export function parseFilterStatePatch(value: unknown): Partial<PersistedFilterState> | null {
   const input = asInputRecord(value)
   if (input === null) return null
+  // 保存項目と全解除の操作項目だけを受け付け、誤記による部分更新を防ぐ
+  if (!hasOnlyKeys(input, [...Object.keys(constant.DEFAULT_FILTER_STATE), webMcp.WebMcpSchemaField.ClearFilters]))
+    return null
   const patch: Partial<PersistedFilterState> = {}
 
   // 省略された項目は現在値を維持し、指定された項目だけを差分として組み立てる
@@ -244,8 +247,9 @@ export function parseFilterStatePatch(value: unknown): Partial<PersistedFilterSt
 export function parseAppPreferencesPatch(value: unknown): Partial<AppPreferences> | null {
   const input = asInputRecord(value)
   if (input === null) return null
+  // 表示設定も既定値に定義されたキーだけを許可し、更新前に入力全体を検証する
+  if (!hasOnlyKeys(input, Object.keys(constant.DEFAULT_APP_PREFERENCES))) return null
   const patch: Partial<AppPreferences> = {}
-  // 表示設定はtrue/falseの差分だけを受け取り、未知のキーは保存処理へ渡さない
   if (input.showMobileBottomNav !== undefined) {
     if (typeof input.showMobileBottomNav !== 'boolean') return null
     patch.showMobileBottomNav = input.showMobileBottomNav
@@ -542,10 +546,9 @@ function parseUnitSettingsPatch(value: unknown): UnitSettingsVariantPatch | null
       webMcp.WebMcpSchemaField.TypeCountMin,
       webMcp.WebMcpSchemaField.TypeCountMax,
       webMcp.WebMcpSchemaField.ParamBonusPercent,
-      webMcp.WebMcpSchemaField.ManualRental,
       webMcp.WebMcpSchemaField.RentalCardName,
       webMcp.WebMcpSchemaField.LockedCards,
-      webMcp.WebMcpSchemaField.ManualCards,
+      webMcp.WebMcpSchemaField.SelectedCards,
       webMcp.WebMcpSchemaField.ExcludedCardNames,
       webMcp.WebMcpSchemaField.InitialParams,
       webMcp.WebMcpSchemaField.ParamCapOverride,
@@ -602,10 +605,6 @@ function parseUnitSettingsPatch(value: unknown): UnitSettingsVariantPatch | null
     patch.initialParams = initialParams
   }
 
-  if (input.manualRental !== undefined) {
-    if (typeof input.manualRental !== 'boolean') return null
-    patch.manualRental = input.manualRental
-  }
   if (input.unifyRentalLock !== undefined) {
     if (typeof input.unifyRentalLock !== 'boolean') return null
     patch.unifyRentalLock = input.unifyRentalLock
@@ -632,10 +631,10 @@ function parseUnitSettingsPatch(value: unknown): UnitSettingsVariantPatch | null
     if (lockedCards === null) return null
     patch.lockedCards = lockedCards
   }
-  if (input.manualCards !== undefined) {
-    const manualCards = parseNullableStringArray(input.manualCards)
-    if (manualCards === null) return null
-    patch.manualCards = manualCards
+  if (input.selectedCards !== undefined) {
+    const selectedCards = parseNullableStringArray(input.selectedCards)
+    if (selectedCards === null) return null
+    patch.selectedCards = selectedCards
   }
   if (input.excludedCardNames !== undefined) {
     const excludedCardNames = parseStringArray(input.excludedCardNames)

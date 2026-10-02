@@ -8,7 +8,7 @@ import * as constant from '../../constant'
 import { AllCards, TriggerActionMap, getScheduleData } from '../../data'
 import * as scoreData from '../../data/score'
 import { resolveParamCap } from '../../data/score/paramCap'
-import type { ScoreSettings } from '../../types/card'
+import type { ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
 import { calculateCardParameter } from '../../utils/calculator/calculateCard'
@@ -67,10 +67,9 @@ function makeSimulatorSettings(
       [enums.ParameterType.Visual]: constant.TYPE_COUNT_MAX_DEFAULT,
     },
     paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
-    manualRental: false,
     rentalCardName: null,
     lockedCards: [],
-    manualCards: cardNames,
+    selectedCards: cardNames,
     excludedCardNames: [],
     initialParams: { vocal: 0, dance: 0, visual: 0 },
     ...overrides,
@@ -78,6 +77,71 @@ function makeSimulatorSettings(
 }
 
 describe('最適編成', () => {
+  it('カスタム行の丸めが単体・手動編成・最適編成で一致する', async () => {
+    const cards: SupportCard[] = Array.from({ length: 6 }, (_, index) => ({
+      ...AllCards[0],
+      name: `丸め確認${index}`,
+      type: enums.CardType.Vocal,
+      parameter_type: enums.ParameterType.Vocal,
+      plan: enums.PlanType.Free,
+      events: [],
+      p_item: null,
+      skill_card: null,
+      abilities:
+        index === 0
+          ? [
+              {
+                name_key: enums.AbilityNameKeyType.ParameterBonus,
+                trigger_key: enums.TriggerKeyType.VoParameterBonus,
+                values: { '4': '10%' },
+                is_parameter_bonus: true,
+                is_percentage: true,
+                parameter_type: enums.ParameterType.Vocal,
+              },
+            ]
+          : [],
+    }))
+    const scoreSettings = makeScoreSettings({
+      scenario: enums.ScenarioType.Custom,
+      difficulty: enums.DifficultyType.None,
+      useCustomMode: true,
+      customParamBonusRows: [
+        { vocal: 15, dance: 0, visual: 0 },
+        { vocal: 15, dance: 0, visual: 0 },
+      ],
+      parameterBonusBase: { vocal: 30, dance: 0, visual: 0 },
+    })
+    const settings = makeSimulatorSettings(
+      cards.map((card) => card.name),
+      {
+        allowedTypes: [enums.CardType.Vocal],
+        typeCountMax: { vocal: 6, dance: 6, visual: 6 },
+        rentalCardName: cards[5].name,
+        lockedCards: [cards[5].name],
+      },
+    )
+    const input = {
+      settings,
+      scoreSettings,
+      cardUncaps: {},
+      allCards: cards,
+      excludedCardNames: [],
+      cardByName: new Map(cards.map((card) => [card.name, card])),
+    }
+    const single = calculateCardParameter(cards[0], enums.UncapType.Four, {}, {}, scoreSettings.customParamBonusRows)
+    expect(single.parameterBonus).toBe(2)
+    const manual = evaluateManualUnit(input)
+    const optimized = await exhaustiveOptimizeAsync(
+      input,
+      () => undefined,
+      () => false,
+    )
+    expect(manual?.parameterBonus).toEqual({ vocal: 2, dance: 0, visual: 0 })
+    expect(manual?.totalScore).toBe(32)
+    expect(optimized?.parameterBonus).toEqual(manual?.parameterBonus)
+    expect(optimized?.totalScore).toBe(manual?.totalScore)
+  })
+
   describe('パラメータ上限値', () => {
     it('通常シナリオではoverrideを無視してシナリオ既定値を使う', () => {
       expect(resolveParamCap(enums.ScenarioType.Hajime, enums.DifficultyType.Legend, 3200)).toBe(3000)
@@ -124,7 +188,7 @@ describe('最適編成', () => {
         enums.UncapType.Four,
         effectiveCounts,
         {},
-        scoreSettings.parameterBonusBase,
+        [scoreSettings.parameterBonusBase],
         scoreSettings.includeSelfTrigger,
         scoreSettings.includePItem,
       )
@@ -778,7 +842,7 @@ describe('最適編成', () => {
       const input = {
         settings: makeSimulatorSettings([], {
           plan: enums.PlanType.Sense,
-          manualRental: true,
+          lockedCards: [testCards[0].name],
           rentalCardName: testCards[0].name,
           typeCountMax: {
             [enums.ParameterType.Vocal]: constant.UNIT_SIZE,
@@ -821,7 +885,6 @@ describe('最適編成', () => {
       const input = {
         settings: makeSimulatorSettings([], {
           plan: enums.PlanType.Sense,
-          manualRental: false,
           rentalCardName: null,
           exhaustiveCandidateLimit: 14,
         }),

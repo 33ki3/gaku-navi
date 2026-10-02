@@ -4,16 +4,10 @@
  * 編成評価ホットパスを独立モジュール化し、
  * 探索ロジック本体から責務を分離する。
  */
-import * as constant from '../../constant'
 import type { ParameterValues } from '../../types/card'
-
-/** 評価に必要なシナジー情報 */
-interface EvaluatorSynergyAbility {
-  actionIdx: number
-  parsedValue: number
-  maxCount: number | undefined
-  usedCount: number
-}
+import { calculateParameterBonus } from '../calculator/parameterBonus'
+import type { SynergyAbility } from './synergyScore'
+import { calculateSynergyScore } from './synergyScore'
 
 /** 評価対象メンバーの最小情報 */
 interface EvaluatorMember {
@@ -22,7 +16,7 @@ interface EvaluatorMember {
   paramBonusPercent: ParameterValues
   providedActionsVec: Float64Array
   providedActionEntries: { actionIdx: number; count: number }[]
-  synergyAbilities: EvaluatorSynergyAbility[]
+  synergyAbilities: SynergyAbility[]
 }
 
 /** 評価時の固定コンテキスト */
@@ -97,7 +91,7 @@ export function createEvaluatorSeed(fixedMembers: EvaluatorMember[]): EvaluatorS
  *
  * @param seed - 固定メンバーの事前集計シード
  * @param variableMembers - 可変メンバー
- * @param parameterBonusBase - パラメータボーナス基礎値
+ * @param parameterBonusRows - 上昇機会ごとのVo/Da/Vi値
  * @param outsideParamBonusPercent - サポート外パラメータボーナス%
  * @param ctx - パラメータキャップ含む評価コンテキスト
  * @returns キャップ適用済みユニット合計スコア
@@ -105,7 +99,7 @@ export function createEvaluatorSeed(fixedMembers: EvaluatorMember[]): EvaluatorS
 export function evaluateUnitScoreWithSeed(
   seed: EvaluatorSeed,
   variableMembers: EvaluatorMember[],
-  parameterBonusBase: ParameterValues,
+  parameterBonusRows: ParameterValues[],
   outsideParamBonusPercent: ParameterValues,
   ctx: EvaluatorContext,
 ): number {
@@ -141,16 +135,7 @@ export function evaluateUnitScoreWithSeed(
     supportScoreBuffer[pi] += m.baseScoreWithoutParamBonus
 
     // 自身が提供した回数は除外し、他メンバー提供分のみをシナジーとして加算する
-    const vec = m.providedActionsVec
-    for (const sa of m.synergyAbilities) {
-      let extraCount = totalProvidedBuffer[sa.actionIdx] - vec[sa.actionIdx]
-      if (extraCount <= 0) continue
-      if (sa.maxCount !== undefined) {
-        extraCount = Math.min(extraCount, sa.maxCount - sa.usedCount)
-        if (extraCount <= 0) continue
-      }
-      supportScoreBuffer[pi] += Math.floor(sa.parsedValue * extraCount)
-    }
+    supportScoreBuffer[pi] += calculateSynergyScore(m.synergyAbilities, totalProvidedBuffer, m.providedActionsVec)
   }
 
   // 固定メンバー側も同様にシナジー加点のみ再計算して足し込む
@@ -158,29 +143,18 @@ export function evaluateUnitScoreWithSeed(
     const pi = m.paramIndex
     if (pi < 0) continue
 
-    const vec = m.providedActionsVec
-    for (const sa of m.synergyAbilities) {
-      let extraCount = totalProvidedBuffer[sa.actionIdx] - vec[sa.actionIdx]
-      if (extraCount <= 0) continue
-      if (sa.maxCount !== undefined) {
-        extraCount = Math.min(extraCount, sa.maxCount - sa.usedCount)
-        if (extraCount <= 0) continue
-      }
-      supportScoreBuffer[pi] += Math.floor(sa.parsedValue * extraCount)
-    }
+    supportScoreBuffer[pi] += calculateSynergyScore(m.synergyAbilities, totalProvidedBuffer, m.providedActionsVec)
   }
 
-  // ユニット全体パラボ（サポート内+サポート外）をタイプ別に加算する
-  supportScoreBuffer[0] += Math.floor(
-    (parameterBonusBase.vocal * (supportPercentBuffer[0] + outsideParamBonusPercent.vocal)) / constant.PERCENT_DIVISOR,
-  )
-  supportScoreBuffer[1] += Math.floor(
-    (parameterBonusBase.dance * (supportPercentBuffer[1] + outsideParamBonusPercent.dance)) / constant.PERCENT_DIVISOR,
-  )
-  supportScoreBuffer[2] += Math.floor(
-    (parameterBonusBase.visual * (supportPercentBuffer[2] + outsideParamBonusPercent.visual)) /
-      constant.PERCENT_DIVISOR,
-  )
+  // 上昇機会ごとに編成全体のボーナス率を適用し、結果表示と同じ丸め規則で集計する
+  const parameterBonus = calculateParameterBonus(parameterBonusRows, {
+    vocal: supportPercentBuffer[0] + outsideParamBonusPercent.vocal,
+    dance: supportPercentBuffer[1] + outsideParamBonusPercent.dance,
+    visual: supportPercentBuffer[2] + outsideParamBonusPercent.visual,
+  })
+  supportScoreBuffer[0] += parameterBonus.vocal
+  supportScoreBuffer[1] += parameterBonus.dance
+  supportScoreBuffer[2] += parameterBonus.visual
 
   // 最後にパラメータ上限を適用して合計スコアを返す
   const cap = ctx.paramCap

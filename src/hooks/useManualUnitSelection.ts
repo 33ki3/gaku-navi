@@ -9,6 +9,7 @@ import * as constant from '../constant'
 import type { SupportCard } from '../types/card'
 import * as enums from '../types/enums'
 import type { UnitSimulatorSettings } from '../types/unit'
+import { getUnitSlotCards } from '../utils/unitCardSelection'
 
 interface UseManualUnitSelectionParams {
   /** 現在の最適編成設定 */
@@ -104,11 +105,10 @@ export function useManualUnitSelection({
     const addCard = (cardName: string) => {
       // 同じカードの重複と6枚超過を先に拒否する
       const currentSettings = settingsRef.current
-      const filledCount = currentSettings.manualCards.filter((name) => name !== null).length
-      if (filledCount >= constant.UNIT_SIZE || currentSettings.manualCards.includes(cardName)) return
+      const filledCount = currentSettings.selectedCards.filter((name) => name !== null).length
+      if (filledCount >= constant.UNIT_SIZE || currentSettings.selectedCards.includes(cardName)) return
 
-      const nextCards = [...currentSettings.manualCards]
-      while (nextCards.length < constant.UNIT_SIZE) nextCards.push(null)
+      const nextCards = getUnitSlotCards(currentSettings)
 
       const targetIndex = targetSlotIndexRef.current
       // 指定枠が空いていればそこへ、そうでなければ先頭の空き枠へ入れる
@@ -118,11 +118,11 @@ export function useManualUnitSelection({
       nextCards[insertIndex] = cardName
       clearTargetSlot()
 
-      const rentalName = nextCards[constant.UNIT_SIZE - 1] ?? currentSettings.rentalCardName
-      // 最後の枠をレンタル枠として扱い、手動設定と表示を一致させる
+      const rentalName = insertIndex === constant.UNIT_SIZE - 1 ? cardName : currentSettings.rentalCardName
+      // 選択枠の位置と空き枠を保持し、6枠目への選択だけレンタル名も更新する
       setSettingsRef.current({
         ...currentSettings,
-        manualCards: nextCards,
+        selectedCards: nextCards,
         rentalCardName: rentalName,
       })
 
@@ -143,10 +143,9 @@ export function useManualUnitSelection({
       // プラン・重複・凸数の条件を一覧側のクリック前に判定する
       const currentSettings = settingsRef.current
       if (card.plan !== enums.PlanType.Free && card.plan !== currentSettings.plan) return false
-      if (currentSettings.manualCards.includes(card.name)) return false
+      if (currentSettings.selectedCards.includes(card.name)) return false
 
-      const nextCards = [...currentSettings.manualCards]
-      while (nextCards.length < constant.UNIT_SIZE) nextCards.push(null)
+      const nextCards = getUnitSlotCards(currentSettings)
       const effectiveTargetIndex = targetSlotIndexRef.current ?? nextCards.indexOf(null)
       const isRentalSlot = effectiveTargetIndex === constant.UNIT_SIZE - 1
 
@@ -155,7 +154,7 @@ export function useManualUnitSelection({
 
     registerIsCardEligible(isEligible)
     return () => registerIsCardEligible(null)
-  }, [registerIsCardEligible, settings.manualCards, settings.plan, targetSlotIndex, useFixedUncap])
+  }, [registerIsCardEligible, settings.selectedCards, settings.plan, targetSlotIndex, useFixedUncap])
 
   // 指定したスロットを選択対象にして、スマホでは一覧へ戻る
   const startSlotSelection = useCallback(

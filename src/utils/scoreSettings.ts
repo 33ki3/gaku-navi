@@ -10,17 +10,10 @@ import type { ScheduleWeekData } from '../data'
 import * as data from '../data'
 import type { TranslationKey } from '../i18n'
 import type { ScenarioScheduleSelections } from '../types/calculation'
-import type {
-  ActionCounts,
-  ParameterValues,
-  PerLessonParameterValues,
-  ScoreSettings,
-  ScoreSettingsBase,
-} from '../types/card'
+import type { ActionCounts, ParameterValues, ScoreSettings, ScoreSettingsBase } from '../types/card'
 import * as enums from '../types/enums'
 import { StorageOperationPhase, StorageTransactionOutcome, type StorageTransactionResult } from '../types/storage'
 import { calculateParameterBonusFromSchedule } from './calculator/parameterBonus'
-import { normalizeHifLessonActivityForPairMode, resolveHifLessonPair } from './hifScheduleHelpers'
 import { isScoreSettings } from './scoreSettingsValidation'
 import { isScenarioScheduleSelections } from './storageCollectionValidation'
 import { applyStorageEntries, createStorageSnapshotResult } from './storageTransaction'
@@ -172,12 +165,15 @@ export function resolveScoreSettingsDifficulty(
  * @returns 難易度とパラメータボーナスを正規化した設定
  */
 export function normalizeScoreSettingsDerived(settings: ScoreSettings): ScoreSettings {
-  // シナリオに合わせて難易度をそろえ、スケジュール連動時だけパラメータボーナスを再計算する
+  // カスタム行の合計とスケジュール派生値を、UI・外部更新・保存で共通の規則へそろえる
   const difficulty = resolveScoreSettingsDifficulty(settings.scenario, settings.difficulty)
   if (!settings.useScheduleLimits || settings.useCustomMode) {
     return {
       ...settings,
       difficulty,
+      parameterBonusBase: settings.useCustomMode
+        ? sumCustomParamBonusRows(settings.customParamBonusRows)
+        : settings.parameterBonusBase,
       manualParameterBonusBase: settings.useCustomMode
         ? (settings.manualParameterBonusBase ?? settings.parameterBonusBase)
         : settings.parameterBonusBase,
@@ -298,18 +294,11 @@ function sanitizeScheduleSelections(
     const weekData = weekByNumber.get(week)
     if (!weekData) continue
 
-    // HIFの保存形式を表示モードに合わせて現在のフォームへそろえる
-    const normalizedActivityId =
-      scenario === enums.ScenarioType.Hif
-        ? hifLessonSplitSub && resolveHifLessonPair(activityId)
-          ? resolveHifLessonPair(activityId)!.main
-          : !hifLessonSplitSub
-            ? normalizeHifLessonActivityForPairMode(activityId)
-            : activityId
-        : activityId
+    // 副属性を含む保存値は維持し、現在の表示モードに投影して候補を検証する
+    const normalizedActivityId = data.getScheduleActivityForMode(activityId, scenario, hifLessonSplitSub)
     if (data.isScheduleActivityAllowed(weekData, normalizedActivityId, scenario, hifLessonSplitSub)) {
       // 現在の週に存在する活動だけを採用する
-      sanitized[week] = normalizedActivityId
+      sanitized[week] = activityId
     }
   }
   return sanitized
@@ -414,7 +403,12 @@ export function hasAllScheduleSelections(settings: ScoreSettings): boolean {
     const selected = settings.scheduleSelections[week.week]
     const isValidSelection =
       selected !== undefined &&
-      data.isScheduleActivityAllowed(week, selected, settings.scenario, settings.hifLessonSplitSub)
+      data.isScheduleActivityAllowed(
+        week,
+        data.getScheduleActivityForMode(selected, settings.scenario, settings.hifLessonSplitSub),
+        settings.scenario,
+        settings.hifLessonSplitSub,
+      )
     if (!isFullyFixed && !isValidSelection) {
       // 1週でも未選択・無効なら、スケジュール由来の派生値は未確定とする
       return false
@@ -468,7 +462,11 @@ export function calculateCountsFromSchedule(
   const effectiveSelections = getEffectiveScheduleSelections(selections, schedule)
 
   for (const week of schedule) {
-    const selected: enums.ActivityIdType | undefined = effectiveSelections[week.week]
+    const stored = effectiveSelections[week.week]
+    const selected =
+      stored === undefined
+        ? undefined
+        : data.getScheduleActivityForMode(stored, scenario ?? enums.ScenarioType.Hajime, hifLessonSplitSub)
 
     if (!selected) continue
     if (scenario !== undefined && !data.isScheduleActivityAllowed(week, selected, scenario, hifLessonSplitSub)) {
@@ -590,27 +588,12 @@ export function loadScoreSettings(): ScoreSettings {
 }
 
 /**
- * カスタムパラメータボーナス行配列を PerLessonParameterValues に変換する
- *
- * @param rows - カスタムパラメータボーナス行の配列
- * @returns レッスンごとの Vo/Da/Vi 配列
- */
-export function customRowsToPerLessonValues(rows: ParameterValues[]): PerLessonParameterValues {
-  // 行配列を計算器が使う属性別配列へ転置する
-  return {
-    vocal: rows.map((r) => r.vocal),
-    dance: rows.map((r) => r.dance),
-    visual: rows.map((r) => r.visual),
-  }
-}
-
-/**
  * カスタムパラメータボーナス行配列の合計値を返す
  *
  * @param rows - カスタムパラメータボーナス行の配列
  * @returns Vo/Da/Vi の合計値
  */
-export function sumCustomParamBonusRows(rows: ParameterValues[]): ParameterValues {
+function sumCustomParamBonusRows(rows: ParameterValues[]): ParameterValues {
   // カスタム行をVo/Da/Viごとに合算し、表示と計算で同じ合計値を使う
   return {
     vocal: rows.reduce((s, r) => s + r.vocal, 0),

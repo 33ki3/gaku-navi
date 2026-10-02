@@ -20,7 +20,7 @@ function createDefaultSettings(): UnitSimulatorSettings {
     typeCountMax: { ...defaults.typeCountMax },
     paramBonusPercent: { ...defaults.paramBonusPercent },
     lockedCards: [...defaults.lockedCards],
-    manualCards: [...defaults.manualCards],
+    selectedCards: [...defaults.selectedCards],
     excludedCardNames: [...defaults.excludedCardNames],
     initialParams: { ...defaults.initialParams },
   }
@@ -35,7 +35,6 @@ function createDefaultSettings(): UnitSimulatorSettings {
 function cloneSettings(settings: UnitSimulatorSettings): UnitSimulatorSettings {
   // 入れ子の配列・対応表も複製し、読み込み後の画面変更から既定値を守る
   return {
-    ...createDefaultSettings(),
     ...settings,
     allowedTypes: [...settings.allowedTypes],
     spConstraint: { ...settings.spConstraint },
@@ -43,7 +42,7 @@ function cloneSettings(settings: UnitSimulatorSettings): UnitSimulatorSettings {
     typeCountMax: { ...settings.typeCountMax },
     paramBonusPercent: { ...settings.paramBonusPercent },
     lockedCards: [...settings.lockedCards],
-    manualCards: [...settings.manualCards],
+    selectedCards: [...settings.selectedCards],
     excludedCardNames: [...settings.excludedCardNames],
     initialParams: { ...settings.initialParams },
   }
@@ -57,7 +56,7 @@ function cloneSettings(settings: UnitSimulatorSettings): UnitSimulatorSettings {
  */
 function parseUnitSimulatorSettings(value: unknown): UnitSimulatorSettings | null {
   // 保存値にない項目だけを既定値で補ってから、設定全体を検証する
-  const settings = isRecord(value) ? { ...createDefaultSettings(), ...value } : value
+  const settings = isRecord(value) ? { ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS, ...value } : value
   return isUnitSimulatorSettings(settings) ? cloneSettings(settings) : null
 }
 

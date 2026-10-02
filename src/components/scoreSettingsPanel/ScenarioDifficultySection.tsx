@@ -15,7 +15,6 @@ import {
   loadScoreSettings,
   normalizeScoreSettingsDerived,
   resolveScoreSettingsDifficulty,
-  sumCustomParamBonusRows,
 } from '../../utils/scoreSettings'
 import { ToggleButton } from '../ui/ToggleButton'
 
@@ -63,9 +62,6 @@ export function ScenarioDifficultySection({ settings, onSettingsChange }: Scenar
                     useCustomMode,
                     difficulty: newDifficulty,
                     scheduleSelections,
-                    parameterBonusBase: useCustomMode
-                      ? sumCustomParamBonusRows(sharedSettings.customParamBonusRows)
-                      : sharedSettings.parameterBonusBase,
                   }),
                 )
               }}

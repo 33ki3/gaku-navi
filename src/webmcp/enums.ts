@@ -75,10 +75,8 @@ export const WebMcpSchemaField = {
   Limit: 'limit',
   /** 編成へ固定するカード名 */
   LockedCards: 'lockedCards',
-  /** 手動指定するカード名 */
-  ManualCards: 'manualCards',
-  /** レンタルカードを手動指定するか */
-  ManualRental: 'manualRental',
+  /** 選択中の編成カード名 */
+  SelectedCards: 'selectedCards',
   /** カード一覧の操作モード */
   Mode: 'mode',
   /** 名前 */

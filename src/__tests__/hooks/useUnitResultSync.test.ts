@@ -48,7 +48,9 @@ describe('useUnitResultSync', () => {
     renderHook(() =>
       useUnitResultSync({
         result: makeResult(first),
-        manualCards: [first, second],
+        selectedCards: [first, second],
+        rentalCardName: null,
+        cardUncaps: {},
         cardCountCustom: {},
         scoreSettings,
         recalculateScores: vi.fn(),
@@ -67,25 +69,50 @@ describe('useUnitResultSync', () => {
     const initialResult = makeResult(first)
 
     const { rerender } = renderHook(
-      ({ result, manualCards }: { result: UnitResult; manualCards: (string | null)[] }) =>
+      ({ result, selectedCards }: { result: UnitResult; selectedCards: (string | null)[] }) =>
         useUnitResultSync({
           result,
-          manualCards,
+          selectedCards,
+          rentalCardName: null,
+          cardUncaps: {},
           cardCountCustom: {},
           scoreSettings,
           recalculateScores: vi.fn(),
           evaluateCurrentCards,
         }),
-      { initialProps: { result: initialResult, manualCards: [first] } },
+      { initialProps: { result: initialResult, selectedCards: [first] } },
     )
 
     // 最適化結果と手動編成が同時に反映された場合は、同じ編成を再評価しない
     const optimizedResult = makeResult(second)
-    rerender({ result: optimizedResult, manualCards: [second] })
+    rerender({ result: optimizedResult, selectedCards: [second] })
     expect(evaluateCurrentCards).not.toHaveBeenCalled()
 
     // 手動編成だけが結果とずれた場合は、古い結果なので再評価する
-    rerender({ result: optimizedResult, manualCards: [first] })
+    rerender({ result: optimizedResult, selectedCards: [first] })
+    expect(evaluateCurrentCards).toHaveBeenCalledOnce()
+  })
+  it('カード一覧が同じでもレンタル指定の変更で再評価する', () => {
+    const first = data.AllCards[0].name
+    const result = makeResult(first)
+    const selectedCards = [first]
+    const evaluateCurrentCards = vi.fn()
+    const { rerender } = renderHook(
+      ({ rentalCardName }: { rentalCardName: string | null }) =>
+        useUnitResultSync({
+          result,
+          selectedCards,
+          rentalCardName,
+          cardUncaps: {},
+          cardCountCustom: {},
+          scoreSettings,
+          recalculateScores: vi.fn(),
+          evaluateCurrentCards,
+        }),
+      { initialProps: { rentalCardName: null as string | null } },
+    )
+    expect(evaluateCurrentCards).not.toHaveBeenCalled()
+    rerender({ rentalCardName: first })
     expect(evaluateCurrentCards).toHaveBeenCalledOnce()
   })
 })

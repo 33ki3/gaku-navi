@@ -10,6 +10,7 @@ import type { ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from '../../types/unit'
 import { hasAllScheduleSelections } from '../../utils/scoreSettings'
+import { getUnitSlotCards } from '../../utils/unitCardSelection'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { OptimizeUnitButton } from './OptimizeUnitButton'
 import UnitResultView from './UnitResult'
@@ -93,17 +94,6 @@ export function UnitOptimizationSection({
 
   // 通常枠とレンタル枠それぞれの固定状態を切り替える
   const toggleLock = (cardName: string) => {
-    const isRentalCard = settings.manualCards[constant.UNIT_SIZE - 1] === cardName
-    if (isRentalCard) {
-      const isLocked = settings.manualRental && settings.rentalCardName === cardName
-      simulator.setSettings({
-        ...settings,
-        manualRental: !isLocked,
-        rentalCardName: isLocked ? null : cardName,
-      })
-      return
-    }
-
     const lockedCards = settings.lockedCards.includes(cardName)
       ? settings.lockedCards.filter((name) => name !== cardName)
       : [...settings.lockedCards, cardName]
@@ -112,20 +102,16 @@ export function UnitOptimizationSection({
 
   // カードをスロットから外し、関連する固定状態も解除する
   const removeCard = (cardName: string) => {
-    const isRentalCard = settings.manualCards[constant.UNIT_SIZE - 1] === cardName
+    const isRentalCard = settings.rentalCardName === cardName
     simulator.setSettings({
       ...settings,
-      manualCards: settings.manualCards.map((name) => (name === cardName ? null : name)),
+      selectedCards: getUnitSlotCards(settings).map((name) => (name === cardName ? null : name)),
       lockedCards: settings.lockedCards.filter((name) => name !== cardName),
-      manualRental: isRentalCard ? false : settings.manualRental,
       rentalCardName: isRentalCard ? null : settings.rentalCardName,
     })
   }
 
-  const lockedCards = [
-    ...settings.lockedCards,
-    ...(settings.manualRental && settings.rentalCardName ? [settings.rentalCardName] : []),
-  ]
+  const lockedCards = settings.lockedCards
   const difficulty = scoreSettings.difficulty ?? enums.DifficultyType.None
 
   return (
@@ -162,7 +148,7 @@ export function UnitOptimizationSection({
         {showManualEditor && (
           /* 手動編成スロット編集欄 */
           <UnitSlotEditor
-            cards={settings.manualCards}
+            cards={getUnitSlotCards(settings)}
             cardByName={allCardByName}
             onRemoveCard={removeCard}
             onStartSelect={manualSelection.startSlotSelection}
@@ -196,7 +182,7 @@ export function UnitOptimizationSection({
             customNonBonusGain={scoreSettings.customNonBonusGain}
             initialParams={settings.initialParams}
             paramCapOverride={settings.paramCapOverride}
-            manualCards={settings.manualCards}
+            selectedCards={getUnitSlotCards(settings)}
             onStartSelect={manualSelection.startSlotSelection}
             selectMode={manualSelection.active}
             isCalculating={simulator.isCalculating}

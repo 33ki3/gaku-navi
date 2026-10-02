@@ -5,7 +5,7 @@
  * 更新ツールだけが設定変更の入口を呼び出すことを確認する
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { ImportCommandState } from '../../application/command'
+import { type ImportCommandState, createCalculationCommand } from '../../application/command'
 import { DomainStateStore } from '../../application/domainStateStore'
 import * as constant from '../../constant'
 import * as data from '../../data'
@@ -22,9 +22,15 @@ import * as enums from '../../types/enums'
 import type { StorageEntry } from '../../types/storage'
 import type { UnitSimulatorSettings } from '../../types/unit'
 import { createCalculationSnapshot } from '../../utils/calculationSnapshot'
+import { calculateCardWithSettings } from '../../utils/calculator/calculateCardScores'
 import { createDomainDigest, createDomainStateSnapshot } from '../../utils/domainRevision'
 import type { ScorePreset } from '../../utils/presetHelpers'
-import { createDefaultSettings } from '../../utils/scoreSettings'
+import {
+  createDefaultSettings,
+  loadScoreSettings,
+  mergeScheduleCounts,
+  normalizeScoreSettingsDerived,
+} from '../../utils/scoreSettings'
 import { isPersistedFilterState } from '../../utils/storageCollectionValidation'
 import { createWebMcpTools, registerWebMcpTools } from '../../webmcp'
 import * as webMcpConstant from '../../webmcp/constants'
@@ -43,6 +49,7 @@ import {
   type WebMcpToolNameType,
   type WebMcpUiCommand,
 } from '../../webmcp/types'
+import { createTestCommandStatePort } from '../fixtures/application'
 
 const WEB_MCP_MANIFEST_BUDGET_BYTES = 28 * 1024
 const WEB_MCP_TOOL_BUDGET_BYTES = 8 * 1024
@@ -410,6 +417,33 @@ function createRuntime(cards = data.AllCards): TestWebMcpRuntime {
       userSupports: userSupportCommand,
     } as unknown as NonNullable<WebMcpRuntime['applicationCommands']>,
   }
+}
+
+/** 実際の保存commandを接続し、再読込を含むツール更新を検証する */
+function createPersistedRuntime(scoreSettings: ScoreSettings): TestWebMcpRuntime {
+  const runtime = createRuntime()
+  const snapshot = runtime.getCalculationSnapshot()
+  const store = new DomainStateStore({
+    domain: ApplicationDomain.Calculation,
+    initialValue: {
+      scoreSettings,
+      unitSimulatorSettings: snapshot.unitSettings,
+      cardUncaps: snapshot.cardUncaps,
+      cardCountCustom: snapshot.cardCountCustom,
+    },
+  })
+  const commands = runtime.applicationCommands
+  if (!commands) throw new Error('保存commandがありません')
+  commands.calculation = createCalculationCommand({ state: createTestCommandStatePort(store), storage: localStorage })
+  runtime.getCalculationSnapshot = () => {
+    const current = store.getSnapshot().value
+    return createCalculationSnapshot({
+      ...snapshot,
+      ...current,
+      unitSettings: current.unitSimulatorSettings,
+    })
+  }
+  return runtime
 }
 
 /** 公開tool名から定義を取得し、未登録ならテストを失敗させる */
@@ -1095,14 +1129,14 @@ describe('webMcp tools', () => {
 
   it('手動編成の空き枠を複数nullで指定できる', async () => {
     const runtime = createRuntime()
-    const manualCards = [data.AllCards[0].name, null, null, null, null, null]
+    const selectedCards = [data.AllCards[0].name, null, null, null, null, null]
     const result = await getTool(
       createWebMcpTools(() => runtime),
       WebMcpToolName.UpdateCalculationSettings,
-    ).execute({ unitSettings: { manualCards } }, executionOptions)
+    ).execute({ unitSettings: { selectedCards } }, executionOptions)
 
     expect(result).toMatchObject({ applied: true })
-    expect(runtime.setUnitSettings).toHaveBeenCalledWith(expect.objectContaining({ manualCards }))
+    expect(runtime.setUnitSettings).toHaveBeenCalledWith(expect.objectContaining({ selectedCards }))
   })
 
   it('計算条件patchを厳格化しても回数調整の明示削除を受け付ける', async () => {
@@ -1154,6 +1188,112 @@ describe('webMcp tools', () => {
     expect(runtime.setUnitSettings).not.toHaveBeenCalled()
     expect(runtime.setCardUncaps).not.toHaveBeenCalled()
     expect(runtime.setCardCountCustom).not.toHaveBeenCalled()
+  })
+
+  it('HIFのペア選択をツール更新・保存・再読込後の切り戻しでも保持する', async () => {
+    localStorage.clear()
+    const original = normalizeScoreSettingsDerived({
+      ...createDefaultSettings(enums.ScenarioType.Hif),
+      hifLessonSplitSub: false,
+      scheduleSelections: { 2: enums.ActivityIdType.VoLessonVi },
+    })
+    let runtime = createPersistedRuntime(original)
+    const tools = createWebMcpTools(() => runtime)
+    const update = getTool(tools, WebMcpToolName.UpdateCalculationSettings)
+    const result = await update.execute({ scoreSettings: { hifLessonSplitSub: true } }, executionOptions)
+    expect(result).toMatchObject({
+      applied: true,
+      settings: {
+        scoreSettings: {
+          scheduleSelections: { 2: enums.ActivityIdType.VoLesson },
+        },
+      },
+    })
+    const loaded = loadScoreSettings()
+    expect(loaded.scheduleSelections).toEqual(original.scheduleSelections)
+    expect(loaded.parameterBonusBase).toEqual(
+      normalizeScoreSettingsDerived({ ...original, hifLessonSplitSub: true }).parameterBonusBase,
+    )
+    expect(loaded.parameterBonusBase).not.toEqual(original.parameterBonusBase)
+    const schedule = data.getScheduleData(enums.ScenarioType.Hif, enums.DifficultyType.None)
+    const mainOnly = { ...loaded, scheduleSelections: { 2: enums.ActivityIdType.VoLesson } }
+    expect(mergeScheduleCounts(loaded, schedule)).toEqual(mergeScheduleCounts(mainOnly, schedule))
+    expect(
+      data.getSpLessonTotal(enums.ScenarioType.Hif, enums.DifficultyType.None, loaded.scheduleSelections, true),
+    ).toEqual(
+      data.getSpLessonTotal(enums.ScenarioType.Hif, enums.DifficultyType.None, mainOnly.scheduleSelections, true),
+    )
+    runtime = createPersistedRuntime(loaded)
+    const current = await getTool(tools, WebMcpToolName.GetCurrentAppState).execute(
+      { sections: [WebMcpCurrentAppStateSection.Calculation] },
+      executionOptions,
+    )
+    expect(current).toHaveProperty(
+      'sections.calculation.scoreSettings.scheduleSelections.2',
+      enums.ActivityIdType.VoLesson,
+    )
+    const restored = await update.execute({ scoreSettings: { hifLessonSplitSub: false } }, executionOptions)
+    expect(restored).toMatchObject({
+      applied: true,
+      settings: {
+        scoreSettings: {
+          scheduleSelections: original.scheduleSelections,
+          parameterBonusBase: original.parameterBonusBase,
+        },
+      },
+    })
+    expect(loadScoreSettings().scheduleSelections).toEqual(original.scheduleSelections)
+    localStorage.clear()
+  })
+
+  it('カスタム行の合計をツール応答・保存・再読込後のカード計算へ反映する', async () => {
+    localStorage.clear()
+    const manual = { vocal: 12, dance: 34, visual: 56 }
+    const runtime = createPersistedRuntime({
+      ...createDefaultSettings(enums.ScenarioType.Custom),
+      manualParameterBonusBase: manual,
+    })
+    const tools = createWebMcpTools(() => runtime)
+    const rows = [
+      { vocal: 1000, dance: 2000, visual: 3000 },
+      { vocal: 4000, dance: 5000, visual: 6000 },
+    ]
+    const base = { vocal: 5000, dance: 7000, visual: 9000 }
+    const result = await getTool(tools, WebMcpToolName.UpdateCalculationSettings).execute(
+      { scoreSettings: { customParamBonusRows: rows } },
+      executionOptions,
+    )
+    expect(result).toMatchObject({ applied: true, settings: { scoreSettings: { parameterBonusBase: base } } })
+    expect(JSON.parse(localStorage.getItem(constant.SCORE_SETTINGS_STORAGE_KEY)!)).toMatchObject({
+      parameterBonusBase: base,
+      manualParameterBonusBase: manual,
+    })
+    const loaded = loadScoreSettings()
+    expect(loaded.parameterBonusBase).toEqual(base)
+    expect(loaded.manualParameterBonusBase).toEqual(manual)
+    const card = data.AllCards.find((card) => card.abilities.some((ability) => ability.is_parameter_bonus))
+    if (!card) throw new Error('パラメータボーナスのカードがありません')
+    const expected = calculateCardWithSettings(card, enums.UncapType.Four, { ...loaded, parameterBonusBase: base })
+    if (!expected) throw new Error('カスタム行のカード計算がありません')
+    expect(expected.totalIncrease).toBeGreaterThan(0)
+    expect(
+      calculateCardWithSettings(card, enums.UncapType.Four, runtime.getCalculationSnapshot().scoreSettings),
+    ).toEqual(expected)
+    expect(calculateCardWithSettings(card, enums.UncapType.Four, loaded)).toEqual(expected)
+    const toolScore = await getTool(tools, WebMcpToolName.GetSupportCardScore).execute(
+      { name: card.name, uncap: enums.UncapType.Four },
+      executionOptions,
+    )
+    expect(toolScore).toMatchObject({
+      breakdown: { parameterBonus: expected.parameterBonus, totalIncrease: expected.totalIncrease },
+    })
+    expect(
+      calculateCardWithSettings(card, enums.UncapType.Four, {
+        ...loaded,
+        parameterBonusBase: { vocal: 0, dance: 0, visual: 0 },
+      }),
+    ).toEqual(expected)
+    localStorage.clear()
   })
 
   it('全カードの凸数を更新し、個別指定を優先する', async () => {
@@ -1478,6 +1618,83 @@ describe('webMcp tools', () => {
     expect(runtime.setUnitSettings).not.toHaveBeenCalled()
   })
 
+  it('フィルターと表示設定の未知キーを拒否し、既知項目も更新しない', async () => {
+    const runtime = createRuntime()
+    const tools = createWebMcpTools(() => runtime)
+    const filterSnapshot = runtime.applicationCommands!.filters.getSnapshot()
+    const preferenceSnapshot = runtime.applicationCommands!.preferences.getSnapshot()
+
+    const cases = [
+      { name: WebMcpToolName.UpdateCardFilters, input: { searchTerm: 'x', sortRevers: true } },
+      { name: WebMcpToolName.UpdateCardFilters, input: { sortRevers: true } },
+      {
+        name: WebMcpToolName.UpdateAppPreferences,
+        input: { showMobileBottomNav: false, keepMobileBottomNavFixd: true },
+      },
+      { name: WebMcpToolName.UpdateAppPreferences, input: { keepMobileBottomNavFixd: true } },
+    ]
+    for (const { name, input } of cases) {
+      const result = await getTool(tools, name).execute(input, executionOptions)
+      expect(result).toMatchObject({ error: { code: WebMcpErrorCode.InvalidInput } })
+    }
+
+    expect(runtime.setFilterState).not.toHaveBeenCalled()
+    expect(runtime.setPreferences).not.toHaveBeenCalled()
+    expect(runtime.applicationCommands!.filters.getSnapshot()).toEqual(filterSnapshot)
+    expect(runtime.applicationCommands!.preferences.getSnapshot()).toEqual(preferenceSnapshot)
+  })
+
+  it('フィルター全解除を保存し、Undoで解除前の状態へ戻せる', async () => {
+    const runtime = createRuntime()
+    const tools = createWebMcpTools(() => runtime)
+    const tool = getTool(tools, WebMcpToolName.UpdateCardFilters)
+    await tool.execute({ searchTerm: 'SSR', rarities: [enums.RarityType.SSR], sortReverse: true }, executionOptions)
+    const before = runtime.applicationCommands!.filters.getSnapshot().value
+
+    const cleared = await tool.execute({ clearFilters: true }, executionOptions)
+    expect(cleared).toMatchObject({ applied: true, before, after: constant.DEFAULT_FILTER_STATE })
+    expect(runtime.applicationCommands!.filters.getSnapshot().value).toEqual(constant.DEFAULT_FILTER_STATE)
+    expect(runtime.setFilterState).toHaveBeenLastCalledWith(constant.DEFAULT_FILTER_STATE)
+    expect(runtime.applicationCommands!.filters.getSnapshot().value).not.toHaveProperty('clearFilters')
+
+    const undone = await getTool(tools, WebMcpToolName.UndoLastChange).execute({ confirmation: true }, executionOptions)
+    expect(undone).toMatchObject({ applied: true })
+    expect(runtime.applicationCommands!.filters.getSnapshot().value).toEqual(before)
+  })
+
+  it.each([false, true])('clearFilters=%sと更新項目を組み合わせて指定できる', async (clearFilters) => {
+    const runtime = createRuntime()
+    const tool = getTool(
+      createWebMcpTools(() => runtime),
+      WebMcpToolName.UpdateCardFilters,
+    )
+    await tool.execute({ rarities: [enums.RarityType.SSR], sortReverse: true }, executionOptions)
+    const updated = await tool.execute({ clearFilters, searchTerm: 'x' }, executionOptions)
+    expect(updated).toMatchObject({
+      applied: true,
+      after: { searchTerm: 'x', rarities: clearFilters ? [] : [enums.RarityType.SSR], sortReverse: !clearFilters },
+    })
+  })
+
+  it('全解除と誤記・不正な操作値を含む入力は状態を変更しない', async () => {
+    const runtime = createRuntime()
+    const tool = getTool(
+      createWebMcpTools(() => runtime),
+      WebMcpToolName.UpdateCardFilters,
+    )
+    const before = runtime.applicationCommands!.filters.getSnapshot()
+    for (const input of [
+      { clearFilters: true, searchTerm: 'x', sortRevers: true },
+      { clearFilters: 'true', searchTerm: 'x' },
+    ]) {
+      expect(await tool.execute(input, executionOptions)).toMatchObject({
+        error: { code: WebMcpErrorCode.InvalidInput },
+      })
+    }
+    expect(runtime.applicationCommands!.filters.getSnapshot()).toEqual(before)
+    expect(runtime.setFilterState).not.toHaveBeenCalled()
+  })
+
   it('フィルターと表示設定を更新し、直前の変更を取り消せる', async () => {
     const runtime = createRuntime()
     const tools = createWebMcpTools(() => runtime)
@@ -1713,7 +1930,7 @@ describe('webMcp tools', () => {
       { properties: Record<string, Record<string, unknown>> }
     >
     const unitSettingsProperties = calculationProperties[WebMcpSchemaField.UnitSettings]!.properties
-    expect(unitSettingsProperties[WebMcpSchemaField.ManualCards]).not.toHaveProperty('uniqueItems')
+    expect(unitSettingsProperties[WebMcpSchemaField.SelectedCards]).not.toHaveProperty('uniqueItems')
     expect(manifest).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: WebMcpToolName.SearchSupportCards, inputSchema: expect.any(Object) }),

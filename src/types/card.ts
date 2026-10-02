@@ -381,21 +381,6 @@ export interface ParameterValues {
   visual: number
 }
 
-/**
- * レッスンごとの Vo/Da/Vi パラメータ値配列
- *
- * パラメータボーナスをレッスン1回ごとに切り捨て計算するために使う
- * 各配列の要素が1回のレッスンでの上昇量に対応する
- */
-export interface PerLessonParameterValues {
-  /** ボーカル値の配列（レッスンごと） */
-  vocal: number[]
-  /** ダンス値の配列（レッスンごと） */
-  dance: number[]
-  /** ビジュアル値の配列（レッスンごと） */
-  visual: number[]
-}
-
 /** 表示対象のアビリティ計算内訳 */
 export interface CardAbilityBoost {
   /** 表示名の種類を示すキー（アビリティ用） */
@@ -471,7 +456,7 @@ export interface ScoreSettingsBase {
   manualParameterBonusBase?: ParameterValues
   /** スケジュール自動計算から手動モードへ戻すための制御対象アクション回数 */
   manualScheduleActionCounts?: ActionCounts
-  /** スケジュール選択（週番号 → 選択した活動ID） */
+  /** スケジュール選択（週番号 → 活動ID）。HIFのペアは主属性のみ表示中も保持する */
   scheduleSelections: Record<number, ActivityIdType>
   /** スケジュールに基づく上限を有効にするか */
   useScheduleLimits: boolean

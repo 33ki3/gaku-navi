@@ -10,7 +10,7 @@ import type { CardCountCustom, ScoreSettings, SupportCard } from '../types/card'
 import type { UncapType } from '../types/enums'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from '../types/unit'
 import type { OptimizeInput } from '../types/unitOptimizer'
-import { resolveSettingsAfterOptimization } from '../utils/unitOptimizedSettings'
+import { getUnitSlotCards } from '../utils/unitCardSelection'
 import { loadUnitResult, saveUnitResult } from '../utils/unitResultStorage'
 import { useUnitExhaustiveOptimizer } from './useUnitExhaustiveOptimizer'
 import { useUnitManualEvaluation } from './useUnitManualEvaluation'
@@ -73,7 +73,13 @@ export function useUnitSimulator(
   const applyOptimizedResult = useCallback(
     (optimized: UnitResult) => {
       saveUnitResult(optimized)
-      setSettings(resolveSettingsAfterOptimization(settingsRef.current, optimized))
+      // 最適化結果を通常5枠・レンタル1枠へ配置し、固定一覧はそのまま保持する
+      const nextSettings = {
+        ...settingsRef.current,
+        selectedCards: optimized.members.map((member) => member.card.name),
+        rentalCardName: optimized.members.find((member) => member.isRental)?.card.name ?? null,
+      }
+      setSettings({ ...nextSettings, selectedCards: getUnitSlotCards(nextSettings) })
     },
     [setSettings, settingsRef],
   )

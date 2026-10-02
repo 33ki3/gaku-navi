@@ -10,10 +10,6 @@ import type { ScoreSettings } from '../../../types/card'
 import type { ActionIdType } from '../../../types/enums'
 import * as enums from '../../../types/enums'
 import { getParameterBonusBreakdown } from '../../../utils/calculator/parameterBonus'
-import {
-  normalizeHifLessonActivityForMainMode,
-  normalizeHifLessonActivityForPairMode,
-} from '../../../utils/hifScheduleHelpers'
 import { normalizeScoreSettingsDerived, setScoreSettingsScheduleLimits } from '../../../utils/scoreSettings'
 import { CheckboxField } from '../../ui/CheckboxField'
 import { ScheduleSummary } from '../ScheduleSummary'
@@ -66,19 +62,9 @@ export function HifScheduleContent({
         label={t('ui.settings.hif_lesson_split_sub')}
         checked={hifLessonSplitSub}
         onChange={(value) => {
-          const normalizeActivity = value
-            ? normalizeHifLessonActivityForMainMode
-            : normalizeHifLessonActivityForPairMode
-          const normalizedSelections = Object.fromEntries(
-            Object.entries(settings.scheduleSelections).map(([week, activityId]) => [
-              Number(week),
-              normalizeActivity(activityId),
-            ]),
-          )
           onSettingsChange(
             normalizeScoreSettingsDerived({
               ...settings,
-              scheduleSelections: normalizedSelections,
               hifLessonSplitSub: value,
             }),
           )

@@ -5,6 +5,7 @@
  * ページ情報を付ける
  */
 import * as constant from '../constant'
+import * as data from '../data'
 import type { CalculationSnapshot } from '../types/calculation'
 import type {
   CardAbilityBoost,
@@ -257,7 +258,12 @@ export function createScoreSettings(settings: ScoreSettings): WebMcpScoreSetting
     difficulty: settings.difficulty,
     parameterBonusBase: { ...settings.parameterBonusBase },
     actionCounts: { ...settings.actionCounts },
-    scheduleSelections: { ...settings.scheduleSelections },
+    scheduleSelections: Object.fromEntries(
+      Object.entries(settings.scheduleSelections).map(([week, activityId]) => [
+        week,
+        data.getScheduleActivityForMode(activityId, settings.scenario, settings.hifLessonSplitSub),
+      ]),
+    ),
     useScheduleLimits: settings.useScheduleLimits,
     includeSelfTrigger: settings.includeSelfTrigger,
     includePItem: settings.includePItem,
@@ -285,10 +291,9 @@ function createUnitSettings(settings: UnitSimulatorSettings): WebMcpUnitSettings
     typeCountMin: { ...settings.typeCountMin },
     typeCountMax: { ...settings.typeCountMax },
     paramBonusPercent: { ...settings.paramBonusPercent },
-    manualRental: settings.manualRental,
     rentalCardName: settings.rentalCardName,
     lockedCards: [...settings.lockedCards],
-    manualCards: [...settings.manualCards],
+    selectedCards: [...settings.selectedCards],
     excludedCardNames: [...settings.excludedCardNames],
     initialParams: { ...settings.initialParams },
     ...(settings.paramCapOverride === undefined ? {} : { paramCapOverride: settings.paramCapOverride }),

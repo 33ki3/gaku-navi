@@ -78,7 +78,8 @@ interface SpTypeCountInput<T extends OptimizerCardLike> extends SpPools<T>, SpNe
 }
 
 /** SP+タイプ制約の列挙入力 */
-interface SpTypeEnumerateInput<T extends OptimizerCardLike> extends SpPools<T>, GenericPools<T>, SpNeeds, TypeBounds {
+export interface SpTypeEnumerateInput<T extends OptimizerCardLike>
+  extends SpPools<T>, GenericPools<T>, SpNeeds, TypeBounds {
   totalSlots: number
 }
 

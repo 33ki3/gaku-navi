@@ -13,7 +13,6 @@ import type { UserSupportCommand } from '../application/command/userSupportComma
 import type { AppPreferences, PersistedFilterState } from '../types/app'
 import type { CalculationSnapshot } from '../types/calculation'
 import type { SupportCard } from '../types/card'
-import { ApplicationUiAction } from '../types/enums'
 import type {
   AbilityKeywordType,
   AbilityNameKeyType,
@@ -35,6 +34,7 @@ import type {
   TriggerKeyType,
   UncapType,
 } from '../types/enums'
+import { ApplicationUiAction } from '../types/enums'
 import type { WebMcpCurrentAppStateSectionType, WebMcpToolNameType } from './enums'
 export * from './enums'
 
@@ -255,14 +255,12 @@ export interface WebMcpUnitSettings {
   typeCountMax: WebMcpParameterValues
   /** サポート外パラメータボーナス率 */
   paramBonusPercent: WebMcpParameterValues
-  /** 手動レンタルカードを使うか */
-  manualRental: boolean
-  /** 手動指定したレンタルカード名 */
+  /** 選択中のレンタルカード名。固定一覧に含まれる場合だけ最適化でも固定する */
   rentalCardName: string | null
-  /** 最適化結果へ固定するカード名 */
+  /** 最適化結果へ固定するカード名。通常枠とレンタル枠を含む */
   lockedCards: readonly string[]
-  /** 手動編成中のスロットごとのカード名 */
-  manualCards: readonly (string | null)[]
+  /** 画面のスロット順で保持する選択カード名。nullはその位置の空き枠 */
+  selectedCards: readonly (string | null)[]
   /** 最適化候補から除外するカード名 */
   excludedCardNames: readonly string[]
   /** 育成開始時の初期パラメータ */

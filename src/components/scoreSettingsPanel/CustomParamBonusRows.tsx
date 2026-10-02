@@ -10,7 +10,7 @@ import * as constant from '../../constant'
 import * as data from '../../data'
 import type { ParameterValues, ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
-import { sumCustomParamBonusRows } from '../../utils/scoreSettings'
+import { normalizeScoreSettingsDerived } from '../../utils/scoreSettings'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { CloseIcon, PlusIcon } from '../ui/icons'
 import { ParameterValueInputs } from './ParameterValueInputs'
@@ -25,8 +25,7 @@ interface CustomParamBonusRowsProps {
 
 /** 行を更新したときに parameterBonusBase も合計値で同期する */
 function updateRows(settings: ScoreSettings, newRows: ParameterValues[], onChange: (s: ScoreSettings) => void): void {
-  const newBase = sumCustomParamBonusRows(newRows)
-  onChange({ ...settings, customParamBonusRows: newRows, parameterBonusBase: newBase })
+  onChange(normalizeScoreSettingsDerived({ ...settings, customParamBonusRows: newRows }))
 }
 
 /** カスタムパラメータボーナス行入力 */

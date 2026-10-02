@@ -42,7 +42,7 @@ describe('calculateCardParameter', () => {
 
   it('アビリティもイベントもない場合は合計 0', () => {
     const card = makeCard()
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     expect(result.totalIncrease).toBe(0)
     expect(result.eventBoost).toBe(0)
     expect(result.parameterBonus).toBe(0)
@@ -60,7 +60,7 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     // ブースト倍率 = 1.0 → 20 * 1.0 = 20
     expect(result.eventBoost).toBe(20)
     expect(result.eventBoostBase).toBe(20)
@@ -88,7 +88,7 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     // 20 * 1.5 = 30
     expect(result.eventBoost).toBe(30)
     expect(result.totalIncrease).toBe(30)
@@ -106,7 +106,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.ActionIdType.LessonVo]: 5 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     // 3 * 5 = 15
     expect(result.abilityBoosts).toHaveLength(1)
     expect(result.abilityBoosts[0].total).toBe(15)
@@ -126,8 +126,8 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.ActionIdType.Lesson]: 10 }
-    const r0 = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
-    const r4 = calculateCardParameter(card, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase)
+    const r0 = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
+    const r4 = calculateCardParameter(card, enums.UncapType.Four, actions, emptyExtra, [zeroBonusBase])
     expect(r0.totalIncrease).toBe(10) // 1 * 10
     expect(r4.totalIncrease).toBe(30) // 3 * 10
   })
@@ -144,7 +144,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.ActionIdType.Lesson]: 10 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     // 5 * 3 = 15（max_count 3 で制限）
     expect(result.abilityBoosts[0].count).toBe(3)
     expect(result.totalIncrease).toBe(15)
@@ -164,13 +164,9 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(
-      card,
-      enums.UncapType.Four,
-      { [enums.ActionIdType.Delete]: 6 },
-      emptyExtra,
+    const result = calculateCardParameter(card, enums.UncapType.Four, { [enums.ActionIdType.Delete]: 6 }, emptyExtra, [
       zeroBonusBase,
-    )
+    ])
 
     expect(derived.triggerKey).toBe(enums.TriggerKeyType.DeleteCount)
     expect(result.abilityBoosts[0].count).toBe(4)
@@ -196,7 +192,7 @@ describe('calculateCardParameter', () => {
       enums.UncapType.Zero,
       { [enums.ActionIdType.PDrinkAcquire]: 12 },
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
     )
 
     expect(derived.triggerKey).toBe(enums.TriggerKeyType.PDrinkAcquireCount)
@@ -226,14 +222,14 @@ describe('calculateCardParameter', () => {
         [enums.ActionIdType.GoodImpressionCardAcquire8]: 2,
       },
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
     )
     const capped = calculateCardParameter(
       card,
       enums.UncapType.Four,
       { [enums.ActionIdType.GoodImpressionCardAcquire8]: 8 },
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
     )
 
     expect(twice.abilityBoosts[0].count).toBe(2)
@@ -254,7 +250,7 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     expect(result.abilityBoosts).toHaveLength(1)
     expect(result.abilityBoosts[0].total).toBe(52)
     expect(result.abilityBoosts[0].count).toBe(1)
@@ -279,7 +275,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.ActionIdType.Lesson]: 2 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     expect(result.totalIncrease).toBe(10) // 5 * 2 only
   })
 
@@ -298,7 +294,7 @@ describe('calculateCardParameter', () => {
     })
     // vocal bonusBase = 1000, 4.3% → 1000 * 4.3 / 100 = 43
     const bonusBase = { vocal: 1000, dance: 500, visual: 500 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [bonusBase])
     expect(result.parameterBonus).toBe(43)
     expect(result.paramBonusPercent).toBeCloseTo(4.3)
     expect(result.paramBonusBase).toBe(1000) // vocal サポートなので vocal の値
@@ -318,11 +314,13 @@ describe('calculateCardParameter', () => {
       ],
     })
     // vocal bonusBase = 100, 2.8% → 100 * 2.8 / 100 = 2.8 → floor(2.8) = 2
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, {
-      vocal: 100,
-      dance: 0,
-      visual: 0,
-    })
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [
+      {
+        vocal: 100,
+        dance: 0,
+        visual: 0,
+      },
+    ])
     expect(result.parameterBonus).toBe(2)
   })
 
@@ -338,7 +336,9 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, 200)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [
+      { vocal: 200, dance: 200, visual: 200 },
+    ])
     // 200 * 10 / 100 = 20
     expect(result.parameterBonus).toBe(20)
   })
@@ -355,7 +355,7 @@ describe('calculateCardParameter', () => {
     })
     const actions = { [enums.TriggerKeyType.SkillAcquire]: 2 }
     const extra = { [enums.TriggerKeyType.SkillAcquire]: 3 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, extra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, extra, [zeroBonusBase])
     // 10 * (2 + 3) = 50
     expect(result.abilityBoosts[0].count).toBe(5)
     expect(result.totalIncrease).toBe(50)
@@ -376,7 +376,7 @@ describe('calculateCardParameter', () => {
     })
     const actions = { [enums.TriggerKeyType.SkillAcquire]: 2 }
     // selfTrigger → SkillAcquire +1 → total = 2 + 0 + 1 = 3
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase, true)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase], true)
     expect(result.abilityBoosts[0].count).toBe(3)
     expect(result.totalIncrease).toBe(30) // 10 * 3
   })
@@ -395,7 +395,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.TriggerKeyType.SkillAcquire]: 2 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase, false)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase], false)
     expect(result.abilityBoosts[0].count).toBe(2)
     expect(result.totalIncrease).toBe(20)
   })
@@ -414,7 +414,7 @@ describe('calculateCardParameter', () => {
       },
     })
     const actions = { [enums.ActionIdType.LessonVo]: 4 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     // 6 * 4 = 24
     expect(result.totalIncrease).toBe(24)
   })
@@ -433,7 +433,7 @@ describe('calculateCardParameter', () => {
       },
     })
     const actions = { [enums.ActionIdType.Lesson]: 4 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase, true, false)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase], true, false)
     expect(result.totalIncrease).toBe(0)
   })
 
@@ -474,7 +474,7 @@ describe('calculateCardParameter', () => {
     })
     const actions = { [enums.ActionIdType.Lesson]: 3 }
     const bonusBase = { vocal: 200, dance: 0, visual: 0 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [bonusBase])
 
     // イベント: 20 * 1.5 = 30
     expect(result.eventBoost).toBe(30)
@@ -503,17 +503,12 @@ describe('calculateCardParameter', () => {
     // 13 * 10 / 100 = 1.3 → 1
     // 17 * 10 / 100 = 1.7 → 1
     // 合計 = 3
-    const perLesson = { vocal: [15, 13, 17], dance: [5, 5, 5], visual: [5, 5, 5] }
-    const result = calculateCardParameter(
-      card,
-      enums.UncapType.Zero,
-      emptyActions,
-      emptyExtra,
-      zeroBonusBase,
-      true,
-      true,
-      perLesson,
-    )
+    const perLesson = [
+      { vocal: 15, dance: 5, visual: 5 },
+      { vocal: 13, dance: 5, visual: 5 },
+      { vocal: 17, dance: 5, visual: 5 },
+    ]
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, perLesson, true, true)
     expect(result.parameterBonus).toBe(3)
   })
 
@@ -534,7 +529,7 @@ describe('calculateCardParameter', () => {
     })
     // lesson のみ回数あり(3)、consult は 0
     const actions = { [enums.ActionIdType.Lesson]: 3 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     expect(result.abilityBoosts).toHaveLength(1) // lesson のみ
     expect(result.allAbilityDetails).toHaveLength(2) // lesson + consult 両方
     const consultDetail = result.allAbilityDetails.find((d) => d.nameKey === enums.AbilityNameKeyType.Consult)
@@ -558,7 +553,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.ActionIdType.Lesson]: 3 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     for (const detail of result.allAbilityDetails) {
       expect(detail.trigger).toBeDefined()
     }
@@ -580,14 +575,14 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     expect(result.abilityBoosts).toHaveLength(0)
     expect(result.totalIncrease).toBe(0)
   })
 
   it('cardName と parameterType が正しくセットされる', () => {
     const card = makeCard({ name: 'テスト花咲', parameter_type: enums.ParameterType.Dance })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     expect(result.cardName).toBe('テスト花咲')
     expect(result.parameterType).toBe(enums.ParameterType.Dance)
   })
@@ -606,7 +601,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const bonusBase = { vocal: 100, dance: 200, visual: 300 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [bonusBase])
     // visual bonusBase 300 * 10% = 30
     expect(result.parameterBonus).toBe(30)
     expect(result.paramBonusBase).toBe(300)
@@ -626,7 +621,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const bonusBase = { vocal: 100, dance: 400, visual: 200 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [bonusBase])
     // dance bonusBase 400 * 5% = 20
     expect(result.parameterBonus).toBe(20)
     expect(result.paramBonusBase).toBe(400)
@@ -652,7 +647,7 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     // 空文字 → 0% → 倍率 1.0 → 20 * 1.0 = 20
     expect(result.eventBoost).toBe(20)
     expect(result.eventBoostPercent).toBe(0)
@@ -683,7 +678,7 @@ describe('calculateCardParameter', () => {
       ],
     })
     const actions = { [enums.TriggerKeyType.SsrCardAcquire]: 2 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase, true)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase], true)
     // selfTrigger → SsrCardAcquire +1 → 10 * (2 + 1) = 30
     expect(result.abilityBoosts[0].count).toBe(3)
     expect(result.totalIncrease).toBe(30)
@@ -704,7 +699,7 @@ describe('calculateCardParameter', () => {
       },
     })
     const actions = { [enums.ActionIdType.LessonVo]: 10 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     // 6 * 3 = 18（max_count 3 で制限、10→3）
     expect(result.totalIncrease).toBe(18)
   })
@@ -730,7 +725,7 @@ describe('calculateCardParameter', () => {
       },
     })
     const actions = { [enums.ActionIdType.Lesson]: 3, [enums.ActionIdType.LessonVo]: 3 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     // アビリティ: 5*3=15, Pアイテム: 6*3=18 → total=33
     expect(result.totalIncrease).toBe(33)
     expect(result.allAbilityDetails).toHaveLength(2)
@@ -744,7 +739,7 @@ describe('calculateCardParameter', () => {
     expect(card).toBeDefined()
     if (!card) return
 
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     const pItemDetail = result.allAbilityDetails.find((d) => d.displayName === '素敵なお仕事')
     expect(pItemDetail).toMatchObject({ count: 1, total: 25 })
 
@@ -753,10 +748,9 @@ describe('calculateCardParameter', () => {
       enums.UncapType.Zero,
       emptyActions,
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
       true,
       true,
-      undefined,
       { [enums.ActionIdType.Change]: 0 },
     )
     const adjustedPItemDetail = adjustedResult.allAbilityDetails.find((d) => d.displayName === '素敵なお仕事')
@@ -767,10 +761,9 @@ describe('calculateCardParameter', () => {
       enums.UncapType.Zero,
       emptyActions,
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
       false,
       true,
-      undefined,
       { [enums.ActionIdType.Change]: 1 },
     )
     const customOnePItemDetail = customOneResult.allAbilityDetails.find((d) => d.displayName === '素敵なお仕事')
@@ -796,7 +789,7 @@ describe('calculateCardParameter', () => {
         },
       ],
     })
-    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, emptyActions, emptyExtra, [zeroBonusBase])
     expect(result.totalIncrease).toBe(50)
     expect(result.abilityBoosts).toHaveLength(2)
   })
@@ -814,7 +807,7 @@ describe('calculateCardParameter', () => {
     })
     // baseCount=5 で max_count=3 を超過するが、キャップされる
     const actions = { [enums.ActionIdType.SpecialTraining]: 5 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     expect(result.abilityBoosts[0].count).toBe(3)
     expect(result.totalIncrease).toBe(30) // 10 * 3
     expect(result.allAbilityDetails[0].maxCount).toBe(3)
@@ -836,7 +829,7 @@ describe('calculateCardParameter', () => {
     })
     // base=3, selfBonus=1(SkillCard提供) → total=4 → ちょうど max_count=4
     const actions = { [enums.ActionIdType.SkillAcquire]: 3 }
-    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(card, enums.UncapType.Zero, actions, emptyExtra, [zeroBonusBase])
     expect(result.abilityBoosts[0].count).toBe(4)
     expect(result.totalIncrease).toBe(40)
   })
@@ -862,10 +855,9 @@ describe('calculateCardParameter', () => {
       enums.UncapType.Zero,
       actions,
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
       true,
       true,
-      undefined,
       selfBonusCustom,
     )
     expect(result.abilityBoosts[0].count).toBe(3)

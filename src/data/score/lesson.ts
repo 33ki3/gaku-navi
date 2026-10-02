@@ -4,9 +4,9 @@
  * シナリオ・難易度・週番号ごとのSPレッスンと追い込みの情報を定義する
  * 通常レッスンは点数計算に使わないため含めない
  */
+import type { ParameterValues } from '../../types/card'
 import { ActivityIdType, DifficultyType, LessonType, ParameterType, ScenarioType } from '../../types/enums'
-import type { ParameterValues } from '../../types/unit'
-import { getScheduleData, isScheduleActivityAllowed } from './schedule'
+import { getScheduleActivityForMode, getScheduleData, isScheduleActivityAllowed } from './schedule'
 
 /** 1レッスンのデータ */
 interface LessonEntry {
@@ -122,7 +122,8 @@ export function getSpLessonTotal(
   const total: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
 
   for (const lesson of lessons) {
-    const selection = scheduleSelections[lesson.week]
+    const stored = scheduleSelections[lesson.week]
+    const selection = stored === undefined ? undefined : getScheduleActivityForMode(stored, scenario, hifLessonSplitSub)
     const scheduleWeek = scheduleByWeek.get(lesson.week)
     // 別の活動が直接指定されていても、レッスン週として表示される選択だけを
     // パラメータ上昇量へ加える

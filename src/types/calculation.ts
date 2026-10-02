@@ -9,6 +9,18 @@ import type { CardCountCustom, ParameterValues, ScoreSettings, SupportCard } fro
 import type { ActionIdType, ActivityIdType, CardType, DifficultyType, PlanType, ScenarioType, UncapType } from './enums'
 import type { SpRateConstraint, TypeCountValues, UnitSimulatorSettings } from './unit'
 
+/** カードスコア計算へ渡す、設定から導出した共有入力 */
+export interface CardScoreCalculationContext {
+  /** 自己発火・Pアイテム計算に使う有効なアクション回数 */
+  effectiveCounts: Partial<Record<ActionIdType, number>>
+  /** アクション回数が1つ以上設定されているか */
+  hasAnyAction: boolean
+  /** パラメータボーナス対象値が1つ以上設定されているか */
+  hasAnyBonus: boolean
+  /** 入力モードから解決した上昇機会ごとのパラメータ値 */
+  parameterBonusRows: ParameterValues[]
+}
+
 /** 計算条件の変更と内容を確認するための状態番号と比較用の印 */
 export interface CalculationRevision {
   /** 計算条件が更新されるたびに増える状態番号 */
@@ -106,14 +118,12 @@ export interface UnitSettingsVariantPatch {
   typeCountMax?: TypeCountValues
   /** サポート外パラメータボーナス% */
   paramBonusPercent?: ParameterValues
-  /** レンタル枠を手動指定するか */
-  manualRental?: boolean
-  /** 手動指定するレンタル名 */
+  /** 選択中のレンタルカード名。固定一覧と組み合わせてレンタル固定を判定する */
   rentalCardName?: string | null
-  /** 固定カード */
+  /** 採用を固定するカード（レンタル名と一致すればレンタル枠で固定） */
   lockedCards?: string[]
-  /** 手動編成 */
-  manualCards?: (string | null)[]
+  /** 画面のスロット順で保持する選択カード。nullはその位置の空き枠 */
+  selectedCards?: (string | null)[]
   /** 自動候補から除外するカード */
   excludedCardNames?: string[]
   /** 初期パラメータ */

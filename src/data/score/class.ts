@@ -3,8 +3,8 @@
  *
  * シナリオ・難易度・週番号ごとの授業の上昇量を定義する
  */
+import type { ParameterValues } from '../../types/card'
 import { ActivityIdType, DifficultyType, ParameterType, ScenarioType } from '../../types/enums'
-import type { ParameterValues } from '../../types/unit'
 import { getScheduleData, isScheduleActivityAllowed } from './schedule'
 
 /** 週番号から授業のパラメータ上昇量を探す表 */

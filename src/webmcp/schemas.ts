@@ -200,9 +200,7 @@ const unitSettingsPatchSchema = {
         ]),
       ),
     },
-    /** レンタルカードを手動指定するか */
-    [webMcp.WebMcpSchemaField.ManualRental]: { type: 'boolean' },
-    /** 手動指定するレンタルカード名 */
+    /** 選択中のレンタルカード名。固定一覧に含まれる場合は最適化でも固定する */
     [webMcp.WebMcpSchemaField.RentalCardName]: { type: ['string', 'null'] },
     /** 編成へ固定するカード名 */
     [webMcp.WebMcpSchemaField.LockedCards]: {
@@ -211,8 +209,8 @@ const unitSettingsPatchSchema = {
       maxItems: constant.UNIT_SIZE,
       uniqueItems: true,
     },
-    /** 編成へ手動指定するカード名。nullはその枠を手動指定しないことを示す */
-    [webMcp.WebMcpSchemaField.ManualCards]: {
+    /** 画面のスロット順の選択カード名。nullはその位置の空き枠を示す */
+    [webMcp.WebMcpSchemaField.SelectedCards]: {
       type: 'array',
       items: { type: ['string', 'null'], minLength: 1 },
       maxItems: constant.UNIT_SIZE,

@@ -102,7 +102,7 @@ describe('CalculationQuery', () => {
   it('不正variantだけを無効として返し、他variantを処理する', () => {
     const query = createCalculationQuery(createSnapshot())
     const result = query.compareCardScores(data.AllCards[0].name, [
-      { label: '不正', patch: { unitSettings: { manualCards: ['存在しないカード'] } } },
+      { label: '不正', patch: { unitSettings: { selectedCards: ['存在しないカード'] } } },
       { label: '正しい', patch: { scoreSettings: { actionCounts: {} } } },
     ])
 

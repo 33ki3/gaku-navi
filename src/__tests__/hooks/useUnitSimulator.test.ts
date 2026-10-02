@@ -96,10 +96,9 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       typeCountMin: { vocal: 0, dance: 0, visual: 0 },
       typeCountMax: { vocal: 6, dance: 6, visual: 6 },
       paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
-      manualRental: true,
       rentalCardName: 'CardA', // CardAをレンタルでロック
-      lockedCards: ['CardB'], // CardBを通常枠でロック
-      manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
+      lockedCards: ['CardB', 'CardA'], // CardBを通常枠でロック
+      selectedCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: true, // ロック自動入れ替え機能をON
@@ -137,10 +136,10 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
     const saved = JSON.parse(savedRaw!)
 
     // CardAとCardBの固定を保ったまま、通常枠とレンタル枠が入れ替わっていること
-    expect(saved.manualRental).toBe(true)
+    expect(saved).not.toHaveProperty('manualRental')
     expect(saved.rentalCardName).toBe('CardB') // CardBが新しくレンタルでロック
     expect(saved.lockedCards).toContain('CardA') // CardAが通常でロック
-    expect(saved.lockedCards).not.toContain('CardB')
+    expect(saved.lockedCards).toContain('CardB')
   })
 
   /**
@@ -159,10 +158,9 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       typeCountMin: { vocal: 0, dance: 0, visual: 0 },
       typeCountMax: { vocal: 6, dance: 6, visual: 6 },
       paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
-      manualRental: true,
       rentalCardName: 'CardA', // CardAがレンタルロック
-      lockedCards: [], // 通常ロックなし
-      manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
+      lockedCards: ['CardA'], // 通常ロックなし
+      selectedCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: true, // ロック自動入れ替え機能をON
@@ -196,7 +194,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
     const saved = JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)!)
 
     // CardAの固定だけを通常枠へ移し、CardBにはレンタルロックを付けない
-    expect(saved.manualRental).toBe(false)
+    expect(saved).not.toHaveProperty('manualRental')
     expect(saved.rentalCardName).toBe('CardB')
     expect(saved.lockedCards).toContain('CardA')
   })
@@ -217,10 +215,9 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       typeCountMin: { vocal: 0, dance: 0, visual: 0 },
       typeCountMax: { vocal: 6, dance: 6, visual: 6 },
       paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
-      manualRental: true,
       rentalCardName: 'CardA',
-      lockedCards: ['CardB'],
-      manualCards: ['CardB', 'CardC', null, null, null, 'CardA'],
+      lockedCards: ['CardB', 'CardA'],
+      selectedCards: ['CardB', 'CardC', null, null, null, 'CardA'],
       excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: false, // ロック自動入れ替えを無効にする
@@ -253,11 +250,11 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
 
     const saved = JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)!)
 
-    // 無効時はロックの引き継ぎを行わず、通常枠の固定をそのまま保つ
-    expect(saved.manualRental).toBe(true)
-    // レンタル枠のカード名は結果に合わせるが、ロック状態は引き継がない
+    // 無効時も共通の固定一覧を保ち、結果のレンタル名を反映する
+    expect(saved).not.toHaveProperty('manualRental')
+    // 固定一覧のカードは、結果でレンタルに採用されても固定を保持する
     expect(saved.rentalCardName).toBe('CardB')
-    expect(saved.lockedCards).toEqual(['CardB']) // 通常ロック配列は上書き・反転されない
+    expect(saved.lockedCards).toEqual(['CardB', 'CardA']) // 通常・レンタル双方の固定を共通一覧で保持する
   })
 
   /**
@@ -266,7 +263,7 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
    * - 最適化結果: CardBがレンタル枠に収まる
    * - 期待結果:
    *    unifyRentalLock=true の場合、通常ロックのCardBがレンタル枠に昇格するため
-   *    manualRental=true, rentalCardName='CardB', lockedCards=[] に更新されること
+   *    rentalCardName='CardB', lockedCards=['CardB'] に更新されること
    */
   it('unifyRentalLock = true 時、レンタルロックなし・B(通常ロック)の状態で結果適用によりBがレンタル枠に収まったとき、Bがレンタルでロック、通常ロックがオフになること', async () => {
     const initialSettings = {
@@ -276,10 +273,9 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
       typeCountMin: { vocal: 0, dance: 0, visual: 0 },
       typeCountMax: { vocal: 6, dance: 6, visual: 6 },
       paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
-      manualRental: false, // レンタルロックなし
       rentalCardName: null,
       lockedCards: ['CardB'], // CardBのみ通常ロック
-      manualCards: ['CardB', 'CardC', null, null, null, null],
+      selectedCards: ['CardB', 'CardC', null, null, null, null],
       excludedCardNames: [],
       initialParams: { vocal: 0, dance: 0, visual: 0 },
       unifyRentalLock: true, // ロック自動入れ替え機能をON
@@ -313,8 +309,8 @@ describe('useUnitSimulator - applyOptimizedResult ロック入れ替え機能', 
     const saved = JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY)!)
 
     // CardBの固定をレンタル枠の固定へ移す
-    expect(saved.manualRental).toBe(true)
+    expect(saved).not.toHaveProperty('manualRental')
     expect(saved.rentalCardName).toBe('CardB')
-    expect(saved.lockedCards).toEqual([])
+    expect(saved.lockedCards).toEqual(['CardB'])
   })
 })

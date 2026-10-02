@@ -1,26 +1,24 @@
 /**
- * サポートリストコンポーネント（仮想スクロール対応）
+ * サポート一覧を表示するコンポーネント
  *
- * @tanstack/react-virtual を使って、画面に見えている行だけを描画する。
- * ResizeObserver でグリッドの幅を監視し、1〜4列を自動で切り替える。
- * 設定パネルがピン留めされているときは4列の閾値を広げる。
+ * 画面に見えている行だけを描画し、グリッドの幅に応じて1〜4列を自動で切り替える
+ * 設定パネルがピン留めされているときは4列の閾値を広げる
  */
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { memo, useEffect, useRef, useState } from 'react'
 import * as constant from '../../constant'
 import { useCardDataContext } from '../../contexts/CardContext'
-import type { CardCountCustom } from '../../hooks/useCardCountCustom'
 import type { TranslationKey } from '../../i18n'
-import type { SupportCard } from '../../types/card'
+import type { CardCountCustom, SupportCard } from '../../types/card'
 import { CardListItem } from './CardListItem'
 
-/** CardList コンポーネントに渡すプロパティ */
+/** 絞り込み済みのサポート一覧と表示設定 */
 interface CardListProps {
   /** フィルター済みのサポート一覧 */
   filteredCards: readonly SupportCard[]
-  /** サポート名 → スコアのマップ */
+  /** サポート名ごとの点数 */
   cardScores: ReadonlyMap<string, number>
-  /** サポート名 → アビリティバッジ一覧のマップ */
+  /** サポート名ごとのアビリティバッジ一覧 */
   abilityBadgeMap: ReadonlyMap<string, TranslationKey[]>
   /** サポート別回数調整 */
   cardCountCustom: CardCountCustom
@@ -30,7 +28,7 @@ interface CardListProps {
   bothPanelsPinned: boolean
 }
 
-/** 仮想スクロール付きサポートリスト */
+/** 大量のサポートを効率よく表示する一覧 */
 export default memo(function CardList({
   filteredCards,
   cardScores,
@@ -39,16 +37,16 @@ export default memo(function CardList({
   settingsPinned,
   bothPanelsPinned,
 }: CardListProps) {
-  // サポートの凸数取得用コンテキスト
+  // 表示するサポートの凸数を取得する
   const { getCardUncap } = useCardDataContext()
   const gridRef = useRef<HTMLDivElement>(null)
   const [columns, setColumns] = useState(1)
 
-  // グリッドの幅が変わったら列数を再計算する（ブレークポイント: 1/2/3/4列）
+  // グリッド幅に応じて列数を1〜4列へ切り替える
   useEffect(() => {
     const el = gridRef.current
     if (!el) return
-    // ピン留め時は4列・3列の閾値を変更する（サイドパネル分狭くなるから）
+    // パネルを固定すると表示幅が狭くなるため、列数を切り替える境界を調整する
     const bp4 = settingsPinned ? constant.BREAKPOINT_4COL_PINNED : constant.BREAKPOINT_4COL
     const bp3 = bothPanelsPinned
       ? constant.BREAKPOINT_3COL_BOTH
@@ -56,7 +54,7 @@ export default memo(function CardList({
         ? constant.BREAKPOINT_3COL_PINNED
         : constant.BREAKPOINT_3COL
     const bp2 = bothPanelsPinned ? constant.BREAKPOINT_2COL_BOTH : constant.BREAKPOINT_2COL
-    // 両パネルピン時の最大列数
+    // 両方のパネルを固定しているときは3列までにする
     const maxCols = bothPanelsPinned ? 3 : 4
     const observer = new ResizeObserver((entries) => {
       const width = entries[0].contentRect.width
@@ -69,10 +67,10 @@ export default memo(function CardList({
     return () => observer.disconnect()
   }, [settingsPinned, bothPanelsPinned])
 
-  // 行数 = サポート総数 ÷ 列数（切り上げ）
+  // 現在の列数から、一覧全体に必要な行数を求める
   const rowCount = Math.ceil(filteredCards.length / columns)
 
-  // 仮想スクローラーの初期化（行高さから表示範囲を計算する）
+  // 表示範囲だけを描画するためのスクロール管理を作る
   const virtualizer = useWindowVirtualizer({
     count: rowCount,
     estimateSize: () => constant.ROW_HEIGHT + constant.GRID_GAP,

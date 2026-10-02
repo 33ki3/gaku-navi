@@ -1,19 +1,17 @@
 /**
  * 編成最適化アルゴリズム
  *
- * 総当たり探索（Exhaustive）でSP/タイプ制約を満たす全組み合わせを評価し、
- * 最もスコアの高い6枚編成を求める。
+ * 総当たり探索でSP・タイプ条件を満たす組み合わせを評価し、
+ * 最もスコアの高い6枚編成を求める
  */
 import * as constant from '../constant'
 import * as data from '../data'
-import { getClassParameterTotal } from '../data/score/class'
-import { getExamTotalData, getHifExamTotalData } from '../data/score/exam'
-import { getSpLessonTotal } from '../data/score/lesson'
-import { resolveParamCap } from '../data/score/paramCap'
+import * as scoreData from '../data/score'
+import * as paramCapData from '../data/score/paramCap'
 import type { ParameterValues, PerLessonParameterValues, ScoreSettings } from '../types/card'
 import * as enums from '../types/enums'
-import type { OptimizeInput } from '../types/unitOptimizer'
 import type { SupportSynergyDetail, TypeCountValues, UnitMember, UnitResult } from '../types/unit'
+import type { OptimizeInput } from '../types/unitOptimizer'
 import { parseAbility } from './calculator/helpers'
 import { getPerLessonParameterValues } from './calculator/parameterBonus'
 import { customRowsToPerLessonValues, mergeScheduleCounts } from './scoreSettings'
@@ -30,7 +28,7 @@ import {
 import { countSpTypeConstrainedCombos, spTypeConstrainedCombos } from './unitOptimizer/combinatorics'
 import { createEvaluatorSeed, evaluateUnitScoreWithSeed } from './unitOptimizer/evaluator'
 
-/** ParameterType の値配列（ホットパスで Object.values() の再生成を避ける） */
+/** 3種類のパラメータを繰り返し使うため、アプリ起動時に一度だけ作る一覧 */
 const PARAMETER_TYPES = Object.values(enums.ParameterType)
 
 export type { OptimizeInput } from '../types/unitOptimizer'
@@ -42,51 +40,51 @@ interface ExhaustiveOptimizeOptions {
 
 /** 総当たり最適化の統計 */
 interface ExhaustiveOptimizeStats {
-  /** 実際に評価した組み合わせ数 */
+  /** 実際に点数を比較した組み合わせ数 */
   evaluatedCombos: number
   /** レンタル枝として訪問した件数 */
   rentalBranchesVisited: number
 }
 
-/** resolveSchedule の戻り値型 */
+/** スケジュールから取り出すアクション回数とレッスン値 */
 interface ResolvedSchedule {
   effectiveCounts: Partial<Record<enums.ActionIdType, number>>
   perLessonValues: PerLessonParameterValues | undefined
 }
 
-/** パラメータキャップ最適化用の事前計算済み値 */
+/** パラメータ上限を考慮するための事前計算値 */
 interface ParameterContext {
-  /** サポート以外のパラメータ上昇量（初期パラ + SPレッスン + 試験 + カスタム対象外上昇） */
+  /** サポート以外のパラメータ上昇量（初期値・SPレッスン・試験など） */
   nonSupportParams: ParameterValues
   /** パラメータ上限（null = 上限なし） */
   paramCap: number | null
 }
 
-/** optimizeManualRental と optimizeAutoRental の戻り値型 */
+/** 手動・自動レンタルの最適化結果 */
 interface OptimizeBranchResult {
   /** 最高スコア */
   bestScore: number
   /** 最高スコアを達成したメンバー配列 */
   bestMembers: CandidateCard[] | null
-  /** 自動選出されたレンタル名（autoRental の場合は設定、manualRental の場合は固定値） */
+  /** 計算結果として選ばれたレンタル名（手動指定時は指定名） */
   bestRentalName: string | null
-  /** 実際に評価した組み合わせ数 */
+  /** 実際に点数を比較した組み合わせ数 */
   evaluatedCombos: number
-  /** レンタル枝として訪問した件数（autoRental のみ） */
+  /** 自動レンタルで確認した候補数 */
   rentalBranchesVisited: number
 }
 
 /**
- * 総通数に応じた進捗更新バッチサイズを計算する
+ * 総組み合わせ数に応じた進捗のまとめ方を計算する
  *
- * UI更新回数をおおむね一定に保ちながら、
- * 小規模探索では更新を細かく、大規模探索では更新オーバーヘッドを抑える。
+ * 画面更新回数をおおむね一定に保ちながら、
+ * 小規模探索では更新を細かく、大規模探索では更新オーバーヘッドを抑える
  *
  * @param totalCombos - 総組み合わせ数
  * @returns バッチサイズ
  */
 function resolveExhaustiveBatchSize(totalCombos: number): number {
-  // 切り上げることで、少ない組み合わせでも目標回数を超えない範囲で進捗を細かく通知する
+  // 少ない組み合わせでも進捗を細かく知らせられるよう、切り上げて間隔を決める
   const estimated = Math.ceil(totalCombos / constant.EXHAUSTIVE_PROGRESS_TARGET_UPDATES)
   return Math.max(
     constant.EXHAUSTIVE_PROGRESS_MIN_BATCH_SIZE,
@@ -95,10 +93,10 @@ function resolveExhaustiveBatchSize(totalCombos: number): number {
 }
 
 /**
- * パラメータキャップ最適化コンテキストを構築する
+ * パラメータ上限を考慮するための計算条件を作る
  *
  * 初期パラメータ・SPレッスン・試験などサポート以外のパラメータ上昇量を
- * 事前計算し、パラメータ上限と合わせてコンテキストにまとめる。
+ * 事前計算し、パラメータ上限と合わせてまとめる
  *
  * @param input - 最適化入力
  * @returns パラメータキャップ最適化コンテキスト
@@ -107,26 +105,32 @@ function buildParameterContext(input: OptimizeInput): ParameterContext {
   const { settings, scoreSettings } = input
   const { scenario, scheduleSelections } = scoreSettings
 
-  // SPレッスン上昇量
-  const spLesson = getSpLessonTotal(scenario, scoreSettings.difficulty, scheduleSelections)
+  // SPレッスンによる上昇量を求める
+  // HIFの表示設定も渡し、点数設定画面と最適編成結果で同じ週条件を使う
+  const spLesson = scoreData.getSpLessonTotal(
+    scenario,
+    scoreSettings.difficulty,
+    scheduleSelections,
+    scoreSettings.hifLessonSplitSub,
+  )
 
   // 授業上昇量（通常モードのみ）
   const classTotalGain = scoreSettings.useCustomMode
     ? { vocal: 0, dance: 0, visual: 0 }
-    : getClassParameterTotal(scenario, scoreSettings.difficulty, scheduleSelections)
+    : scoreData.getClassParameterTotal(scenario, scoreSettings.difficulty, scheduleSelections)
 
   // 試験上昇量
   const examTotalGain = scoreSettings.useCustomMode
     ? { vocal: 0, dance: 0, visual: 0 }
     : scoreSettings.scenario === enums.ScenarioType.Hif
-      ? getHifExamTotalData(scoreSettings.hifExamRatios)
-      : getExamTotalData(scoreSettings.scenario, scoreSettings.difficulty)
+      ? scoreData.getHifExamTotalData(scoreSettings.hifExamRatios)
+      : scoreData.getExamTotalData(scoreSettings.scenario, scoreSettings.difficulty)
 
   const customTargetGain = scoreSettings.useCustomMode
     ? scoreSettings.parameterBonusBase
     : { vocal: 0, dance: 0, visual: 0 }
 
-  // カスタムモード時は、授業や試験などパラボ対象外の入力値も合計へ加算する
+  // カスタムモードでは、授業や試験などパラメータボーナス対象外の入力値も合計する
   const customNonBonusGain = scoreSettings.useCustomMode
     ? {
         vocal: scoreSettings.customClassBonus.vocal + scoreSettings.customNonBonusGain.vocal,
@@ -149,27 +153,28 @@ function buildParameterContext(input: OptimizeInput): ParameterContext {
 
   return {
     nonSupportParams,
-    paramCap: resolveParamCap(scenario, scoreSettings.difficulty, settings.paramCapOverride),
+    paramCap: paramCapData.resolveParamCap(scenario, scoreSettings.difficulty, settings.paramCapOverride),
   }
 }
 
 /**
  * スケジュールからアクション回数とレッスン別パラメータを導出する
  *
- * 複数の関数で共通して行うスケジュール解析処理を共通化したヘルパー。
- * 試験中Pアイテム取得回数をPアイテム取得回数に合算する処理も含む。
+ * 共通の計算で使うスケジュールの読み替えをここに集約する
+ * 試験中のPアイテム取得回数を、Pアイテム取得回数へ合算する処理も含む
  *
  * @param scoreSettings - 点数設定
- * @returns スケジュール解析結果（アクション別発動回数マップ + レッスン別パラメータ値）
+ * @returns アクション別の発動回数とレッスン別のパラメータ値
  */
 function resolveSchedule(scoreSettings: ScoreSettings): ResolvedSchedule {
   // シナリオ・難易度からスケジュールデータを取得する
   const schedule = data.getScheduleData(scoreSettings.scenario, scoreSettings.difficulty)
   // カスタムモード時はスケジュール自動計算を無効にしてすべて手動入力値を使う
   const settingsForCount = scoreSettings.useCustomMode ? { ...scoreSettings, useScheduleLimits: false } : scoreSettings
-  // スケジュールからアクション別の発動回数マップを構築する
+  // スケジュールからアクション別の発動回数の対応表を作る
   const mergedCounts = mergeScheduleCounts(settingsForCount, schedule)
-  // 試験後Pアイテム回数を合算する際に元オブジェクトを変更しないよう、常に新しいオブジェクトを構築する
+  // 試験後Pアイテムの回数を合算する
+  // 元の対応表を変更しないよう、常に新しいオブジェクトを作る
   const examPItemCount = mergedCounts[enums.ActionIdType.ExamPItemAcquire] ?? 0
   const effectiveCounts =
     examPItemCount > 0
@@ -195,13 +200,13 @@ function resolveSchedule(scoreSettings: ScoreSettings): ResolvedSchedule {
 }
 
 /**
- * 最適化結果から UnitResult を構築する
+ * 最適化結果から編成結果を作る
  *
  * @param members - 最適化されたサポート配列
  * @param input - 最適化入力
- * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
+ * @param effectiveCounts - スケジュールから導出されたアクション別発動回数の対応表
  * @param autoRentalName - 自動選出されたレンタルサポート名
- * @returns UnitResult
+ * @returns 編成結果
  */
 function buildResult(
   members: CandidateCard[],
@@ -211,6 +216,7 @@ function buildResult(
 ): UnitResult {
   const { settings, scoreSettings } = input
   const cards = members.map((m) => m.card)
+  // 選ばれたサポートが互いに提供する効果を、同じ回数条件で算出する
   const { bonusMap: synergyMap, providerMap: synergyProviderMap } = computeUnitSupportSynergy(
     cards,
     input.cardCountCustom,
@@ -229,7 +235,7 @@ function buildResult(
     }
   }
 
-  // 入力値はサポート外パラボ%なのでそのまま使用する
+  // 入力値はサポート外パラボ%なので、そのまま合計へ加える
   const outsidePercent: ParameterValues = { ...settings.paramBonusPercent }
 
   // パラメータボーナス%: サポートのパラボ% + サポート外のパラボ%
@@ -252,11 +258,11 @@ function buildResult(
     let supportSynergy = 0
     const supportSynergyDetail: SupportSynergyDetail = {}
 
-    // baseResult から各アクションIDの使用済み回数を取得する（max_count 制限をサポート間連携にも適用するため）
+    // すでに使った回数を記録し、サポート間の追加分にも発動回数の上限を適用する
     const usedCounts = new Map<enums.TriggerKeyType, number>()
     for (const detail of m.baseResult.allAbilityDetails) {
       if (detail.nameKey) {
-        // trigger_key → actionId の対応を探す
+        // アビリティの発動条件を、回数表で使うアクションIDへ対応づける
         const ability = m.card.abilities.find((a) => a.name_key === detail.nameKey && a.trigger_key)
         if (ability?.trigger_key) {
           usedCounts.set(ability.trigger_key, detail.count)
@@ -277,7 +283,7 @@ function buildResult(
       const actionId = data.TriggerActionMap[ability.trigger_key]
       let extraCount = synergyExtra[actionId] ?? 0
       if (extraCount > 0) {
-        // max_count がある場合、baseResult で使用済みの回数との合計が上限を超えないよう制限する
+        // すでに使った回数を差し引き、サポート間連携で上限を超えないようにする
         if (ability.max_count !== undefined) {
           const usedCount = usedCounts.get(ability.trigger_key) ?? 0
           extraCount = Math.max(0, Math.min(extraCount, ability.max_count - usedCount))
@@ -288,6 +294,7 @@ function buildResult(
       }
     }
 
+    // 手動指定または自動選出のレンタル枠を結果へ反映する
     const isRental =
       (settings.manualRental && settings.rentalCardName === m.card.name) ||
       (!settings.manualRental && autoRentalName === m.card.name)
@@ -304,8 +311,8 @@ function buildResult(
     }
   })
 
-  // サポート点数合計をパラメータタイプ別に集計する（キャップ適用のため）
-  // 個別パラボは除外し、ユニット全体のパラボはparameterBonusで別途加算する
+  // サポート点数をタイプ別に集計する
+  // 個別パラボは除外し、ユニット全体のパラボを後で別に加算する
   const supportScore: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
   for (const m of unitMembers) {
     const paramKey = m.card.parameter_type as keyof ParameterValues
@@ -335,24 +342,24 @@ function buildResult(
 /**
  * 手動指定レンタルの最適化ロジック
  *
- * 固定レンタルカード（settings.manualRental=true & fixedRentalName 設定）がある場合、
- * 自由枠の候補プールから SP+タイプ制約を満たす組み合わせを総当たり列挙する。
+ * 手動でレンタルカードを指定している場合、
+ * 自由枠の候補プールから SP+タイプ制約を満たす組み合わせを総当たり列挙する
  *
  * @param fixedRentalName - 固定されたレンタルサポート名
- * @param fixedCandidates - ロックカード+固定レンタルを含むメンバー配列
- * @param freePool - 自由枠の候補プール（スコアで降順ソート済み）
+ * @param fixedCandidates - 固定カードと手動レンタルを含むメンバー一覧
+ * @param freePool - 自由枠へ入れられる候補一覧（点数の高い順）
  * @param freeSlots - 自由枠のスロット数
  * @param forcedTypeCount - 固定カードが占有するタイプ数
- * @param adjustedTypeCountMax - 固定カードを考慮した調整済みタイプ上限
- * @param adjustedInput - 調整済み最適化入力
- * @param paramCtx - パラメータキャップコンテキスト
+ * @param adjustedTypeCountMax - 固定カードを考慮したタイプ別上限
+ * @param adjustedInput - 固定条件を反映した最適化入力
+ * @param paramCtx - パラメータ上限を計算するための条件
  * @param fixedVoSp - 固定カードが提供するVocalSP数
  * @param fixedDaSp - 固定カードが提供するDanceSP数
  * @param fixedViSp - 固定カードが提供するVisualSP数
- * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
- * @param onProgress - 進捗コールバック
+ * @param effectiveCounts - スケジュールから導出されたアクション別発動回数の対応表
+ * @param onProgress - 計算の進捗を受け取る操作
  * @param isCancelled - キャンセル判定関数
- * @param onBetterResult - より良い結果が見つかったときのコールバック
+ * @param onBetterResult - より高い結果が見つかったときに呼ぶ操作
  * @returns 最適化ブランチ結果
  */
 async function optimizeManualRental(
@@ -378,7 +385,7 @@ async function optimizeManualRental(
   const neededVi = Math.max(0, settings.spConstraint.visual - fixedViSp)
   const categorizedPools = createCategorizedCandidatePools(freePool)
 
-  // タイプ自由枠の上限/下限（fixedCandidates のタイプ分を差し引く）
+  // 固定カードのタイプ数を引いた残りを、自由枠の上限・下限として使う
   const typeVoMax = Math.max(
     0,
     adjustedTypeCountMax[enums.ParameterType.Vocal] - forcedTypeCount[enums.ParameterType.Vocal],
@@ -404,7 +411,7 @@ async function optimizeManualRental(
     settings.typeCountMin[enums.ParameterType.Visual] - forcedTypeCount[enums.ParameterType.Visual],
   )
 
-  // 制約入力をまとめ、引数の意味を明示する
+  // SP条件とタイプ条件を、この後の候補選出へまとめて渡す
   const constraintInput = {
     voSpPool: categorizedPools.voSpPool,
     daSpPool: categorizedPools.daSpPool,
@@ -426,6 +433,7 @@ async function optimizeManualRental(
     totalSlots: freeSlots,
   }
   const total = countSpTypeConstrainedCombos(constraintInput)
+  // 条件を満たす組み合わせがなければ、探索せずに候補なしを返す
   if (total === 0) {
     return {
       bestScore: -Infinity,
@@ -443,7 +451,7 @@ async function optimizeManualRental(
   let bestMembers: CandidateCard[] | null = null
   const manualRentalSeed = createEvaluatorSeed(fixedCandidates)
 
-  // 列挙入力も同じ構造に寄せ、count/iterate の対応関係を追いやすくする
+  // SP条件ごとの組み合わせ数と、実際に評価する組み合わせを同じ条件でそろえる
   const enumerateInput = {
     voSpPool: categorizedPools.voSpPool,
     daSpPool: categorizedPools.daSpPool,
@@ -480,7 +488,7 @@ async function optimizeManualRental(
     }
     done++
 
-    // SP・タイプ制約は spTypeConstrainedCombos の列挙により保証済み
+    // SP条件とタイプ条件を満たす組み合わせだけを評価する
     const score = evaluateUnitScoreWithSeed(
       manualRentalSeed,
       combo,
@@ -509,26 +517,26 @@ async function optimizeManualRental(
 /**
  * 自動レンタル選出の最適化ロジック
  *
- * 手動レンタル指定がない場合（settings.manualRental=false），
+ * 手動でレンタルカードを指定していない場合、
  * 全レンタル候補を列挙し、各レンタルカードに対して
- * 自由枠の SP+タイプ制約満足組み合わせを総当たり列挙する。
+ * 自由枠の SP+タイプ制約満足組み合わせを総当たり列挙する
  *
- * @param fixedCandidates - ロックカードのメンバー配列（レンタルなし）
- * @param freePool - 自由枠の候補プール（スコアで降順ソート済み）
- * @param freeSlots - 自由枠のスロット数（フリースロット-1, レンタル枠用）
+ * @param fixedCandidates - 固定カードのメンバー一覧（レンタルなし）
+ * @param freePool - 自由枠へ入れられる候補一覧（点数の高い順）
+ * @param freeSlots - 自由枠のスロット数（レンタル枠を除く）
  * @param forcedTypeCount - 固定カードが占有するタイプ数
- * @param adjustedInput - 調整済み最適化入力
+ * @param adjustedInput - 固定条件を反映した最適化入力
  * @param schedule - スケジュール解析結果
- * @param paramCtx - パラメータキャップコンテキスト
+ * @param paramCtx - パラメータ上限を計算するための条件
  * @param fixedVoSp - 固定カードが提供するVocalSP数
  * @param fixedDaSp - 固定カードが提供するDanceSP数
  * @param fixedViSp - 固定カードが提供するVisualSP数
- * @param fixedNames - 固定カード名の Set
- * @param effectiveCounts - スケジュールから導出されたアクション別発動回数マップ
- * @param onProgress - 進捗コールバック
- * @param isCancelled - キャンセル判定関数
- * @param onBetterResult - より良い結果が見つかったときのコールバック
- * @returns 最適化ブランチ結果
+ * @param fixedNames - 通常枠として固定するカード名の集合
+ * @param effectiveCounts - スケジュールから導出されたアクション別発動回数の対応表
+ * @param onProgress - 計算の進捗を受け取る操作
+ * @param isCancelled - 中断を確認する関数
+ * @param onBetterResult - より高い結果が見つかったときに呼ぶ操作
+ * @returns この条件での最適化結果
  */
 async function optimizeAutoRental(
   fixedCandidates: CandidateCard[],
@@ -548,7 +556,8 @@ async function optimizeAutoRental(
   onBetterResult?: (result: UnitResult) => void,
 ): Promise<OptimizeBranchResult> {
   const settings = adjustedInput.settings
-  // 候補上限は最低10枚を保証する。EXHAUSTIVE_CANDIDATE_LIMIT はユーザー設定がない場合のデフォルト値。
+  // 候補上限は最低10枚にする
+  // ユーザー設定がない場合は既定の候補上限を使う
   const candidateLimit = Math.max(10, settings.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT)
   const rentalPool = createRentalPool(adjustedInput, schedule, fixedNames, candidateLimit)
   const rentalContexts = createRentalBranchContexts(
@@ -562,7 +571,7 @@ async function optimizeAutoRental(
     fixedViSp,
   )
 
-  // 総組み合わせ数を事前計算してプログレス報告に使用する（SP+タイプ制約後の実数）
+  // 総組み合わせ数を事前計算し、SP・タイプ条件を反映した進捗を報告する
   let total = 0
   let rentalBranchesVisited = 0
   for (const branch of rentalContexts) {
@@ -590,6 +599,7 @@ async function optimizeAutoRental(
     branch.totalCombos = branchTotal
     total += branchTotal
   }
+  // 条件を満たす組み合わせがなければ、探索せずに候補なしを返す
   if (total === 0) {
     return { bestScore: -Infinity, bestMembers: null, bestRentalName: null, evaluatedCombos: 0, rentalBranchesVisited }
   }
@@ -632,7 +642,7 @@ async function optimizeAutoRental(
       }
       done++
 
-      // SP・タイプ制約は spTypeConstrainedCombos の列挙により保証済み
+      // SP条件とタイプ条件を満たす組み合わせだけを評価する
       const score = evaluateUnitScoreWithSeed(
         branchSeed,
         combo,
@@ -663,9 +673,9 @@ async function optimizeAutoRental(
 /**
  * 組み合わせ数を事前計算する
  *
- * @param input - 最適化入力
- * @param allCandidates - 全候補サポート
- * @param schedule - 解析済みスケジュールデータ
+ * @param input - 最適編成の条件
+ * @param allCandidates - 条件に合うサポート候補一覧
+ * @param schedule - 計算に使うスケジュール情報
  * @returns 組み合わせ数
  */
 function calculateTotalCombos(
@@ -676,7 +686,7 @@ function calculateTotalCombos(
   const { settings, scoreSettings } = input
   const { effectiveCounts, perLessonValues } = schedule
 
-  // 固定候補（ロックカード）を抽出する
+  // 固定候補（固定カード）を抽出する
   const lockedNames = new Set(settings.lockedCards)
   const fixedCandidates: CandidateCard[] = allCandidates.filter((c) => lockedNames.has(c.card.name))
 
@@ -702,7 +712,7 @@ function calculateTotalCombos(
     }
   }
 
-  // adjustedTypeCountMax を計算する（固定カードのタイプを考慮）
+  // 固定カードの枚数を下回らないよう、タイプごとの上限を調整する
   const forcedTypeCount: Record<enums.ParameterType, number> = {
     [enums.ParameterType.Vocal]: 0,
     [enums.ParameterType.Dance]: 0,
@@ -732,20 +742,22 @@ function calculateTotalCombos(
   // 自由枠の候補プールを構築する（所持カードのみ・固定カード除く）
   const fixedNames = new Set(fixedCandidates.map((c) => c.card.name))
   const scoredFree: CandidateCard[] = []
-  // 候補上限は最低10枚を保証する。EXHAUSTIVE_CANDIDATE_LIMIT はユーザー設定がない場合のデフォルト値
+  // 候補上限は最低10枚にする
+  // ユーザー設定がない場合は既定の候補上限を使う
   const candidateLimit = Math.max(10, settings.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT)
   for (const c of allCandidates) {
     if (fixedNames.has(c.card.name)) continue
     scoredFree.push(c)
   }
 
-  // 実アクション回数スコア上位に加えて、Pアイテム行動の相乗効果が大きい候補を採用する
+  // 実際の回数で点数が高い候補に加え、
+  // Pアイテムで他カードへ貢献する候補も残す
   const freePoolMap = new Map(
     selectSynergyAwareCandidates(scoredFree, candidateLimit).map((candidate) => [candidate.card.name, candidate]),
   )
 
   // SP制約を満たすために必要な SP カードをプールに補充する
-  // レンタル候補の多くがSP属性のとき freePool から除外されても残るよう UNIT_SIZE 枚分確保する
+  // レンタル候補の多くがSP属性でも、自由枠から候補がなくならないよう余分に確保する
   // 既に十分な枚数があれば補充しない
   for (const [spCat, needed] of [
     [enums.SpCategoryType.Vocal, settings.spConstraint.vocal] as const,
@@ -781,9 +793,10 @@ function calculateTotalCombos(
   const freePool = [...freePoolMap.values()].sort((a, b) => b.baseScore - a.baseScore)
 
   const freeSlots = constant.UNIT_SIZE - fixedCandidates.length
+  // 固定カードだけで6枠を超える設定は成立しない
   if (freeSlots < 0) return 0
 
-  // fixedCandidates（ロックカード+手動レンタル）が提供する SP 枚数を計算する
+  // 固定カードと手動レンタルが提供するSP枚数を計算する
   let fixedVoSp = 0
   let fixedDaSp = 0
   let fixedViSp = 0
@@ -893,20 +906,20 @@ function calculateTotalCombos(
 }
 
 /**
- * unifyRentalLock 有効時に比較する探索パス一覧を構築して返す。
+ * レンタル枠の固定方法をそろえる設定が有効なとき、比較する探索経路を作る
  *
  * @param input - 最適化入力パラメータ
- * @returns 比較対象の OptimizeInput 配列（現状維持パス含む）
+ * @returns 比較する最適編成条件（現状維持を含む）
  */
 function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
   const { settings, scoreSettings } = input
   const origRental = settings.rentalCardName
 
-  // レンタルロック・通常ロックどちらもない場合はパスなし
+  // レンタル枠・通常枠の固定がなければ、比較する固定方法はない
   if (!origRental && settings.lockedCards.length === 0) return []
 
-  // unifyRentalLock 有効時は「現状維持」「通常ロックカードをレンタルに昇格（所有済みのみ）」
-  // 「完全自動レンタル（origRental がある場合のみ）」の各パターンを並列で比較して最高スコアを選ぶ
+  // ロックを統合する場合は、現状維持・通常ロックのレンタル昇格・完全自動レンタルを比較する
+  // 通常ロックのレンタル昇格は、所持済みカードだけを対象にする
   const configs: OptimizeInput[] = [
     {
       ...input,
@@ -920,7 +933,7 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
       (input.cardUncaps[lockedName] !== undefined && input.cardUncaps[lockedName] !== enums.UncapType.NotOwned)
     if (!isOwned) continue
 
-    // lockedName をレンタルに昇格し、origRental があれば通常ロックに追加（入れ替え）
+    // 通常枠の固定カードをレンタル枠へ移し、元のレンタルカードがあれば通常枠へ入れ替える
     const nextLockedCards = settings.lockedCards.filter((n) => n !== lockedName)
     const lockedCards = origRental ? [...nextLockedCards, origRental] : nextLockedCards
 
@@ -955,14 +968,15 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
 /**
  * 総当たり最適化を非同期で実行する
  *
- * 実アクション回数スコア上位 EXHAUSTIVE_CANDIDATE_LIMIT 枚 + SP補充の候補プールから
- * SP制約を満たす部分空間のみを列挙（spConstrainedCombos）することで効率よく全探索する。
- * SP制約が強いほど評価対象が少なくなり大幅に高速化される。
- * ローカルサーチが局所解に陥った場合の補完として使用する。
+ * 実際のアクション回数で点数が高い候補と、SP条件を満たすための補充候補を対象に、
+ * SP条件とタイプ条件を満たす組み合わせを全探索する
+ * 候補を絞って計算量を抑えながら、通常の探索で取りこぼした組み合わせを確認する
  *
  * @param input - 最適化入力
- * @param onProgress - 進捗コールバック（done: 評価済み数, total: 総組み合わせ数）
- * @param isCancelled - キャンセル判定関数（true を返したら中断）
+ * @param onProgress - 進捗を受け取る操作（done: 評価済み数、total: 総組み合わせ数）
+ * @param isCancelled - 中断を確認する関数（trueなら中断）
+ * @param onBetterResult - より高い結果を受け取る操作
+ * @param options - 探索統計を受け取るオプション
  * @returns 最適ユニット結果、候補不足時は null
  */
 export async function exhaustiveOptimizeAsync(
@@ -974,7 +988,7 @@ export async function exhaustiveOptimizeAsync(
 ): Promise<UnitResult | null> {
   const { settings, scoreSettings } = input
 
-  // バリデーション（optimizeUnit と同じ）
+  // 探索を始める前に、編成枚数とSP条件が成立する設定か確認する
   const spTotal = settings.spConstraint.vocal + settings.spConstraint.dance + settings.spConstraint.visual
   if (spTotal > constant.SP_TOTAL_MAX) return null
   const typeMinTotal = PARAMETER_TYPES.reduce((s, t) => s + settings.typeCountMin[t], 0)
@@ -986,32 +1000,31 @@ export async function exhaustiveOptimizeAsync(
   const paramCtx = buildParameterContext(input)
   const { effectiveCounts, perLessonValues } = schedule
 
-  // 全候補を prepareCandidates で取得する（ロックカード含む）
+  // 固定カードを含む候補一覧を作る
   const allCandidates = prepareCandidates(input, schedule)
 
-  // unifyRentalLockが有効でレンタルロックまたは通常ロックがある場合は、現在の条件と代替パスを比較して最大スコアの編成を選ぶ
-
-  // レンタルロックが「所持済みカード」かどうかを確認する（未所持・NotOwnedは昇格対象外）
+  // ロック統合が有効で、所持済みの固定対象がある場合だけ別の固定方法も比較する
+  // レンタルロックが所持済みカードかを確認する（未所持カードは昇格対象外）
   const isRentalLockOwned =
     settings.manualRental &&
     settings.rentalCardName !== null &&
     (!!scoreSettings.useFixedUncap ||
       (input.cardUncaps[settings.rentalCardName] !== undefined &&
         input.cardUncaps[settings.rentalCardName] !== enums.UncapType.NotOwned))
-  // 通常ロックの中に所持済みカードが 1 枚でもあるかどうかを確認する
+  // 通常ロックの中に所持済みカードが1枚でもあるかを確認する
   const hasOwnedLockedCard = settings.lockedCards.some(
     (n) =>
       !!scoreSettings.useFixedUncap ||
       (input.cardUncaps[n] !== undefined && input.cardUncaps[n] !== enums.UncapType.NotOwned),
   )
-  // どちらかの条件を満たす場合に限り、複数パスの比較探索を行う
+  // どちらかの条件を満たす場合に限り、複数の固定方法を比較する
   const shouldTryUnifyPaths = !!settings.unifyRentalLock && (isRentalLockOwned || hasOwnedLockedCard)
 
   if (shouldTryUnifyPaths) {
-    // 現状維持・昇格・降格などの各パスを構築する
+    // 現状維持・昇格・降格などの固定方法を作る
     const configs = buildUnifyRentalPathConfigs(input)
 
-    // 各パスの組み合わせ数を事前に計算してプログレスバーの配分に使う
+    // 各固定方法の組み合わせ数を事前に計算し、進捗表示へ配分する
     const comboCounts: number[] = []
     let grandTotal = 0
     for (const config of configs) {
@@ -1021,10 +1034,10 @@ export async function exhaustiveOptimizeAsync(
       grandTotal += total
     }
 
-    // 全パスで組み合わせが 0 件なら解なしで終了する
+    // すべての固定方法で組み合わせが0件なら、編成なしで終了する
     if (grandTotal === 0) return null
 
-    // 全パスを通じたベスト結果と累積統計を初期化する
+    // すべての固定方法を通じた最高結果と累積統計を初期化する
     let bestResult: UnitResult | null = null
     let bestTotalScore = -Infinity
 
@@ -1032,18 +1045,18 @@ export async function exhaustiveOptimizeAsync(
     let totalBranches = 0
     let doneAccumulated = 0
 
-    // 各パスを順番に評価し、スコア最大の結果をベストとして更新する
+    // 各固定方法を順番に評価し、最も点数の高い結果を更新する
     for (let i = 0; i < configs.length; i++) {
       if (isCancelled()) return bestResult
       const config = configs[i]
       const totalForThis = comboCounts[i]
 
-      // このパスの進捗を全体進捗の一部として報告するラッパー
+      // この固定方法の進捗を、全体の進捗へ換算して報告する
       const onProgressThis = (done: number) => {
         onProgress(doneAccumulated + done, grandTotal)
       }
 
-      // このパスで暫定ベストを上回る結果が出たら全体ベストを即時更新するラッパー
+      // この固定方法で暫定ベストを上回る結果が出たら、全体の結果をすぐに更新する
       const onBetterResultWrapper = (res: UnitResult) => {
         if (res.totalScore > bestTotalScore) {
           bestTotalScore = res.totalScore
@@ -1052,7 +1065,7 @@ export async function exhaustiveOptimizeAsync(
         }
       }
 
-      // 統計情報を全パス合算して外部コールバックに報告するオプションを組み立てる
+      // 各固定方法の統計を合算し、呼び出し元へ報告する
       const optionsThis: ExhaustiveOptimizeOptions = {
         ...options,
         onStats: (st) => {
@@ -1065,10 +1078,10 @@ export async function exhaustiveOptimizeAsync(
         },
       }
 
-      // このパスの最適化を実行する
+      // この固定方法で最適編成を計算する
       const res = await exhaustiveOptimizeAsync(config, onProgressThis, isCancelled, onBetterResultWrapper, optionsThis)
 
-      // パスの最終結果を確認して全体ベストを更新する
+      // この固定方法の最終結果を確認して、全体の結果を更新する
       if (res && res.totalScore > bestTotalScore) {
         bestTotalScore = res.totalScore
         bestResult = res
@@ -1080,7 +1093,7 @@ export async function exhaustiveOptimizeAsync(
     return bestResult
   }
 
-  // 固定候補（ロックカード）を抽出する
+  // 固定候補（固定カード）を抽出する
   const lockedNames = new Set(settings.lockedCards)
   const fixedCandidates: CandidateCard[] = allCandidates.filter((c) => lockedNames.has(c.card.name))
 
@@ -1106,7 +1119,7 @@ export async function exhaustiveOptimizeAsync(
     }
   }
 
-  // adjustedTypeCountMax を計算する（固定カードのタイプを考慮）
+  // 固定カードの枚数を下回らないよう、タイプごとの上限を調整する
   const forcedTypeCount: Record<enums.ParameterType, number> = {
     [enums.ParameterType.Vocal]: 0,
     [enums.ParameterType.Dance]: 0,
@@ -1142,13 +1155,13 @@ export async function exhaustiveOptimizeAsync(
     scoredFree.push(c)
   }
 
-  // 実アクション回数スコア上位に加えて、Pアイテム行動の相乗効果が大きい候補を採用する
+  // 実際の回数で点数が高い候補に加え、Pアイテムで他カードへ貢献する候補も残す
   const freePoolMap = new Map(
     selectSynergyAwareCandidates(scoredFree, candidateLimit).map((candidate) => [candidate.card.name, candidate]),
   )
 
   // SP制約を満たすために必要な SP カードをプールに補充する
-  // レンタル候補の多くがSP属性のとき freePool から除外されても残るよう UNIT_SIZE 枚分確保する
+  // レンタル候補の多くがSP属性でも、自由枠から候補がなくならないよう余分に確保する
   // 既に十分な枚数があれば補充しない
   for (const [spCat, needed] of [
     [enums.SpCategoryType.Vocal, settings.spConstraint.vocal] as const,
@@ -1184,9 +1197,11 @@ export async function exhaustiveOptimizeAsync(
   const freePool = [...freePoolMap.values()].sort((a, b) => b.baseScore - a.baseScore)
 
   const freeSlots = constant.UNIT_SIZE - fixedCandidates.length
+  // 固定カードだけで6枠を超える設定は成立しない
   if (freeSlots < 0) return null
 
-  // fixedCandidates（ロックカード+手動レンタル）が提供するSP枚数を計算する（両パスで使用）
+  // ロックカードと手動レンタルが提供するSP枚数を計算する
+  // 手動レンタルと自動レンタルの両方で使う
   let fixedVoSp = 0
   let fixedDaSp = 0
   let fixedViSp = 0
@@ -1201,7 +1216,7 @@ export async function exhaustiveOptimizeAsync(
     }
   }
 
-  // 最適化の実行（手動レンタル指定の有無で分岐）
+  // 手動レンタル指定の有無に応じて最適化を実行する
   const branchResult = fixedRentalName
     ? await optimizeManualRental(
         fixedRentalName,
@@ -1238,14 +1253,14 @@ export async function exhaustiveOptimizeAsync(
         onBetterResult,
       )
 
-  // 統計情報を報告する
+  // 探索した組み合わせ数を呼び出し元へ報告する
   const stats: ExhaustiveOptimizeStats = {
     evaluatedCombos: branchResult.evaluatedCombos,
     rentalBranchesVisited: branchResult.rentalBranchesVisited,
   }
   options?.onStats?.(stats)
 
-  // 結果を返す
+  // 最も点数の高かった編成を返す
   if (!branchResult.bestMembers) return null
   return buildResult(branchResult.bestMembers, adjustedInput, effectiveCounts, branchResult.bestRentalName ?? undefined)
 }
@@ -1253,10 +1268,10 @@ export async function exhaustiveOptimizeAsync(
 /**
  * 手動選択ユニットを評価する
  *
- * 指定されたサポート名リストからユニットの合計スコアを計算する。
- * 6枚未満でも計算可能（部分ユニット）。
+ * 指定されたサポート名リストからユニットの合計スコアを計算する
+ * 6枚未満でも計算可能（部分ユニット）
  *
- * @param input - 最適化入力（settings.manualCards を使用）
+ * @param input - 手動編成に指定したカード名を含む最適化入力
  * @returns 計算結果（サポートが0枚の場合は null）
  */
 export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
@@ -1264,16 +1279,17 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
 
   if (settings.manualCards.length === 0) return null
 
-  // null スロットを除外してサポート名リストを取得する
+  // 空き枠を除外して、手動編成に指定したサポート名を取得する
   const cardNames = settings.manualCards.filter((n): n is string => n !== null)
   if (cardNames.length === 0) return null
 
-  // レンタル枠は末尾スロット（6枠目）のカードから導出する（manualRental に関わらず常に末尾スロットをレンタルとして扱う）
+  // レンタル枠は末尾スロット（6枠目）のカードから決める
+  // 手動指定の有無に関わらず、末尾スロットをレンタルとして扱う
   const padded = [...settings.manualCards]
   while (padded.length < constant.UNIT_SIZE) padded.push(null)
   let derivedRentalName = padded[constant.UNIT_SIZE - 1]
-  // 6枚未満のとき末尾スロットが null になるため、settings.rentalCardName が現在のカードリストに含まれていれば
-  // それをレンタルとして引き継ぐ（バッジ表示・4凸強制・パラボ計算を正しく保つ）
+  // 6枚未満では末尾スロットが空になる
+  // 設定したレンタルカードが一覧に含まれていれば、それをレンタルとして引き継ぐ
   if (derivedRentalName === null && settings.rentalCardName && cardNames.includes(settings.rentalCardName)) {
     derivedRentalName = settings.rentalCardName
   }
@@ -1294,7 +1310,8 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
     const card = input.cardByName.get(cardName)
     if (!card) continue
 
-    // 凸数: 4凸固定モードまたは末尾スロット（レンタル枠）なら4凸、それ以外は設定された凸数
+    // 4凸固定モードまたはレンタル枠は4凸で計算する
+    // それ以外はカードごとに設定された凸数を使う
     const isRentalSlot = derivedRentalName === cardName
     const uncap =
       scoreSettings.useFixedUncap || isRentalSlot
@@ -1312,9 +1329,10 @@ export function evaluateManualUnit(input: OptimizeInput): UnitResult | null {
     )
   }
 
+  // 指定名のカードを1枚も見つけられなければ、評価結果を作れない
   if (candidates.length === 0) return null
 
-  // derivedRentalName を autoRentalName として渡し、末尾スロットのカードに isRental: true をセットする
-  // manualRental の状態に関わらず末尾スロットのカードは常にレンタルとして表示する
+  // 末尾スロットのカードをレンタルとして結果へ渡す
+  // 手動指定の有無に関わらず、末尾スロットのカードをレンタル表示にする
   return buildResult(candidates, evalInput, effectiveCounts, derivedRentalName ?? undefined)
 }

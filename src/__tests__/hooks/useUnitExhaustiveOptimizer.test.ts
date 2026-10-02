@@ -1,18 +1,19 @@
 /**
- * 総当たり最適化hookの完了直前の進捗表示を検証する。
+ * 総当たり最適化の完了直前に進捗表示を検証する
  *
- * 計算完了通知を受け取ったら、満タン表示を1フレーム描画してから進捗状態を片付けることを確認する
+ * 計算完了通知を受け取ったら、満タン表示を描画してから
+ * 進捗状態を片付けることを確認する
  */
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_UNIT_SIMULATOR_SETTINGS } from '../../constant/settings'
 import type { OptimizeInput } from '../../types/unitOptimizer'
 
-vi.mock('../../hooks/unitOptimizerRunner', () => ({
+vi.mock('../../application/unitOptimizerRunner', () => ({
   runOptimizerAsync: vi.fn(),
 }))
 
-import { runOptimizerAsync } from '../../hooks/unitOptimizerRunner'
+import { runOptimizerAsync } from '../../application/unitOptimizerRunner'
 import { useUnitExhaustiveOptimizer } from '../../hooks/useUnitExhaustiveOptimizer'
 
 describe('useUnitExhaustiveOptimizer', () => {

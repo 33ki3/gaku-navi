@@ -1,17 +1,18 @@
 /**
  * 編成結果サポート1枚分の表示コンポーネント
  *
- * 最適編成結果の各サポートを表示する。
- * サポート名・レアリティ・タイプ・スコア・サポート間連携・インライン回数設定を含む。
+ * 最適編成結果の各サポートを表示する
+ * サポート名・レアリティ・タイプ・スコアを表示する
+ * サポート間連携とインライン回数設定にも対応する
  */
 import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import * as constant from '../../constant'
 import * as data from '../../data'
-import type { CardCustomData } from '../../hooks/useCardCountCustom'
+import type { CardCustomData } from '../../types/card'
 import type { ActionIdType } from '../../types/enums'
-import { BadgeSizeType, BadgeWeightType } from '../../types/enums'
+import * as enums from '../../types/enums'
 import type { UnitMember } from '../../types/unit'
 import { hasSPAbility } from '../../utils/cardQuery'
 import { getScoreStyles } from '../../utils/display/scoreStyles'
@@ -21,7 +22,7 @@ import { EventBoostSection } from '../scoreDetailModal/EventBoostSection'
 import { Badge } from '../ui/Badge'
 import { AdjustedIcon, ChevronDownIcon, CloseIcon, LockIcon } from '../ui/icons'
 
-/** UnitCardItem に渡すプロパティ */
+/** 編成結果のサポート表示と操作 */
 interface UnitCardItemProps {
   /** 編成メンバー情報 */
   member: UnitMember
@@ -29,32 +30,32 @@ interface UnitCardItemProps {
   isLocked: boolean
   /** 回数調整が設定されているか */
   hasCustom: boolean
-  /** 固定トグルコールバック */
+  /** 固定状態を切り替える操作 */
   onToggleLock: (cardName: string) => void
-  /** サポート削除コールバック */
+  /** 編成からサポートを外す操作 */
   onRemove: (cardName: string) => void
   /** 詳細が展開中かどうか */
   expanded: boolean
-  /** 詳細展開トグルコールバック（サポート名を受け取る） */
+  /** 詳細の表示を切り替える操作（サポート名を受け取る） */
   onToggleExpand: (cardName: string) => void
   /** このサポートの回数調整データ */
   cardCustom: CardCustomData
-  /** 自動カウントの回数調整を変更する（サポート名を受け取る） */
+  /** サポート自身の提供回数を変更する操作（カード名を受け取る） */
   onSelfTriggerChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** 自動カウントの回数調整を個別に削除する（サポート名を受け取る） */
+  /** サポート自身の提供回数設定を削除する操作（カード名を受け取る） */
   onRemoveSelfTrigger: (cardName: string, actionId: ActionIdType) => void
-  /** Pアイテム発動回数の回数調整を変更する（サポート名を受け取る） */
+  /** Pアイテムの発動回数を変更する操作（サポート名を受け取る） */
   onPItemCountChange: (cardName: string, actionId: ActionIdType, count: number) => void
-  /** Pアイテム発動回数の回数調整を個別に削除する（サポート名を受け取る） */
+  /** Pアイテムの発動回数設定を削除する操作（サポート名を受け取る） */
   onRemovePItemCount: (cardName: string, actionId: ActionIdType) => void
-  /** サポート別回数調整をリセットする（サポート名を受け取る） */
+  /** サポートの回数設定をすべて戻す操作（サポート名を受け取る） */
   onClearCustom: (cardName: string) => void
 }
 
 /**
  * 編成結果のサポート1枚を表示する
  *
- * @param props - コンポーネントプロパティ
+ * @param props - サポート情報、固定・削除・展開・回数調整の操作
  * @returns サポート要素
  */
 export default memo(function UnitCardItem({
@@ -79,7 +80,7 @@ export default memo(function UnitCardItem({
   const planEntry = data.getPlanBadge(card.plan)
   const hasSP = hasSPAbility(card)
 
-  // サポート名を束縛した安定コールバック（memo 最適化用）
+  // カード名をあらかじめ結び付け、各行の操作を安定させる
   const handleToggleExpand = useCallback(() => onToggleExpand(card.name), [card.name, onToggleExpand])
   const handleSelfTriggerChange = useCallback(
     (actionId: ActionIdType, count: number) => onSelfTriggerChange(card.name, actionId, count),
@@ -106,7 +107,7 @@ export default memo(function UnitCardItem({
   const hasParamBonus =
     member.paramBonusPercent.vocal > 0 || member.paramBonusPercent.dance > 0 || member.paramBonusPercent.visual > 0
 
-  // アビリティ（nameKey あり）とPアイテム（displayName あり）を分類する（点数詳細と同様に全件表示）
+  // アビリティとPアイテムを分け、点数詳細と同じく全件を表示する
   const { abilities, pItems } = useMemo(
     () => ({
       abilities: result.allAbilityDetails.filter((ab) => ab.nameKey != null),
@@ -164,17 +165,21 @@ export default memo(function UnitCardItem({
           </div>
           {/* バッジ行 */}
           <div className="flex flex-nowrap gap-1 overflow-x-auto scrollbar-none">
-            <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color={rarityEntry.color}>
+            <Badge size={enums.BadgeSizeType.Sm} weight={enums.BadgeWeightType.Black} color={rarityEntry.color}>
               {t(rarityEntry.label)}
             </Badge>
-            <Badge size={BadgeSizeType.Sm} color={typeEntry.badge}>
+            <Badge size={enums.BadgeSizeType.Sm} color={typeEntry.badge}>
               {t(typeEntry.label)}
             </Badge>
-            <Badge size={BadgeSizeType.Sm} color={planEntry.badge}>
+            <Badge size={enums.BadgeSizeType.Sm} color={planEntry.badge}>
               {t(planEntry.label)}
             </Badge>
             {isRental && (
-              <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color="bg-emerald-500 text-white">
+              <Badge
+                size={enums.BadgeSizeType.Sm}
+                weight={enums.BadgeWeightType.Black}
+                color="bg-emerald-500 text-white"
+              >
                 {t('unit.result.rental_label')}
               </Badge>
             )}
@@ -187,7 +192,11 @@ export default memo(function UnitCardItem({
           <div className="w-5 flex flex-col items-center justify-start gap-0.5 shrink-0">
             {/* SPバッジ（常に上） */}
             {hasSP ? (
-              <Badge size={BadgeSizeType.Sm} weight={BadgeWeightType.Black} color="bg-amber-400 text-amber-900">
+              <Badge
+                size={enums.BadgeSizeType.Sm}
+                weight={enums.BadgeWeightType.Black}
+                color="bg-amber-400 text-amber-900"
+              >
                 {t('card.sp_badge')}
               </Badge>
             ) : (

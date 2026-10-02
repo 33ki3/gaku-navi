@@ -1,7 +1,7 @@
 /**
  * 最適編成関連の型定義
  *
- * 最適編成計算で使用する設定・結果の型を定義する。
+ * 最適編成の設定と結果を表す型を定義する
  */
 import type { CardCalculationResult, SupportCard } from './card'
 import type { ActionIdType, CardType, ParameterType, PlanType, TriggerKeyType, UncapType } from './enums'
@@ -93,7 +93,7 @@ export interface UnitMember {
   result: CardCalculationResult
   /** サポート間連携による追加スコア */
   supportSynergy: number
-  /** アビリティのtrigger_keyごとのサポート間連携追加回数 */
+  /** アビリティの発動条件ごとのサポート間連携追加回数 */
   supportSynergyDetail: SupportSynergyDetail
   /** サポート間連携の提供元詳細 */
   synergyProviders: SynergyProviderDetail[]

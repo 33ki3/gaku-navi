@@ -6,9 +6,9 @@
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
-import type { UserCardFormState } from '../../hooks/formHelpers'
 import type { FormValidation } from '../../hooks/useUserCardForm'
 import * as enums from '../../types/enums'
+import type { UserCardFormState } from '../../utils/userCardForm'
 import { ToggleButton } from '../ui/ToggleButton'
 
 /** BasicInfoSection コンポーネントに渡すプロパティ */

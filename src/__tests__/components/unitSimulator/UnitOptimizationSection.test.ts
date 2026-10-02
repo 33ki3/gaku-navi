@@ -1,5 +1,5 @@
 /**
- * 最適計算中の手動編成表示を検証する。
+ * 最適計算中の手動編成表示を検証する
  *
  * 手動設定と直前の計算結果が一致しない場合も、計算中は現在の手動編成の
  * スロット一覧を表示し続け、計算完了まで一覧が消えないことを確認する
@@ -85,6 +85,8 @@ describe('UnitOptimizationSection', () => {
             setPItemCount: vi.fn(),
             removePItemCount: vi.fn(),
             clearCardCustom: vi.fn(),
+            setCardCountCustom: vi.fn(),
+            applyCardCountCustom: vi.fn(),
           },
           customizedCardNames: new Set<string>(),
           allCardByName: new Map(data.AllCards.map((card) => [card.name, card])),
@@ -95,7 +97,7 @@ describe('UnitOptimizationSection', () => {
     // 古い結果側のカード一覧と、結果ビューの合計値ラベルが消えないことを確認する
     expect(screen.getByText(first)).toBeTruthy()
     expect(screen.getByText('合計パラメータ上昇量')).toBeTruthy()
-    // 新しい手動設定は計算完了後に結果へ反映するため、計算中の結果一覧にはまだ出ない
+    // 新しい手動設定は計算完了後に反映するため、計算中の結果一覧にはまだ出ない
     expect(screen.queryByText(second)).toBeNull()
   })
 })

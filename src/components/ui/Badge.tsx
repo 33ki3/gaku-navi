@@ -2,21 +2,21 @@
  * バッジ共通コンポーネント
  *
  * レアリティ（SSR/SR/R）、タイプ（Vo/Da/Vi）、プラン（センス/ロジック）などの
- * ラベルを表示するための汎用的な小さいタグ。
- * サイズ・色・フォントウェイトをpropsで切り替えられる。
+ * ラベルを表示するための汎用的な小さいタグ
+ * サイズ・色・文字の太さを指定できる
  */
 import type { ReactNode } from 'react'
 import { getBadgeSizeStyle, getBadgeWeightClass } from '../../data/ui'
 import type { BadgeSizeType, BadgeWeightType } from '../../types/enums'
 import { BadgeSizeType as BadgeSizeEnum, BadgeWeightType as BadgeWeightEnum } from '../../types/enums'
 
-/** Badge コンポーネントに渡すプロパティ */
+/** バッジへ渡す表示内容と見た目の設定 */
 interface BadgeProps {
   /** バッジ内に表示する内容（テキストやアイコンなど） */
   children: ReactNode
-  /** サイズ（sm / md / lg）。デフォルトは md */
+  /** サイズ（sm / md / lg）。省略時は md */
   size?: BadgeSizeType
-  /** フォントの太さ（bold / normal）。デフォルトは bold */
+  /** フォントの太さ（bold / normal）。省略時は bold */
   weight?: BadgeWeightType
   /** 背景色とテキスト色のTailwindクラス（例: "bg-blue-100 text-blue-800"） */
   color: string

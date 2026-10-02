@@ -1,7 +1,8 @@
 /**
- * 最適編成パネル。
+ * 最適編成パネル
  *
- * パネルのレイアウトと各機能の組み合わせだけを担当し、手動選択・再計算同期・設定・結果表示は専用hook／コンポーネントへ委譲する。
+ * 手動選択、最適編成の設定、計算結果を同じパネルで扱えるようにする
+ * パネルのレイアウトと機能間の受け渡しをまとめる
  */
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +12,7 @@ import type { CardCountCustomState } from '../../hooks/useCardCountCustom'
 import { useManualUnitSelection } from '../../hooks/useManualUnitSelection'
 import { useUnitResultSync } from '../../hooks/useUnitResultSync'
 import { useUnitSimulator } from '../../hooks/useUnitSimulator'
+import type { UnitSimulatorSettingsState } from '../../hooks/useUnitSimulatorSettingsState'
 import type { CardListModeController } from '../../types/app'
 import type { ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
@@ -31,9 +33,9 @@ interface UnitSimulatorPanelProps {
   pinned: boolean
   /** 2枚目パネルとして左側に配置するか */
   secondPanel?: boolean
-  /** サポート一覧からカードを追加する関数の登録先 */
+  /** 一覧からカードを追加する操作を受け取る登録先 */
   registerAddManualCard: (handler: ((cardName: string) => void) | null) => void
-  /** サポート一覧で選択可能か判定する関数の登録先 */
+  /** 一覧でカードを選べるか確認する操作を受け取る登録先 */
   registerIsCardEligible: (handler: ((card: SupportCard) => boolean) | null) => void
   /** サポート一覧の操作モードと切り替え操作 */
   cardListMode: CardListModeController
@@ -43,10 +45,12 @@ interface UnitSimulatorPanelProps {
   scoreSettings: ScoreSettings
   /** ユーザー追加分を含む全サポート */
   allCards: SupportCard[]
-  /** サポート名からカードを引くマップ */
+  /** サポート名からカードを探す一覧 */
   allCardByName: Map<string, SupportCard>
   /** サポートごとの凸数 */
   cardUncaps: Record<string, enums.UncapType>
+  /** アプリで共有する最適編成設定 */
+  unitSettingsState: UnitSimulatorSettingsState
   /** 手動編成の6枠が埋まったときに呼び出す関数 */
   onManualSelectionComplete?: () => void
   /** スマホ下部メニュー分の余白を確保するか */
@@ -56,9 +60,9 @@ interface UnitSimulatorPanelProps {
 }
 
 /**
- * 最適編成をサイドパネルまたはスマホオーバーレイとして表示する。
+ * 最適編成をサイドパネルまたはスマホオーバーレイとして表示する
  *
- * @param props - パネル状態、一覧連携、点数設定、カードデータ
+ * @param props - パネル状態、一覧からの選択操作、点数設定、カードデータ
  * @returns 最適編成パネル。閉じている場合は何も返さない
  */
 export default function UnitSimulatorPanel({
@@ -74,6 +78,7 @@ export default function UnitSimulatorPanel({
   allCards,
   allCardByName,
   cardUncaps,
+  unitSettingsState,
   onManualSelectionComplete,
   reserveMobileNavSpace,
   onSwitchToScoreSettings,
@@ -81,7 +86,14 @@ export default function UnitSimulatorPanel({
   const { t } = useTranslation()
   const isUnitCardSelectMode = cardListMode.mode === enums.CardListInteractionModeType.UnitCardSelect
   const isCardExclusionEditMode = cardListMode.mode === enums.CardListInteractionModeType.CardExclusionEdit
-  const simulator = useUnitSimulator(allCards, allCardByName, scoreSettings)
+  const simulator = useUnitSimulator(
+    allCards,
+    allCardByName,
+    scoreSettings,
+    unitSettingsState,
+    cardUncaps,
+    countCustom.cardCountCustom,
+  )
   const [isSettingsOpen, setIsSettingsOpen] = useState(true)
 
   const manualSelection = useManualUnitSelection({

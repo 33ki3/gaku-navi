@@ -1,7 +1,7 @@
 /**
- * Vo・Da・Viの数値入力グリッド。
+ * Vo・Da・Viの数値入力グリッド
  *
- * 最適編成設定で繰り返し使う3列のラベルと数値入力を、同じレイアウトと操作方法で描画する。
+ * 最適編成設定で使う3列の入力欄を、同じ見た目と操作方法で表示する
  */
 import { useTranslation } from 'react-i18next'
 import * as data from '../../data'

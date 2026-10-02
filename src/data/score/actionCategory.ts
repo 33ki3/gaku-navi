@@ -1,8 +1,8 @@
 /**
- * アクション回数カテゴリのマスタデータ。
+ * 点数設定で選べるアクション一覧とグループ
  *
- * 点数計算の「アクション回数設定」セクションに表示する
- * 入力可能なアクションの一覧・グループ分類・グループラベルを統合的に定義する。
+ * 点数設定の「アクション回数設定」に表示する項目と、
+ * グループごとの見出しを定義する
  */
 import type { TranslationKey } from '../../i18n'
 import { ActionGroupType, ActionIdType } from '../../types/enums'
@@ -118,11 +118,11 @@ const data: ActionGroupEntry[] = [
 /** 全カテゴリのフラット配列（表示順を保持） */
 export const ActionCategoryList: readonly ActionCountCategory[] = data.flatMap((g) => g.categories)
 
-/** アクションID → カテゴリの逆引きマップ（内部用） */
+/** アクションIDから入力欄のカテゴリを探す表 */
 const categoryMap = new Map<ActionIdType, ActionCountCategory>(ActionCategoryList.map((c) => [c.id, c]))
 
 /**
- * アクションIDに対応するカテゴリを返す。
+ * アクションIDに対応するカテゴリを返す
  *
  * @param actionId - アクションID
  * @returns 見つからなければ undefined
@@ -137,10 +137,10 @@ export const ActionGroups: Record<ActionGroupType, ActionCountCategory[]> = Obje
 ) as Record<ActionGroupType, ActionCountCategory[]>
 
 /**
- * アクショングループの表示ラベル（i18n キー）を返す。
+ * アクショングループの表示ラベル（翻訳キー）を返す
  *
  * @param group - アクショングループ
- * @returns i18n キー
+ * @returns 翻訳キー
  */
 export function getActionGroupLabel(group: ActionGroupType): TranslationKey {
   return data.find((g) => g.id === group)!.label

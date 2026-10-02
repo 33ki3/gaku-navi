@@ -5,8 +5,8 @@
  */
 import { useTranslation } from 'react-i18next'
 import * as data from '../../data'
-import type { UserCardFormState } from '../../hooks/formHelpers'
 import * as enums from '../../types/enums'
+import type { UserCardFormState } from '../../utils/userCardForm'
 import { isEnumValue } from '../../utils/valueValidation'
 import { ToggleButton } from '../ui/ToggleButton'
 

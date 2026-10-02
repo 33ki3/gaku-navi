@@ -6,7 +6,7 @@
  */
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
-import type { CardCalculationResult } from '../../types/card'
+import type { CardAbilityDetail, CardCalculationResult } from '../../types/card'
 import { getScoreStyles } from '../../utils/display/scoreStyles'
 import { AbilityRow } from './AbilityRow'
 
@@ -15,7 +15,7 @@ interface AbilitySectionProps {
   /** スコア計算結果 */
   result: CardCalculationResult
   /** アビリティ詳細の配列 */
-  abilities: CardCalculationResult['allAbilityDetails']
+  abilities: CardAbilityDetail[]
   /** パラメータボーナスがあるか */
   hasParamBonus: boolean
 }

@@ -3,8 +3,8 @@
  *
  * JSON構文、外側の形式、各 localStorage 値の順に確認し、保存処理へ渡せるデータだけを返す。
  */
-import { EXPORT_KEYS } from '../data/ui'
 import type { ExportKey } from '../data/ui'
+import { EXPORT_KEYS } from '../data/ui'
 import i18n from '../i18n'
 import type { ImportSalvageResult, ValidatedStorageEntry } from './importDataValidation'
 import { fillImportValueDefaults, getImportValueDefinition, isExportData, isExportKey } from './importDataValidation'
@@ -167,7 +167,7 @@ export function parseImportText(text: string, selectedKeys: readonly ExportKey[]
     const itemLabel = i18n.t(definition.labelKey)
     let value: unknown
     if (typeof rawValue === 'string') {
-      // 旧形式はdata内の値がJSON文字列なので、読み込み時にJSON値へ戻す
+      // v1形式はdata内の値がJSON文字列なので、読み込み時にJSON値へ戻す
       try {
         value = JSON.parse(rawValue)
       } catch (error) {
@@ -182,7 +182,7 @@ export function parseImportText(text: string, selectedKeys: readonly ExportKey[]
         continue
       }
     } else {
-      // 新形式はdata内にオブジェクト・配列・真偽値などのJSON値を直接持つ
+      // v2形式はdata内にオブジェクト・配列・真偽値などのJSON値を直接持つ
       value = rawValue
     }
 

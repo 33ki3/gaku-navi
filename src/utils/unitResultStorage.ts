@@ -1,5 +1,5 @@
 /**
- * 最適編成結果の localStorage 永続化と復元。
+ * 最適編成結果の保存と復元
  *
  * カード本体は保存せず名前だけを保持し、復元時に最新のカードマスタへ
  * 差し替える。削除済みカードや不正なキャッシュがあれば結果全体を破棄する
@@ -24,7 +24,7 @@ const EMPTY_LOADED_RESULT: LoadedUnitResult = {
 }
 
 /**
- * 計算結果を localStorage に保存する
+ * 計算結果をブラウザの保存領域へ保存する
  *
  * @param result - 保存する最適編成結果
  * @returns 戻り値なし
@@ -51,12 +51,12 @@ export function saveUnitResult(result: UnitResult): void {
   try {
     localStorage.setItem(constant.UNIT_RESULT_STORAGE_KEY, JSON.stringify(serializable))
   } catch {
-    /** localStorage が使えない環境でも計算結果の画面表示は続ける */
+    // 保存領域が使えない環境でも、計算結果の画面表示は続ける
   }
 }
 
 /**
- * localStorage から計算結果を復元する
+ * ブラウザの保存領域から計算結果を復元する
  *
  * @param cardByName - 現在利用できるサポート名とカードの対応表
  * @returns 復元結果と計算済み状態

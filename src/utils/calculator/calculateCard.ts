@@ -1,14 +1,21 @@
 /**
  * メインのサポート計算ロジック
  *
- * サポートカード1枚の「パラメータ上昇の合計値」を計算する。
+ * サポートカード1枚の「パラメータ上昇の合計値」を計算する
  * アビリティ・イベント・Pアイテム・パラメータボーナスの各要素を
- * 個別に積み上げて合計する。
+ * 個別に積み上げて合計する
  */
 
 import * as constant from '../../constant'
 import { TriggerActionMap } from '../../data/score'
-import type { CardCalculationResult, ParameterValues, PerLessonParameterValues, SupportCard } from '../../types/card'
+import type {
+  CardAbilityBoost,
+  CardAbilityDetail,
+  CardCalculationResult,
+  ParameterValues,
+  PerLessonParameterValues,
+  SupportCard,
+} from '../../types/card'
 import type { ActionIdType, TriggerKeyType, UncapType } from '../../types/enums'
 import { getProvidedActions } from '../supportSynergy'
 import { getSelfAcquisitionBonus, parseEventParameterBoost, parsePItemParameterBoost } from './events'
@@ -17,8 +24,8 @@ import { parseAbility } from './helpers'
 /**
  * 未所持サポート用の空の計算結果を生成する
  *
- * すべての値が 0 の CardCalculationResult を返す。
- * サポート詳細やスコア内訳モーダルを 0 点として表示するために使う。
+ * すべての値が0のCardCalculationResultを返す
+ * サポート詳細やスコア内訳モーダルを0点として表示するために使う
  */
 export function createEmptyResult(card: SupportCard): CardCalculationResult {
   return {
@@ -38,10 +45,10 @@ export function createEmptyResult(card: SupportCard): CardCalculationResult {
 }
 
 /**
- * trigger_key からアクション回数の参照キーに変換する。
+ * アビリティの発動条件をアクション回数の参照先へ変換する
  *
- * アビリティの trigger_key（例: 'vo_lesson_end'）を
- * actionCounts のキー（例: 'lesson_vo'）にマッピングする。
+ * 例えば、ボーカルレッスン終了時の発動条件を、
+ * ボーカルレッスンの回数へ対応づける
  */
 function resolveActionId(triggerKey: TriggerKeyType): ActionIdType {
   return TriggerActionMap[triggerKey]
@@ -65,9 +72,9 @@ function resolveActionId(triggerKey: TriggerKeyType): ActionIdType {
  * @param parameterBonusBase - パラメータボーナスの対象値（数値 or Vo/Da/Vi別）
  * @param includeSelfTrigger - 自サポートのイベントによる自己発火を含めるか
  * @param includePItem - Pアイテムの効果を含めるか
- * @param parameterBonusPerLesson - レッスンごとの Vo/Da/Vi 上昇量（指定時はレッスンごとに切り捨て計算する）
- * @param selfBonusCustom - 自動カウント（selfBonus）の回数調整（自身イベント効果の加算値を置換する）
- * @param pItemCountCustom - Pアイテム発動回数の回数調整（Pアイテムのトリガー回数を置換する）
+ * @param parameterBonusPerLesson - レッスンごとのVo/Da/Vi上昇量 指定時はレッスンごとに切り捨てて計算する
+ * @param selfBonusCustom - 自動発動アビリティの回数調整 自身のイベント効果による加算値を置き換える
+ * @param pItemCountCustom - Pアイテム発動回数の回数調整 Pアイテムの発動条件に使う回数を置き換える
  * @returns 各アビリティの寄与度を含む計算結果
  */
 export function calculateCardParameter(
@@ -108,8 +115,8 @@ export function calculateCardParameter(
   const eventParamBase = parseEventParameterBoost(card)
   const eventBoost = Math.floor(eventParamBase * eventBoostMultiplier)
 
-  const abilityBoosts: CardCalculationResult['abilityBoosts'] = []
-  const allAbilityDetails: CardCalculationResult['allAbilityDetails'] = []
+  const abilityBoosts: CardAbilityBoost[] = []
+  const allAbilityDetails: CardAbilityDetail[] = []
   const autoCounts: Partial<Record<ActionIdType, number>> = {}
 
   for (const parsed of parsedAbilities) {
@@ -143,7 +150,7 @@ export function calculateCardParameter(
     }
 
     // ベース回数 + 他サポート由来の追加回数 + 自己保有ボーナス
-    // 自動カウント（selfBonus）の回数調整があれば自動計算値を置換する
+    // 自動発動回数の調整があれば、自動計算した自己発動分を置き換える
     const actionId = resolveActionId(parsed.triggerKey)
     const baseCount = actionCounts[actionId] ?? 0
     const extraCount = extraEventCounts[actionId] ?? 0
@@ -162,7 +169,7 @@ export function calculateCardParameter(
       totalCount = parsed.maxCount
     }
 
-    // パーセンテージ値（発生率等）はパラメータ上昇に直接寄与しないのでスキップする
+    // 発生率などの割合はパラメータ上昇量ではないため、合計へ加えない
     if (!parsed.isPercentage) {
       // 上昇量 = 1回あたりの値 × 回数（小数切り捨て）
       const total = totalCount > 0 ? Math.floor(parsed.numericValue * totalCount) : 0
@@ -195,8 +202,8 @@ export function calculateCardParameter(
 
   // Pアイテムによるパラメータ上昇を処理する
   const pItemBoosts = includePItem ? parsePItemParameterBoost(card) : []
-  // Pアイテム自身の発動トリガーに対して、同じカードが提供するイベント/Pアイテムの回数を加算する。
-  // 回数調整が指定された場合は、後続で selfBonusCustom を優先して置換する。
+  // Pアイテム自身の発動条件に、このカードが提供するイベントやPアイテムの回数を加える
+  // 回数調整が指定された場合は、後続でその値を優先して置き換える
   const selfProvidedActions =
     pItemBoosts.length > 0 ? getProvidedActions(card, { includeSelfTrigger, includePItem, actionCounts }) : {}
   for (const boost of pItemBoosts) {
@@ -219,7 +226,7 @@ export function calculateCardParameter(
     if (pItemCountCustom && boostActionId in pItemCountCustom) {
       totalCount = pItemCountCustom[boostActionId]!
     } else if (card.p_item?.provided_action_ids && boost.maxCount !== null) {
-      // ユーザー定義カードの場合、max_count をデフォルトの最小値として使用する
+      // ユーザー定義カードの場合、発動回数上限を既定の最小値として扱う
       totalCount = Math.max(rawCount, boost.maxCount)
     } else {
       totalCount = rawCount
@@ -254,8 +261,8 @@ export function calculateCardParameter(
     }
   }
 
-  // レッスンごとのデータがある場合: 各レッスンの上昇量に対して個別に%適用→切り捨て→合算
-  // ない場合（手動入力）: 合計値 × パーセント / 100（小数切り捨て）
+  // レッスンごとのデータがある場合は、各レッスンで切り捨ててから合算する
+  // レッスンごとのデータがない場合は、合計値に割合を適用してから切り捨てる
   let parameterBonus: number
   if (parameterBonusPerLesson && paramBonusPercent > 0) {
     const perLessonValues = parameterBonusPerLesson[paramType]

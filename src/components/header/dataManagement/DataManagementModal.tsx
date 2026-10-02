@@ -70,7 +70,7 @@ export default function DataManagementModal({ onClose }: DataManagementModalProp
           })}${hasSelectionWarnings ? `\n\n${pendingPreview.selectionWarnings.join('\n')}` : ''}`
 
   return (
-    <ModalOverlay onClose={closeModal} panelClassName={styles.MODAL_PANEL}>
+    <ModalOverlay onClose={closeModal} panelClassName={styles.MODAL_PANEL} ariaLabel={t('ui.data_management.title')}>
       {/* データ管理モーダルのヘッダー */}
       <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-4 py-4 sm:px-6">
         <div className="flex items-center gap-1.5">

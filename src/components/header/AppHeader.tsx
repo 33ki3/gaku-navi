@@ -1,9 +1,9 @@
 /**
  * アプリケーションヘッダーコンポーネント
  *
- * ページ最上部に固定表示されるヘッダー。
+ * ページ最上部に固定表示されるヘッダー
  * アプリタイトル、凸数設定/スコア設定/最適編成ボタン、
- * データ管理パネル、モバイルメニューを含む。
+ * データ管理パネル、モバイルメニューを含む
  */
 import { Suspense, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,7 +20,7 @@ const HelpModal = createPreloadedComponent(lazyModules.loadHelpModal)
 const AboutModal = createPreloadedComponent(lazyModules.loadAboutModal)
 const DataManagementModal = createPreloadedComponent(lazyModules.loadDataManagementModal)
 
-/** AppHeader コンポーネントに渡すプロパティ */
+/** ヘッダーに表示する設定と操作 */
 interface AppHeaderProps {
   /** スコア設定モーダルを開く関数（モバイル用） */
   onOpenScoreSettings: () => void
@@ -52,6 +52,12 @@ interface AppHeaderProps {
   onOpenUserCardForm: () => void
   /** オプションモーダルを開く関数 */
   onOpenOptions: () => void
+  /** データ管理モーダルの開閉状態 */
+  dataManagementOpen: boolean
+  /** データ管理モーダルを開く関数 */
+  onOpenDataManagement: () => void
+  /** データ管理モーダルを閉じる関数 */
+  onCloseDataManagement: () => void
   /** スマホ下部メニューを表示するか */
   showMobileBottomNav: boolean
   /** スマホ下部メニューをスクロール時も固定するか */
@@ -61,7 +67,7 @@ interface AppHeaderProps {
 }
 
 /**
- * アプリケーションのタイトル、主要操作、補助モーダルをまとめて表示する。
+ * アプリケーションのタイトル、主要操作、補助モーダルをまとめて表示する
  *
  * @param props - 各パネルとモバイルナビゲーションの状態・操作
  * @returns 画面上部へ固定するアプリケーションヘッダー
@@ -82,6 +88,9 @@ export default function AppHeader({
   sortReverse,
   onOpenUserCardForm,
   onOpenOptions,
+  dataManagementOpen,
+  onOpenDataManagement,
+  onCloseDataManagement,
   showMobileBottomNav,
   keepMobileBottomNavFixed,
   registerMobileNavigationShow,
@@ -90,13 +99,13 @@ export default function AppHeader({
   const { uncapEditMode, onToggleUncapEdit } = useCardUIContext()
   const [helpOpen, setHelpOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const [dataManagementOpen, setDataManagementOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   useHeaderHeightCssVariable(headerRef)
 
   const moreMenuActions = {
+    // メニュー操作を親へ渡し、ヘッダー内に別の表示状態を持たない
     openUserCardForm: onOpenUserCardForm,
-    openDataManagement: () => setDataManagementOpen(true),
+    openDataManagement: onOpenDataManagement,
     openOptions: onOpenOptions,
     openHelp: () => setHelpOpen(true),
     openAbout: () => setAboutOpen(true),
@@ -170,7 +179,7 @@ export default function AppHeader({
         {dataManagementOpen && (
           <Suspense fallback={<ModalLoadingFallback panelClassName={constant.MODAL_PANEL_DETAIL} />}>
             {/* データ管理モーダル */}
-            <DataManagementModal onClose={() => setDataManagementOpen(false)} />
+            <DataManagementModal onClose={onCloseDataManagement} />
           </Suspense>
         )}
       </header>

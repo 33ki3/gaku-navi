@@ -1,17 +1,21 @@
 /**
- * 点数設定と最適編成のサイドパネルを表示する。
+ * 点数設定と最適編成のサイドパネルを表示する
  *
  * パネル間の切り替えと、一覧からサポートを選ぶための接続だけを
  * ルートコンポーネントから受け取る
  */
 import { Suspense, useCallback } from 'react'
+import type { PresetCommand } from '../../application/command'
 import type { AppState } from '../../hooks/useAppState'
 import type { PanelNavigationActions } from '../../hooks/usePanelNavigation'
 import type { UnitCardSelectionBridge } from '../../hooks/useUnitCardSelectionBridge'
 import type { CardListModeController } from '../../types/app'
-import { CardListInteractionModeType } from '../../types/enums'
+import type { ScoreSettings } from '../../types/card'
+import * as enums from '../../types/enums'
+import type { UnitSimulatorSettings } from '../../types/unit'
 import * as lazyModules from '../../utils/lazyModules'
 import { createPreloadedComponent } from '../../utils/preloadedComponent'
+import type { ScorePreset } from '../../utils/presetHelpers'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { PanelLoadingFallback } from '../ui/PanelLoadingFallback'
 
@@ -29,12 +33,20 @@ interface AppSettingsPanelsProps {
   cardListMode: CardListModeController
   /** スマホ下部メニュー分の余白をパネルに確保するか */
   reserveMobileNavSpace: boolean
+  /** 保存済みプリセット一覧 */
+  presets: readonly ScorePreset[]
+  /** プリセットの保存・削除を行う共通処理 */
+  presetCommand: PresetCommand
+  /** 点数設定を共通commandで保存する操作 */
+  onScoreSettingsChange: (settings: ScoreSettings) => void
+  /** 最適編成設定を共通commandで保存する操作 */
+  onUnitSettingsChange: (settings: UnitSimulatorSettings) => void
 }
 
 /**
  * 開いている点数設定・最適編成パネルを遅延読込して表示する
  *
- * @param props - アプリ状態、パネル遷移、一覧選択接続、下部余白設定
+ * @param props - アプリ状態、パネル遷移、一覧からの選択操作、下部余白設定
  * @returns 表示対象の設定パネル
  */
 export function AppSettingsPanels({
@@ -43,6 +55,10 @@ export function AppSettingsPanels({
   selection,
   cardListMode,
   reserveMobileNavSpace,
+  presets,
+  presetCommand,
+  onScoreSettingsChange,
+  onUnitSettingsChange,
 }: AppSettingsPanelsProps) {
   const closeScoreSettings = useCallback(() => {
     state.ui.setScoreSettingsOpen(false)
@@ -71,7 +87,11 @@ export function AppSettingsPanels({
               onClose={closeScoreSettings}
               pinned={state.ui.settingsPinned}
               settings={state.scores.scoreSettings}
-              onSettingsChange={state.scores.setScoreSettings}
+              persistedSettings={state.scores.persistedScoreSettings}
+              onSettingsPreviewChange={state.scores.previewScoreSettings}
+              onSettingsChange={onScoreSettingsChange}
+              presets={presets}
+              presetCommand={presetCommand}
               reserveMobileNavSpace={reserveMobileNavSpace}
               onSwitchToSimulator={navigation.openUnitSimulator}
             />
@@ -82,7 +102,7 @@ export function AppSettingsPanels({
       {/* 最適編成パネル（手動選択中もマウント維持） */}
       {(state.ui.simulatorOpen ||
         state.ui.simulatorPinned ||
-        cardListMode.mode !== CardListInteractionModeType.None) && (
+        cardListMode.mode !== enums.CardListInteractionModeType.None) && (
         <ErrorBoundary>
           <Suspense
             fallback={
@@ -107,6 +127,10 @@ export function AppSettingsPanels({
               allCards={state.userCards.allCards}
               allCardByName={state.userCards.allCardByName}
               cardUncaps={state.scores.cardUncaps}
+              unitSettingsState={{
+                ...state.unitSettings,
+                setSettings: onUnitSettingsChange,
+              }}
               onManualSelectionComplete={selection.handleSelectionComplete}
               reserveMobileNavSpace={reserveMobileNavSpace}
               onSwitchToScoreSettings={navigation.openScoreSettings}

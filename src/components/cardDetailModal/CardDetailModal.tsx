@@ -66,7 +66,11 @@ export default function CardDetailModal({
   }, [uncap, initialUncap, initialScoreResult, calculateForCard, card])
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL}>
+    <ModalOverlay
+      onClose={onClose}
+      panelClassName={constant.MODAL_PANEL_DETAIL}
+      ariaLabel={t('ui.accessibility.open_card_detail', { name: card.name })}
+    >
       {/* サポート名と分類バッジのモーダルヘッダー */}
       <div className={`sticky top-0 z-10 ${typeEntry.bg} border-b ${typeEntry.border} rounded-t-2xl px-6 py-4`}>
         <div className="flex items-start justify-between gap-3">

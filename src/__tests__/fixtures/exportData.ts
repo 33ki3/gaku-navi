@@ -1,6 +1,6 @@
 import * as constant from '../../constant'
-import { EXPORT_KEYS } from '../../data/ui'
 import type { ExportKey } from '../../data/ui'
+import { EXPORT_KEYS } from '../../data/ui'
 import * as enums from '../../types/enums'
 import { createDefaultSettings } from '../../utils/scoreSettings'
 

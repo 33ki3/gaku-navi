@@ -1,14 +1,13 @@
 /**
- * アプリケーション全体で使う列挙型（enum 相当の定数オブジェクト）をまとめたファイル。
+ * アプリ全体で共有する選択肢と識別子をまとめたファイル
  *
- * TypeScript の `as const` パターンで定義し、値の型と同名の型エイリアスを
- * 同時にエクスポートしている。サポート情報・スコア計算・UI フィルターなど
- * あらゆる場面で参照される基盤型定義。
+ * カード情報・点数計算・画面の絞り込みが同じ値を使うことで、
+ * 保存データと画面表示のずれを防ぐ
  */
 
 /**
- * レアリティ定数。
- * サポートカードの希少度を表す。SSR > SR > R の順にレアリティが高い。
+ * レアリティの種類
+ * サポートカードの希少度を表す。SSR > SR > R の順にレアリティが高い
  */
 export const RarityType = {
   /** SSR */
@@ -21,8 +20,9 @@ export const RarityType = {
 export type RarityType = (typeof RarityType)[keyof typeof RarityType]
 
 /**
- * レアリティ階層定数。
- * アビリティ値マスタで使用する4分類。SSR のうち配布系（イベント・ショップ・コインガチャ・パック）は EventSSR として区別する。
+ * アビリティ効果量の定義で使う4段階のレアリティ分類
+ * SSRのうち配布系（イベント・ショップ・コインガチャ・パック）は
+ * EventSSRとして区別する
  */
 export const RarityTierType = {
   /** SSR（ガチャ産） */
@@ -37,9 +37,9 @@ export const RarityTierType = {
 export type RarityTierType = (typeof RarityTierType)[keyof typeof RarityTierType]
 
 /**
- * サポートタイプ定数。
- * サポートカードが得意とするパラメータの種類（Vo / Da / Vi / アシスト）。
- * フィルターやバッジの色分けに使う。
+ * サポートカードのタイプ
+ * サポートカードが得意とするパラメータの種類（Vo / Da / Vi / アシスト）
+ * フィルターやバッジの色分けに使う
  */
 export const CardType = {
   /** ボーカルタイプ */
@@ -54,9 +54,9 @@ export const CardType = {
 export type CardType = (typeof CardType)[keyof typeof CardType]
 
 /**
- * パラメータタイプ定数。
- * プロデュースで育てる 3 つの能力値（ボーカル / ダンス / ビジュアル）。
- * サポートタイプの Assist を含まない純粋な能力パラメータ。
+ * 育成で使うパラメータの種類
+ * プロデュースで育てる3つの能力値（ボーカル / ダンス / ビジュアル）
+ * サポートタイプの Assist を含まない純粋な能力パラメータ
  */
 export const ParameterType = {
   /** ボーカル */
@@ -69,7 +69,7 @@ export const ParameterType = {
 export type ParameterType = (typeof ParameterType)[keyof typeof ParameterType]
 
 /**
- * カスタム時のパラボ対象外入力フィールドキー。
+ * カスタム時のパラボ対象外入力フィールドキー
  */
 export const CustomNonBonusFieldType = {
   /** 授業分 */
@@ -80,9 +80,9 @@ export const CustomNonBonusFieldType = {
 export type CustomNonBonusFieldType = (typeof CustomNonBonusFieldType)[keyof typeof CustomNonBonusFieldType]
 
 /**
- * 育成プラン定数。
- * サポートカードが対応する育成プラン。
- * Sense / Logic / Anomaly のほか、プラン制限のない Free がある。
+ * 育成プランの種類
+ * サポートカードが対応する育成プラン
+ * Sense / Logic / Anomaly のほか、プラン制限のない Free がある
  */
 export const PlanType = {
   /** プラン制限なし */
@@ -97,9 +97,9 @@ export const PlanType = {
 export type PlanType = (typeof PlanType)[keyof typeof PlanType]
 
 /**
- * 入手方法の固定値定数。
- * サポートをどこで手に入れられるかを示す。ガチャ・限定・フェスなど。
- * イベント配布やショップ購入はカテゴリID（"event" / "shop" / "pack"）で表現する。
+ * サポートカードの入手方法
+ * サポートをどこで手に入れられるかを示す。ガチャ・限定・フェスなど
+ * イベント配布やショップ購入はカテゴリID（"event" / "shop" / "pack"）で表現する
  */
 export const SourceType = {
   /** 恒常ガチャ */
@@ -130,9 +130,9 @@ export const SourceType = {
 export type SourceType = (typeof SourceType)[keyof typeof SourceType]
 
 /**
- * アビリティキーワード定数。
- * サポートアビリティをカテゴリ分けするためのキーワード。
- * フィルター UI のトグルボタンに 1 つずつ対応する。
+ * アビリティのキーワード
+ * サポートアビリティをカテゴリ分けするためのキーワード
+ * フィルター画面のトグルボタンに 1 つずつ対応する
  */
 export const AbilityKeywordType = {
   /** 初期パラメータ */
@@ -180,10 +180,126 @@ export const AbilityKeywordType = {
 } as const
 export type AbilityKeywordType = (typeof AbilityKeywordType)[keyof typeof AbilityKeywordType]
 
+/** アビリティ名から自動設定する項目のキー */
+export const AbilityDerivedFlagType = {
+  /** パーセンテージ値 */
+  IsPercentage: 'is_percentage',
+  /** イベント上昇量の倍率 */
+  IsEventBoost: 'is_event_boost',
+  /** パラメータボーナス */
+  IsParameterBonus: 'is_parameter_bonus',
+  /** 初期値上昇 */
+  IsInitialStat: 'is_initial_stat',
+  /** 計算対象外 */
+  SkipCalculation: 'skip_calculation',
+} as const
+export type AbilityDerivedFlagType = (typeof AbilityDerivedFlagType)[keyof typeof AbilityDerivedFlagType]
+
+/** サポートカードフォームが扱うJSONフィールドのキー */
+export const SupportCardFieldKeyType = {
+  /** カード名 */
+  Name: 'name',
+  /** アビリティ名キー */
+  NameKey: 'name_key',
+  /** 効果値の配列 */
+  Values: 'values',
+  /** 発動条件キー */
+  TriggerKey: 'trigger_key',
+  /** 得意パラメータ */
+  ParameterType: 'parameter_type',
+  /** 発動上限 */
+  MaxCount: 'max_count',
+  /** イベント解放条件 */
+  Release: 'release',
+  /** イベント効果種別 */
+  EffectType: 'effect_type',
+  /** 効果対象パラメータ */
+  ParamType: 'param_type',
+  /** 効果値 */
+  ParamValue: 'param_value',
+  /** イベントタイトル */
+  Title: 'title',
+  /** レアリティ */
+  Rarity: 'rarity',
+  /** 育成プラン */
+  Plan: 'plan',
+  /** サポートタイプ */
+  Type: 'type',
+  /** 入手方法 */
+  Source: 'source',
+  /** イベント配布カードかどうか */
+  IsEventSource: 'is_event_source',
+  /** 登場日 */
+  ReleaseDate: 'release_date',
+  /** アビリティ配列 */
+  Abilities: 'abilities',
+  /** イベント配列 */
+  Events: 'events',
+  /** Pアイテム */
+  PItem: 'p_item',
+  /** スキルカード */
+  SkillCard: 'skill_card',
+  /** Pアイテムの記憶可否 */
+  Memory: 'memory',
+  /** 効果 */
+  Effect: 'effect',
+  /** 効果の基礎値 */
+  Boost: 'boost',
+  /** 提供アクション回数 */
+  ProvidedActionIds: 'provided_action_ids',
+  /** 効果トリガー */
+  Trigger: 'trigger',
+  /** 効果本体 */
+  Body: 'body',
+  /** 効果制限 */
+  Limit: 'limit',
+  /** スキルカード使用回数 */
+  LessonLimit: 'lesson_limit',
+  /** 重複不可フラグ */
+  NoDuplicate: 'no_duplicate',
+  /** 効果配列 */
+  Effects: 'effects',
+  /** 上限値 */
+  CustomCap: 'custom_cap',
+  /** カスタム枠 */
+  CustomSlot: 'custom_slot',
+  /** 効果テンプレートキー */
+  Key: 'key',
+  /** 効果対象パラメータの補助値 */
+  Param: 'param',
+  /** アクションID */
+  ActionId: 'action_id',
+  /** 回数 */
+  Count: 'count',
+  /** 効果値 */
+  Value: 'value',
+} as const
+export type SupportCardFieldKeyType = (typeof SupportCardFieldKeyType)[keyof typeof SupportCardFieldKeyType]
+
+/** サポートカード追加フォームが検証する構造のグループ */
+export const SupportCardFormFieldGroupType = {
+  /** アビリティ */
+  Ability: 'ability',
+  /** イベント */
+  Event: 'event',
+  /** サポートカード本体 */
+  SupportCard: 'support_card',
+  /** Pアイテム */
+  PItem: 'p_item',
+  /** Pアイテム効果 */
+  PItemEffect: 'p_item_effect',
+  /** スキルカード */
+  SkillCard: 'skill_card',
+  /** 効果部品 */
+  EffectPart: 'effect_part',
+} as const
+export type SupportCardFormFieldGroupType =
+  (typeof SupportCardFormFieldGroupType)[keyof typeof SupportCardFormFieldGroupType]
+
 /**
- * アビリティ名キー定数。
- * 各サポートアビリティの識別子。i18n テンプレート `card.ability_name.*` に対応し、
- * アビリティ表示名の生成やスコア計算でのルックアップに使う。
+ * アビリティ名のキー
+ * 各サポートアビリティの識別子。翻訳テンプレート `card.ability_name.*` に対応し、
+ * アビリティ表示名の生成やスコア計算でのルックアップに使う
  */
 export const AbilityNameKeyType = {
   /** 初期ステータス */
@@ -326,8 +442,8 @@ export const AbilityNameKeyType = {
 export type AbilityNameKeyType = (typeof AbilityNameKeyType)[keyof typeof AbilityNameKeyType]
 
 /**
- * ユーザーサポートフォームのアビリティ入力値。
- * `None` は未選択を表すフォーム専用値で、保存するアビリティ識別子には含めない。
+ * ユーザーサポートフォームのアビリティ入力値
+ * `None` は未選択を表すフォーム専用値で、保存するアビリティ識別子には含めない
  */
 export const AbilityFormValueType = {
   /** 未選択 */
@@ -357,9 +473,9 @@ export const CostType = {
 export type CostType = (typeof CostType)[keyof typeof CostType]
 
 /**
- * イベント効果タイプ定数。
+ * イベント効果の種別
  * サポートイベントの効果を分類する。パラメータ上昇・Pアイテム獲得・
- * スキルカード獲得・カード強化など、イベントの内容をカテゴリ分けする。
+ * スキルカード獲得・カード強化など、イベントの内容をカテゴリ分けする
  */
 export const EventEffectType = {
   /** パラメータ上昇 */
@@ -388,9 +504,9 @@ export const EventEffectType = {
 export type EventEffectType = (typeof EventEffectType)[keyof typeof EventEffectType]
 
 /**
- * イベント種別フィルター値定数。
- * ユーザーがサポート一覧画面でイベント効果で絞り込むためのフィルター値。
- * 6 種類のボタンに 1 つずつ対応する。
+ * イベント種別フィルターの値
+ * ユーザーがサポート一覧画面でイベント効果で絞り込むためのフィルター値
+ * 6 種類のボタンに 1 つずつ対応する
  */
 export const EventFilterType = {
   /** スキルカード獲得 */
@@ -409,8 +525,8 @@ export const EventFilterType = {
 export type EventFilterType = (typeof EventFilterType)[keyof typeof EventFilterType]
 
 /**
- * イベントフィルターカテゴリ定数。
- * フィルター UI でイベント種別を「獲得系」「操作系」に分類する。
+ * イベントフィルターのカテゴリ
+ * フィルター画面でイベント種別を「獲得系」「操作系」に分類する
  */
 export const EventFilterCategoryType = {
   /** 獲得系（スキルカード獲得・Pアイテム獲得） */
@@ -421,9 +537,9 @@ export const EventFilterCategoryType = {
 export type EventFilterCategoryType = (typeof EventFilterCategoryType)[keyof typeof EventFilterCategoryType]
 
 /**
- * Pアイテムアクション定数。
+ * Pアイテムが提供するアクションの種別
  * Pアイテムが起こすアクション（強化・削除・チェンジ・トラブル削除・
- * Pドリンク獲得・Pドリンク交換）の識別子。
+ * Pドリンク獲得・Pドリンク交換）の識別子
  */
 export const PItemActionType = {
   /** カード強化 */
@@ -442,9 +558,9 @@ export const PItemActionType = {
 export type PItemActionType = (typeof PItemActionType)[keyof typeof PItemActionType]
 
 /**
- * メモリ化区分定数。
- * Pアイテムがメモリー編成で使えるかどうかを表す。
- * Memorizable = メモリ化可能、NonMemorizable = メモリ化不可。
+ * Pアイテムをメモリ化できるかの区分
+ * Pアイテムがメモリー編成で使えるかどうかを表す
+ * Memorizable = メモリ化可能、NonMemorizable = メモリ化不可
  */
 export const PItemMemoryType = {
   /** メモリ化可能 */
@@ -455,8 +571,8 @@ export const PItemMemoryType = {
 export type PItemMemoryType = (typeof PItemMemoryType)[keyof typeof PItemMemoryType]
 
 /**
- * Pアイテムレアリティ定数。
- * Pアイテムのレアリティ。SSR または SR の 2 段階。
+ * Pアイテムのレアリティ
+ * Pアイテムのレアリティ。SSR または SR の 2 段階
  */
 export const PItemRarityType = {
   /** SSRランク */
@@ -467,8 +583,8 @@ export const PItemRarityType = {
 export type PItemRarityType = (typeof PItemRarityType)[keyof typeof PItemRarityType]
 
 /**
- * スキルカードレアリティ定数。
- * スキルカードのレアリティ。SSR / SR / R の 3 段階。
+ * スキルカードのレアリティ
+ * スキルカードのレアリティ。SSR / SR / R の 3 段階
  */
 export const SkillCardRarityType = {
   /** SSRランク */
@@ -481,8 +597,8 @@ export const SkillCardRarityType = {
 export type SkillCardRarityType = (typeof SkillCardRarityType)[keyof typeof SkillCardRarityType]
 
 /**
- * スキルカードの強化段階定数。
- * Base = 未強化、Plus = 強化済み（+マーク付き）。
+ * スキルカードの強化段階
+ * Base = 未強化、Plus = 強化済み（+マーク付き）
  */
 export const SkillCardLevelType = {
   /** 未強化 */
@@ -493,8 +609,8 @@ export const SkillCardLevelType = {
 export type SkillCardLevelType = (typeof SkillCardLevelType)[keyof typeof SkillCardLevelType]
 
 /**
- * スキルカードタイプ定数。
- * メンタルスキルカードとアクティブスキルカードの 2 種類。
+ * スキルカードのタイプ
+ * メンタルスキルカードとアクティブスキルカードの 2 種類
  */
 export const SkillCardType = {
   /** メンタルスキルカード */
@@ -505,9 +621,9 @@ export const SkillCardType = {
 export type SkillCardType = (typeof SkillCardType)[keyof typeof SkillCardType]
 
 /**
- * スキルカード表示モード定数。
- * 詳細モーダルでスキルカードの効果表示を切り替えるモード。
- * Unenhanced = 未強化、Enhanced = 強化済み、Custom = カスタム効果。
+ * スキルカードの表示モード
+ * 詳細モーダルでスキルカードの効果表示を切り替えるモード
+ * Unenhanced = 未強化、Enhanced = 強化済み、Custom = カスタム効果
  */
 export const SkillCardViewModeType = {
   /** 未強化表示 */
@@ -520,9 +636,9 @@ export const SkillCardViewModeType = {
 export type SkillCardViewModeType = (typeof SkillCardViewModeType)[keyof typeof SkillCardViewModeType]
 
 /**
- * ソートモード定数。
+ * サポート一覧の並び替え項目
  * サポート一覧の並び替え方法。Rarity = レアリティ順、Date = 登場日順、
- * Score = 点数順、Uncap = 凸数順。
+ * Score = 点数順、Uncap = 凸数順
  */
 export const SortModeType = {
   /** レアリティ順 */
@@ -536,18 +652,18 @@ export const SortModeType = {
 } as const
 export type SortModeType = (typeof SortModeType)[keyof typeof SortModeType]
 
-/** ソート方向の表示定義。sortReverseのboolean状態とUIラベルを対応付ける。 */
+/** 一覧の並び順を表示するための定義 */
 export const SortDirectionType = {
-  /** 昇順。sortReverse=trueに対応する。 */
+  /** 昇順 */
   Ascending: 'ascending',
-  /** 降順。sortReverse=falseに対応する。 */
+  /** 降順 */
   Descending: 'descending',
 } as const
 export type SortDirectionType = (typeof SortDirectionType)[keyof typeof SortDirectionType]
 
 /**
- * サポート一覧で相互排他にする選択系の操作モード。
- * 凸数編集は独立した表示状態として管理する。
+ * サポート一覧で相互排他にする選択系の操作モード
+ * 凸数編集は独立した表示状態として管理する
  */
 export const CardListInteractionModeType = {
   /** 通常表示 */
@@ -560,9 +676,9 @@ export const CardListInteractionModeType = {
 export type CardListInteractionModeType = (typeof CardListInteractionModeType)[keyof typeof CardListInteractionModeType]
 
 /**
- * 回数調整フィルター種別。
+ * 回数調整フィルター種別
  *
- * 「未調整」「調整済」の2状態でサポートを絞り込む。
+ * 「未調整」「調整済」の2状態でサポートを絞り込む
  */
 export const CountCustomFilter = {
   /** 未調整 */
@@ -582,8 +698,7 @@ export const CardExclusionFilterType = {
 export type CardExclusionFilterType = (typeof CardExclusionFilterType)[keyof typeof CardExclusionFilterType]
 
 /**
- * フィルターアクション種別定数。
- * useFilterState の useReducer で使用するアクション種別。
+ * フィルター状態を更新する操作の種別
  */
 export const FilterActionType = {
   /** 検索テキスト設定 */
@@ -618,9 +733,9 @@ export const FilterActionType = {
 export type FilterActionType = (typeof FilterActionType)[keyof typeof FilterActionType]
 
 /**
- * 凸数定数。
- * サポートカードの上限解放段階を 0（無凸）〜4（完凸）で表す。
- * 凸数が上がるとアビリティの効果量やレベル上限が上がる。
+ * サポートの凸数
+ * サポートカードの上限解放段階を0（無凸）〜4（完凸）で表す
+ * 凸数が上がるとアビリティの効果量やレベル上限が上がる
  */
 export const UncapType = {
   /** 未所持 */
@@ -639,8 +754,8 @@ export const UncapType = {
 export type UncapType = (typeof UncapType)[keyof typeof UncapType]
 
 /**
- * SP分類結果。
- * サポートのSPレッスン種別を判定した結果を表す。
+ * SP分類結果
+ * サポートのSPレッスン種別を判定した結果を表す
  */
 export const SpCategoryType = {
   /** ボーカルSP */
@@ -657,9 +772,9 @@ export const SpCategoryType = {
 export type SpCategoryType = (typeof SpCategoryType)[keyof typeof SpCategoryType]
 
 /**
- * アクショングループ定数。
+ * アクションのグループ
  * 点数計算のアクション回数設定で、アクションをセクションごとに
- * グループ分けするためのカテゴリ。UI のアコーディオン表示に対応する。
+ * グループ分けするためのカテゴリ。画面のアコーディオン表示に対応する
  */
 export const ActionGroupType = {
   /** 活動アクション（レッスン・お出かけ等） */
@@ -678,10 +793,10 @@ export const ActionGroupType = {
 export type ActionGroupType = (typeof ActionGroupType)[keyof typeof ActionGroupType]
 
 /**
- * アクションID定数。
- * 点数計算で回数を数えるアクションの識別子。
+ * 育成中に発生するアクションの識別子
+ * 点数計算で回数を数えるアクションの識別子
  * レッスン・お出かけ・スキル獲得/強化/削除など
- * プロデュース中に発生するすべてのアクションを網羅する。
+ * プロデュース中に発生するすべてのアクションを網羅する
  */
 export const ActionIdType = {
   /** レッスン */
@@ -804,9 +919,9 @@ export const ActionIdType = {
 export type ActionIdType = (typeof ActionIdType)[keyof typeof ActionIdType]
 
 /**
- * スケジュール活動ID定数。
- * プロデュースの週間スケジュールで選べる活動の識別子。
- * Vo/Da/Viレッスン・授業・お出かけ・相談・差し入れ・追い込み・試験・休む。
+ * スケジュールで選べる活動の識別子
+ * プロデュースの週間スケジュールで選べる活動の識別子
+ * Vo/Da/Viレッスン・授業・お出かけ・相談・差し入れ・追い込み・試験・休む
  */
 export const ActivityIdType = {
   /** Voレッスン */
@@ -884,9 +999,9 @@ export const HifStage = {
 export type HifStage = (typeof HifStage)[keyof typeof HifStage]
 
 /**
- * 難易度定数。
- * プロデュースの難易度。Regular → Pro → Master → Legend の順に難しくなる。
- * スケジュールやレッスンのスコアテーブルが難易度で変わる。
+ * シナリオの難易度
+ * プロデュースの難易度。Regular → Pro → Master → Legend の順に難しくなる
+ * スケジュールやレッスンのスコアテーブルが難易度で変わる
  */
 export const DifficultyType = {
   /** 難易度なし（HIF・カスタムなど難易度の概念がないシナリオ専用） */
@@ -903,8 +1018,8 @@ export const DifficultyType = {
 export type DifficultyType = (typeof DifficultyType)[keyof typeof DifficultyType]
 
 /**
- * レッスンタイプ定数。
- * SPレッスンの獲得パラメータ量定義に使用。
+ * レッスンの種別
+ * SPレッスンのパラメータ上昇量を区別する
  */
 export const LessonType = {
   /** SPレッスン */
@@ -913,8 +1028,8 @@ export const LessonType = {
 export type LessonType = (typeof LessonType)[keyof typeof LessonType]
 
 /**
- * シナリオ種別定数。
- * シナリオごとにスケジュールやレッスン内容が異なる。
+ * 育成シナリオの種類
+ * シナリオごとにスケジュールやレッスン内容が異なる
  */
 export const ScenarioType = {
   /** カスタムモード（シナリオ非依存の手動設定） */
@@ -929,10 +1044,10 @@ export const ScenarioType = {
 export type ScenarioType = (typeof ScenarioType)[keyof typeof ScenarioType]
 
 /**
- * トリガーキー定数。
- * アビリティの発動条件を表すキー。
- * パラメータボーナスや初期ステータスなど計算専用の特殊キーも含む。
- * スコア計算でアクション回数とアビリティを紐づけるために使う。
+ * アビリティやPアイテムの発動条件の識別子
+ * アビリティの発動条件を表すキー
+ * パラメータボーナスや初期ステータスなど計算専用の特殊キーも含む
+ * アクション回数とアビリティの発動条件を対応づける
  */
 export const TriggerKeyType = {
   /** レッスン終了時（汎用。属性別は Vo/Da/ViLessonEnd を使用） */
@@ -1123,14 +1238,13 @@ export const TriggerKeyType = {
   SupportRate: 'support_rate',
   /** 効果なし（計算スキップ用） */
   Nothing: 'nothing',
-  /** 未設定（ユーザー定義サポートのデフォルト） */
+  /** 未設定（ユーザー定義サポートの初期状態） */
   None: 'none',
 } as const
 export type TriggerKeyType = (typeof TriggerKeyType)[keyof typeof TriggerKeyType]
 
 /**
- * Badge サイズ種別定数。
- * Badge コンポーネントのサイズバリアント。
+ * バッジのサイズ
  */
 export const BadgeSizeType = {
   /** 小 */
@@ -1143,8 +1257,7 @@ export const BadgeSizeType = {
 export type BadgeSizeType = (typeof BadgeSizeType)[keyof typeof BadgeSizeType]
 
 /**
- * Badge フォントウェイト種別定数。
- * Badge コンポーネントの文字太さバリアント。
+ * バッジの文字の太さ
  */
 export const BadgeWeightType = {
   /** 太字 */
@@ -1155,8 +1268,7 @@ export const BadgeWeightType = {
 export type BadgeWeightType = (typeof BadgeWeightType)[keyof typeof BadgeWeightType]
 
 /**
- * ボタンサイズ種別定数。
- * CloseButton / ToggleButton などのサイズバリアント。
+ * ボタンのサイズ
  */
 export const ButtonSizeType = {
   /** 小 */
@@ -1169,8 +1281,7 @@ export const ButtonSizeType = {
 export type ButtonSizeType = (typeof ButtonSizeType)[keyof typeof ButtonSizeType]
 
 /**
- * 折りたたみセクションバリアント定数。
- * CollapsibleSection コンポーネントの表示バリアント。
+ * 折りたたみセクションの表示形式
  */
 export const CollapsibleVariantType = {
   /** モーダル用 */
@@ -1181,8 +1292,7 @@ export const CollapsibleVariantType = {
 export type CollapsibleVariantType = (typeof CollapsibleVariantType)[keyof typeof CollapsibleVariantType]
 
 /**
- * モーダル配置定数。
- * ModalOverlay コンポーネントの配置バリアント。
+ * モーダルの配置
  */
 export const ModalAlignType = {
   /** 中央 */
@@ -1193,8 +1303,7 @@ export const ModalAlignType = {
 export type ModalAlignType = (typeof ModalAlignType)[keyof typeof ModalAlignType]
 
 /**
- * 凸数セレクターバリアント定数。
- * UncapSelector コンポーネントの表示バリアント。
+ * 凸数選択欄の表示形式
  */
 export const UncapSelectorVariantType = {
   /** サポート一覧用（コンパクト） */
@@ -1205,8 +1314,7 @@ export const UncapSelectorVariantType = {
 export type UncapSelectorVariantType = (typeof UncapSelectorVariantType)[keyof typeof UncapSelectorVariantType]
 
 /**
- * フィルターボタンカテゴリ定数。
- * フィルターバーのトグルボタンの色カテゴリ。
+ * フィルター画面のボタンカテゴリとトグルボタンの色
  */
 export const FilterButtonCategory = {
   /** 汎用アクティブ状態（トグルボタンの ON 表示） */
@@ -1227,8 +1335,8 @@ export const FilterButtonCategory = {
 export type FilterButtonCategory = (typeof FilterButtonCategory)[keyof typeof FilterButtonCategory]
 
 /**
- * イベント解放条件定数。
- * サポートイベントの解放タイミング。初期 / レベル20 / レベル40 の 3 段階。
+ * イベントが解放されるタイミング
+ * サポートイベントの解放タイミング。初期 / レベル20 / レベル40 の 3 段階
  */
 export const ReleaseConditionType = {
   /** 初期（サポート入手時に解放） */
@@ -1241,9 +1349,9 @@ export const ReleaseConditionType = {
 export type ReleaseConditionType = (typeof ReleaseConditionType)[keyof typeof ReleaseConditionType]
 
 /**
- * 効果キーワード定数。
- * Pアイテム効果やスキルカード効果で使われるキーワード識別子。
- * 状態異常や能力バフの種類を表す。
+ * 効果が扱うキーワード
+ * Pアイテム効果やスキルカード効果で使われるキーワード識別子
+ * 状態異常や能力バフの種類を表す
  */
 export const EffectKeywordType = {
   /** 元気 */
@@ -1272,10 +1380,10 @@ export const EffectKeywordType = {
 export type EffectKeywordType = (typeof EffectKeywordType)[keyof typeof EffectKeywordType]
 
 /**
- * エフェクトセクション定数。
+ * 効果内訳の区分
  * カード効果テンプレートの各セクション（Pアイテム効果・スキルカード効果・
- * カスタムスロット効果・アビリティ名など）を区別する。
- * i18n プレフィックスと 1:1 で対応する。
+ * カスタムスロット効果・アビリティ名など）を区別する
+ * 翻訳キーの先頭部分と1対1で対応する
  */
 export const EffectSectionType = {
   /** アビリティ名 */
@@ -1310,8 +1418,8 @@ export const EffectSectionType = {
 export type EffectSectionType = (typeof EffectSectionType)[keyof typeof EffectSectionType]
 
 /**
- * カードゾーン定数。
- * スキルカード効果で参照するカードの存在場所。
+ * スキルカードの存在場所
+ * スキルカード効果で参照するカードの存在場所
  */
 export const CardZoneType = {
   /** 手札 */
@@ -1322,9 +1430,9 @@ export const CardZoneType = {
 export type CardZoneType = (typeof CardZoneType)[keyof typeof CardZoneType]
 
 /**
- * 効果テンプレートキー定数。
+ * 効果テンプレートの種類
  * Pアイテム効果・スキルカード効果・カスタムスロットの
- * i18n テンプレートを識別するキー。
+ * 翻訳テンプレートを識別するキー
  */
 export const EffectTemplateKeyType = {
   /** Pドリンク獲得+Pポイント */
@@ -1706,9 +1814,60 @@ export const EffectTemplateKeyType = {
 export type EffectTemplateKeyType = (typeof EffectTemplateKeyType)[keyof typeof EffectTemplateKeyType]
 
 /**
- * ヘルプセクションキー定数。
- * ヘルプモーダル内の各セクションを識別するキー。
- * アコーディオンの開閉状態管理に使用する。
+ * アプリケーションの画面操作識別子
+ * アプリ内の機能を開く・閉じるなどの操作を識別する
+ */
+export const ApplicationUiAction = {
+  /** 点数設定パネルを開く */
+  OpenScoreSettings: 'open_score_settings',
+  /** 点数設定パネルを閉じる */
+  CloseScoreSettings: 'close_score_settings',
+  /** 点数設定パネルの固定表示を変更する */
+  SetScoreSettingsPinned: 'set_score_settings_pinned',
+  /** 最適編成パネルを開く */
+  OpenUnitSimulator: 'open_unit_simulator',
+  /** 最適編成パネルを閉じる */
+  CloseUnitSimulator: 'close_unit_simulator',
+  /** 最適編成パネルの固定表示を変更する */
+  SetSimulatorPinned: 'set_simulator_pinned',
+  /** 絞り込み・並び替えパネルを開く */
+  OpenFilterSort: 'open_filter_sort',
+  /** 絞り込み・並び替えパネルを閉じる */
+  CloseFilterSort: 'close_filter_sort',
+  /** 絞り込みパネルのタブを変更する */
+  SetFilterSortTab: 'set_filter_sort_tab',
+  /** カード一覧の操作モードを変更する */
+  SetCardListMode: 'set_card_list_mode',
+  /** 凸数編集モードを変更する */
+  SetUncapEditMode: 'set_uncap_edit_mode',
+  /** カード詳細を開く */
+  ShowCard: 'show_card',
+  /** カード詳細を閉じる */
+  HideCard: 'hide_card',
+  /** カード点数内訳を開く */
+  ShowCardScore: 'show_card_score',
+  /** カード点数内訳を閉じる */
+  HideCardScore: 'hide_card_score',
+  /** ユーザー定義サポートの新規入力フォームを開く */
+  OpenUserSupportForm: 'open_user_support_form',
+  /** ユーザー定義サポートの編集フォームを開く */
+  EditUserSupportForm: 'edit_user_support_form',
+  /** ユーザー定義サポート入力フォームを閉じる */
+  CloseUserSupportForm: 'close_user_support_form',
+  /** データ管理モーダルを開く */
+  OpenDataManagement: 'open_data_management',
+  /** データ管理モーダルを閉じる */
+  CloseDataManagement: 'close_data_management',
+  /** オプションモーダルを開く */
+  OpenOptions: 'open_options',
+  /** オプションモーダルを閉じる */
+  CloseOptions: 'close_options',
+} as const
+
+/**
+ * ヘルプのセクション識別子
+ * ヘルプモーダル内の各セクションを識別するキー
+ * セクションの開閉状態を区別する
  */
 export const HelpSectionKey = {
   /** フィルター */
@@ -1723,6 +1882,10 @@ export const HelpSectionKey = {
   Uncap: 'uncap',
   /** データ */
   Data: 'data',
+  /** WebMCP */
+  WebMcp: 'webMcp',
+  /** PWA */
+  Pwa: 'pwa',
   /** 最適編成 */
   UnitSimulator: 'unitSimulator',
   /** サポート追加 */
@@ -1731,8 +1894,8 @@ export const HelpSectionKey = {
 export type HelpSectionKey = (typeof HelpSectionKey)[keyof typeof HelpSectionKey]
 
 /**
- * 点数設定パネルのセクションキー。
- * 各設定ブロック（プリセット・シナリオ・スケジュール等）を識別する。
+ * 点数設定パネルのセクションキー
+ * 各設定ブロック（プリセット・シナリオ・スケジュール等）を識別する
  */
 export const ScoreSettingsSectionKey = {
   /** プリセット */
@@ -1753,7 +1916,7 @@ export const ScoreSettingsSectionKey = {
 export type ScoreSettingsSectionKey = (typeof ScoreSettingsSectionKey)[keyof typeof ScoreSettingsSectionKey]
 
 /**
- * スコア詳細モーダルのセクションキー。
+ * スコア詳細モーダルのセクションキー
  */
 export const ScoreDetailSectionKey = {
   /** 回数調整 */
@@ -1762,7 +1925,7 @@ export const ScoreDetailSectionKey = {
 export type ScoreDetailSectionKey = (typeof ScoreDetailSectionKey)[keyof typeof ScoreDetailSectionKey]
 
 /**
- * ユーザーサポートフォームの折りたたみセクションキー。
+ * ユーザーサポートフォームの折りたたみセクションキー
  */
 export const UserFormSectionKey = {
   /** アビリティ */
@@ -1777,7 +1940,7 @@ export const UserFormSectionKey = {
 export type UserFormSectionKey = (typeof UserFormSectionKey)[keyof typeof UserFormSectionKey]
 
 /**
- * フィルタ・ソートモーダルのタブ種別。
+ * フィルタ・ソートモーダルのタブ種別
  */
 export const FilterSortTab = {
   /** フィルタタブ */
@@ -1788,8 +1951,8 @@ export const FilterSortTab = {
 export type FilterSortTab = (typeof FilterSortTab)[keyof typeof FilterSortTab]
 
 /**
- * 点数設定・最適編成の表示パネル種別。
- * スマホのパネル切り替えと、表示中パネルの判定に使用する。
+ * 点数設定・最適編成の表示パネル種別
+ * スマホのパネル切り替えと、表示中パネルを区別する
  */
 export const SettingsPanelType = {
   /** 点数設定 */
@@ -1800,8 +1963,8 @@ export const SettingsPanelType = {
 export type SettingsPanelType = (typeof SettingsPanelType)[keyof typeof SettingsPanelType]
 
 /**
- * ヘッダー・下部ナビゲーションの主要操作キー。
- * 表示場所ごとに並び順を変えても、同じ操作を参照できるようにする。
+ * ヘッダー・下部ナビゲーションの主要操作キー
+ * 表示場所ごとに並び順を変えても、同じ操作を参照できるようにする
  */
 export const PrimaryNavigationKey = {
   /** 凸数設定 */
@@ -1814,8 +1977,8 @@ export const PrimaryNavigationKey = {
 export type PrimaryNavigationKey = (typeof PrimaryNavigationKey)[keyof typeof PrimaryNavigationKey]
 
 /**
- * オプションモーダルのセクションキー。
- * 折りたたみ状態を型安全に管理するために使用する。
+ * オプションモーダル内のセクションを区別するキー
+ * 折りたたみ状態をセクションごとに管理する
  */
 export const OptionsSectionKey = {
   /** アプリ全体の表示設定 */
@@ -1828,8 +1991,8 @@ export const OptionsSectionKey = {
 export type OptionsSectionKey = (typeof OptionsSectionKey)[keyof typeof OptionsSectionKey]
 
 /**
- * データ管理モーダルのセクションキー。
- * 保存項目、ファイル、JSON文字列の開閉状態を識別する。
+ * データ管理モーダルのセクションキー
+ * 保存項目、ファイル、JSON文字列の開閉状態を識別する
  */
 export const DataManagementSectionKey = {
   /** 保存項目の選択 */
@@ -1880,8 +2043,8 @@ export const ImportArrayFieldKeyType = {
 export type ImportArrayFieldKeyType = (typeof ImportArrayFieldKeyType)[keyof typeof ImportArrayFieldKeyType]
 
 /**
- * データ管理の操作結果種別。
- * 成功・失敗メッセージの表示色を決める。
+ * データ管理の操作結果種別
+ * 成功・失敗メッセージの表示色を決める
  */
 export const DataManagementMessageType = {
   /** 操作成功 */

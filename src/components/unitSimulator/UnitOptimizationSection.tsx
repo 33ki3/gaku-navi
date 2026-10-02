@@ -1,5 +1,5 @@
 /**
- * 最適編成の計算操作・スロット編集・結果表示を担当する。
+ * 最適編成の計算操作・スロット編集・結果表示を担当する
  * パネルのレイアウトや設定アコーディオンは親へ任せ、計算に直接関係する
  * 表示だけをまとめる
  */
@@ -82,7 +82,7 @@ export function UnitOptimizationSection({
   const showManualEditor = simulator.result === null
   const showResult = simulator.result !== null
 
-  /** 手動選択を終了してから最適編成を開始する */
+  // 手動選択を終了してから最適編成を開始する
   const optimize = () => {
     if (manualSelection.active) {
       manualSelection.setActive(false)
@@ -91,7 +91,7 @@ export function UnitOptimizationSection({
     simulator.optimizeRemaining()
   }
 
-  /** 通常枠とレンタル枠それぞれの固定状態を切り替える */
+  // 通常枠とレンタル枠それぞれの固定状態を切り替える
   const toggleLock = (cardName: string) => {
     const isRentalCard = settings.manualCards[constant.UNIT_SIZE - 1] === cardName
     if (isRentalCard) {
@@ -110,7 +110,7 @@ export function UnitOptimizationSection({
     simulator.setSettings({ ...settings, lockedCards })
   }
 
-  /** カードをスロットから外し、関連する固定状態も解除する */
+  // カードをスロットから外し、関連する固定状態も解除する
   const removeCard = (cardName: string) => {
     const isRentalCard = settings.manualCards[constant.UNIT_SIZE - 1] === cardName
     simulator.setSettings({
@@ -190,6 +190,7 @@ export function UnitOptimizationSection({
             difficulty={difficulty}
             scheduleSelections={scoreSettings.scheduleSelections}
             hifExamRatios={scoreSettings.hifExamRatios}
+            hifLessonSplitSub={scoreSettings.hifLessonSplitSub}
             useCustomMode={scoreSettings.useCustomMode}
             customClassBonus={scoreSettings.customClassBonus}
             customNonBonusGain={scoreSettings.customNonBonusGain}

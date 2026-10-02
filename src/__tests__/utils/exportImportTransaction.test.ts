@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as constant from '../../constant'
-import { importUserDataText } from '../../utils/exportImport'
+import { importUserDataText } from './importHelpers'
 
 /**
  * テスト用のエクスポートJSONを作る

@@ -1,8 +1,8 @@
 /**
  * アビリティ自動導出ユーティリティ
  *
- * アビリティ種別とパラメータ型からトリガーキーとフラグを導出する。
- * データ定義（ABILITY_CONFIG / PARAM_TRIGGER_MAP）は data/card/abilityConfig.ts に置く。
+ * アビリティ種別とパラメータ型からトリガーキーとフラグを導出する
+ * データ定義（ABILITY_CONFIG / PARAM_TRIGGER_MAP）はdata/card/abilityConfig.tsに置く
  */
 import { ABILITY_CONFIG, PARAM_TRIGGER_MAP } from '../data/card/abilityConfig'
 import { AbilityNameKeyType, ParameterType, TriggerKeyType } from '../types/enums'
@@ -24,11 +24,11 @@ interface DeriveAbilityResult {
 }
 
 /**
- * deriveAbilityConfig はアビリティ種別とパラメータ型からトリガーキーとフラグを自動導出する。
+ * アビリティ種別とパラメータ型から、計算に使う条件とフラグを自動で決める
  *
  * @param nameKey - アビリティ種別
- * @param paramType - パラメータ種別（パラメータ特化型アビリティで使用）
- * @returns トリガーキーとフラグのオブジェクト。設定がない場合は nameKey をそのまま triggerKey として返す
+ * @param paramType - パラメータ種別（パラメータ特化型アビリティの判定に使う）
+ * @returns 計算に使う条件とフラグ。設定がない場合はアビリティ種別を条件として使う
  */
 export function deriveAbilityConfig(nameKey: AbilityNameKeyType, paramType?: ParameterType): DeriveAbilityResult {
   const config = ABILITY_CONFIG[nameKey]
@@ -38,7 +38,7 @@ export function deriveAbilityConfig(nameKey: AbilityNameKeyType, paramType?: Par
     return { triggerKey: nameKey as unknown as TriggerKeyType }
   }
 
-  // パラメータ特化型の場合、ネストマップからトリガーキーを解決する
+  // パラメータ特化型の場合、パラメータ別の対応表から発動条件を解決する
   let triggerKey = config.baseTriggerKey
   if (config.needsParameterType && paramType) {
     triggerKey = PARAM_TRIGGER_MAP[config.baseTriggerKey]?.[paramType] ?? config.baseTriggerKey

@@ -9,8 +9,8 @@
  */
 import { useTranslation } from 'react-i18next'
 import * as data from '../../data'
-import type { EventFormRow, UserCardFormState } from '../../hooks/formHelpers'
 import * as enums from '../../types/enums'
+import type { EventFormRow, UserCardFormState } from '../../utils/userCardForm'
 import { isEnumValue } from '../../utils/valueValidation'
 
 import * as constant from '../../constant'

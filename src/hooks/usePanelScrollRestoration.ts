@@ -1,7 +1,8 @@
 /**
- * パネルのスクロール位置を表示・非表示の切り替えをまたいで保持する。
+ * パネルのスクロール位置を表示・非表示の切り替えをまたいで保持する
  *
- * 手動カード選択のようにパネルを一度隠してから再表示する場合、再表示直後は結果やセクションの高さがまだ確定していないことがある。
+ * 手動カード選択のようにパネルを一度隠してから再表示する場合、
+ * 再表示直後は結果やセクションの高さがまだ確定していないことがある
  * そのため、初回表示だけでなく内容のリサイズ後にも保存位置を復元する
  */
 import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
@@ -13,7 +14,7 @@ import * as constant from '../constant'
 const panelScrollPositions = new Map<string, number>()
 
 interface UsePanelScrollRestorationParams {
-  /** パネルのスクロール対象要素へのref */
+  /** パネルのスクロール対象要素 */
   panelRef: RefObject<HTMLElement | null>
   /** パネル表示状態 */
   isOpen: boolean
@@ -26,7 +27,7 @@ interface UsePanelScrollRestorationParams {
 /**
  * パネルのスクロール保存・復元処理を提供する
  *
- * @param params - パネルref、表示状態、保存キー
+ * @param params - パネルの表示状態、スクロール対象、保存キー
  * @returns スクロールイベントへ渡すハンドラー
  */
 export function usePanelScrollRestoration({ panelRef, isOpen, pinned, storageKey }: UsePanelScrollRestorationParams): {
@@ -80,7 +81,8 @@ export function usePanelScrollRestoration({ panelRef, isOpen, pinned, storageKey
       if (frameId !== null) cancelAnimationFrame(frameId)
       resizeObserver?.disconnect()
 
-      // refがnullになった後でも、スクロールイベントで保持した最新値を失わない
+      // 要素への参照が一時的に外れても、スクロールイベントで保持した
+      // 最新値を失わない
       const currentScrollTop = panel.isConnected
         ? panel.scrollTop
         : Math.max(panel.scrollTop, latestScrollTopRef.current)

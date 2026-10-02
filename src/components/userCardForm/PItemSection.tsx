@@ -7,9 +7,9 @@
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
-import type { PItemEffectRow, UserCardFormState } from '../../hooks/formHelpers'
 import type { FormValidation } from '../../hooks/useUserCardForm'
 import * as enums from '../../types/enums'
+import type { PItemEffectRow, UserCardFormState } from '../../utils/userCardForm'
 import { isEnumValue } from '../../utils/valueValidation'
 
 /** PItemSection コンポーネントに渡すプロパティ */

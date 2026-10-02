@@ -4,8 +4,8 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import * as data from '../../data'
-import { useCardInteractions } from '../../hooks/useCardInteractions'
 import type { AppState } from '../../hooks/useAppState'
+import { useCardInteractions } from '../../hooks/useCardInteractions'
 import type { UnitCardSelectionBridge } from '../../hooks/useUnitCardSelectionBridge'
 import * as enums from '../../types/enums'
 

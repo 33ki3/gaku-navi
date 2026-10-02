@@ -1,9 +1,9 @@
 /**
  * ヘルプモーダルコンポーネント
  *
- * アプリの使い方ガイドを表示するモーダル。
+ * アプリの使い方ガイドを表示するモーダル
  * 各機能の説明を折りたたみセクション形式で表示し、
- * セクションの開閉状態とモーダル全体の配置を管理する。
+ * セクションの開閉状態とモーダル全体の配置を管理する
  */
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
@@ -13,7 +13,7 @@ import CloseButton from '../ui/CloseButton'
 import ModalOverlay from '../ui/ModalOverlay'
 import { HelpSections } from './HelpSections'
 
-/** HelpModal コンポーネントに渡すプロパティ */
+/** ヘルプモーダルの表示と閉じる操作 */
 interface HelpModalProps {
   /** モーダルを閉じる関数 */
   onClose: () => void
@@ -27,12 +27,14 @@ const initialSections: Record<enums.HelpSectionKey, boolean> = {
   [enums.HelpSectionKey.CountTarget]: false,
   [enums.HelpSectionKey.Uncap]: false,
   [enums.HelpSectionKey.Data]: false,
+  [enums.HelpSectionKey.WebMcp]: false,
+  [enums.HelpSectionKey.Pwa]: false,
   [enums.HelpSectionKey.UnitSimulator]: false,
   [enums.HelpSectionKey.UserSupport]: false,
 }
 
 /**
- * 機能別の説明を折りたたみ形式で表示する。
+ * 機能別の説明を折りたたみ形式で表示する
  *
  * @param props - モーダルを閉じる操作
  * @returns ヘルプセクションを含むモーダル
@@ -42,7 +44,7 @@ export default function HelpModal({ onClose }: HelpModalProps) {
   const { state: sections, toggle } = useAccordionState(initialSections)
 
   return (
-    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL}>
+    <ModalOverlay onClose={onClose} panelClassName={constant.MODAL_PANEL_DETAIL} ariaLabel={t('ui.help.title')}>
       {/* ヘルプモーダルのヘッダー */}
       <div className="sticky top-0 bg-white z-10 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
         <h2 className="text-sm font-black text-slate-800">{t('ui.help.title')}</h2>

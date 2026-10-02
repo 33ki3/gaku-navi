@@ -3,10 +3,10 @@
  *
  * 手動編成中はカード本体だけでなくスコア行を押しても編成へ追加し、通常時だけスコア詳細を開くことを期待する。
  */
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { I18nextProvider } from 'react-i18next'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CardListItem } from '../../../components/cardList/CardListItem'
 import { CardDataProvider, CardUIProvider } from '../../../contexts/CardContext'
 import * as data from '../../../data'
@@ -16,6 +16,8 @@ import { hasSPAbility } from '../../../utils/cardQuery'
 
 /** 実カードを一覧へ渡し、手動編成中と通常時でクリック先が変わることを検証する */
 const targetCard = data.AllCards[0]
+
+afterEach(cleanup)
 
 function renderCard(
   unitCardSelectMode: boolean,
@@ -71,6 +73,18 @@ function renderCard(
 }
 
 describe('CardListItem', () => {
+  it('カード本体と点数行で操作先を分ける', () => {
+    const onCardClick = vi.fn()
+    const onScoreClick = vi.fn()
+    renderCard(false, onCardClick, onScoreClick)
+
+    fireEvent.click(screen.getByText(targetCard.name))
+    expect(onCardClick).toHaveBeenCalledWith(targetCard)
+
+    fireEvent.click(screen.getByTitle('クリックで内訳を表示'))
+    expect(onScoreClick).toHaveBeenCalledOnce()
+  })
+
   it('手動編成中にスコア行を押してもカード選択へ渡す', () => {
     const onCardClick = vi.fn()
     const onScoreClick = vi.fn()

@@ -5,8 +5,8 @@
  */
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../../constant'
-import * as data from '../../../data/ui'
 import type { ExportKey } from '../../../data/ui'
+import * as data from '../../../data/ui'
 import * as enums from '../../../types/enums'
 import CollapsibleSection from '../../ui/CollapsibleSection'
 import { ToggleButton } from '../../ui/ToggleButton'

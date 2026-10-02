@@ -8,6 +8,10 @@ import * as constant from '../../constant'
 import type { AppOptionsState } from '../../hooks/useAppOptions'
 import type { AppState } from '../../hooks/useAppState'
 import type { CardInteractions } from '../../hooks/useCardInteractions'
+import type { AppPreferences } from '../../types/app'
+import type { ScoreSettings, SupportCard } from '../../types/card'
+import type { UncapType } from '../../types/enums'
+import type { UnitSimulatorSettings } from '../../types/unit'
 import { createEmptyResult } from '../../utils/calculator/calculateCard'
 import * as lazyModules from '../../utils/lazyModules'
 import { createPreloadedComponent } from '../../utils/preloadedComponent'
@@ -29,6 +33,16 @@ interface AppModalsProps {
   options: AppOptionsState
   /** 固定パネルを避けるモーダル右位置のクラス */
   panelRightOffset: string
+  /** ユーザー定義サポートを共通commandで保存する操作 */
+  onSaveUserSupport: (card: SupportCard) => void
+  /** 表示設定を共通commandで保存する操作 */
+  onPreferencesChange: (preferences: AppPreferences) => void
+  /** 点数設定を共通commandで保存する操作 */
+  onScoreSettingsChange: (settings: ScoreSettings) => void
+  /** 最適編成設定を共通commandで保存する操作 */
+  onUnitSettingsChange: (settings: UnitSimulatorSettings) => void
+  /** 凸数変更を共通commandで保存する操作 */
+  onCardUncapChange: (cardName: string, uncap: UncapType) => void
 }
 
 /**
@@ -37,7 +51,17 @@ interface AppModalsProps {
  * @param props - アプリ状態、サポート操作、オプション状態、配置クラス
  * @returns 開いているモーダル群
  */
-export function AppModals({ state, cardInteractions, options, panelRightOffset }: AppModalsProps) {
+export function AppModals({
+  state,
+  cardInteractions,
+  options,
+  panelRightOffset,
+  onSaveUserSupport,
+  onPreferencesChange,
+  onScoreSettingsChange,
+  onUnitSettingsChange,
+  onCardUncapChange,
+}: AppModalsProps) {
   const selectedCard = state.ui.selectedCard
   const scoreBreakdown = state.ui.scoreBreakdown
 
@@ -67,7 +91,7 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
             scoreResult={state.scores.cardResults.get(selectedCard.name) ?? createEmptyResult(selectedCard)}
             calculateForCard={state.scores.calculateForCard}
             onClose={() => state.ui.setSelectedCard(null)}
-            onUncapChange={state.handlers.handleUncapChange}
+            onUncapChange={onCardUncapChange}
             onEditUserCard={cardInteractions.editUserCard}
             onDeleteUserCard={cardInteractions.deleteUserCard}
           />
@@ -113,13 +137,7 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
               state.ui.setEditingUserCard(null)
               if (editingCard) state.ui.setSelectedCard(editingCard)
             }}
-            onSave={(card) => {
-              if (state.ui.editingUserCard) {
-                state.userCards.updateUserCard(state.ui.editingUserCard.name, card)
-                return
-              }
-              state.userCards.addUserCard(card)
-            }}
+            onSave={onSaveUserSupport}
             editingCard={state.ui.editingUserCard ?? undefined}
             existingNames={state.userCards.userCardNames}
           />
@@ -132,11 +150,11 @@ export function AppModals({ state, cardInteractions, options, panelRightOffset }
           <OptionsModal
             onClose={options.close}
             preferences={options.preferences}
-            onPreferencesChange={options.updatePreferences}
+            onPreferencesChange={onPreferencesChange}
             scoreSettings={state.scores.scoreSettings}
-            onScoreSettingsChange={state.scores.setScoreSettings}
+            onScoreSettingsChange={onScoreSettingsChange}
             unitSettings={options.unitSettings}
-            onUnitSettingsChange={options.updateUnitSettings}
+            onUnitSettingsChange={onUnitSettingsChange}
           />
         </Suspense>
       )}

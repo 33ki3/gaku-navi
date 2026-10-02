@@ -3,11 +3,14 @@
  * ドリンク設定変更時の局所解問題を再現し、exhaustiveOptimizeAsync で解決されることを検証する。
  */
 import { describe, expect, it } from 'vitest'
-import { AllCards, CardByName } from '../../data/index'
+import { AllCards } from '../../data/index'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
 import { evaluateManualUnit, exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
+import { createTestCardByName } from '../fixtures/cards'
+
+const cardByName = createTestCardByName()
 
 /** ユーザーの実際の設定（p_drink_acquire 可変） */
 function makeUserScoreSettings(pDrinkAcquire = 10): ScoreSettings {
@@ -195,7 +198,7 @@ function getManualScore(pDrinkAcquire = 10): number {
     cardUncaps: fullCardUncaps,
     excludedCardNames: [],
     allCards: AllCards,
-    cardByName: CardByName,
+    cardByName,
   })
   return result?.totalScore ?? 0
 }
@@ -238,7 +241,7 @@ function getManualScorePDrink12(): number {
     cardUncaps: fullCardUncaps,
     excludedCardNames: [],
     allCards: AllCards,
-    cardByName: CardByName,
+    cardByName,
   })
   return result?.totalScore ?? 0
 }
@@ -281,7 +284,7 @@ describe('総当たり最適化', () => {
           cardUncaps: fullCardUncaps,
           excludedCardNames: [],
           allCards: AllCards,
-          cardByName: CardByName,
+          cardByName,
         },
         () => {
           progressCalls++
@@ -333,7 +336,7 @@ describe('総当たり最適化', () => {
         cardUncaps: fullCardUncaps,
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       },
       () => {
         // no-op
@@ -387,7 +390,7 @@ describe('総当たり最適化', () => {
           cardUncaps: fullCardUncaps,
           excludedCardNames: [],
           allCards: AllCards,
-          cardByName: CardByName,
+          cardByName,
         },
         (done, total) => {
           progressCalls++
@@ -478,7 +481,7 @@ describe('総当たり最適化', () => {
         cardUncaps: fullCardUncaps,
         excludedCardNames: [],
         allCards: AllCards,
-        cardByName: CardByName,
+        cardByName,
       },
       () => {},
       () => false,

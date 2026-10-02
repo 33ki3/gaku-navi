@@ -1,14 +1,13 @@
 /**
- * 最適編成結果の再計算同期フック。
+ * 最適編成結果の再計算同期フック
  *
- * 回数調整・点数設定・手動編成の変更を監視し、必要な計算だけを実行する。
+ * 回数調整・点数設定・手動編成の変更を監視し、必要な計算だけを実行する
  */
 import { useEffect, useMemo, useRef } from 'react'
 import * as constant from '../constant'
-import type { ScoreSettings } from '../types/card'
+import type { CardCountCustom, ScoreSettings } from '../types/card'
 import type { UnitResult } from '../types/unit'
 import { isUnitResultSynchronized } from '../utils/unitManualCards'
-import type { CardCountCustom } from './useCardCountCustom'
 
 interface UseUnitResultSyncParams {
   /** 現在の計算結果 */
@@ -41,7 +40,7 @@ export function useUnitResultSync({
 }: UseUnitResultSyncParams): Set<string> {
   const isFirstRender = useRef(true)
   const previousManualCardsRef = useRef(manualCards)
-  // パネルを閉じている間に設定だけ更新されたケースを、再マウント時に一度だけ救済する
+  // パネルを閉じている間に設定だけ更新された場合は再表示したときに一度だけ再評価する
   const initialResultRef = useRef(result)
   const isInitialManualSyncRef = useRef(true)
 
@@ -72,7 +71,7 @@ export function useUnitResultSync({
     previousManualCardsRef.current = manualCards
 
     if (!cardsChanged && !resultWasStaleOnMount) return
-    // 最適化完了時は結果と手動編成が同時に更新されるため、同じ編成をもう一度main側で評価しない
+    // 最適化完了時は結果と手動編成が同時に更新されるため同じ編成をもう一度評価しない
     if (result !== null && isUnitResultSynchronized(result, manualCards)) return
     const filledCount = manualCards.filter((name) => name !== null).length
     if (filledCount > 0 && filledCount <= constant.UNIT_SIZE) evaluateCurrentCards()

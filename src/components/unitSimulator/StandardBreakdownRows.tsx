@@ -6,7 +6,7 @@
  */
 import { useTranslation } from 'react-i18next'
 
-import type { ParameterValues } from '../../types/unit'
+import type { ParameterValues } from '../../types/card'
 import BreakdownRow from './BreakdownRow'
 
 /** StandardBreakdownRows コンポーネントに渡すプロパティ */

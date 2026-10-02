@@ -322,9 +322,9 @@ describe('importUserDataText', () => {
     expect(loadScoreSettings().hifLessonSplitSub).toBe(false)
     expect(loadScoreSettings()).toEqual({
       ...expectedScoreSettings,
+      parameterBonusBase: { vocal: 10, dance: 20, visual: 30 },
       scheduleSelections: {
         ...JSON.parse(JSON.stringify(values[constant.SCHEDULE_SELECTIONS_STORAGE_KEY])).hif,
-        2: enums.ActivityIdType.VoLessonDa,
       },
     })
     expect(loadAppPreferences()).toEqual({
@@ -407,7 +407,7 @@ describe('importUserDataText', () => {
       ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
       allowedTypes: [...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS.allowedTypes, 'invalid-type'],
       lockedCards: ['正常固定カード', null],
-      manualCards: [null, '正常手動カード', 42],
+      selectedCards: [null, '正常手動カード', 42],
     }
 
     const result = importUserDataText(
@@ -421,13 +421,13 @@ describe('importUserDataText', () => {
     expect(result.message).toContain('最適編成設定')
     expect(result.message).toContain('許可タイプ')
     expect(result.message).toContain('固定サポート')
-    expect(result.message).toContain('手動編成サポート')
+    expect(result.message).toContain('選択中の編成サポート')
     // 保存後は許可タイプ・固定カード・手動カードの不正要素だけが除外される
     expect(JSON.parse(localStorage.getItem(constant.UNIT_SIMULATOR_STORAGE_KEY) ?? 'null')).toEqual({
       ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
       allowedTypes: constant.DEFAULT_UNIT_SIMULATOR_SETTINGS.allowedTypes,
       lockedCards: ['正常固定カード'],
-      manualCards: [null, '正常手動カード'],
+      selectedCards: [null, '正常手動カード'],
     })
   })
 

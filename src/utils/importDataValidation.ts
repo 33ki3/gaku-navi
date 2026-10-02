@@ -190,7 +190,7 @@ const FILTER_ARRAY_FIELDS = withValidators(FILTER_ARRAY_FIELD_METADATA, {
 const UNIT_SETTINGS_ARRAY_FIELDS = withValidators(UNIT_SETTINGS_ARRAY_FIELD_METADATA, {
   [enums.ImportArrayFieldKeyType.AllowedTypes]: (item) => isEnumValue(item, enums.CardType),
   [enums.ImportArrayFieldKeyType.LockedCards]: (item) => typeof item === 'string',
-  [enums.ImportArrayFieldKeyType.ManualCards]: (item) => typeof item === 'string' || item === null,
+  [enums.ImportArrayFieldKeyType.SelectedCards]: (item) => typeof item === 'string' || item === null,
   [enums.ImportArrayFieldKeyType.ExcludedCardNames]: (item) => typeof item === 'string' && item.trim() !== '',
 })
 

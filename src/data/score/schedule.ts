@@ -7,7 +7,7 @@
 import type { TranslationKey } from '../../i18n'
 import { ActivityIdType, DifficultyType, HifStage, ScenarioType } from '../../types/enums'
 import { getActivityLabel } from './activity'
-import { HIF_LESSON_BASE_OPTIONS, HIF_LESSON_PAIR_MAP } from './hifScheduleMaster'
+import { HIF_LESSON_BASE_OPTIONS, HIF_LESSON_DEFAULT_PAIR_MAP, HIF_LESSON_PAIR_MAP } from './hifScheduleMaster'
 
 /** スケジュール内の活動選択肢 */
 export interface ScheduleActivityOption {
@@ -342,6 +342,25 @@ export function getScheduleData(scenario: ScenarioType, difficulty: DifficultyTy
 }
 
 /**
+ * 保持されたHIFの主属性・副属性から、現在の表示・計算用の活動を解決する
+ *
+ * @param activityId - 保存されている活動ID
+ * @param scenario - 対象シナリオ
+ * @param hifLessonSplitSub - 副属性を残り2属性へ配分する場合はtrue
+ * @returns 選択を保存し直さずに使用できる活動ID
+ */
+export function getScheduleActivityForMode(
+  activityId: ActivityIdType,
+  scenario: ScenarioType,
+  hifLessonSplitSub = true,
+): ActivityIdType {
+  if (scenario !== ScenarioType.Hif) return activityId
+  return hifLessonSplitSub
+    ? (HIF_LESSON_PAIR_MAP[activityId]?.main ?? activityId)
+    : (HIF_LESSON_DEFAULT_PAIR_MAP[activityId] ?? activityId)
+}
+
+/**
  * 指定した週でフォームから選択できる活動か判定する
  *
  * HIFは表示モードによって公開レッスンの保存形式が変わる
@@ -365,7 +384,7 @@ export function isScheduleActivityAllowed(
   const isHifLessonWeek =
     scenario === ScenarioType.Hif && week.activities.some((activity) => HIF_LESSON_PAIR_MAP[activity.id] !== undefined)
   if (isHifLessonWeek) {
-    // HIFは表示モードにより、属性別IDかメイン属性IDのどちらを保存できるかが変わる
+    // 外部入力は表示モードの選択肢に限定する。保持されたペアは呼び出し側で表示用に投影する
     return hifLessonSplitSub
       ? HIF_LESSON_BASE_OPTIONS.includes(activityId)
       : HIF_LESSON_PAIR_MAP[activityId] !== undefined

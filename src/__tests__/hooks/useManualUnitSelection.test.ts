@@ -52,7 +52,7 @@ function createInitialSettings(): UnitSimulatorSettings {
     typeCountMax: { ...defaults.typeCountMax },
     paramBonusPercent: { ...defaults.paramBonusPercent },
     lockedCards: [...defaults.lockedCards],
-    manualCards: Array.from({ length: constant.UNIT_SIZE }, () => null),
+    selectedCards: Array.from({ length: constant.UNIT_SIZE }, () => null),
     excludedCardNames: [...defaults.excludedCardNames],
     initialParams: { ...defaults.initialParams },
   }
@@ -117,8 +117,8 @@ describe('useManualUnitSelection', () => {
 
     // クリックしたカードは指定スロットだけへ入り、選択モードと
     // 一覧を閉じる通知も維持される
-    expect(result.current.settings.manualCards[2]).toBe(targetCard.name)
-    expect(result.current.settings.manualCards.filter((name) => name !== null)).toHaveLength(1)
+    expect(result.current.settings.selectedCards[2]).toBe(targetCard.name)
+    expect(result.current.settings.selectedCards.filter((name) => name !== null)).toHaveLength(1)
     expect(result.current.unitCardSelectMode).toBe(true)
     expect(onClosePanel).toHaveBeenCalledOnce()
   })
@@ -153,7 +153,7 @@ describe('useManualUnitSelection', () => {
     // パネルを閉じた後も選択モードを保ち、
     // クリックしたカードを指定位置へ入れられる
     expect(result.current.panelOpen).toBe(false)
-    expect(result.current.settings.manualCards[4]).toBe(targetCard.name)
+    expect(result.current.settings.selectedCards[4]).toBe(targetCard.name)
     expect(result.current.unitCardSelectMode).toBe(true)
     expect(onClosePanel).not.toHaveBeenCalled()
   })
@@ -168,6 +168,6 @@ describe('useManualUnitSelection', () => {
 
     act(() => result.current.bridge.handleManualCardClick(targetCard))
 
-    expect(result.current.settings.manualCards[0]).toBe(targetCard.name)
+    expect(result.current.settings.selectedCards[0]).toBe(targetCard.name)
   })
 })

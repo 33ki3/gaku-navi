@@ -901,7 +901,7 @@
       "import_field_card_exclusion": "最適編成候補",
       "import_field_allowed_type": "許可タイプ",
       "import_field_locked_card": "固定サポート",
-      "import_field_manual_card": "手動編成サポート",
+      "import_field_selected_card": "選択中の編成サポート",
       "import_field_excluded_cards": "除外サポート",
       "error_boundary_title": "表示中にエラーが発生しました",
       "error_boundary_unknown": "不明なエラー",

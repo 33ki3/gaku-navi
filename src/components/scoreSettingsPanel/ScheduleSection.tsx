@@ -14,6 +14,7 @@ import type { ActionIdType } from '../../types/enums'
 import * as enums from '../../types/enums'
 import { CollapsibleVariantType } from '../../types/enums'
 import { getParameterBonusBreakdown } from '../../utils/calculator/parameterBonus'
+import { updateHifLessonMain } from '../../utils/hifScheduleHelpers'
 import { normalizeScoreSettingsDerived } from '../../utils/scoreSettings'
 import CollapsibleSection from '../ui/CollapsibleSection'
 import { HelpTooltip } from '../ui/HelpTooltip'
@@ -71,7 +72,12 @@ export function ScheduleSection({
   ])
 
   const handleScheduleSelect = (week: number, activityId: enums.ActivityIdType) => {
-    const newSelections = { ...settings.scheduleSelections, [week]: activityId }
+    // 主属性のみ表示中も副属性の選択を保持し、ペア表示へ戻せるようにする
+    const selected =
+      settings.scenario === enums.ScenarioType.Hif && settings.hifLessonSplitSub
+        ? updateHifLessonMain(settings.scheduleSelections[week], activityId)
+        : activityId
+    const newSelections = { ...settings.scheduleSelections, [week]: selected }
     onSettingsChange(
       normalizeScoreSettingsDerived({
         ...settings,

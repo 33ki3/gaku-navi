@@ -8,7 +8,7 @@ export {
   getActionCategory,
   getActionGroupLabel,
 } from './actionCategory'
-export { ActivityActionMap, getActivityColor, ScheduleControlledIds } from './activity'
+export { ActivityActionMap, ScheduleControlledIds, getActivityColor } from './activity'
 export { getClassBreakdown, getClassParameterTotal } from './class'
 export { getExamData, getExamTotalData, getHifExamTotalData, getHifSelectionExamData } from './exam'
 export { getLessonData, getSpLessonTotal } from './lesson'
@@ -17,7 +17,13 @@ export { getMaxLevel } from './maxLevel'
 export { resolveParamCap } from './paramCap'
 export { ParameterInputList } from './parameterInput'
 export { PItemBodyActionMap } from './pItemActionMap'
-export { getScheduleData, HIF_EXAM_LABEL_KEYS, isScheduleActivityAllowed, RestOption } from './schedule'
+export {
+  HIF_EXAM_LABEL_KEYS,
+  RestOption,
+  getScheduleActivityForMode,
+  getScheduleData,
+  isScheduleActivityAllowed,
+} from './schedule'
 export type { ScheduleWeekData } from './schedule'
-export { getDifficultyOptionList, ScenarioOptionList } from './scoreOption'
+export { ScenarioOptionList, getDifficultyOptionList } from './scoreOption'
 export { PItemTriggerActionMap, TriggerActionMap } from './triggerActionMap'

@@ -9,7 +9,7 @@ import * as data from '../../data'
 import type { CardCalculationResult } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitMember, UnitResult } from '../../types/unit'
-import { isUnitResultSynchronized } from '../../utils/unitManualCards'
+import { isUnitResultSynchronized } from '../../utils/unitSelectedCards'
 
 function makeMember(cardName: string): UnitMember {
   // 同期判定が参照するカード名とレンタル状態だけを実値にし、他の結果項目は固定値にする
@@ -27,7 +27,7 @@ function makeMember(cardName: string): UnitMember {
 }
 
 function makeResult(memberNames: string[]): UnitResult {
-  // 引数の順序をそのままmembersへ反映し、スロット順比較を再現する
+  // 引数の順序をそのままmembersへ反映し、カード集合の比較を再現する
   return {
     members: memberNames.map(makeMember),
     totalScore: 0,
@@ -42,15 +42,22 @@ describe('isUnitResultSynchronized', () => {
   const first = data.AllCards[0].name
   const second = data.AllCards[1].name
 
-  it('同じカードでもスロット順が変われば再計算対象と判定する', () => {
-    // 結果と手動設定の順序が逆なら不一致、同じ順序なら一致と判定されるべき
-    expect(isUnitResultSynchronized(makeResult([first, second]), [second, first, null])).toBe(false)
-    expect(isUnitResultSynchronized(makeResult([first, second]), [first, second, null])).toBe(true)
+  it('通常カードの並び順が変わっても一致と判定する', () => {
+    // 通常カードの表示順は計算結果の有効性に影響しない
+    expect(isUnitResultSynchronized(makeResult([first, second]), [second, first, null], null)).toBe(true)
+    expect(isUnitResultSynchronized(makeResult([first, second]), [first, second, null], null)).toBe(true)
+  })
+
+  it('同じカード集合でもレンタル指定が変われば不一致と判定する', () => {
+    const result = makeResult([first, second])
+    result.members[0].isRental = true
+    expect(isUnitResultSynchronized(result, [second, first], first)).toBe(true)
+    expect(isUnitResultSynchronized(result, [second, first], second)).toBe(false)
   })
 
   it('追加・削除されたカードがある場合は古い結果として判定する', () => {
     // 結果より手動設定が増えた場合も、手動設定より結果が減った場合も再計算対象になる
-    expect(isUnitResultSynchronized(makeResult([first]), [first, second])).toBe(false)
-    expect(isUnitResultSynchronized(makeResult([first, second]), [first])).toBe(false)
+    expect(isUnitResultSynchronized(makeResult([first]), [first, second], null)).toBe(false)
+    expect(isUnitResultSynchronized(makeResult([first, second]), [first], null)).toBe(false)
   })
 })

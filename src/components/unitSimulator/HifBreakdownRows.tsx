@@ -7,7 +7,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { HIF_EXAM_LABEL_KEYS } from '../../data/score'
-import type { ParameterValues } from '../../types/unit'
+import type { ParameterValues } from '../../types/card'
 import BreakdownRow from './BreakdownRow'
 
 /** HifBreakdownRows コンポーネントに渡すプロパティ */

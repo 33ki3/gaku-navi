@@ -111,8 +111,10 @@ export default function UnitSimulatorPanel({
 
   const customizedCardNames = useUnitResultSync({
     result: simulator.result,
-    manualCards: simulator.settings.manualCards,
+    selectedCards: simulator.settings.selectedCards,
+    rentalCardName: simulator.settings.rentalCardName,
     cardCountCustom: countCustom.cardCountCustom,
+    cardUncaps,
     scoreSettings,
     recalculateScores: simulator.recalculateScores,
     evaluateCurrentCards: simulator.evaluateCurrentCards,

@@ -3,7 +3,7 @@
  *
  * 最適編成の設定と結果を表す型を定義する
  */
-import type { CardCalculationResult, SupportCard } from './card'
+import type { CardCalculationResult, ParameterValues, SupportCard } from './card'
 import type { ActionIdType, CardType, ParameterType, PlanType, TriggerKeyType, UncapType } from './enums'
 
 /** SP発生率の枚数設定（Vo/Da/Vi それぞれの必要枚数） */
@@ -13,13 +13,6 @@ export interface SpRateConstraint {
   /** ダンスSP発生率の必要枚数 */
   dance: number
   /** ビジュアルSP発生率の必要枚数 */
-  visual: number
-}
-
-/** パラメータ値（Vo/Da/Vi の3軸） */
-export interface ParameterValues {
-  vocal: number
-  dance: number
   visual: number
 }
 
@@ -40,14 +33,12 @@ export interface UnitSimulatorSettings {
   typeCountMax: TypeCountValues
   /** パラメータボーナス%（プロデュース開始画面の値） */
   paramBonusPercent: ParameterValues
-  /** レンタル枠を手動指定するか */
-  manualRental: boolean
-  /** 手動指定されたレンタルサポート名（null = 自動選出） */
+  /** 選択中のレンタルカード名。固定一覧に含まれる場合だけ最適化でもレンタルを固定する */
   rentalCardName: string | null
-  /** 固定サポート名リスト（自動最適化から除外） */
+  /** 採用を固定するカード名。レンタル名と一致するカードはレンタル枠、それ以外は通常枠で固定する */
   lockedCards: string[]
-  /** 手動選択されたサポート名リスト（手動モード用・null はスロット空き） */
-  manualCards: (string | null)[]
+  /** 画面のスロット順で保持する選択カード。nullはその位置の空き枠 */
+  selectedCards: (string | null)[]
   /** 最適編成の自動候補から除外するサポート名リスト */
   excludedCardNames: string[]
   /** 初期パラメータ（プロデュース開始時のアイドルステータス） */

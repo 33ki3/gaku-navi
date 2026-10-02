@@ -6,31 +6,19 @@
  */
 import * as constant from '../../constant'
 import * as data from '../../data'
+import type { CardScoreCalculationContext } from '../../types/calculation'
 import type {
   CardCalculationResult,
   CardCountCustom,
   CardCustomData,
-  PerLessonParameterValues,
   ScoreSettings,
   SupportCard,
 } from '../../types/card'
 import type { UncapType } from '../../types/enums'
 import * as enums from '../../types/enums'
-import { customRowsToPerLessonValues, mergeScheduleCounts, resolveScoreSettingsDifficulty } from '../scoreSettings'
+import { mergeScheduleCounts, resolveScoreSettingsDifficulty } from '../scoreSettings'
 import { calculateCardParameter } from './calculateCard'
-import { getPerLessonParameterValues } from './parameterBonus'
-
-/** カードスコア計算へ渡す、設定から導出した共有入力 */
-interface CardScoreCalculationContext {
-  /** 自己発火・Pアイテム計算に使う有効なアクション回数 */
-  effectiveCounts: Partial<Record<enums.ActionIdType, number>>
-  /** アクション回数が1つ以上設定されているか */
-  hasAnyAction: boolean
-  /** パラメータボーナス対象値が1つ以上設定されているか */
-  hasAnyBonus: boolean
-  /** レッスンごとのパラメータ値。不要な場合は undefined */
-  perLessonValues: PerLessonParameterValues | undefined
-}
+import { resolveParameterBonusRows } from './parameterBonus'
 
 /** 全カードのスコア計算へ渡す入力 */
 interface CardScoreCalculationInput {
@@ -85,25 +73,12 @@ export function createCardScoreCalculationContext(scoreSettings: ScoreSettings):
         }
       : { ...mergedCounts }
 
+  const parameterBonusRows = resolveParameterBonusRows({ ...scoreSettings, difficulty: resolvedDifficulty })
   const hasAnyAction = Object.values(effectiveCounts).some((value) => value > 0)
-  const hasAnyBonus =
-    scoreSettings.parameterBonusBase.vocal > 0 ||
-    scoreSettings.parameterBonusBase.dance > 0 ||
-    scoreSettings.parameterBonusBase.visual > 0
+  // 計算対象の有無は、実際に使用する上昇値の行配列から判定する
+  const hasAnyBonus = parameterBonusRows.some((row) => row.vocal > 0 || row.dance > 0 || row.visual > 0)
 
-  const perLessonValues = scoreSettings.useCustomMode
-    ? customRowsToPerLessonValues(scoreSettings.customParamBonusRows)
-    : scoreSettings.useScheduleLimits
-      ? getPerLessonParameterValues(
-          scoreSettings.scheduleSelections,
-          scoreSettings.scenario,
-          resolvedDifficulty,
-          scoreSettings.hifLessonSplitSub,
-          scoreSettings.hifExamRatios,
-        )
-      : undefined
-
-  return { effectiveCounts, hasAnyAction, hasAnyBonus, perLessonValues }
+  return { effectiveCounts, hasAnyAction, hasAnyBonus, parameterBonusRows }
 }
 
 /**
@@ -130,10 +105,9 @@ export function calculateCardWithSettings(
     uncap,
     context.effectiveCounts,
     {},
-    scoreSettings.parameterBonusBase,
+    context.parameterBonusRows,
     scoreSettings.includeSelfTrigger,
     scoreSettings.includePItem,
-    context.perLessonValues,
     custom?.selfTrigger,
     custom?.pItemCount,
   )

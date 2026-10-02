@@ -12,7 +12,7 @@ import * as enums from '../../../types/enums'
 import {
   calculateParameterBonusFromSchedule,
   getParameterBonusBreakdown,
-  getPerLessonParameterValues,
+  getParameterBonusRowsFromSchedule,
 } from '../../../utils/calculator/parameterBonus'
 
 // テストデータは実際のシナリオ/難易度を使用（data/score/lesson.ts に依存）
@@ -135,12 +135,10 @@ describe('calculateParameterBonusFromSchedule', () => {
 })
 
 /** レッスンごとのパラメータ上昇値取得テスト */
-describe('getPerLessonParameterValues', () => {
+describe('getParameterBonusRowsFromSchedule', () => {
   it('レッスン選択なしは空配列', () => {
-    const result = getPerLessonParameterValues({}, scenario, difficulty)
-    expect(result.vocal).toEqual([])
-    expect(result.dance).toEqual([])
-    expect(result.visual).toEqual([])
+    const result = getParameterBonusRowsFromSchedule({}, scenario, difficulty)
+    expect(result).toEqual([])
   })
 
   it('レッスン選択した分だけ要素が増える', () => {
@@ -148,31 +146,31 @@ describe('getPerLessonParameterValues', () => {
       4: enums.ActivityIdType.VoLesson,
       7: enums.ActivityIdType.DaLesson,
     }
-    const result = getPerLessonParameterValues(selections, scenario, difficulty)
-    expect(result.vocal.length).toBe(2)
-    expect(result.dance.length).toBe(2)
-    expect(result.visual.length).toBe(2)
+    const result = getParameterBonusRowsFromSchedule(selections, scenario, difficulty)
+    expect(result).toHaveLength(2)
   })
 
   it('ボーカルレッスンの場合、vocalがメイン値（大きい方）', () => {
     const selections = { 4: enums.ActivityIdType.VoLesson }
-    const result = getPerLessonParameterValues(selections, scenario, difficulty)
-    expect(result.vocal[0]).toBeGreaterThan(result.dance[0])
-    expect(result.vocal[0]).toBeGreaterThan(result.visual[0])
+    const result = getParameterBonusRowsFromSchedule(selections, scenario, difficulty)
+    expect(result[0].vocal).toBeGreaterThan(result[0].dance)
+    expect(result[0].vocal).toBeGreaterThan(result[0].visual)
   })
 
   it('ビジュアルレッスンの場合、visualがメイン値', () => {
     const selections = { 4: enums.ActivityIdType.ViLesson }
-    const result = getPerLessonParameterValues(selections, scenario, difficulty)
-    expect(result.visual[0]).toBeGreaterThan(result.vocal[0])
-    expect(result.visual[0]).toBeGreaterThan(result.dance[0])
+    const result = getParameterBonusRowsFromSchedule(selections, scenario, difficulty)
+    expect(result[0].visual).toBeGreaterThan(result[0].vocal)
+    expect(result[0].visual).toBeGreaterThan(result[0].dance)
   })
 
   it('HIF では選抜試験3回分が末尾に追加される', () => {
-    const result = getPerLessonParameterValues({}, enums.ScenarioType.Hif, enums.DifficultyType.None)
-    expect(result.vocal).toEqual([46, 146, 173])
-    expect(result.dance).toEqual([46, 146, 173])
-    expect(result.visual).toEqual([48, 148, 174])
+    const result = getParameterBonusRowsFromSchedule({}, enums.ScenarioType.Hif, enums.DifficultyType.None)
+    expect(result).toEqual([
+      { vocal: 46, dance: 46, visual: 48 },
+      { vocal: 146, dance: 146, visual: 148 },
+      { vocal: 173, dance: 173, visual: 174 },
+    ])
   })
 })
 

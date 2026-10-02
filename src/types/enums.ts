@@ -2036,7 +2036,7 @@ export const ImportArrayFieldKeyType = {
   CardExclusionFilters: 'cardExclusionFilters',
   AllowedTypes: 'allowedTypes',
   LockedCards: 'lockedCards',
-  ManualCards: 'manualCards',
+  SelectedCards: 'selectedCards',
   ExcludedCardNames: 'excludedCardNames',
   Members: 'members',
 } as const

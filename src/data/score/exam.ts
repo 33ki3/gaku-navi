@@ -4,8 +4,8 @@
  * シナリオ×難易度ごとの中間試験・最終試験で得られる
  * パラメータ上昇量（Vo/Da/Vi）を定義する。
  */
+import type { ParameterValues } from '../../types/card'
 import { DifficultyType, ScenarioType } from '../../types/enums'
-import type { ParameterValues } from '../../types/unit'
 
 /** 試験1回分の上昇量 */
 interface ExamEntry {

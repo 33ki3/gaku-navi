@@ -4,13 +4,10 @@
  * splitSub 設定に応じて、メイン属性トグルまたは Main/Sub 2段の選択 UI を表示する。
  */
 import { useTranslation } from 'react-i18next'
+import * as data from '../../../data'
 import { HIF_LESSON_BASE_OPTIONS } from '../../../data/score/hifScheduleMaster'
 import * as enums from '../../../types/enums'
-import {
-  normalizeHifLessonActivityForPairMode,
-  resolveHifLessonActivity,
-  resolveHifLessonPair,
-} from '../../../utils/hifScheduleHelpers'
+import { resolveHifLessonActivity, resolveHifLessonPair } from '../../../utils/hifScheduleHelpers'
 import { HifLessonPartRows } from './HifLessonPartRows'
 import { LessonMainSelector } from './LessonMainSelector'
 
@@ -44,7 +41,7 @@ export function HifLessonWeekRow({
   const { t } = useTranslation()
   const currentPair = (() => {
     if (hifLessonSplitSub || selected === undefined) return { main: undefined, sub: undefined }
-    const normalizedSelected = normalizeHifLessonActivityForPairMode(selected)
+    const normalizedSelected = data.getScheduleActivityForMode(selected, enums.ScenarioType.Hif, false)
     return resolveHifLessonPair(normalizedSelected) ?? { main: undefined, sub: undefined }
   })()
 

@@ -162,7 +162,7 @@ const fullCardUncaps: Record<string, enums.UncapType> = {
 
 /** ユーザーの手動最適解（いつまでも続けばいいのに + ふわふわでワクワク）をスコア計算する */
 function getManualScore(pDrinkAcquire = 10): number {
-  const manualCards = [
+  const selectedCards = [
     'ぜったいに取るんだ！',
     'どんな関係なんですか？',
     'おいしい顔、いただき～！',
@@ -185,10 +185,9 @@ function getManualScore(pDrinkAcquire = 10): number {
       [enums.ParameterType.Visual]: 3,
     },
     paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-    manualRental: true,
     rentalCardName: 'いつまでも続けばいいのに',
-    lockedCards: [],
-    manualCards,
+    lockedCards: [...new Set([...[], 'いつまでも続けばいいのに'])],
+    selectedCards,
     excludedCardNames: [],
     initialParams: { vocal: 125, dance: 169, visual: 210 },
   }
@@ -205,7 +204,7 @@ function getManualScore(pDrinkAcquire = 10): number {
 
 /** 手動編成（Pドリンク獲得=12）をスコア計算する */
 function getManualScorePDrink12(): number {
-  const manualCards = [
+  const selectedCards = [
     'ぜったいに取るんだ！',
     'どんな関係なんですか？',
     'あなたたちのことが好き',
@@ -228,10 +227,9 @@ function getManualScorePDrink12(): number {
       [enums.ParameterType.Visual]: 3,
     },
     paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-    manualRental: true,
     rentalCardName: 'いつまでも続けばいいのに',
-    lockedCards: [],
-    manualCards,
+    lockedCards: [...new Set([...[], 'いつまでも続けばいいのに'])],
+    selectedCards,
     excludedCardNames: [],
     initialParams: { vocal: 125, dance: 169, visual: 210 },
   }
@@ -248,7 +246,7 @@ function getManualScorePDrink12(): number {
 
 describe('総当たり最適化', () => {
   it(
-    'manualRental=false で exhaustiveOptimizeAsync がいつまでも続けばいいのに 以上のスコアを発見する',
+    'レンタル未固定で exhaustiveOptimizeAsync がいつまでも続けばいいのに 以上のスコアを発見する',
     { timeout: 120000 },
     async () => {
       const manualScore = getManualScore(10)
@@ -268,10 +266,9 @@ describe('総当たり最適化', () => {
           [enums.ParameterType.Visual]: 3,
         },
         paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-        manualRental: false,
         rentalCardName: null,
         lockedCards: [],
-        manualCards: [],
+        selectedCards: [],
         excludedCardNames: [],
         initialParams: { vocal: 125, dance: 169, visual: 210 },
       }
@@ -320,10 +317,9 @@ describe('総当たり最適化', () => {
         [enums.ParameterType.Visual]: 3,
       },
       paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-      manualRental: false,
       rentalCardName: null,
       lockedCards: [],
-      manualCards: [],
+      selectedCards: [],
       excludedCardNames: [],
       initialParams: { vocal: 125, dance: 169, visual: 210 },
       exhaustiveCandidateLimit: 100,
@@ -369,10 +365,9 @@ describe('総当たり最適化', () => {
           [enums.ParameterType.Visual]: 3,
         },
         paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-        manualRental: true,
         rentalCardName: 'いつまでも続けばいいのに',
-        lockedCards: [],
-        manualCards: [],
+        lockedCards: [...new Set([...[], 'いつまでも続けばいいのに'])],
+        selectedCards: [],
         excludedCardNames: [],
         initialParams: { vocal: 125, dance: 169, visual: 210 },
         unifyRentalLock: true,
@@ -464,11 +459,10 @@ describe('総当たり最適化', () => {
         [enums.ParameterType.Dance]: 4,
         [enums.ParameterType.Visual]: 3,
       },
-      paramBonusPercent: { vocal: 20, dance: 20, visual: 20 },
-      manualRental: false, // レンタルカードを全自動探索
+      paramBonusPercent: { vocal: 20, dance: 20, visual: 20 }, // レンタルカードを全自動探索
       rentalCardName: null,
       lockedCards,
-      manualCards: [],
+      selectedCards: [],
       excludedCardNames: [],
       initialParams: { vocal: 150, dance: 150, visual: 150 },
     }

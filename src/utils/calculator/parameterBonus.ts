@@ -5,12 +5,13 @@
  * パラメータボーナスの対象となる値（Vo/Da/Vi）を推定する
  */
 
+import * as constant from '../../constant'
 import * as data from '../../data'
 import * as examData from '../../data/score/exam'
 import * as hifScheduleMaster from '../../data/score/hifScheduleMaster'
-import type { ParameterValues, PerLessonParameterValues } from '../../types/card'
+import type { ParameterValues, ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
-import { getHifExamWeeks, normalizeHifLessonActivityForPairMode } from '../hifScheduleHelpers'
+import { getHifExamWeeks } from '../hifScheduleHelpers'
 
 /**
  * レッスン週ごとの解析結果
@@ -55,7 +56,9 @@ function iterateLessonWeeks(
   let lessonIndex = 0
   const lessonWeeks = lessonList.map((l) => l.week)
   for (const week of lessonWeeks) {
-    const selectedActivity = selections[week]
+    const stored = selections[week]
+    const selectedActivity =
+      stored === undefined ? undefined : data.getScheduleActivityForMode(stored, scenario, hifLessonSplitSub)
     if (!selectedActivity) {
       lessonIndex++
       continue
@@ -174,12 +177,7 @@ export function calculateParameterBonusFromSchedule(
     difficulty,
     splitSub,
   )) {
-    // HIFの表示モードに応じて、サブ属性を分割するかペアのメイン属性へ寄せる
-    const effectiveActivity =
-      scenario === enums.ScenarioType.Hif && !shouldSplitSub
-        ? normalizeHifLessonActivityForPairMode(activity)
-        : activity
-    const dist = distributeIncrease(effectiveActivity, mainIncrease, subIncrease, shouldSplitSub)
+    const dist = distributeIncrease(activity, mainIncrease, subIncrease, shouldSplitSub)
     result.vocal += dist.vocal
     result.dance += dist.dance
     result.visual += dist.visual
@@ -201,7 +199,7 @@ export function calculateParameterBonusFromSchedule(
  * スケジュールのレッスン選択からレッスンごとの Vo/Da/Vi 上昇量を返す
  *
  * パラメータボーナスをレッスン1回ごとに切り捨て計算するために使う
- * 各配列の i 番目の要素が i 番目のレッスンでの上昇量に対応する
+ * 各行が1回の上昇機会に対応し、Vo/Da/Viの値を同じ行に保持する
  *
  * @param selections - 週番号 → 選んだ活動ID のマッピング
  * @param scenario - シナリオ名
@@ -210,15 +208,15 @@ export function calculateParameterBonusFromSchedule(
  * @param hifExamRatios - HIF選抜試験のパラメータ配分比率
  * @returns レッスンごとの Vo/Da/Vi 上昇量配列
  */
-export function getPerLessonParameterValues(
+export function getParameterBonusRowsFromSchedule(
   selections: Record<number, enums.ActivityIdType>,
   scenario: enums.ScenarioType,
   difficulty: enums.DifficultyType,
   splitSub = false,
   hifExamRatios?: ParameterValues[],
-): PerLessonParameterValues {
+): ParameterValues[] {
   const shouldSplitSub = scenario === enums.ScenarioType.Hif && splitSub
-  const result: PerLessonParameterValues = { vocal: [], dance: [], visual: [] }
+  const result: ParameterValues[] = []
 
   for (const { activity, mainIncrease, subIncrease } of iterateLessonWeeks(
     selections,
@@ -226,26 +224,53 @@ export function getPerLessonParameterValues(
     difficulty,
     splitSub,
   )) {
-    const effectiveActivity =
-      scenario === enums.ScenarioType.Hif && !shouldSplitSub
-        ? normalizeHifLessonActivityForPairMode(activity)
-        : activity
-    const dist = distributeIncrease(effectiveActivity, mainIncrease, subIncrease, shouldSplitSub)
-    result.vocal.push(dist.vocal)
-    result.dance.push(dist.dance)
-    result.visual.push(dist.visual)
+    const dist = distributeIncrease(activity, mainIncrease, subIncrease, shouldSplitSub)
+    result.push(dist)
   }
 
   // HIF の選抜試験は1回ごとに切り捨て計算できるよう配列へ個別に追加する
   if (scenario === enums.ScenarioType.Hif) {
     for (const exam of examData.getHifSelectionExamData(hifExamRatios)) {
-      result.vocal.push(exam.vocal)
-      result.dance.push(exam.dance)
-      result.visual.push(exam.visual)
+      result.push(exam)
     }
   }
 
   return result
+}
+
+/**
+ * 入力モードによらず、計算対象の上昇機会を行配列として取り出す
+ *
+ * @param settings - 現在の点数設定
+ * @returns カスタム行、自動計算の上昇機会、または手動合計値の1行
+ */
+export function resolveParameterBonusRows(settings: ScoreSettings): ParameterValues[] {
+  if (settings.useCustomMode) return settings.customParamBonusRows
+  if (!settings.useScheduleLimits) return [settings.parameterBonusBase]
+  return getParameterBonusRowsFromSchedule(
+    settings.scheduleSelections,
+    settings.scenario,
+    settings.difficulty,
+    settings.hifLessonSplitSub,
+    settings.hifExamRatios,
+  )
+}
+
+/**
+ * 上昇機会ごとにボーナスを切り捨て、対象属性の加点を合算する
+ *
+ * @param rows - 1回の上昇機会ごとのVo/Da/Vi値
+ * @param percent - Vo/Da/Viごとのボーナス率
+ * @returns 各行で切り捨てたVo/Da/Viのボーナス合計
+ */
+export function calculateParameterBonus(rows: readonly ParameterValues[], percent: ParameterValues): ParameterValues {
+  const total: ParameterValues = { vocal: 0, dance: 0, visual: 0 }
+  for (const row of rows) {
+    total.vocal += Math.floor((row.vocal * percent.vocal) / constant.PERCENT_DIVISOR)
+    total.dance += Math.floor((row.dance * percent.dance) / constant.PERCENT_DIVISOR)
+    total.visual += Math.floor((row.visual * percent.visual) / constant.PERCENT_DIVISOR)
+  }
+  return total
 }
 
 /**
@@ -306,14 +331,10 @@ export function getParameterBonusBreakdown(
   const shouldSplitSub = scenario === enums.ScenarioType.Hif && splitSub
   const lessonRows = iterateLessonWeeks(selections, scenario, difficulty, splitSub).map(
     ({ week, activity, mainIncrease, subIncrease }) => {
-      const effectiveActivity =
-        scenario === enums.ScenarioType.Hif && !shouldSplitSub
-          ? normalizeHifLessonActivityForPairMode(activity)
-          : activity
-      const dist = distributeIncrease(effectiveActivity, mainIncrease, subIncrease, shouldSplitSub)
-      const attribute = hifScheduleMaster.LESSON_MAIN_PARAM_MAP[effectiveActivity] ?? enums.ParameterType.Vocal
+      const dist = distributeIncrease(activity, mainIncrease, subIncrease, shouldSplitSub)
+      const attribute = hifScheduleMaster.LESSON_MAIN_PARAM_MAP[activity] ?? enums.ParameterType.Vocal
       // HIFのsplitSubモードではサブ属性は表示不要
-      const subAttribute = shouldSplitSub ? undefined : hifScheduleMaster.LESSON_SUB_PARAM_MAP[effectiveActivity]
+      const subAttribute = shouldSplitSub ? undefined : hifScheduleMaster.LESSON_SUB_PARAM_MAP[activity]
       return { week, attribute, subAttribute, ...dist }
     },
   )

@@ -93,8 +93,8 @@ export const UNIT_SETTINGS_ARRAY_FIELD_METADATA: readonly ImportArrayFieldMetada
     labelKey: 'ui.message.import_field_locked_card',
   },
   {
-    key: enums.ImportArrayFieldKeyType.ManualCards,
-    labelKey: 'ui.message.import_field_manual_card',
+    key: enums.ImportArrayFieldKeyType.SelectedCards,
+    labelKey: 'ui.message.import_field_selected_card',
   },
   {
     key: enums.ImportArrayFieldKeyType.ExcludedCardNames,

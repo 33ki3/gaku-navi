@@ -127,8 +127,8 @@ export const ACTION_COUNT_MAX = 999
 export const SP_TOTAL_MAX = 6
 /** 総当たり最適化の候補枚数の既定値 */
 export const EXHAUSTIVE_CANDIDATE_LIMIT = 30
-/** 候補プール内で保護するPアイテム行動提供元の最大枚数（最終編成枚数の2倍） */
-export const P_ITEM_ACTION_PROVIDER_LIMIT = UNIT_SIZE * 2
+/** 候補上限内で最低限確保するVo・Da・Vi各タイプの候補枚数 */
+export const CANDIDATE_TYPE_MINIMUM = 5
 /** 総当たり進捗の目標更新回数（画面更新頻度の目安） */
 export const EXHAUSTIVE_PROGRESS_TARGET_UPDATES = 200
 /** 総当たり進捗バッチサイズの下限（小規模探索でも中間進捗を通知する） */

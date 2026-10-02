@@ -93,19 +93,18 @@ export function isUnitSimulatorSettings(value: unknown): value is UnitSimulatorS
     countValuesAreValid(value.typeCountMin, constant.UNIT_SIZE) &&
     countValuesAreValid(value.typeCountMax, constant.UNIT_SIZE) &&
     paramBonusIsValid &&
-    typeof value.manualRental === 'boolean' &&
     (typeof value.rentalCardName === 'string' || value.rentalCardName === null) &&
     isStringArray(value.lockedCards) &&
     uniqueValues(value.lockedCards) &&
-    isNullableStringArray(value.manualCards) &&
-    uniqueNullableValues(value.manualCards) &&
+    isNullableStringArray(value.selectedCards) &&
+    uniqueNullableValues(value.selectedCards) &&
     isStringArray(value.excludedCardNames) &&
     uniqueValues(value.excludedCardNames) &&
     initialParamsAreValid
 
   if (!requiredValuesAreValid) return false
 
-  if (!isStringArray(value.lockedCards) || !isNullableStringArray(value.manualCards)) return false
+  if (!isStringArray(value.lockedCards) || !isNullableStringArray(value.selectedCards)) return false
   const rentalCardName = value.rentalCardName
 
   return (
@@ -117,8 +116,9 @@ export function isUnitSimulatorSettings(value: unknown): value is UnitSimulatorS
     typeof value.ignoreCardExclusions === 'boolean' &&
     candidateLimitIsValid &&
     value.lockedCards.length <= constant.UNIT_SIZE &&
-    value.manualCards.length <= constant.UNIT_SIZE &&
-    (!value.manualRental || rentalCardName !== null) &&
+    value.selectedCards.length <= constant.UNIT_SIZE &&
+    (value.selectedCards.filter((name) => name !== null).length < constant.UNIT_SIZE ||
+      (typeof rentalCardName === 'string' && value.selectedCards.includes(rentalCardName))) &&
     (rentalCardName === null || (typeof rentalCardName === 'string' && rentalCardName.trim() !== ''))
   )
 }

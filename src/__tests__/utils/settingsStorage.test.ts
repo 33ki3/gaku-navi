@@ -61,7 +61,7 @@ describe('最適編成設定の永続化', () => {
   it('正しい設定を保存して読み戻せる', () => {
     const settings = {
       ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
-      manualRental: true,
+      lockedCards: ['テストサポート'],
       rentalCardName: 'テストサポート',
     }
 
@@ -72,23 +72,12 @@ describe('最適編成設定の永続化', () => {
     expect(loadUnitSimulatorSettings()).toEqual(settings)
   })
 
-  it('保存値にない設定項目は現在の既定値を補完して読み戻す', () => {
-    const legacySettings = {
-      ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
-      manualRental: true,
-      rentalCardName: '旧設定のサポート',
-      excludedCardNames: undefined,
-      initialParams: undefined,
-    }
-    localStorage.setItem(constant.UNIT_SIMULATOR_STORAGE_KEY, JSON.stringify(legacySettings))
-
-    expect(loadUnitSimulatorSettings()).toEqual({
-      ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS,
-      manualRental: true,
-      rentalCardName: '旧設定のサポート',
-      excludedCardNames: [],
-      initialParams: constant.DEFAULT_UNIT_SIMULATOR_SETTINGS.initialParams,
-    })
+  it('現行項目が不正なら読み込みを拒否する', () => {
+    localStorage.setItem(
+      constant.UNIT_SIMULATOR_STORAGE_KEY,
+      JSON.stringify({ ...constant.DEFAULT_UNIT_SIMULATOR_SETTINGS, selectedCards: null }),
+    )
+    expect(loadUnitSimulatorSettings()).toEqual(constant.DEFAULT_UNIT_SIMULATOR_SETTINGS)
   })
 
   it('入れ子が壊れた設定は既定値へ戻す', () => {

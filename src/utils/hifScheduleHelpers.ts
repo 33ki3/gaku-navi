@@ -6,8 +6,9 @@
  */
 import type { TFunction } from 'i18next'
 import type { ScheduleWeekData } from '../data'
+import * as data from '../data'
 import { HIF_EXAM_LABEL_KEYS } from '../data'
-import { HIF_LESSON_DEFAULT_PAIR_MAP, HIF_LESSON_PAIR_MAP } from '../data/score/hifScheduleMaster'
+import { HIF_LESSON_PAIR_MAP } from '../data/score/hifScheduleMaster'
 import type { ParameterValues } from '../types/card'
 import * as enums from '../types/enums'
 
@@ -31,16 +32,6 @@ export function resolveHifLessonPair(
 }
 
 /**
- * HIF複合レッスンを半分モードで使うメイン属性の活動IDへ変換する。
- *
- * @param activityId - 正規化する活動ID
- * @returns 複合レッスンならメイン活動ID。それ以外は入力された活動ID
- */
-export function normalizeHifLessonActivityForMainMode(activityId: enums.ActivityIdType): enums.ActivityIdType {
-  return resolveHifLessonPair(activityId)?.main ?? activityId
-}
-
-/**
  * メイン/サブの属性選択から HIF公開レッスンの活動IDを解決する。
  *
  * @param main - メイン属性の活動ID
@@ -53,15 +44,23 @@ export function resolveHifLessonActivity(main: enums.ActivityIdType, sub: enums.
 }
 
 /**
- * 非半分モード用に HIF公開レッスン活動IDを正規化する。
+ * 主属性だけの編集では既存の副属性を保持し、同一属性になる場合だけ既定の副属性へ補正する
  *
- * MainのみID（Vo/Da/Vi）が保存されている場合は、既定のSubを補った複合IDへ変換する。
- *
- * @param activityId - 正規化対象の活動ID
- * @returns 非半分モードで扱える活動ID
+ * @param selected - 編集前の保存値
+ * @param main - 選択された主属性
+ * @returns 主属性と副属性を保持した活動ID
  */
-export function normalizeHifLessonActivityForPairMode(activityId: enums.ActivityIdType): enums.ActivityIdType {
-  return HIF_LESSON_DEFAULT_PAIR_MAP[activityId] ?? activityId
+export function updateHifLessonMain(
+  selected: enums.ActivityIdType | undefined,
+  main: enums.ActivityIdType,
+): enums.ActivityIdType {
+  const defaultActivity = data.getScheduleActivityForMode(main, enums.ScenarioType.Hif, false)
+  const defaultPair = resolveHifLessonPair(defaultActivity)
+  if (!defaultPair) return main
+  const previousSub = selected === undefined ? undefined : resolveHifLessonPair(selected)?.sub
+  return previousSub !== undefined && previousSub !== main
+    ? resolveHifLessonActivity(main, previousSub)
+    : defaultActivity
 }
 
 /**

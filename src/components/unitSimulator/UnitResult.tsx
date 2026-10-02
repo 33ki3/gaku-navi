@@ -9,10 +9,10 @@ import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as scoreData from '../../data/score'
 import * as paramCapData from '../../data/score/paramCap'
-import type { CardCountCustom } from '../../types/card'
+import type { CardCountCustom, ParameterValues } from '../../types/card'
 import type { ActionIdType, ActivityIdType, DifficultyType, ScenarioType } from '../../types/enums'
 import * as enums from '../../types/enums'
-import type { ParameterValues, UnitResult as UnitResultType } from '../../types/unit'
+import type { UnitResult as UnitResultType } from '../../types/unit'
 import { PlusIcon } from '../ui/icons'
 import UnitCardItem from './UnitCardItem'
 import { UnitResultBreakdown } from './UnitResultBreakdown'
@@ -62,7 +62,7 @@ interface UnitResultProps {
   /** パラメータ上限の上書き設定 */
   paramCapOverride: number | null | undefined
   /** 手動編成の各枠に入っているサポート名（空き枠はnull） */
-  manualCards: (string | null)[]
+  selectedCards: (string | null)[]
   /** 一覧から手動編成へ追加する対象スロットを指定する操作 */
   onStartSelect: (slotIndex: number) => void
   /** 一覧からサポートを選択中か */
@@ -99,7 +99,7 @@ export default function UnitResult({
   customNonBonusGain,
   initialParams,
   paramCapOverride,
-  manualCards,
+  selectedCards,
   onStartSelect,
   selectMode,
   isCalculating,
@@ -131,38 +131,23 @@ export default function UnitResult({
       return inOrder
     }
     const byName = new Map(result.members.map((m) => [m.card.name, m]))
-    const padded = [...manualCards]
+    const padded = [...selectedCards]
     while (padded.length < constant.UNIT_SIZE) padded.push(null)
     return padded.map((name) => (name ? (byName.get(name) ?? null) : null))
-  }, [result, manualCards, isCalculating])
-
-  // サポート外パラボ（基礎値 × サポート外% で直接計算）
-  const outsideParamBonus = useMemo(
-    () => ({
-      vocal: Math.floor(
-        (result.parameterBonusBase.vocal * result.outsideParamBonusPercent.vocal) / constant.PERCENT_DIVISOR,
-      ),
-      dance: Math.floor(
-        (result.parameterBonusBase.dance * result.outsideParamBonusPercent.dance) / constant.PERCENT_DIVISOR,
-      ),
-      visual: Math.floor(
-        (result.parameterBonusBase.visual * result.outsideParamBonusPercent.visual) / constant.PERCENT_DIVISOR,
-      ),
-    }),
-    [result.parameterBonusBase, result.outsideParamBonusPercent],
-  )
+  }, [result, selectedCards, isCalculating])
 
   /** スコア内訳の展開トグル */
   const [showBreakdown, setShowBreakdown] = useState(false)
   const handleToggleBreakdown = useCallback(() => setShowBreakdown((prev) => !prev), [])
 
-  // サポートの全効果とサポート間連携を、カードの担当パラメータ別に合計する
+  // 個別計算のパラボを除き、サポート効果と連携だけを属性別に合計する
+  // パラボは編成全体の率で各回を丸めた result.parameterBonus に集約する
   const supportScore = useMemo(() => {
     const sum = { vocal: 0, dance: 0, visual: 0 }
     for (const m of result.members) {
       const key = m.card.parameter_type as keyof typeof sum
       if (key in sum) {
-        sum[key] += m.result.totalIncrease + m.supportSynergy
+        sum[key] += m.result.totalIncrease - m.result.parameterBonus + m.supportSynergy
       }
     }
     return sum
@@ -236,7 +221,7 @@ export default function UnitResult({
       examData.final,
       hifExamTotal,
       supportScore,
-      outsideParamBonus,
+      result.parameterBonus,
       customNonBonusTotal,
     )
     return breakdownTotal
@@ -245,7 +230,7 @@ export default function UnitResult({
     targetGain,
     examData,
     supportScore,
-    outsideParamBonus,
+    result.parameterBonus,
     useCustomMode,
     customClassBonus,
     customNonBonusGain,
@@ -268,20 +253,17 @@ export default function UnitResult({
     }
   }, [paramCap, breakdownTotal])
 
-  // 全合計（VoDaVi合計）
-  const grandTotal = cappedTotal.vocal + cappedTotal.dance + cappedTotal.visual
-
   return (
     <div className="space-y-3">
       {/* 合計スコアとパラメータ内訳 */}
       <UnitResultBreakdown
         useCustomMode={useCustomMode}
         scenario={scenario}
-        grandTotal={grandTotal}
+        grandTotal={result.totalScore}
         showBreakdown={showBreakdown}
         onToggleBreakdown={handleToggleBreakdown}
         initialParams={initialParams}
-        outsideParamBonus={outsideParamBonus}
+        parameterBonus={result.parameterBonus}
         targetGain={targetGain}
         customClassBonus={customClassBonus}
         classParams={classParams}

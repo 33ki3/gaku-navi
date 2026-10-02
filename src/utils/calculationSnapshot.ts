@@ -25,6 +25,7 @@ import * as enums from '../types/enums'
 import type { UnitSimulatorSettings } from '../types/unit'
 import type { OptimizeInput } from '../types/unitOptimizer'
 import { isActionCountRecord, isActionId, isEnumArray, isParameterValues } from './domainValueValidation'
+import { updateHifLessonMain } from './hifScheduleHelpers'
 import {
   isValidScheduleSelections,
   normalizeScoreSettingsDerived,
@@ -110,9 +111,7 @@ export function validateScoreSettingsForCalculation(settings: unknown): ScoreSet
   }
 
   // シナリオ別スケジュールとフォームの値を検証し、通過した設定だけ合計値を整える
-  return isValidScoreSettings(candidate, { scheduleSelections: candidate.scheduleSelections })
-    ? normalizeScoreSettingsDerived(candidate)
-    : null
+  return isValidScoreSettings(candidate, {}) ? normalizeScoreSettingsDerived(candidate) : null
 }
 
 /**
@@ -224,10 +223,7 @@ function mergeScoreSettingsVariant(base: ScoreSettings, patch: ScoreSettingsVari
   }
 
   const scheduleConfigurationChanged =
-    patch.scenario !== undefined ||
-    patch.difficulty !== undefined ||
-    patch.scheduleSelections !== undefined ||
-    patch.hifLessonSplitSub !== undefined
+    patch.scenario !== undefined || patch.difficulty !== undefined || patch.scheduleSelections !== undefined
   if (scheduleConfigurationChanged && patch.scheduleSelections === undefined) {
     // シナリオ変更で前のシナリオの週を持ち越さず、切替後も使える選択だけを残す
     candidate.scheduleSelections = Object.fromEntries(
@@ -238,7 +234,12 @@ function mergeScoreSettingsVariant(base: ScoreSettings, patch: ScoreSettingsVari
           .find((scheduleWeek) => scheduleWeek.week === Number(weekRaw))
         return (
           week !== undefined &&
-          data.isScheduleActivityAllowed(week, activityId, candidate.scenario, candidate.hifLessonSplitSub)
+          data.isScheduleActivityAllowed(
+            week,
+            data.getScheduleActivityForMode(activityId, candidate.scenario, candidate.hifLessonSplitSub),
+            candidate.scenario,
+            candidate.hifLessonSplitSub,
+          )
         )
       }),
     )
@@ -246,6 +247,15 @@ function mergeScoreSettingsVariant(base: ScoreSettings, patch: ScoreSettingsVari
 
   // 選択肢・形・負数を確認してから、合計回数とパラメータを作り直す
   if (!isScoreSettings(candidate) || !isValidScoreSettings(candidate, patch)) return null
+  // 主属性のみの入力は、表示していない副属性を元の週選択から引き継ぐ
+  if (candidate.scenario === enums.ScenarioType.Hif && candidate.hifLessonSplitSub && patch.scheduleSelections) {
+    for (const [week, activityId] of Object.entries(patch.scheduleSelections)) {
+      candidate.scheduleSelections[Number(week)] = updateHifLessonMain(
+        base.scenario === candidate.scenario ? base.scheduleSelections[Number(week)] : undefined,
+        activityId,
+      )
+    }
+  }
   // 画面の入力から自動計算される合計回数・パラメータも作り直す
   return normalizeScoreSettingsDerived(candidate)
 }
@@ -277,7 +287,7 @@ function mergeUnitSettingsVariant(
     typeCountMax: patch.typeCountMax ? { ...patch.typeCountMax } : { ...base.typeCountMax },
     paramBonusPercent: patch.paramBonusPercent ? { ...patch.paramBonusPercent } : { ...base.paramBonusPercent },
     lockedCards: patch.lockedCards ? [...patch.lockedCards] : [...base.lockedCards],
-    manualCards: patch.manualCards ? [...patch.manualCards] : [...base.manualCards],
+    selectedCards: patch.selectedCards ? [...patch.selectedCards] : [...base.selectedCards],
     excludedCardNames: patch.excludedCardNames ? [...patch.excludedCardNames] : [...base.excludedCardNames],
     initialParams: patch.initialParams ? { ...patch.initialParams } : { ...base.initialParams },
   }
@@ -309,12 +319,26 @@ function isValidScoreSettings(settings: ScoreSettings, patch: ScoreSettingsVaria
     settings.scenario !== enums.ScenarioType.Nia &&
     (settings.scenario === enums.ScenarioType.Custom) === settings.useCustomMode
 
-  const scheduleSelectionsAreValid = isValidScheduleSelections(
-    settings.scenario,
-    settings.difficulty,
-    settings.scheduleSelections,
-    settings.hifLessonSplitSub,
-  )
+  // 保持された副属性は表示用に投影して検証し、新規入力には現在の選択肢だけを許可する
+  const scheduleSelectionsAreValid =
+    isValidScheduleSelections(
+      settings.scenario,
+      settings.difficulty,
+      Object.fromEntries(
+        Object.entries(settings.scheduleSelections).map(([week, activityId]) => [
+          week,
+          data.getScheduleActivityForMode(activityId, settings.scenario, settings.hifLessonSplitSub),
+        ]),
+      ),
+      settings.hifLessonSplitSub,
+    ) &&
+    (patch.scheduleSelections === undefined ||
+      isValidScheduleSelections(
+        settings.scenario,
+        settings.difficulty,
+        patch.scheduleSelections,
+        settings.hifLessonSplitSub,
+      ))
   const scheduleControlledPatchIsValid =
     // スケジュール連動中は、画面で直接編集できない回数を一時変更から入れさせない
     patch.actionCounts === undefined ||
@@ -413,11 +437,10 @@ function isValidUnitSettings(settings: UnitSimulatorSettings): boolean {
     initialParamsAreValid &&
     paramCapIsValid &&
     candidateLimitIsValid &&
-    settings.manualCards.length <= constant.UNIT_SIZE &&
+    settings.selectedCards.length <= constant.UNIT_SIZE &&
     hasUniqueStrings(settings.lockedCards) &&
     hasUniqueStrings(settings.excludedCardNames) &&
-    hasUniqueNullableStrings(settings.manualCards) &&
-    (!settings.manualRental || settings.rentalCardName !== null) &&
+    hasUniqueNullableStrings(settings.selectedCards) &&
     (settings.rentalCardName === null || settings.rentalCardName.trim() !== '')
   )
 }
@@ -436,9 +459,9 @@ function hasKnownUnitPatchCardNames(
   // 固定・手動・除外・レンタルのカード名を、同じ一覧で確認する
   return (
     (patch.lockedCards === undefined || hasKnownCardNames(patch.lockedCards, cardByName)) &&
-    (patch.manualCards === undefined ||
+    (patch.selectedCards === undefined ||
       hasKnownCardNames(
-        patch.manualCards.filter((name): name is string => name !== null),
+        patch.selectedCards.filter((name): name is string => name !== null),
         cardByName,
       )) &&
     (patch.excludedCardNames === undefined || hasKnownCardNames(patch.excludedCardNames, cardByName)) &&
@@ -647,7 +670,7 @@ function cloneUnitSettings(settings: UnitSimulatorSettings): UnitSimulatorSettin
     typeCountMax: { ...settings.typeCountMax },
     paramBonusPercent: { ...settings.paramBonusPercent },
     lockedCards: [...settings.lockedCards],
-    manualCards: [...settings.manualCards],
+    selectedCards: [...settings.selectedCards],
     excludedCardNames: [...settings.excludedCardNames],
     initialParams: { ...settings.initialParams },
   }

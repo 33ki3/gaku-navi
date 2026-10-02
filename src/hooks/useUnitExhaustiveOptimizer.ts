@@ -9,7 +9,6 @@ import { type Dispatch, type SetStateAction, useCallback, useRef, useState } fro
 import { runOptimizerAsync } from '../application/unitOptimizerRunner'
 import type { ExhaustiveProgress, UnitResult, UnitSimulatorSettings } from '../types/unit'
 import type { BuildUnitRuntimeInput } from '../types/unitOptimizer'
-import { createExhaustiveOptimizationSettings } from '../utils/unitOptimizedSettings'
 
 /** 総当たり最適化フックの引数 */
 interface UseUnitExhaustiveOptimizerOptions {
@@ -85,8 +84,8 @@ export function useUnitExhaustiveOptimizer(options: UseUnitExhaustiveOptimizerOp
     latestProgressRef.current = null
     terminateOptimizeWorker()
 
-    // 計算用設定をコピーしてから入力を構築し、表示中の設定を計算中に変更しない
-    const input = buildRuntimeInput(createExhaustiveOptimizationSettings(settings))
+    // 現在の条件で計算入力を作り、レンタルの固定判定は探索側に任せる
+    const input = buildRuntimeInput(settings)
 
     requestAnimationFrame(() => {
       // 進捗イベントを受け取る前に、計算開始済みであることを画面へ通知する

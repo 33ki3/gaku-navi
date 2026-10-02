@@ -6,9 +6,9 @@
 import { useTranslation } from 'react-i18next'
 
 import { SelectableTypeEntries } from '../../data/card'
+import type { ParameterValues } from '../../types/card'
 import type { ScenarioType } from '../../types/enums'
 import * as enums from '../../types/enums'
-import type { ParameterValues } from '../../types/unit'
 import { ChevronRightIcon } from '../ui/icons'
 import BreakdownRow from './BreakdownRow'
 import { CustomBreakdownRows } from './CustomBreakdownRows'
@@ -23,7 +23,7 @@ interface UnitResultBreakdownProps {
   showBreakdown: boolean
   onToggleBreakdown: () => void
   initialParams: ParameterValues
-  outsideParamBonus: ParameterValues
+  parameterBonus: ParameterValues
   targetGain: ParameterValues
   customClassBonus: ParameterValues
   classParams: ParameterValues
@@ -48,7 +48,7 @@ export function UnitResultBreakdown({
   showBreakdown,
   onToggleBreakdown,
   initialParams,
-  outsideParamBonus,
+  parameterBonus,
   targetGain,
   customClassBonus,
   classParams,
@@ -84,8 +84,8 @@ export function UnitResultBreakdown({
           </div>
           {/* 初期パラメータ */}
           <BreakdownRow label={t('unit.result.breakdown_initial_params')} values={initialParams} />
-          {/* サポート外パラメータボーナス */}
-          <BreakdownRow label={t('unit.result.breakdown_param_bonus')} values={outsideParamBonus} />
+          {/* サポートとサポート外を合算したパラメータボーナス */}
+          <BreakdownRow label={t('unit.result.breakdown_param_bonus')} values={parameterBonus} />
           {useCustomMode ? (
             <CustomBreakdownRows
               targetGain={targetGain}

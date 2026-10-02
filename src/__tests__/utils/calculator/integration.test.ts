@@ -14,7 +14,7 @@ import * as enums from '../../../types/enums'
 import { calculateCardParameter } from '../../../utils/calculator/calculateCard'
 import {
   calculateParameterBonusFromSchedule,
-  getPerLessonParameterValues,
+  getParameterBonusRowsFromSchedule,
 } from '../../../utils/calculator/parameterBonus'
 import { mergeScheduleCounts } from '../../../utils/scoreSettings'
 
@@ -54,7 +54,7 @@ describe('統合テスト: 実サポート × アクション回数', () => {
     // total = 20 + 15 + 21 = 56
     const actions = { [enums.ActionIdType.LessonVo]: 5 }
     const bonusBase = { vocal: 500, dance: 0, visual: 0 }
-    const result = calculateCardParameter(imageTraining, enums.UncapType.Four, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(imageTraining, enums.UncapType.Four, actions, emptyExtra, [bonusBase])
 
     expect(result.eventBoost).toBe(20)
     expect(result.eventBoostPercent).toBe(100)
@@ -71,7 +71,7 @@ describe('統合テスト: 実サポート × アクション回数', () => {
     // total = 10 + 5 + 14 = 29
     const actions = { [enums.ActionIdType.LessonVo]: 5 }
     const bonusBase = { vocal: 500, dance: 0, visual: 0 }
-    const result = calculateCardParameter(imageTraining, enums.UncapType.Zero, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(imageTraining, enums.UncapType.Zero, actions, emptyExtra, [bonusBase])
 
     expect(result.eventBoost).toBe(10)
     expect(result.eventBoostPercent).toBe(0)
@@ -91,7 +91,7 @@ describe('統合テスト: 実サポート × アクション回数', () => {
       [enums.ActionIdType.NormalLessonVi]: 5,
       [enums.TriggerKeyType.ActivitySupplyGift]: 2,
     }
-    const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, actions, emptyExtra, [zeroBonusBase])
 
     expect(result.parameterType).toBe(enums.ParameterType.Visual)
     expect(result.eventBoost).toBe(20)
@@ -102,7 +102,9 @@ describe('統合テスト: 実サポート × アクション回数', () => {
     // initial_stat: 23 (fixed 1 count)
     // event_boost: "" → 0% → event 10 * 1.0 = 10
     // total = 10 + 23 = 33
-    const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Zero, emptyActions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Zero, emptyActions, emptyExtra, [
+      zeroBonusBase,
+    ])
     expect(result.totalIncrease).toBe(33)
   })
 
@@ -117,7 +119,7 @@ describe('統合テスト: 実サポート × アクション回数', () => {
       [enums.TriggerKeyType.SkillEnhance]: 4,
       [enums.TriggerKeyType.VitalityCardAcquire]: 2,
     }
-    const result = calculateCardParameter(niMeiSama, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(niMeiSama, enums.UncapType.Four, actions, emptyExtra, [zeroBonusBase])
 
     expect(result.eventBoost).toBe(30)
     expect(result.totalIncrease).toBe(133)
@@ -132,7 +134,7 @@ describe('統合テスト: 実サポート × アクション回数', () => {
       [enums.TriggerKeyType.ActivitySupplyGift]: 2,
       [enums.TriggerKeyType.Change]: 5,
     }
-    const result = calculateCardParameter(gutsugutsu, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(gutsugutsu, enums.UncapType.Four, actions, emptyExtra, [zeroBonusBase])
 
     expect(result.eventBoost).toBe(30)
     // sp_lesson_20 は max_count:4 で制限
@@ -158,7 +160,14 @@ describe('統合テスト: 実サポート × アクション回数', () => {
       [enums.TriggerKeyType.ActivitySupplyGift]: 3,
       [enums.TriggerKeyType.SsrCardAcquire]: 2,
     }
-    const result = calculateCardParameter(atashiNoKachi, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase, true)
+    const result = calculateCardParameter(
+      atashiNoKachi,
+      enums.UncapType.Four,
+      actions,
+      emptyExtra,
+      [zeroBonusBase],
+      true,
+    )
 
     expect(result.parameterType).toBe(enums.ParameterType.Visual)
     expect(result.eventBoost).toBe(40)
@@ -182,7 +191,7 @@ describe('統合テスト: 実サポート × アクション回数', () => {
       enums.UncapType.Four,
       actions,
       emptyExtra,
-      zeroBonusBase,
+      [zeroBonusBase],
       false,
     )
 
@@ -217,7 +226,7 @@ describe('統合テスト: スケジュール → パラメータボーナス �
     // event_boost: 100% → 10 * 2.0 = 20
     // total = 20 + 9 + 24 = 53
     const actions = { [enums.ActionIdType.LessonVo]: 3 }
-    const result = calculateCardParameter(imageTraining, enums.UncapType.Four, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(imageTraining, enums.UncapType.Four, actions, emptyExtra, [bonusBase])
 
     expect(result.parameterBonus).toBe(24)
     expect(result.totalIncrease).toBe(53)
@@ -245,7 +254,7 @@ describe('統合テスト: スケジュール → パラメータボーナス �
       [enums.ActionIdType.NormalLessonVi]: 2,
       [enums.TriggerKeyType.ActivitySupplyGift]: 1,
     }
-    const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, actions, emptyExtra, [bonusBase])
     expect(result.totalIncrease).toBe(79)
   })
 
@@ -255,12 +264,17 @@ describe('統合テスト: スケジュール → パラメータボーナス �
       4: enums.ActivityIdType.VoLesson,
       7: enums.ActivityIdType.DaLesson,
     }
-    const perLesson = getPerLessonParameterValues(selections, enums.ScenarioType.Hajime, enums.DifficultyType.Legend)
+    const perLesson = getParameterBonusRowsFromSchedule(
+      selections,
+      enums.ScenarioType.Hajime,
+      enums.DifficultyType.Legend,
+    )
     // week4(Vo): vocal=140, dance=55, visual=55
     // week7(Da): vocal=60, dance=180, visual=60
-    expect(perLesson.vocal).toEqual([140, 60])
-    expect(perLesson.dance).toEqual([55, 180])
-    expect(perLesson.visual).toEqual([55, 60])
+    expect(perLesson).toEqual([
+      { vocal: 140, dance: 55, visual: 55 },
+      { vocal: 60, dance: 180, visual: 60 },
+    ])
 
     // いめーじとれーにんぐ (vocal, uncap4): parameter_bonus 4.3%
     // perLesson vocal: [140, 60]
@@ -271,10 +285,9 @@ describe('統合テスト: スケジュール → パラメータボーナス �
       enums.UncapType.Four,
       actions,
       emptyExtra,
-      zeroBonusBase,
-      true,
-      true,
       perLesson,
+      true,
+      true,
     )
     expect(result.parameterBonus).toBe(8)
     // event: 10 * 2.0 = 20, lesson_end: 3*2=6
@@ -293,7 +306,7 @@ describe('統合テスト: スケジュール → パラメータボーナス �
       [enums.ActionIdType.Lesson]: 2,
       [enums.TriggerKeyType.VitalityCardAcquire]: 1,
     }
-    const result = calculateCardParameter(niMeiSama, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(niMeiSama, enums.UncapType.Four, actions, emptyExtra, [zeroBonusBase])
     expect(result.eventBoost).toBe(30)
     expect(result.totalIncrease).toBe(114)
   })
@@ -313,7 +326,7 @@ describe('統合テスト: スケジュール → パラメータボーナス �
       [enums.TriggerKeyType.ActivitySupplyGift]: 1,
       [enums.TriggerKeyType.Change]: 1,
     }
-    const result = calculateCardParameter(gutsugutsu, enums.UncapType.Four, actions, extra, zeroBonusBase)
+    const result = calculateCardParameter(gutsugutsu, enums.UncapType.Four, actions, extra, [zeroBonusBase])
     expect(result.totalIncrease).toBe(163)
   })
 })
@@ -476,13 +489,13 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // class_work_end: 3 * 4 = 12
       // event_boost: 100% → 10 * 2.0 = 20
       // total = 20 + 12 + 12 + 45 = 89
-      const result = calculateCardParameter(imageTraining, enums.UncapType.Four, merged1, emptyExtra, bonus1)
+      const result = calculateCardParameter(imageTraining, enums.UncapType.Four, merged1, emptyExtra, [bonus1])
       expect(result.parameterBonus).toBe(45)
       expect(result.totalIncrease).toBe(89)
     })
 
     it('いめーじとれーにんぐ: perLesson で切り捨て計算', () => {
-      const perLesson = getPerLessonParameterValues(
+      const perLesson = getParameterBonusRowsFromSchedule(
         pattern1Selections,
         enums.ScenarioType.Hajime,
         enums.DifficultyType.Legend,
@@ -495,10 +508,9 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
         enums.UncapType.Four,
         merged1,
         emptyExtra,
-        zeroBonusBase,
-        true,
-        true,
         perLesson,
+        true,
+        true,
       )
       expect(result.parameterBonus).toBe(43)
       // total = 20 + 12 + 12 + 43 = 87（lesson_vo=4）
@@ -512,7 +524,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // activity_supply_gift: 8 * 4 = 32
       // event_boost: 100% → 10 * 2.0 = 20
       // total = 20 + 33 + 0 + 32 = 85
-      const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, merged1, emptyExtra, zeroBonusBase)
+      const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, merged1, emptyExtra, [zeroBonusBase])
       expect(result.totalIncrease).toBe(85)
     })
 
@@ -526,7 +538,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
         enums.UncapType.Four,
         merged1,
         emptyExtra,
-        zeroBonusBase,
+        [zeroBonusBase],
         true,
         true,
       )
@@ -540,7 +552,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
         enums.UncapType.Four,
         merged1,
         emptyExtra,
-        zeroBonusBase,
+        [zeroBonusBase],
         true,
         false,
       )
@@ -552,7 +564,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // activity_supply_gift: 11*4=44, change: 16*min(2,3)=32
       // event_boost: 100% → 15*2.0=30
       // total = 30 + 49 + 45 + 44 + 32 = 200
-      const result = calculateCardParameter(gutsugutsu, enums.UncapType.Four, merged1, emptyExtra, zeroBonusBase)
+      const result = calculateCardParameter(gutsugutsu, enums.UncapType.Four, merged1, emptyExtra, [zeroBonusBase])
       expect(result.totalIncrease).toBe(200)
     })
 
@@ -567,7 +579,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
         enums.UncapType.Four,
         merged1,
         emptyExtra,
-        zeroBonusBase,
+        [zeroBonusBase],
         true,
       )
       expect(result.totalIncrease).toBe(209)
@@ -581,7 +593,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
         enums.UncapType.Four,
         merged1,
         emptyExtra,
-        zeroBonusBase,
+        [zeroBonusBase],
         false,
       )
       expect(result.totalIncrease).toBe(203)
@@ -594,7 +606,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // activity_supply_gift: 17 * 4 = 68
       // event_boost: 100% → 20 * 2.0 = 40
       // total = 40 + 33 + 12 + 33 + 68 = 186
-      const result = calculateCardParameter(oshikatsu, enums.UncapType.Four, merged1, emptyExtra, bonus1)
+      const result = calculateCardParameter(oshikatsu, enums.UncapType.Four, merged1, emptyExtra, [bonus1])
       expect(result.parameterBonus).toBe(33)
       expect(result.eventBoost).toBe(40)
       expect(result.totalIncrease).toBe(186)
@@ -608,7 +620,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // p_item: special_training 30 * 1 = 30
       // event_boost: 100% → 20 * 2.0 = 40
       // total = 40 + 65 + 68 + 12 + 33 + 30 = 248
-      const result = calculateCardParameter(oshiro, enums.UncapType.Four, merged1, emptyExtra, bonus1)
+      const result = calculateCardParameter(oshiro, enums.UncapType.Four, merged1, emptyExtra, [bonus1])
       expect(result.eventBoost).toBe(40)
       expect(result.totalIncrease).toBe(248)
     })
@@ -620,7 +632,14 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // a_skill_delete: 22 * min(1+2, 3) = 66（Pアイテム delete → +2）
       // event_boost: 100% → 20 * 2.0 = 40
       // total = 40 + 65 + 63 + 0 + 66 = 234
-      const result = calculateCardParameter(hitorigoto, enums.UncapType.Four, merged1, emptyExtra, zeroBonusBase, true)
+      const result = calculateCardParameter(
+        hitorigoto,
+        enums.UncapType.Four,
+        merged1,
+        emptyExtra,
+        [zeroBonusBase],
+        true,
+      )
       expect(result.eventBoost).toBe(40)
       const change = result.abilityBoosts.find((b) => b.nameKey === enums.AbilityNameKeyType.Change)
       expect(change?.count).toBe(3)
@@ -630,7 +649,14 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
     it('ひとりごとです: 自己発火 OFF', () => {
       // change: 21 * min(2, 3) = 42（selfBonus なし）
       // total = 40 + 65 + 42 + 0 + 22 = 169
-      const result = calculateCardParameter(hitorigoto, enums.UncapType.Four, merged1, emptyExtra, zeroBonusBase, false)
+      const result = calculateCardParameter(
+        hitorigoto,
+        enums.UncapType.Four,
+        merged1,
+        emptyExtra,
+        [zeroBonusBase],
+        false,
+      )
       const change = result.abilityBoosts.find((b) => b.nameKey === enums.AbilityNameKeyType.Change)
       expect(change?.count).toBe(2)
       expect(result.totalIncrease).toBe(169)
@@ -679,7 +705,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // class_work_end: 3 * 3 = 9
       // event_boost: 100% → 10 * 2.0 = 20
       // total = 20 + 0 + 9 + 16 = 45
-      const result = calculateCardParameter(imageTraining, enums.UncapType.Four, merged2, emptyExtra, bonus2)
+      const result = calculateCardParameter(imageTraining, enums.UncapType.Four, merged2, emptyExtra, [bonus2])
       expect(result.parameterBonus).toBe(16)
       expect(result.totalIncrease).toBe(45)
     })
@@ -689,7 +715,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // activity_supply_gift: 8 * 2 = 16
       // event_boost: 100% → 10 * 2.0 = 20
       // total = 20 + 33 + 0 + 16 = 69
-      const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, merged2, emptyExtra, zeroBonusBase)
+      const result = calculateCardParameter(hitamukiLesson, enums.UncapType.Four, merged2, emptyExtra, [zeroBonusBase])
       expect(result.totalIncrease).toBe(69)
     })
 
@@ -698,7 +724,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
       // class_work_end: 5*3=15, event_boost: 100% → 15*2.0=30
       // p_item: 6*2=12
       // total = 30 + 49 + 20 + 33 + 15 + 12 = 159
-      const result = calculateCardParameter(niMeiSama, enums.UncapType.Four, merged2, emptyExtra, zeroBonusBase)
+      const result = calculateCardParameter(niMeiSama, enums.UncapType.Four, merged2, emptyExtra, [zeroBonusBase])
       expect(result.totalIncrease).toBe(159)
     })
 
@@ -713,7 +739,7 @@ describe('統合テスト: 実スケジュール × 実サポート', () => {
         enums.UncapType.Four,
         merged2,
         emptyExtra,
-        zeroBonusBase,
+        [zeroBonusBase],
         true,
       )
       expect(result.totalIncrease).toBe(175)
@@ -871,13 +897,9 @@ describe('統合テスト: モックサポート（未テストアビリティ�
     const actions = {
       [enums.ActionIdType.ConcentrationCardAcquire]: 4,
     }
-    const result = calculateCardParameter(
-      mockConcentrationCard,
-      enums.UncapType.Four,
-      actions,
-      emptyExtra,
+    const result = calculateCardParameter(mockConcentrationCard, enums.UncapType.Four, actions, emptyExtra, [
       zeroBonusBase,
-    )
+    ])
 
     expect(result.parameterType).toBe(enums.ParameterType.Dance)
     expect(result.eventBoost).toBe(20)
@@ -898,13 +920,9 @@ describe('統合テスト: モックサポート（未テストアビリティ�
     const actions = {
       [enums.ActionIdType.ConcentrationCardAcquire]: 2,
     }
-    const result = calculateCardParameter(
-      mockConcentrationCard,
-      enums.UncapType.Zero,
-      actions,
-      emptyExtra,
+    const result = calculateCardParameter(mockConcentrationCard, enums.UncapType.Zero, actions, emptyExtra, [
       zeroBonusBase,
-    )
+    ])
 
     expect(result.eventBoostPercent).toBe(0)
     expect(result.eventBoost).toBe(10)
@@ -927,7 +945,9 @@ describe('統合テスト: モックサポート（未テストアビリティ�
       [enums.ActionIdType.MotivationCardAcquire]: 4,
       [enums.ActionIdType.SpLessonVi]: 3,
     }
-    const result = calculateCardParameter(mockMotivationCard, enums.UncapType.Four, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(mockMotivationCard, enums.UncapType.Four, actions, emptyExtra, [
+      zeroBonusBase,
+    ])
 
     expect(result.parameterType).toBe(enums.ParameterType.Visual)
     expect(result.eventBoost).toBe(30)
@@ -949,7 +969,9 @@ describe('統合テスト: モックサポート（未テストアビリティ�
     const actions = {
       [enums.ActionIdType.MotivationCardAcquire]: 1,
     }
-    const result = calculateCardParameter(mockMotivationCard, enums.UncapType.Zero, actions, emptyExtra, zeroBonusBase)
+    const result = calculateCardParameter(mockMotivationCard, enums.UncapType.Zero, actions, emptyExtra, [
+      zeroBonusBase,
+    ])
 
     expect(result.eventBoost).toBe(15)
     const motAbility = result.abilityBoosts.find((b) => b.nameKey === enums.AbilityNameKeyType.MotivationCardAcquire)
@@ -967,7 +989,7 @@ describe('統合テスト: モックサポート（未テストアビリティ�
       [enums.ActionIdType.ReserveCardAcquire]: 4,
     }
     const bonusBase = { vocal: 300, dance: 0, visual: 0 }
-    const result = calculateCardParameter(mockReserveCard, enums.UncapType.Four, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(mockReserveCard, enums.UncapType.Four, actions, emptyExtra, [bonusBase])
 
     expect(result.parameterType).toBe(enums.ParameterType.Vocal)
     expect(result.eventBoost).toBe(20)
@@ -989,7 +1011,7 @@ describe('統合テスト: モックサポート（未テストアビリティ�
       [enums.ActionIdType.ReserveCardAcquire]: 3,
     }
     const bonusBase = { vocal: 300, dance: 0, visual: 0 }
-    const result = calculateCardParameter(mockReserveCard, enums.UncapType.Zero, actions, emptyExtra, bonusBase)
+    const result = calculateCardParameter(mockReserveCard, enums.UncapType.Zero, actions, emptyExtra, [bonusBase])
 
     expect(result.eventBoost).toBe(10)
     expect(result.parameterBonus).toBe(9)
@@ -1010,7 +1032,7 @@ describe('統合テスト: モックサポート（未テストアビリティ�
     const extra = {
       [enums.ActionIdType.ConcentrationCardAcquire]: 1,
     }
-    const result = calculateCardParameter(mockConcentrationCard, enums.UncapType.Four, actions, extra, zeroBonusBase)
+    const result = calculateCardParameter(mockConcentrationCard, enums.UncapType.Four, actions, extra, [zeroBonusBase])
 
     const concAbility = result.abilityBoosts.find(
       (b) => b.nameKey === enums.AbilityNameKeyType.ConcentrationCardAcquire,

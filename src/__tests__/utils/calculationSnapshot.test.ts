@@ -44,6 +44,25 @@ const applyUnitSettingsVariant = (
 ) => applyCalculationVariant(snapshot, { unitSettings: patch })
 
 describe('calculationSnapshot', () => {
+  it('HIFの主属性編集は副属性を保持し、重複する場合だけ補正する', () => {
+    const snapshot = createSnapshot()
+    snapshot.scoreSettings = {
+      ...createDefaultSettings(enums.ScenarioType.Hif),
+      hifLessonSplitSub: true,
+      scheduleSelections: { 2: enums.ActivityIdType.VoLessonVi },
+    }
+    const changed = applyScoreSettingsVariant(snapshot, { scheduleSelections: { 2: enums.ActivityIdType.DaLesson } })
+    expect(changed?.scoreSettings.scheduleSelections[2]).toBe(enums.ActivityIdType.DaLessonVi)
+    const overlapping = applyScoreSettingsVariant(snapshot, {
+      scheduleSelections: { 2: enums.ActivityIdType.ViLesson },
+    })
+    expect(overlapping?.scoreSettings.scheduleSelections[2]).toBe(enums.ActivityIdType.ViLessonVo)
+    expect(snapshot.scoreSettings.scheduleSelections[2]).toBe(enums.ActivityIdType.VoLessonVi)
+    expect(
+      applyScoreSettingsVariant(snapshot, { scheduleSelections: { 2: enums.ActivityIdType.DaLessonVi } }),
+    ).toBeNull()
+  })
+
   it('snapshot上の自動・手動切り替えでも手動値を復元し、明示入力を優先する', () => {
     const manual = applyScoreSettingsVariant(createSnapshot(), {
       useScheduleLimits: false,
@@ -119,16 +138,16 @@ describe('calculationSnapshot', () => {
     const snapshot = createSnapshot()
     const cardName = data.AllCards[0].name
     const variant = applyUnitSettingsVariant(snapshot, {
-      manualCards: [cardName],
+      selectedCards: [cardName],
       lockedCards: [cardName],
     })
     const invalid = applyUnitSettingsVariant(snapshot, {
-      manualCards: ['存在しないカード'],
+      selectedCards: ['存在しないカード'],
     })
 
     expect(variant).not.toBeNull()
-    expect(snapshot.unitSettings.manualCards).toEqual([])
-    expect(variant!.unitSettings.manualCards).toEqual([cardName])
+    expect(snapshot.unitSettings.selectedCards).toEqual([])
+    expect(variant!.unitSettings.selectedCards).toEqual([cardName])
     expect(invalid).toBeNull()
   })
 

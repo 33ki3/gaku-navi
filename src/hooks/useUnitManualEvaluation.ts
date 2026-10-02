@@ -6,7 +6,6 @@ import { type Dispatch, type SetStateAction, useCallback } from 'react'
 import type { CardCountCustom } from '../types/card'
 import type { UnitResult, UnitSimulatorSettings } from '../types/unit'
 import type { BuildUnitRuntimeInput } from '../types/unitOptimizer'
-import { toOrderedUnitMemberNames } from '../utils/unitOptimizedSettings'
 import { saveUnitResult } from '../utils/unitResultStorage'
 import { evaluateManualUnit } from '../utils/unitSimulator'
 
@@ -56,10 +55,11 @@ export function useUnitManualEvaluation(options: UseUnitManualEvaluationOptions)
       // 編成メンバーは変えず、回数調整や点数設定だけを再評価する
       if (result === null || result.members.length === 0) return
 
-      // 評価関数が末尾をレンタル枠として扱うため、保存結果も同じ順へ戻す
+      // 保存結果のレンタル名を明示し、現在の表示順とは独立して再評価する
       const recalcSettings: UnitSimulatorSettings = {
         ...settings,
-        manualCards: toOrderedUnitMemberNames(result.members),
+        selectedCards: result.members.map((member) => member.card.name),
+        rentalCardName: result.members.find((member) => member.isRental)?.card.name ?? null,
       }
       const updated = evaluateManualUnit(buildRuntimeInput(recalcSettings, custom))
       if (updated === null) return
@@ -72,12 +72,12 @@ export function useUnitManualEvaluation(options: UseUnitManualEvaluationOptions)
 
   const evaluateCurrentCards = useCallback(() => {
     // 計算結果と手動編成がずれたときだけ、現在のカードを評価する
-    const filledCards = settings.manualCards.filter((cardName): cardName is string => cardName !== null)
+    const filledCards = settings.selectedCards.filter((cardName): cardName is string => cardName !== null)
     if (filledCards.length === 0) return
 
     const input = buildRuntimeInput({
       ...settings,
-      manualCards: filledCards,
+      selectedCards: filledCards,
     })
     requestAnimationFrame(() => {
       const evaluated = evaluateManualUnit(input)

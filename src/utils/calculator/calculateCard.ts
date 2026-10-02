@@ -13,13 +13,13 @@ import type {
   CardAbilityDetail,
   CardCalculationResult,
   ParameterValues,
-  PerLessonParameterValues,
   SupportCard,
 } from '../../types/card'
 import type { ActionIdType, TriggerKeyType, UncapType } from '../../types/enums'
 import { getProvidedActions } from '../supportSynergy'
 import { getSelfAcquisitionBonus, parseEventParameterBoost, parsePItemParameterBoost } from './events'
 import { parseAbility } from './helpers'
+import { calculateParameterBonus } from './parameterBonus'
 
 /**
  * 未所持サポート用の空の計算結果を生成する
@@ -69,10 +69,9 @@ function resolveActionId(triggerKey: TriggerKeyType): ActionIdType {
  * @param uncap - 凸数（0〜4、凸数でアビリティの値が変わる）
  * @param actionCounts - 各アクションの実行回数（スケジュール or 手動入力）
  * @param extraEventCounts - 他サポートのイベントによる追加回数（スキルカード獲得等）
- * @param parameterBonusBase - パラメータボーナスの対象値（数値 or Vo/Da/Vi別）
+ * @param parameterBonusRows - 上昇機会ごとのVo/Da/Vi値
  * @param includeSelfTrigger - 自サポートのイベントによる自己発火を含めるか
  * @param includePItem - Pアイテムの効果を含めるか
- * @param parameterBonusPerLesson - レッスンごとのVo/Da/Vi上昇量 指定時はレッスンごとに切り捨てて計算する
  * @param selfBonusCustom - 自動発動アビリティの回数調整 自身のイベント効果による加算値を置き換える
  * @param pItemCountCustom - Pアイテム発動回数の回数調整 Pアイテムの発動条件に使う回数を置き換える
  * @returns 各アビリティの寄与度を含む計算結果
@@ -82,10 +81,9 @@ export function calculateCardParameter(
   uncap: UncapType,
   actionCounts: Partial<Record<ActionIdType, number>>,
   extraEventCounts: Partial<Record<ActionIdType, number>>,
-  parameterBonusBase: number | ParameterValues,
+  parameterBonusRows: ParameterValues[],
   includeSelfTrigger = true,
   includePItem = true,
-  parameterBonusPerLesson?: PerLessonParameterValues,
   selfBonusCustom?: Partial<Record<ActionIdType, number>>,
   pItemCountCustom?: Partial<Record<ActionIdType, number>>,
 ): CardCalculationResult {
@@ -94,7 +92,7 @@ export function calculateCardParameter(
 
   // パラメータボーナスの対象値を取得する
   // Vo/Da/Vi別の場合はサポートのタイプに応じた値を選ぶ
-  const bonusBase = typeof parameterBonusBase === 'number' ? parameterBonusBase : parameterBonusBase[paramType]
+  const bonusBase = parameterBonusRows.reduce((sum, row) => sum + row[paramType], 0)
 
   // サポートがイベントでスキルカードやPアイテムを提供する場合、
   // 対応する獲得系トリガーに +1 される（自分自身のイベントも発動回数に含む）
@@ -261,18 +259,13 @@ export function calculateCardParameter(
     }
   }
 
-  // レッスンごとのデータがある場合は、各レッスンで切り捨ててから合算する
-  // レッスンごとのデータがない場合は、合計値に割合を適用してから切り捨てる
-  let parameterBonus: number
-  if (parameterBonusPerLesson && paramBonusPercent > 0) {
-    const perLessonValues = parameterBonusPerLesson[paramType]
-    parameterBonus = perLessonValues.reduce(
-      (sum, v) => sum + Math.floor((v * paramBonusPercent) / constant.PERCENT_DIVISOR),
-      0,
-    )
-  } else {
-    parameterBonus = Math.floor((bonusBase * paramBonusPercent) / constant.PERCENT_DIVISOR)
-  }
+  // 入力モードを問わず、各上昇機会のボーナスを切り捨てて合算する
+  const parameterBonus = calculateParameterBonus(parameterBonusRows, {
+    vocal: 0,
+    dance: 0,
+    visual: 0,
+    [paramType]: paramBonusPercent,
+  })[paramType]
 
   const totalIncrease = eventBoost + abilityBoosts.reduce((sum, b) => sum + b.total, 0) + parameterBonus
 

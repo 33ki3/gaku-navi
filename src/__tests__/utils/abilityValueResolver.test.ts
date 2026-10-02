@@ -6,12 +6,7 @@
  * また固定スロット（1・3・6）の選択肢が仕様通りであることを確認する。
  */
 import { describe, expect, it } from 'vitest'
-import {
-  ABILITY_MAX_COUNT,
-  SLOT1_OPTIONS,
-  SLOT3_OPTIONS,
-  SLOT6_OPTIONS,
-} from '../../data/card/abilitySlot'
+import { ABILITY_MAX_COUNT, SLOT1_OPTIONS, SLOT3_OPTIONS, SLOT6_OPTIONS } from '../../data/card/abilitySlot'
 import { getAvailableAbilities, getSchedule, getStages } from '../../data/score/abilityValue'
 import type { Ability, SupportCard } from '../../types/card'
 import {

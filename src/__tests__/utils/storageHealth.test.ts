@@ -226,5 +226,4 @@ describe('storageHealth', () => {
       members: [validMember],
     })
   })
-
 })

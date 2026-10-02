@@ -44,6 +44,31 @@ const applyUnitSettingsVariant = (
 ) => applyCalculationVariant(snapshot, { unitSettings: patch })
 
 describe('calculationSnapshot', () => {
+  it('snapshot上の自動・手動切り替えでも手動値を復元し、明示入力を優先する', () => {
+    const manual = applyScoreSettingsVariant(createSnapshot(), {
+      useScheduleLimits: false,
+      parameterBonusBase: { vocal: 999, dance: 888, visual: 777 },
+      actionCounts: { [enums.ActionIdType.SpLessonVo]: 7, [enums.ActionIdType.ClassWork]: 5 },
+    })
+    if (!manual) throw new Error('manual settings should be valid')
+    const automatic = applyScoreSettingsVariant(manual, { useScheduleLimits: true })
+    if (!automatic) throw new Error('automatic settings should be valid')
+    const restored = applyScoreSettingsVariant(automatic, { useScheduleLimits: false })
+    expect(restored?.scoreSettings.parameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
+    expect(restored?.scoreSettings.actionCounts).toMatchObject({
+      [enums.ActionIdType.SpLessonVo]: 7,
+      [enums.ActionIdType.ClassWork]: 5,
+    })
+    const explicit = applyScoreSettingsVariant(automatic, {
+      useScheduleLimits: false,
+      parameterBonusBase: { vocal: 1, dance: 2, visual: 3 },
+      actionCounts: { [enums.ActionIdType.SpLessonVo]: 9 },
+    })
+    expect(explicit?.scoreSettings.parameterBonusBase).toEqual({ vocal: 1, dance: 2, visual: 3 })
+    expect(explicit?.scoreSettings.actionCounts[enums.ActionIdType.SpLessonVo]).toBe(9)
+    expect(automatic.scoreSettings.manualParameterBonusBase).toEqual({ vocal: 999, dance: 888, visual: 777 })
+  })
+
   it('計算入力の入れ子をコピーして、元のstate参照を保持しない', () => {
     const scoreSettings = createDefaultSettings()
     const card = data.AllCards.find((candidate) =>

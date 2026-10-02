@@ -29,7 +29,9 @@ export function isScoreSettings(value: unknown): value is ScoreSettings {
     isEnumValue(value.scenario, enums.ScenarioType) &&
     isEnumValue(value.difficulty, enums.DifficultyType) &&
     isParameterValues(value.parameterBonusBase) &&
+    (value.manualParameterBonusBase === undefined || isParameterValues(value.manualParameterBonusBase)) &&
     isActionCountRecord(value.actionCounts) &&
+    (value.manualScheduleActionCounts === undefined || isActionCountRecord(value.manualScheduleActionCounts)) &&
     scheduleSelectionsAreValid &&
     typeof value.useScheduleLimits === 'boolean' &&
     typeof value.includeSelfTrigger === 'boolean' &&

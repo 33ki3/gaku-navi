@@ -31,6 +31,16 @@ export function resolveHifLessonPair(
 }
 
 /**
+ * HIF複合レッスンを半分モードで使うメイン属性の活動IDへ変換する。
+ *
+ * @param activityId - 正規化する活動ID
+ * @returns 複合レッスンならメイン活動ID。それ以外は入力された活動ID
+ */
+export function normalizeHifLessonActivityForMainMode(activityId: enums.ActivityIdType): enums.ActivityIdType {
+  return resolveHifLessonPair(activityId)?.main ?? activityId
+}
+
+/**
  * メイン/サブの属性選択から HIF公開レッスンの活動IDを解決する。
  *
  * @param main - メイン属性の活動ID

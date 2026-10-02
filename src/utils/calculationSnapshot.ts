@@ -29,6 +29,7 @@ import {
   isValidScheduleSelections,
   normalizeScoreSettingsDerived,
   resolveScoreSettingsDifficulty,
+  setScoreSettingsScheduleLimits,
 } from './scoreSettings'
 import { isScoreSettings } from './scoreSettingsValidation'
 import { isUnitSimulatorSettings } from './settingsValidation'
@@ -188,22 +189,29 @@ export function applyCalculationVariant(
  * @returns 検証・正規化済みの点数設定。不正な場合はnull
  */
 function mergeScoreSettingsVariant(base: ScoreSettings, patch: ScoreSettingsVariantPatch): ScoreSettings | null {
+  // 自動・手動の切り替えで復元した値を基準にし、明示された入力はその後で優先する
+  const transitionedBase =
+    patch.useScheduleLimits === undefined ? base : setScoreSettingsScheduleLimits(base, patch.useScheduleLimits)
   // 単純な値は一時変更で上書きし、配列や入れ子の値は新しく作る
   const candidate: ScoreSettings = {
     // 単純な値と入れ子の値を分けてコピーし、元の条件へ変更を戻さない
-    ...base,
+    ...transitionedBase,
     ...patch,
-    parameterBonusBase: patch.parameterBonusBase ? { ...patch.parameterBonusBase } : { ...base.parameterBonusBase },
-    actionCounts: { ...base.actionCounts, ...patch.actionCounts },
-    scheduleSelections: { ...base.scheduleSelections, ...patch.scheduleSelections },
+    parameterBonusBase: patch.parameterBonusBase
+      ? { ...patch.parameterBonusBase }
+      : { ...transitionedBase.parameterBonusBase },
+    actionCounts: { ...transitionedBase.actionCounts, ...patch.actionCounts },
+    scheduleSelections: { ...transitionedBase.scheduleSelections, ...patch.scheduleSelections },
     customParamBonusRows: patch.customParamBonusRows
       ? patch.customParamBonusRows.map((row) => ({ ...row }))
-      : base.customParamBonusRows.map((row) => ({ ...row })),
-    customClassBonus: patch.customClassBonus ? { ...patch.customClassBonus } : { ...base.customClassBonus },
-    customNonBonusGain: patch.customNonBonusGain ? { ...patch.customNonBonusGain } : { ...base.customNonBonusGain },
+      : transitionedBase.customParamBonusRows.map((row) => ({ ...row })),
+    customClassBonus: patch.customClassBonus ? { ...patch.customClassBonus } : { ...transitionedBase.customClassBonus },
+    customNonBonusGain: patch.customNonBonusGain
+      ? { ...patch.customNonBonusGain }
+      : { ...transitionedBase.customNonBonusGain },
     hifExamRatios: patch.hifExamRatios
       ? patch.hifExamRatios.map((row) => ({ ...row }))
-      : base.hifExamRatios.map((row) => ({ ...row })),
+      : transitionedBase.hifExamRatios.map((row) => ({ ...row })),
   }
 
   // シナリオ切替時は難易度なしをNoneへ寄せ、設定画面にない組み合わせを拒否する

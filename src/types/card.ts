@@ -467,6 +467,10 @@ export interface ScoreSettingsBase {
   difficulty: DifficultyType
   /** 各アクションカテゴリの回数 */
   actionCounts: ActionCounts
+  /** スケジュール自動計算から手動モードへ戻すためのパラメータボーナス */
+  manualParameterBonusBase?: ParameterValues
+  /** スケジュール自動計算から手動モードへ戻すための制御対象アクション回数 */
+  manualScheduleActionCounts?: ActionCounts
   /** スケジュール選択（週番号 → 選択した活動ID） */
   scheduleSelections: Record<number, ActivityIdType>
   /** スケジュールに基づく上限を有効にするか */

@@ -38,7 +38,6 @@ describe('createDefaultSettings', () => {
     const defaults = createDefaultSettings(enums.ScenarioType.Hif)
     expect(defaults.scheduleSelections).toEqual({})
   })
-
 })
 
 /** スケジュール由来の派生値同期テスト */

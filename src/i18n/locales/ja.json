@@ -1369,11 +1369,9 @@
     "summary": {
       "earned": "獲得済み経験値",
       "next_level": "次のレベルまで",
-      "target_progress": "目標レベルまでの進捗度",
       "target_remaining": "目標レベルまで",
       "current_and_target_level": "PLv {{current}} → {{target}}",
-      "level_cap": "上限到達",
-      "no_more_rewards": "すべて達成"
+      "level_cap": "上限到達"
     },
     "section": {
       "production": "プロデュースアチーブメント",
@@ -1391,7 +1389,6 @@
       "decrease_to_previous_reward": "{{title}}を前の報酬まで戻す",
       "registered_rewards_complete": "すべてのEXP報酬を獲得済みです",
       "input_tabs": "アチーブメントカテゴリ",
-      "remaining_units": "あと{{value}}{{unit}}",
       "increase_value": "{{title}}を1つ増やす",
       "next_milestone": "次：{{threshold}}到達で{{exp}}EXP",
       "next_progress": "次：{{threshold}}到達",
@@ -1400,8 +1397,6 @@
       "idol_exp_progress": "{{name}}の獲得EXP進捗",
       "scroll_idols_left": "アイドル選択を左にスクロール",
       "scroll_idols_right": "アイドル選択を右にスクロール",
-      "complete_p_idol_achievements": "{{name}}の6項目を全クリア",
-      "clear_p_idol_achievements": "{{name}}の6項目を全未クリア",
       "bulk_completion_toggle": "{{name}}を一括で切り替え",
       "bulk_complete_hint": "押すと全クリア",
       "bulk_completion_title": "{{label}}：{{hint}}",
@@ -1410,7 +1405,6 @@
       "exp_value": "{{exp}} EXP"
     },
     "settings": {
-      "title": "オプション",
       "target_level": "目標PLv",
       "target_level_tip": "PLv55以降は、次のレベルまでに必要なEXPを70,000として計算しています。",
       "other_exp": "その他の経験値",
@@ -1426,8 +1420,7 @@
         "pro_master_failed": "プロ・マスター：試験不合格",
         "outcome_exp": "1回 {{exp}} EXP 合計 −{{totalDeduction}} EXP",
         "count_label": "{{title}}の回数",
-        "count_error": "結果の内訳（{{adjustments}}回）がプロデュース回数（{{count}}回）を超えています。",
-        "total_deduction": "補正合計 −{{exp}} EXP"
+        "count_error": "結果の内訳（{{adjustments}}回）がプロデュース回数（{{count}}回）を超えています。"
       },
       "section": {
         "initial_and_p_tasks": "初星課題・P課題",
@@ -1453,14 +1446,9 @@
       }
     },
     "road": {
-      "next_exp_reward": "次のEXP報酬",
-      "stars_until_reward": "あと{{count}}★",
       "idol_stages": "アイドル別のステージ",
-      "mark_idol_complete": "全クリア",
-      "mark_idol_incomplete": "全未クリア",
       "stage": "STAGE {{stage}}",
       "set_stage_stars": "STAGE {{stage}}の星{{stars}}を切り替える",
-      "stage_progress": "ステージの達成状況",
       "next_reward": "次のEXP報酬まであと{{count}}（{{exp}} EXP）"
     },
     "metric": {
@@ -1514,7 +1502,6 @@
         "stamina_spent": "合計体力消費数",
         "special_training_stages_1_to_6": "特訓段階1〜6",
         "special_training_stage_7": "特訓段階7",
-        "produce_rank": "最高到達ランク",
         "special_training": "特別指導回数",
         "fan_votes": "ファン投票数",
         "affection": "親愛度",
@@ -1986,9 +1973,7 @@
           "true_end_hatsu": "本当のきもち",
           "true_end_nia": "きみが手を引いてくれた",
           "true_end_hif": "病めるときも、健やかなるときも"
-        },
-        "special_training_stage": "特訓段階",
-        "produce_rank": "プロデュース評価"
+        }
       }
     }
   },

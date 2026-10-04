@@ -11,6 +11,9 @@ export const WEB_MCP_TOOL_MANIFEST_NAMES = [
   WebMcpToolName.SearchSupportCards,
   WebMcpToolName.GetSupportCard,
   WebMcpToolName.GetSupportCardScore,
+  WebMcpToolName.GetAchievementCatalog,
+  WebMcpToolName.GetAchievementState,
+  WebMcpToolName.UpdateAchievementProgress,
   WebMcpToolName.GetCalculationCapabilities,
   WebMcpToolName.GetCurrentAppState,
   WebMcpToolName.UpdateCardFilters,
@@ -37,6 +40,7 @@ export const WEB_MCP_TOOL_MANIFEST_NAMES = [
 
 /** 点数・編成設定の入れ子schema境界を公開するツール */
 const WEB_MCP_SETTING_PATCH_SCHEMA_TOOL_NAMES = new Set<string>([
+  WebMcpToolName.UpdateAchievementProgress,
   WebMcpToolName.UpdateCalculationSettings,
   WebMcpToolName.CompareSupportCardScores,
   WebMcpToolName.CompareUnitOptimizations,

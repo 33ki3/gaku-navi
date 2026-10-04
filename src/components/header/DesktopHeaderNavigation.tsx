@@ -1,6 +1,4 @@
-/**
- * PC・タブレット向けのヘッダーナビゲーション
- */
+/** PC・タブレット向けのヘッダーナビゲーション */
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as uiData from '../../data/ui'
@@ -8,7 +6,7 @@ import { useEscapeClose } from '../../hooks/useEscapeClose'
 import * as enums from '../../types/enums'
 import * as navigationStyleUtils from '../../utils/navigationStyles'
 import { MenuIcon } from '../ui/icons'
-import { DeferredMoreMenuItems } from './DeferredMoreMenuItems'
+import { MoreMenuItems } from './MoreMenuItems'
 import { NavigationActionButton } from './NavigationActionButton'
 import { createPrimaryNavigationItems } from './navigationItems'
 import * as navigationStyles from './navigationStyles'
@@ -91,7 +89,7 @@ export function DesktopHeaderNavigation({
             <div className="fixed inset-0 z-20" onClick={closeMoreMenu} aria-hidden="true" />
             {/* その他のメニュー項目 */}
             <div className="absolute right-0 top-full z-[80] mt-1 w-52 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
-              <DeferredMoreMenuItems actions={moreMenuActions} onAfterAction={closeMoreMenu} />
+              <MoreMenuItems actions={moreMenuActions} onAfterAction={closeMoreMenu} />
             </div>
           </>
         )}

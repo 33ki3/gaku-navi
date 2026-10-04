@@ -1,10 +1,8 @@
-/**
- * スマホ下部ナビゲーションから開く「その他」メニュー
- */
+/** スマホ下部ナビゲーションから開く「その他」メニュー */
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { MenuIcon } from '../ui/icons'
-import { DeferredMoreMenuItems } from './DeferredMoreMenuItems'
+import { MoreMenuItems } from './MoreMenuItems'
 import type { MoreMenuActions } from './navigationTypes'
 
 interface MobileMoreMenuProps {
@@ -30,11 +28,7 @@ export function MobileMoreMenu({ open, actions, onClose }: MobileMoreMenuProps) 
   return createPortal(
     <>
       {/* ボトムシートの背景レイヤー */}
-      <div
-        className="fixed inset-0 z-[60] bg-slate-950/25 backdrop-blur-[2px] md:hidden"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 z-[60] bg-slate-950/25 md:hidden" onClick={onClose} aria-hidden="true" />
       {/* その他の操作をまとめたボトムシート */}
       <div
         role="dialog"
@@ -54,7 +48,7 @@ export function MobileMoreMenu({ open, actions, onClose }: MobileMoreMenuProps) 
           </button>
         </div>
         {/* 共通のその他メニュー項目 */}
-        <DeferredMoreMenuItems actions={actions} onAfterAction={onClose} />
+        <MoreMenuItems actions={actions} onAfterAction={onClose} />
       </div>
     </>,
     document.body,

@@ -5,6 +5,8 @@
  * boolean・コールバックを個別に受け渡さずに済むようにする
  */
 
+import type { AppPage } from '../../types/enums'
+
 /** 「その他」メニューから実行できる操作 */
 export interface MoreMenuActions {
   /** ユーザーサポート追加画面を開く */
@@ -13,6 +15,8 @@ export interface MoreMenuActions {
   openDataManagement: () => void
   /** オプション画面を開く */
   openOptions: () => void
+  /** 指定したアプリ内ページへ移動する */
+  navigateToPage: (page: AppPage) => void
   /** ヘルプ画面を開く */
   openHelp: () => void
   /** このサイトについての画面を開く */

@@ -21,6 +21,8 @@ import AppHeader from '../header/AppHeader'
 import { CardListModeCompletionBarContent } from './CardListModeCompletionBar'
 
 interface AppPageContentProps {
+  /** URLを変えずに指定ページへ切り替える */
+  onNavigatePage: (page: enums.AppPage) => void
   /** アプリ全体の統合状態 */
   state: AppState
   /** 設定パネルを開閉する操作 */
@@ -46,6 +48,7 @@ interface AppPageContentProps {
  * @returns ヘッダー、サポート一覧、フッター
  */
 export function AppPageContent({
+  onNavigatePage,
   state,
   navigation,
   options,
@@ -70,6 +73,7 @@ export function AppPageContent({
     <>
       {/* アプリヘッダー */}
       <AppHeader
+        onNavigatePage={onNavigatePage}
         onOpenScoreSettings={navigation.openScoreSettings}
         onPinScoreSettings={navigation.toggleScoreSettingsPin}
         settingsPinned={state.ui.settingsPinned}

@@ -17,6 +17,11 @@ import {
 import type { TranslationKey } from '../i18n'
 import i18n from '../i18n'
 import * as enums from '../types/enums'
+import {
+  compactAchievementCalculatorProgress,
+  createAchievementCalculatorProgress,
+  isStoredAchievementCalculatorProgress,
+} from './achievementCalculatorProgress'
 import { isParameterValues } from './domainValueValidation'
 import { fillScoreSettingsDefaults } from './scoreSettings'
 import { isScorePreset, isScorePresetArray, isScoreSettings } from './scoreSettingsValidation'
@@ -280,6 +285,15 @@ const IMPORT_VALUE_DEFINITIONS: Record<ExportKey, ImportValueDefinition> = {
     validate: isSupportCardArray,
     fillDefaults: keepStoredValue,
     salvage: (value) => salvageArrayItems(value, isSupportCard),
+  },
+  [constant.ACHIEVEMENT_CALCULATOR_STORAGE_KEY]: {
+    ...IMPORT_VALUE_METADATA[constant.ACHIEVEMENT_CALCULATOR_STORAGE_KEY],
+    validate: isStoredAchievementCalculatorProgress,
+    // 正常な記録だけを省略形式へ揃える。不正値は検証で報告できるよう元のまま残す
+    fillDefaults: (value) =>
+      isStoredAchievementCalculatorProgress(value)
+        ? compactAchievementCalculatorProgress(createAchievementCalculatorProgress(value))
+        : value,
   },
   [constant.APP_PREFERENCES_STORAGE_KEY]: {
     ...IMPORT_VALUE_METADATA[constant.APP_PREFERENCES_STORAGE_KEY],

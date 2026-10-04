@@ -1,9 +1,11 @@
 /** Appの状態をWebMCP runtimeへ変換し、ページツールを登録するcontroller facade */
 import { useCallback } from 'react'
+import type { AchievementCalculatorCommand } from '../application/command/achievementCalculatorCommand'
+import type { createAchievementCalculatorQuery } from '../application/query/achievementCalculatorQuery'
 
 import * as constant from '../constant'
-import { createEmptyResult } from '../utils/calculator/calculateCard'
 import { ApplicationUiAction } from '../types/enums'
+import { createEmptyResult } from '../utils/calculator/calculateCard'
 import type { WebMcpUiCommand } from '../webmcp/types'
 import type { ApplicationCommands } from './useApplicationCommands'
 import type { AppOptionsState } from './useAppOptions'
@@ -12,6 +14,12 @@ import type { PanelNavigationActions } from './usePanelNavigation'
 import { useWebMcp } from './useWebMcp'
 
 interface UseApplicationWebMcpOptions {
+  /** 画面と共有する達成記録の保存・更新操作 */
+  achievementCommands: AchievementCalculatorCommand
+  /** 保存操作と同じ達成記録を読み取る集計 */
+  achievementQuery: ReturnType<typeof createAchievementCalculatorQuery>
+  /** 対象指定を省略した読み取りに使う選択アイドル */
+  selectedAchievementIdolId: string
   /** アプリ全体の統合状態 */
   state: AppState
   /** 表示設定と最適編成設定 */
@@ -35,6 +43,9 @@ interface UseApplicationWebMcpOptions {
  */
 export function useApplicationWebMcp({
   state,
+  achievementCommands,
+  achievementQuery,
+  selectedAchievementIdolId,
   options,
   navigation,
   closeUnitSimulator,
@@ -176,6 +187,9 @@ export function useApplicationWebMcp({
   )
 
   useWebMcp({
+    getAchievementSnapshot: achievementCommands.getSnapshot,
+    getAchievementSummary: achievementQuery.getSummary,
+    getSelectedAchievementIdolId: () => selectedAchievementIdolId,
     // カード検索・詳細取得・計算比較では、実行時点のカード一覧を使う
     getCards: () => state.userCards.allCards,
     getCardByName: () => state.userCards.allCardByName,
@@ -205,7 +219,7 @@ export function useApplicationWebMcp({
       // 画面がイベントによる更新を反映してから、次のWebMCP呼び出しへ制御を戻す
       await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
     },
-    applicationCommands,
+    applicationCommands: { ...applicationCommands, achievement: achievementCommands },
     getUiState,
     controlUi,
   })

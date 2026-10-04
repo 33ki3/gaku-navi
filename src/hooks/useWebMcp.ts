@@ -1,24 +1,14 @@
-/**
- * ページ上のカード操作を登録し、実行時には最新のカード・計算状態を使う
- *
- * WebMCP対応ブラウザだけでページ上の操作を登録する
- */
+/** アプリ全体のWebMCP登録を表示期間に接続し、実行時には最新のruntimeを参照する */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-
 import i18n from '../i18n'
 import type { WebMcpRuntime } from '../webmcp/types'
 
 /**
- * 対応ブラウザへカード操作用のページツールを登録する
- *
- * 登録後に画面の設定が変わっても登録し直さない
- * ツール実行時だけ最新の状態を参照する
- *
- * @param runtime - 現在のカード・計算状態を取得する処理
- * @returns なし
+ * 画面更新では再登録せず、最新のruntimeを参照する登録ライフサイクル
+ * @param runtime アプリ全体の読み取り・更新操作。変更時は実行時の参照だけを更新する
  */
 export function useWebMcp(runtime: WebMcpRuntime): void {
-  // ツールは再登録せず、実行時に最新のカード・設定を読む
+  // ツールは再登録せず、実行時に最新の画面状態を読む
   const runtimeRef = useRef(runtime)
 
   // 開発中にコードが更新されたときだけ世代を進め、通常の設定変更では再登録しない
@@ -50,12 +40,12 @@ export function useWebMcp(runtime: WebMcpRuntime): void {
     // コード更新や画面破棄時にブラウザ側の登録も解除できるようにする
     const controller = new AbortController()
 
-    // WebMCP非対応ブラウザでは追加実装を読み込まず、通常利用者の初期表示を軽くする
+    // WebMCP対応APIを持つブラウザでだけ追加実装を読み込む
     if (typeof document !== 'undefined' && document.modelContext) {
       void import('../webmcp')
         .then(({ registerWebMcpTools }) => {
           // 古い読み込みが画面破棄やコード更新の後に完了しても、ツールを登録しない
-          if (!controller.signal.aborted) void registerWebMcpTools(() => runtimeRef.current, controller.signal)
+          if (!controller.signal.aborted) return registerWebMcpTools(() => runtimeRef.current, controller.signal)
         })
         .catch((error: unknown) => {
           if (!controller.signal.aborted) console.warn(i18n.t('webmcp.messages.load_failed'), error)

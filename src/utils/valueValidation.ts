@@ -78,3 +78,46 @@ export function isStringRecord(value: unknown): value is Record<string, string> 
 export function isOptional(value: unknown, validate: (candidate: unknown) => boolean): boolean {
   return value === undefined || validate(value)
 }
+
+/**
+ * 保存値や数値入力を安全な非負整数へ揃える
+ * @param value 有限数か確認する入力、負数や数値以外は受け付けない
+ * @param maxValue 指定した場合に切り詰める上限
+ * @returns 小数を切り捨てた範囲内の整数、不正入力はundefined
+ * @example valueが12.8、maxValueが10なら10、負数やNaNならundefinedになる
+ */
+export function normalizeNonNegativeInteger(value: unknown, maxValue = Number.MAX_SAFE_INTEGER): number | undefined {
+  if (!isFiniteNumber(value) || value < 0) return undefined
+  return Math.min(Math.floor(value), Number.MAX_SAFE_INTEGER, maxValue)
+}
+
+/**
+ * EXP補正など、負数を含む入力を安全な整数へ揃える
+ * @param value 有限数か確認する入力
+ * @returns 小数を0方向へ切り捨てた安全な整数、不正入力はundefined
+ * @example -12.8は-12、NaNや文字列はundefinedになる
+ */
+export function normalizeInteger(value: unknown): number | undefined {
+  if (!isFiniteNumber(value)) return undefined
+  return Math.max(Number.MIN_SAFE_INTEGER, Math.min(Math.trunc(value), Number.MAX_SAFE_INTEGER))
+}
+
+/**
+ * 有限で正確に保存できる非負整数かを確認する
+ * @param value 保存値や外部入力から取得した値
+ * @returns 0以上の安全な整数ならtrue、小数・負数・非数値ならfalse
+ * @example 0や300はtrue、-1や1.5やNaNはfalseになる
+ */
+export function isNonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+}
+
+/**
+ * オブジェクトのすべての値が安全な非負整数かを確認する
+ * @param value IDごとの件数などを持つ保存値や外部入力
+ * @returns 配列やnullではないオブジェクトで、全値が安全な非負整数ならtrue
+ * @example { lessons: 20 }はtrue、{ lessons: -1 }や[20]はfalseになる
+ */
+export function isNonNegativeIntegerRecord(value: unknown): value is Record<string, number> {
+  return isRecord(value) && Object.values(value).every(isNonNegativeSafeInteger)
+}

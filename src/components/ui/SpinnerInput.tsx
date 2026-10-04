@@ -1,37 +1,25 @@
-/**
- * スピナー入力コンポーネント
- *
- * [-] ボタン・数値入力欄・[+] ボタンを横に並べた数値入力UI。
- * アクション回数の設定などで使われる。
- */
-import { useEffect, useState } from 'react'
+/** 共通の数値入力欄に、クリック・長押しできる増減ボタンを添える */
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-
 import * as constant from '../../constant'
+import { usePressRepeat } from '../../hooks/usePressRepeat'
+import type { NumberInputProps } from './NumberInput'
+import { NumberInput } from './NumberInput'
 
-/** SpinnerInput コンポーネントに渡すプロパティ */
-interface SpinnerInputProps {
-  /** 今の数値 */
-  value: number
-  /** 数値が変わった時に呼ばれる関数 */
-  onChange: (value: number) => void
-  /** 入力を無効にするかどうか */
-  disabled?: boolean
-  /** 最小値（デフォルトは0、0未満にはできない） */
-  min?: number
-  /** 最大値（省略可。指定されている場合、この値を超える入力は制限される） */
-  max?: number
-  /** 増減ステップ（デフォルトは1） */
-  step?: number
+/** 入力欄の設定に増減ボタンのレイアウトを加える */
+interface SpinnerInputProps extends NumberInputProps {
   /** 狭いグリッド内で入力欄だけを可変幅にする */
   fluid?: boolean
+  /** 計算機など、増減ボタンの大きさと配色を揃える場合のクラス */
+  buttonClassName?: string
+  /** 入力欄とボタンの間隔・配置を上書きするクラス */
+  className?: string
 }
 
 /**
- * 範囲制限付きの数値入力と増減ボタンを表示する。
- *
- * @param props - 現在値、更新操作、入力範囲、増減単位
- * @returns 数値入力と増減ボタンの組
+ * 入力の検証はNumberInputに任せ、増減操作を追加する
+ * @param props 数値入力の設定とボタンのレイアウト
+ * @returns 入力欄と増減ボタン
  */
 export function SpinnerInput({
   value,
@@ -41,97 +29,76 @@ export function SpinnerInput({
   max,
   step = 1,
   fluid = false,
+  inputClassName,
+  buttonClassName,
+  className,
+  ...inputProps
 }: SpinnerInputProps) {
   const { t } = useTranslation()
-  const btnClass = `${fluid ? 'flex h-6 w-5 shrink-0 items-center justify-center rounded text-xs font-bold' : constant.SPINNER_BTN} ${
-    disabled ? constant.BTN_DISABLED : constant.BTN_TOGGLE_INACTIVE
-  }`
-
-  // stepから小数桁数を導出する（浮動小数点誤差回避用）
-  // 例: step=0.1 → log10(0.1)=-1 → decimals=1, step=0.01 → decimals=2
-  // toFixed(decimals) で 0.1+0.2≠0.3 のような誤差を丸める
+  const inputRef = useRef<HTMLInputElement>(null)
+  // 親側で保存を遅延していても、スピナー操作をすぐに表示へ反映する
+  const [previousValue, setPreviousValue] = useState(value)
+  const [displayValue, setDisplayValue] = useState(value)
+  // 親から外部更新が届いた時だけ入力表示を揃え、未保存の操作値は維持する
+  if (value !== previousValue) {
+    setPreviousValue(value)
+    setDisplayValue(value)
+  }
+  const btnClass =
+    buttonClassName ??
+    `${fluid ? 'flex h-6 w-5 shrink-0 items-center justify-center rounded text-xs font-bold' : constant.SPINNER_BTN} ${disabled ? constant.BTN_DISABLED : constant.BTN_TOGGLE_INACTIVE}`
   const decimals = step < 1 ? Math.max(0, -Math.floor(Math.log10(step))) : 0
 
-  /** 値を min/max の範囲にクランプし、浮動小数点誤差を丸める */
-  const clamp = (v: number) => {
-    const rounded = decimals > 0 ? parseFloat(v.toFixed(decimals)) : v
-    const clamped = Math.max(min, rounded)
-    return max !== undefined ? Math.min(max, clamped) : clamped
+  // 直接入力の途中でも、表示中の有限値を基準に増減する。空欄や不正入力は直近の確定値を使う
+  const changeValue = (direction: number) => {
+    const draft = inputRef.current?.value ?? ''
+    const parsed = draft.trim() === '' ? NaN : Number(draft)
+    const current = Number.isFinite(parsed) ? parsed : displayValue
+    const changed = current + direction * step
+    const rounded = decimals > 0 ? parseFloat(changed.toFixed(decimals)) : changed
+    const next = Math.max(min, max === undefined ? rounded : Math.min(max, rounded))
+    handleValueChange(next)
   }
-
-  // 入力中の文字列をローカルで保持し、確定時のみ onChange を呼ぶ
-  const [rawValue, setRawValue] = useState(String(value))
-
-  // 外部からの value 変更に追従（+/- ボタン等）
-  useEffect(() => {
-    setRawValue(String(value))
-  }, [value])
-
-  /** テキスト入力中は文字列をそのまま保持し、有効な数値の場合だけ onChange を呼ぶ */
-  const handleChange = (raw: string) => {
-    setRawValue(raw)
-    const parsed = decimals > 0 ? parseFloat(raw) : parseInt(raw)
-    if (!isNaN(parsed)) {
-      onChange(clamp(parsed))
-    }
-  }
-
-  /** フォーカスが外れたら値を確定する（空欄の場合は 0 として確定） */
-  const handleBlur = () => {
-    const parsed = decimals > 0 ? parseFloat(rawValue) : parseInt(rawValue)
-    if (isNaN(parsed) || rawValue.trim() === '') {
-      const clamped = clamp(0)
-      onChange(clamped)
-      setRawValue(String(clamped))
-    } else {
-      setRawValue(String(value))
-    }
-  }
-
-  /** 現在の表示値（rawValue）から数値を取り出す。無効な場合は props の value を使う */
-  const getCurrentValue = () => {
-    const parsed = decimals > 0 ? parseFloat(rawValue) : parseInt(rawValue)
-    return isNaN(parsed) ? value : parsed
-  }
-
-  /** step 分だけ減算して反映する（連打時も rawValue 基準でズレないようにする） */
-  const handleDecrement = () => {
-    const current = getCurrentValue()
-    const next = clamp(current - step)
-    setRawValue(String(next))
+  const handleValueChange = (next: number) => {
+    setDisplayValue(next)
     onChange(next)
   }
-
-  /** step 分だけ加算して反映する（連打時も rawValue 基準でズレないようにする） */
-  const handleIncrement = () => {
-    const current = getCurrentValue()
-    const next = clamp(current + step)
-    setRawValue(String(next))
-    onChange(next)
-  }
+  const decrementDisabled = disabled || displayValue <= min
+  const incrementDisabled = disabled || (max !== undefined && displayValue >= max)
+  const decrementPress = usePressRepeat(() => changeValue(-1), decrementDisabled)
+  const incrementPress = usePressRepeat(() => changeValue(1), incrementDisabled)
+  const defaultInputClassName = `${constant.SPINNER_INPUT} ${fluid ? 'min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none' : ''} ${disabled ? constant.INPUT_LOCKED : 'border-slate-200'}`
 
   return (
-    <div className={fluid ? 'flex w-full min-w-0 items-center gap-0.5' : 'flex items-center gap-2'}>
-      {/* マイナスボタン（値を step 分減らす。最小値で止まる） */}
-      <button onClick={handleDecrement} disabled={disabled} className={btnClass}>
+    // Tab移動は入力欄へ直接進め、増減ボタンはクリック・長押しで操作する
+    <div className={className ?? (fluid ? 'flex w-full min-w-0 items-center gap-0.5' : 'flex items-center gap-2')}>
+      <button
+        type="button"
+        tabIndex={-1}
+        {...decrementPress}
+        disabled={decrementDisabled}
+        className={`${btnClass} touch-none select-none`}
+      >
         {t('ui.symbol.minus')}
       </button>
-      {/* 数値入力欄（直接キーボードで値を入力できる） */}
-      <input
-        type="number"
-        value={rawValue}
+      <NumberInput
+        {...inputProps}
+        ref={inputRef}
+        value={displayValue}
+        onChange={handleValueChange}
+        min={min}
+        max={max}
         step={step}
-        onChange={(e) => handleChange(e.target.value)}
-        onBlur={handleBlur}
         disabled={disabled}
-        className={`${constant.SPINNER_INPUT} ${
-          fluid
-            ? 'min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
-            : ''
-        } ${disabled ? constant.INPUT_LOCKED : 'border-slate-200'}`}
+        inputClassName={inputClassName ?? defaultInputClassName}
       />
-      {/* プラスボタン（値を step 分増やす） */}
-      <button onClick={handleIncrement} disabled={disabled || (max !== undefined && value >= max)} className={btnClass}>
+      <button
+        type="button"
+        tabIndex={-1}
+        {...incrementPress}
+        disabled={incrementDisabled}
+        className={`${btnClass} touch-none select-none`}
+      >
         {t('ui.symbol.plus')}
       </button>
     </div>

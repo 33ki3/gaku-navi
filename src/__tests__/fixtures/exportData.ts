@@ -2,6 +2,7 @@ import * as constant from '../../constant'
 import type { ExportKey } from '../../data/ui'
 import { EXPORT_KEYS } from '../../data/ui'
 import * as enums from '../../types/enums'
+import { createAchievementCalculatorProgress } from '../../utils/achievementCalculatorProgress'
 import { createDefaultSettings } from '../../utils/scoreSettings'
 
 /** v1/v2の全保存項目を通す互換テスト用データを作る */
@@ -192,6 +193,7 @@ export function createCompleteExportValues(includeV2Settings: boolean): Record<E
       showMobileBottomNav: false,
       keepMobileBottomNavFixed: includeV2Settings ? true : undefined,
     },
+    [constant.ACHIEVEMENT_CALCULATOR_STORAGE_KEY]: createAchievementCalculatorProgress(),
   }
 
   // 保存キーを追加したときにfixtureの更新漏れが分かるよう、定義順の全キーを必ず持たせる

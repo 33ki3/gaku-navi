@@ -70,6 +70,11 @@ export interface ImportPreview {
  * @returns バージョンと保存日時を含むJSON文字列
  */
 export function getUserDataJson(date = new Date(), selectedKeys: readonly ExportKey[] = data.EXPORT_KEYS): string {
+  return JSON.stringify(getUserData(date, selectedKeys), null, 2)
+}
+
+/** 編集欄とダウンロードで同じ検証済みデータを使い、整形方法だけを各出力先で選ぶ */
+function getUserData(date: Date, selectedKeys: readonly ExportKey[]): ExportData {
   // 保存対象を定義順に走査し、存在するキーだけを一時データへ集める
   const selectedKeySet = new Set(selectedKeys)
   const rawData: Record<string, unknown> = {}
@@ -97,7 +102,7 @@ export function getUserDataJson(date = new Date(), selectedKeys: readonly Export
     exportedAt,
     data: exportedData,
   }
-  return JSON.stringify(exportData, null, 2)
+  return exportData
 }
 
 /**
@@ -108,7 +113,8 @@ export function getUserDataJson(date = new Date(), selectedKeys: readonly Export
  */
 export function exportUserData(selectedKeys: readonly ExportKey[] = data.EXPORT_KEYS): void {
   const date = new Date()
-  const blob = new Blob([getUserDataJson(date, selectedKeys)], { type: constant.EXPORT_MIME_TYPE })
+  // ファイルは整形用の改行・字下げを付けず、項目名と値を保持したまま容量を抑える
+  const blob = new Blob([JSON.stringify(getUserData(date, selectedKeys))], { type: constant.EXPORT_MIME_TYPE })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url

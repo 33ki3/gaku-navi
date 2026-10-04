@@ -44,6 +44,8 @@ export const USER_SUPPORTS_STORAGE_KEY = 'gaku-navi-user-supports'
 export const USER_SUPPORT_NAME_MAX_LENGTH = 200
 /** アプリ全体の表示設定の保存キー */
 export const APP_PREFERENCES_STORAGE_KEY = 'gaku-navi-app-preferences'
+/** アチーブ計算機の達成記録・目標PLv・その他の経験値を保存するキー */
+export const ACHIEVEMENT_CALCULATOR_STORAGE_KEY = 'gaku-navi-achievement-calculator'
 /** ブラウザの保存領域が変更されたことを知らせるイベント名 */
 export const STORAGE_EVENT_NAME = 'storage'
 /** AbortSignalへ中断listenerを登録・解除するイベント名 */
@@ -161,3 +163,29 @@ export const PARAM_CAP_MIN = 0
 export const CANDIDATE_LIMIT_MIN = 10
 /** 最適編成の候補枚数入力で許可する最大値 */
 export const CANDIDATE_LIMIT_MAX = 100
+
+/** プロデュース1回あたりの基準EXP */
+export const PRODUCTION_RUN_BASE_EXP = 50
+/** 計算機で設定できるPLvの上限 */
+export const PRODUCER_LEVEL_CAP = 999
+/** 初期状態の目標PLv */
+export const PRODUCER_LEVEL_DEFAULT_TARGET = 80
+
+/** アイドルへの道で1人につき挑戦できるステージ数 */
+export const ROAD_STAGE_COUNT_PER_IDOL = 27
+/** アイドルへの道の1ステージで獲得できる星数 */
+export const ROAD_STARS_PER_STAGE = 3
+/** アイドルへの道で1人の全ステージを達成したときの星数 */
+export const ROAD_MAX_STARS_PER_IDOL = ROAD_STAGE_COUNT_PER_IDOL * ROAD_STARS_PER_STAGE
+
+/** 通常のタップと長押しを区別する待ち時間 */
+export const PRESS_REPEAT_DELAY_MS = 400
+/** 長押し中の繰り返し間隔 */
+export const PRESS_REPEAT_INTERVAL_MS = 90
+
+/** 循環アイドル選択の中央列。前後に同数の補助列を置き、ネイティブの慣性スクロール用の余白を持たせる */
+export const IDOL_SELECTOR_MIDDLE_COPY_INDEX = 5
+/** 中央列と前後の補助列の合計 */
+export const IDOL_SELECTOR_COPY_COUNT = IDOL_SELECTOR_MIDDLE_COPY_INDEX * 2 + 1
+/** scrollendが使えない環境で、最後の移動後に中央列へ戻す待機時間 */
+export const IDOL_SELECTOR_SCROLL_IDLE_MS = 180

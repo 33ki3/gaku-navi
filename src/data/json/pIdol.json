@@ -1,0 +1,587 @@
+[
+  {
+    "cards": [
+      {
+        "name": "ガラクタロード",
+        "released_at": "2026-07-21"
+      },
+      {
+        "name": "GO MY WAY!!",
+        "released_at": "2026-06-26"
+      },
+      {
+        "name": "Wildest Flower",
+        "released_at": "2026-03-19"
+      },
+      {
+        "name": "がむしゃらに行こう！",
+        "released_at": "2025-09-29"
+      },
+      {
+        "name": "雨上がりのアイリス",
+        "released_at": "2025-05-01"
+      },
+      {
+        "name": "桜フォトグラフ",
+        "released_at": "2025-04-11"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2024-12-26"
+      },
+      {
+        "name": "古今東西ちょちょいのちょい",
+        "released_at": "2024-10-28"
+      },
+      {
+        "name": "冠菊",
+        "released_at": "2024-08-01"
+      },
+      {
+        "name": "Boom Boom Pow",
+        "released_at": "2024-06-19"
+      },
+      {
+        "name": "Fighting My Way",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "わたしが一番！",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "saki"
+  },
+  {
+    "cards": [
+      {
+        "name": "「ねえ、言っちゃうよ。」",
+        "released_at": "2026-08-17"
+      },
+      {
+        "name": "ガラクタロード",
+        "released_at": "2026-05-16"
+      },
+      {
+        "name": "一体いつから",
+        "released_at": "2026-01-16"
+      },
+      {
+        "name": "がむしゃらに行こう！",
+        "released_at": "2025-10-10"
+      },
+      {
+        "name": "雨上がりのアイリス",
+        "released_at": "2025-05-01"
+      },
+      {
+        "name": "雪解けに",
+        "released_at": "2025-02-28"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2024-12-26"
+      },
+      {
+        "name": "仮装狂騒曲",
+        "released_at": "2024-09-30"
+      },
+      {
+        "name": "アイヴイ",
+        "released_at": "2024-05-22"
+      },
+      {
+        "name": "Luna say maybe",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "一匹狼",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "temari"
+  },
+  {
+    "cards": [
+      {
+        "name": "GO MY WAY!!",
+        "released_at": "2026-06-26"
+      },
+      {
+        "name": "がむしゃらに行こう！",
+        "released_at": "2025-09-29"
+      },
+      {
+        "name": "自己肯定感爆上げ↑↑しゅきしゅきソング",
+        "released_at": "2025-08-12"
+      },
+      {
+        "name": "雨上がりのアイリス",
+        "released_at": "2025-05-01"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2024-12-26"
+      },
+      {
+        "name": "White Night! White Wish!",
+        "released_at": "2024-11-28"
+      },
+      {
+        "name": "冠菊",
+        "released_at": "2024-08-11"
+      },
+      {
+        "name": "Yellow Big Bang！",
+        "released_at": "2024-06-10"
+      },
+      {
+        "name": "世界一可愛い私",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "カワイイ♡はじめました",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "kotone"
+  },
+  {
+    "cards": [
+      {
+        "name": "クライアイ",
+        "released_at": "2026-07-31"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-12-26"
+      },
+      {
+        "name": "理論武装して",
+        "released_at": "2025-11-16"
+      },
+      {
+        "name": "初志貫徹",
+        "released_at": "2025-11-16"
+      }
+    ],
+    "idol_id": "tsubame"
+  },
+  {
+    "cards": [
+      {
+        "name": "標",
+        "released_at": "2026-09-04"
+      },
+      {
+        "name": "SUGAR FLAVOR",
+        "released_at": "2026-06-15"
+      },
+      {
+        "name": "見て",
+        "released_at": "2025-10-31"
+      },
+      {
+        "name": "ミラクルナナウ(ﾟ∀ﾟ)！",
+        "released_at": "2025-08-29"
+      },
+      {
+        "name": "雪解けに",
+        "released_at": "2025-03-10"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-02"
+      },
+      {
+        "name": "Feel Jewel Dream",
+        "released_at": "2024-09-20"
+      },
+      {
+        "name": "キミとセミブルー",
+        "released_at": "2024-07-01"
+      },
+      {
+        "name": "Fluorite",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "はじまりはカッコよく",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "mao"
+  },
+  {
+    "cards": [
+      {
+        "name": "Agitato",
+        "released_at": "2026-09-30"
+      },
+      {
+        "name": "ガラクタロード",
+        "released_at": "2026-06-05"
+      },
+      {
+        "name": "ときめきエモーション",
+        "released_at": "2026-04-01"
+      },
+      {
+        "name": "Atmosphere",
+        "released_at": "2025-12-08"
+      },
+      {
+        "name": "Howling over the World",
+        "released_at": "2025-06-09"
+      },
+      {
+        "name": "桜フォトグラフ",
+        "released_at": "2025-04-01"
+      },
+      {
+        "name": "極光",
+        "released_at": "2025-03-21"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-16"
+      },
+      {
+        "name": "White Night! White Wish!",
+        "released_at": "2024-12-09"
+      },
+      {
+        "name": "冠菊",
+        "released_at": "2024-08-01"
+      },
+      {
+        "name": "白線",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "一つ踏み出した先に",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "lilja"
+  },
+  {
+    "cards": [
+      {
+        "name": "標",
+        "released_at": "2026-09-04"
+      },
+      {
+        "name": "みちなるひろがる",
+        "released_at": "2026-01-27"
+      },
+      {
+        "name": "空と約束",
+        "released_at": "2025-10-21"
+      },
+      {
+        "name": "Howling over the World",
+        "released_at": "2025-05-29"
+      },
+      {
+        "name": "雪解けに",
+        "released_at": "2025-02-28"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-09"
+      },
+      {
+        "name": "仮装狂騒曲",
+        "released_at": "2024-09-30"
+      },
+      {
+        "name": "ようこそ初星温泉",
+        "released_at": "2024-09-11"
+      },
+      {
+        "name": "日々、発見的ステップ！",
+        "released_at": "2024-08-22"
+      },
+      {
+        "name": "Wonder Scale",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "胸を張って一歩ずつ",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "china"
+  },
+  {
+    "cards": [
+      {
+        "name": "標",
+        "released_at": "2026-09-04"
+      },
+      {
+        "name": "ときめきエモーション",
+        "released_at": "2026-04-01"
+      },
+      {
+        "name": "ミラクルナナウ(ﾟ∀ﾟ)！",
+        "released_at": "2025-08-29"
+      },
+      {
+        "name": "Love & Joy",
+        "released_at": "2025-06-19"
+      },
+      {
+        "name": "桜フォトグラフ",
+        "released_at": "2025-04-01"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-16"
+      },
+      {
+        "name": "カクシタワタシ",
+        "released_at": "2024-12-18"
+      },
+      {
+        "name": "キミとセミブルー",
+        "released_at": "2024-07-01"
+      },
+      {
+        "name": "Tame-Lie-One-Step",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "夢へのリスタート",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "sumika"
+  },
+  {
+    "cards": [
+      {
+        "name": "め",
+        "released_at": "2026-09-20"
+      },
+      {
+        "name": "ガラクタロード",
+        "released_at": "2026-05-26"
+      },
+      {
+        "name": "みちなるひろがる",
+        "released_at": "2026-01-27"
+      },
+      {
+        "name": "ミラクルナナウ(ﾟ∀ﾟ)！",
+        "released_at": "2025-09-08"
+      },
+      {
+        "name": "サンフェーデッド",
+        "released_at": "2025-07-17"
+      },
+      {
+        "name": "ハッピーミルフィーユ",
+        "released_at": "2025-02-01"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-09"
+      },
+      {
+        "name": "仮装狂騒曲",
+        "released_at": "2024-10-08"
+      },
+      {
+        "name": "コントラスト",
+        "released_at": "2024-07-22"
+      },
+      {
+        "name": "光景",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "一番向いてないこと",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "hiro"
+  },
+  {
+    "cards": [
+      {
+        "name": "ガラクタロード",
+        "released_at": "2026-09-10"
+      },
+      {
+        "name": "「ねえ、言っちゃうよ。」",
+        "released_at": "2026-08-17"
+      },
+      {
+        "name": "ENDLESS DANCE",
+        "released_at": "2026-03-09"
+      },
+      {
+        "name": "赤裸々",
+        "released_at": "2026-02-09"
+      },
+      {
+        "name": "Star-mine",
+        "released_at": "2025-07-31"
+      },
+      {
+        "name": "Our Chant",
+        "released_at": "2025-04-22"
+      },
+      {
+        "name": "ハッピーミルフィーユ",
+        "released_at": "2025-02-14"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-02"
+      },
+      {
+        "name": "小さな野望",
+        "released_at": "2024-11-16"
+      },
+      {
+        "name": "一番星",
+        "released_at": "2024-11-16"
+      }
+    ],
+    "idol_id": "sena"
+  },
+  {
+    "cards": [
+      {
+        "name": "「ねえ、言っちゃうよ。」",
+        "released_at": "2026-08-26"
+      },
+      {
+        "name": "VEIL",
+        "released_at": "2026-04-29"
+      },
+      {
+        "name": "ENDLESS DANCE",
+        "released_at": "2026-02-27"
+      },
+      {
+        "name": "Superlative",
+        "released_at": "2026-01-05"
+      },
+      {
+        "name": "Star-mine",
+        "released_at": "2025-07-31"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-06-30"
+      },
+      {
+        "name": "ツキノカメ",
+        "released_at": "2025-05-16"
+      },
+      {
+        "name": "ゆっくり、一歩ずつ",
+        "released_at": "2025-05-16"
+      }
+    ],
+    "idol_id": "misuzu"
+  },
+  {
+    "cards": [
+      {
+        "name": "Agitato",
+        "released_at": "2026-09-30"
+      },
+      {
+        "name": "GO MY WAY!!",
+        "released_at": "2026-07-08"
+      },
+      {
+        "name": "真っ白いページと水彩の主人公",
+        "released_at": "2026-04-10"
+      },
+      {
+        "name": "ENDLESS DANCE",
+        "released_at": "2026-02-27"
+      },
+      {
+        "name": "グースーピー",
+        "released_at": "2025-11-28"
+      },
+      {
+        "name": "Star-mine",
+        "released_at": "2025-07-31"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-09"
+      },
+      {
+        "name": "White Night! White Wish!",
+        "released_at": "2024-11-28"
+      },
+      {
+        "name": "The Rolling Riceball",
+        "released_at": "2024-06-01"
+      },
+      {
+        "name": "アイドル、はじめっ！",
+        "released_at": "2024-06-01"
+      }
+    ],
+    "idol_id": "ume"
+  },
+  {
+    "cards": [
+      {
+        "name": "SUGAR FLAVOR",
+        "released_at": "2026-06-15"
+      },
+      {
+        "name": "ガラクタロード",
+        "released_at": "2026-05-16"
+      },
+      {
+        "name": "36℃ U･B･U",
+        "released_at": "2025-09-17"
+      },
+      {
+        "name": "Howling over the World",
+        "released_at": "2025-05-29"
+      },
+      {
+        "name": "ハッピーミルフィーユ",
+        "released_at": "2025-02-01"
+      },
+      {
+        "name": "Campus mode!!",
+        "released_at": "2025-01-02"
+      },
+      {
+        "name": "L.U.V",
+        "released_at": "2024-10-18"
+      },
+      {
+        "name": "ようこそ初星温泉",
+        "released_at": "2024-09-01"
+      },
+      {
+        "name": "キミとセミブルー",
+        "released_at": "2024-07-12"
+      },
+      {
+        "name": "clumsy trick",
+        "released_at": "2024-05-16"
+      },
+      {
+        "name": "『私らしさ』のはじまり",
+        "released_at": "2024-05-16"
+      }
+    ],
+    "idol_id": "rinami"
+  }
+]

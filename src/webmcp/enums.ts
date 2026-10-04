@@ -163,6 +163,28 @@ export const WebMcpSchemaField = {
   UserSupports: 'userSupports',
   /** 比較条件一覧 */
   Variants: 'variants',
+  /** 更新時に照合する達成記録のrevision */
+  ExpectedRevision: 'expected_revision',
+  /** 対象アイドルの識別子 */
+  IdolId: 'idol_id',
+  /** 達成回数を更新する項目 */
+  TrackerId: 'tracker_id',
+  /** Pアイドルカードの識別子 */
+  CardId: 'card_id',
+  /** カード内の達成条件 */
+  AchievementId: 'achievement_id',
+  /** 単発条件または星の達成状態 */
+  Completed: 'completed',
+  /** アイドル固有の達成項目 */
+  Metric: 'metric',
+  /** 0始まりのステージ番号 */
+  StageIndex: 'stage_index',
+  /** 0始まりの星の位置 */
+  StarIndex: 'star_index',
+  /** 試験結果による補正区分 */
+  AdjustmentId: 'adjustment_id',
+  /** 達成数・目標PLv・補正EXPの入力値 */
+  Value: 'value',
 } as const
 
 /** JSON Schemaの構造を表すキーワード */
@@ -177,6 +199,12 @@ export const WebMcpSchemaKeyword = {
 
 /** WebMCPで公開するツール名 */
 export const WebMcpToolName = {
+  /** アチーブ計算機の入力項目と報酬条件 */
+  GetAchievementCatalog: 'get_achievement_catalog',
+  /** アチーブ計算機の記録・EXP・PLv集計 */
+  GetAchievementState: 'get_achievement_state',
+  /** アチーブ計算機の達成記録更新 */
+  UpdateAchievementProgress: 'update_achievement_progress',
   /** サポートカード検索 */
   SearchSupportCards: 'search_support_cards',
   /** サポートカード詳細 */
@@ -316,3 +344,27 @@ export const WebMcpCurrentAppStateSection = {
 /** 現在状態取得で指定できるセクション名の型 */
 export type WebMcpCurrentAppStateSectionType =
   (typeof WebMcpCurrentAppStateSection)[keyof typeof WebMcpCurrentAppStateSection]
+
+/** アチーブ計算機で公開する個別更新の対象 */
+export const AchievementUpdateAction = {
+  /** プロデュースアチーブの現在値 */
+  Production: 'production',
+  /** アイドル固有アチーブの現在値 */
+  Idol: 'idol',
+  /** Pアイドルの条件1つ */
+  PIdol: 'p_idol',
+  /** Pアイドル1枚の全条件 */
+  PIdolAll: 'p_idol_all',
+  /** ステージ内の星1つ */
+  RoadStar: 'road_star',
+  /** アイドル1人の全ステージ */
+  RoadAll: 'road_all',
+  /** 課題・パネルの現在値 */
+  OtherTask: 'other_task',
+  /** プロデュース試験結果の回数 */
+  ProductionReward: 'production_reward',
+  /** 目標PLv */
+  TargetLevel: 'target_level',
+  /** 符号付きの補正EXP */
+  OtherExp: 'other_exp',
+} as const

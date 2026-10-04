@@ -31,9 +31,9 @@ export const loadDataManagementModal = createLazyModuleLoader(
   () => import('../components/header/dataManagement/DataManagementModal'),
 )
 
-/** その他メニュー項目の共有ローダー */
-export const loadMoreMenuItems = createLazyModuleLoader(() =>
-  import('../components/header/MoreMenuItems').then(({ MoreMenuItems }) => ({ default: MoreMenuItems })),
+/** アチーブ計算機ページの共有ローダー */
+export const loadAchievementCalculatorPage = createLazyModuleLoader(
+  () => import('../components/achievementCalculator/AchievementCalculatorPage'),
 )
 
 /** 点数設定パネルの共有ローダー */
@@ -46,8 +46,9 @@ export const loadUnitSimulatorPanel = createLazyModuleLoader(
   () => import('../components/unitSimulator/UnitSimulatorPanel'),
 )
 
-/** アプリ起動直後に取得・評価する遅延画面 */
+/** 初期画面の描画後に取得・評価し、メニューやモーダルの初回操作を準備する画面 */
 export const INITIAL_PRELOAD_MODULES = [
+  loadAchievementCalculatorPage,
   loadFilterSortModal,
   loadCardDetailModal,
   loadScoreDetailModal,
@@ -55,7 +56,6 @@ export const INITIAL_PRELOAD_MODULES = [
   loadScoreSettingsPanel,
   loadUserCardFormModal,
   loadOptionsModal,
-  loadMoreMenuItems,
   loadHelpModal,
   loadAboutModal,
   loadDataManagementModal,

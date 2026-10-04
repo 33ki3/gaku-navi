@@ -56,3 +56,44 @@ export function CalculatorIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+/** 達成条件のオン・オフを塗り分ける五芒星アイコン */
+export function RatingStarIcon({ className, filled }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={1.5}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinejoin="round"
+        d="m12 3 2.78 5.63 6.22.9-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.92 1.06-6.2L3 9.53l6.22-.9L12 3Z"
+      />
+    </svg>
+  )
+}
+
+/** アチーブメントの分類マークを、四隅の三角形・ひし形・星で表す */
+export function AchievementIcon({ className, title }: IconProps) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden={title ? undefined : true}
+    >
+      {title && <title>{title}</title>}
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M7 2H2v5l5-5Zm10 0h5v5l-5-5ZM2 17v5h5l-5-5Zm20 0v5h-5l5-5ZM12 3l9 9-9 9-9-9 9-9Z"
+      />
+      <path strokeLinejoin="round" d="m12 8 1.2 2.4 2.6.4-1.9 1.9.4 2.6-2.3-1.2-2.3 1.2.4-2.6-1.9-1.9 2.6-.4L12 8Z" />
+    </svg>
+  )
+}

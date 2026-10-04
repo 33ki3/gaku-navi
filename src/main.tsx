@@ -24,9 +24,12 @@ registerSW({
   },
 })
 
+// 初期画面に必要なアプリ本体だけを取得する。未表示の画面はReactの描画後に先読みする
+const applicationBootstrapPromise = import('./appBootstrap')
+
 // Service Workerの準備を待たずに、初期JSON取得とアプリ描画を開始する
 void Promise.all([
-  import('./appBootstrap'),
+  applicationBootstrapPromise,
   fetchJsonAsset('card-asset-url', 'assets/cards.json'),
   fetchJsonAsset('locale-asset-url', 'assets/ja.json'),
 ])

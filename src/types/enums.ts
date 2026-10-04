@@ -68,9 +68,7 @@ export const ParameterType = {
 } as const
 export type ParameterType = (typeof ParameterType)[keyof typeof ParameterType]
 
-/**
- * カスタム時のパラボ対象外入力フィールドキー
- */
+/** カスタム時のパラボ対象外入力フィールドキー */
 export const CustomNonBonusFieldType = {
   /** 授業分 */
   ClassBonus: 'customClassBonus',
@@ -697,9 +695,7 @@ export const CardExclusionFilterType = {
 } as const
 export type CardExclusionFilterType = (typeof CardExclusionFilterType)[keyof typeof CardExclusionFilterType]
 
-/**
- * フィルター状態を更新する操作の種別
- */
+/** フィルター状態を更新する操作の種別 */
 export const FilterActionType = {
   /** 検索テキスト設定 */
   SetSearch: 'SET_SEARCH',
@@ -1243,9 +1239,7 @@ export const TriggerKeyType = {
 } as const
 export type TriggerKeyType = (typeof TriggerKeyType)[keyof typeof TriggerKeyType]
 
-/**
- * バッジのサイズ
- */
+/** バッジのサイズ */
 export const BadgeSizeType = {
   /** 小 */
   Sm: 'sm',
@@ -1256,9 +1250,7 @@ export const BadgeSizeType = {
 } as const
 export type BadgeSizeType = (typeof BadgeSizeType)[keyof typeof BadgeSizeType]
 
-/**
- * バッジの文字の太さ
- */
+/** バッジの文字の太さ */
 export const BadgeWeightType = {
   /** 太字 */
   Bold: 'bold',
@@ -1267,9 +1259,7 @@ export const BadgeWeightType = {
 } as const
 export type BadgeWeightType = (typeof BadgeWeightType)[keyof typeof BadgeWeightType]
 
-/**
- * ボタンのサイズ
- */
+/** ボタンのサイズ */
 export const ButtonSizeType = {
   /** 小 */
   Sm: 'sm',
@@ -1280,9 +1270,7 @@ export const ButtonSizeType = {
 } as const
 export type ButtonSizeType = (typeof ButtonSizeType)[keyof typeof ButtonSizeType]
 
-/**
- * 折りたたみセクションの表示形式
- */
+/** 折りたたみセクションの表示形式 */
 export const CollapsibleVariantType = {
   /** モーダル用 */
   Modal: 'modal',
@@ -1291,9 +1279,7 @@ export const CollapsibleVariantType = {
 } as const
 export type CollapsibleVariantType = (typeof CollapsibleVariantType)[keyof typeof CollapsibleVariantType]
 
-/**
- * モーダルの配置
- */
+/** モーダルの配置 */
 export const ModalAlignType = {
   /** 中央 */
   Center: 'center',
@@ -1302,9 +1288,7 @@ export const ModalAlignType = {
 } as const
 export type ModalAlignType = (typeof ModalAlignType)[keyof typeof ModalAlignType]
 
-/**
- * 凸数選択欄の表示形式
- */
+/** 凸数選択欄の表示形式 */
 export const UncapSelectorVariantType = {
   /** サポート一覧用（コンパクト） */
   Compact: 'compact',
@@ -1313,9 +1297,7 @@ export const UncapSelectorVariantType = {
 } as const
 export type UncapSelectorVariantType = (typeof UncapSelectorVariantType)[keyof typeof UncapSelectorVariantType]
 
-/**
- * フィルター画面のボタンカテゴリとトグルボタンの色
- */
+/** フィルター画面のボタンカテゴリとトグルボタンの色 */
 export const FilterButtonCategory = {
   /** 汎用アクティブ状態（トグルボタンの ON 表示） */
   Active: 'active',
@@ -1915,18 +1897,14 @@ export const ScoreSettingsSectionKey = {
 } as const
 export type ScoreSettingsSectionKey = (typeof ScoreSettingsSectionKey)[keyof typeof ScoreSettingsSectionKey]
 
-/**
- * スコア詳細モーダルのセクションキー
- */
+/** スコア詳細モーダルのセクションキー */
 export const ScoreDetailSectionKey = {
   /** 回数調整 */
   CountCustom: 'countCustom',
 } as const
 export type ScoreDetailSectionKey = (typeof ScoreDetailSectionKey)[keyof typeof ScoreDetailSectionKey]
 
-/**
- * ユーザーサポートフォームの折りたたみセクションキー
- */
+/** ユーザーサポートフォームの折りたたみセクションキー */
 export const UserFormSectionKey = {
   /** アビリティ */
   Abilities: 'abilities',
@@ -1939,9 +1917,7 @@ export const UserFormSectionKey = {
 } as const
 export type UserFormSectionKey = (typeof UserFormSectionKey)[keyof typeof UserFormSectionKey]
 
-/**
- * フィルタ・ソートモーダルのタブ種別
- */
+/** フィルタ・ソートモーダルのタブ種別 */
 export const FilterSortTab = {
   /** フィルタタブ */
   Filter: 'filter',
@@ -2055,3 +2031,246 @@ export const DataManagementMessageType = {
   Error: 'error',
 } as const
 export type DataManagementMessageType = (typeof DataManagementMessageType)[keyof typeof DataManagementMessageType]
+
+/** アイドルの共有識別子 */
+export const IdolId = {
+  /** 花海咲季 */
+  Saki: 'saki',
+  /** 月村手毬 */
+  Temari: 'temari',
+  /** 藤田ことね */
+  Kotone: 'kotone',
+  /** 雨夜燕 */
+  Tsubame: 'tsubame',
+  /** 有村麻央 */
+  Mao: 'mao',
+  /** 葛城リーリヤ */
+  Lilja: 'lilja',
+  /** 倉本千奈 */
+  China: 'china',
+  /** 紫雲清夏 */
+  Sumika: 'sumika',
+  /** 篠澤広 */
+  Hiro: 'hiro',
+  /** 十王星南 */
+  Sena: 'sena',
+  /** 秦谷美鈴 */
+  Misuzu: 'misuzu',
+  /** 花海佑芽 */
+  Ume: 'ume',
+  /** 姫崎莉波 */
+  Rinami: 'rinami',
+} as const
+
+export type IdolId = (typeof IdolId)[keyof typeof IdolId]
+
+/** プロデュースアチーブメントの識別子 */
+export const ProductionAchievementId = {
+  /** Pポイント獲得数 */
+  PPoints: 'p_points',
+  /** アチーブメント獲得数 */
+  AchievementsAcquired: 'achievements_acquired',
+  /** スキルカード獲得数 */
+  SkillCardsAcquired: 'skill_cards_acquired',
+  /** Pアイテム獲得数 */
+  PItemsAcquired: 'p_items_acquired',
+  /** Pドリンク獲得数 */
+  PDrinksAcquired: 'p_drinks_acquired',
+  /** スキルカード獲得種類数 */
+  SkillCardTypesAcquired: 'skill_card_types_acquired',
+  /** Pアイテム獲得種類数 */
+  PItemTypesAcquired: 'p_item_types_acquired',
+  /** Pドリンク獲得種類数 */
+  PDrinkTypesAcquired: 'p_drink_types_acquired',
+  /** Voレッスン回数 */
+  VocalLessons: 'vocal_lessons',
+  /** Daレッスン回数 */
+  DanceLessons: 'dance_lessons',
+  /** Viレッスン回数 */
+  VisualLessons: 'visual_lessons',
+  /** 活動支給・差し入れ選択回数 */
+  ActivitiesClaimed: 'activities_claimed',
+  /** 授業/おでかけ回数 */
+  ClassesAndOutings: 'classes_and_outings',
+  /** スキルカード強化回数 */
+  SkillCardsEnhanced: 'skill_cards_enhanced',
+  /** 相談での交換回数 */
+  ConsultExchanges: 'consult_exchanges',
+  /** レッスンクリア回数 */
+  LessonsCleared: 'lessons_cleared',
+  /** SPレッスンクリア回数 */
+  SpLessonsCleared: 'sp_lessons_cleared',
+  /** 合計体力消費数 */
+  StaminaSpent: 'stamina_spent',
+  /** クリア時評価B以上 */
+  RankB: 'rank_b',
+  /** クリア時評価A以上 */
+  RankA: 'rank_a',
+  /** クリア時評価A+以上 */
+  RankAPlus: 'rank_a_plus',
+  /** クリア時評価S以上 */
+  RankS: 'rank_s',
+  /** クリア時評価S+以上 */
+  RankSPlus: 'rank_s_plus',
+  /** クリア時評価SS以上 */
+  RankSs: 'rank_ss',
+  /** クリア時評価SS+以上 */
+  RankSsPlus: 'rank_ss_plus',
+  /** クリア時評価SSS以上 */
+  RankSss: 'rank_sss',
+  /** クリア時評価SSS+以上 */
+  RankSssPlus: 'rank_sss_plus',
+  /** クリア時評価S4以上 */
+  RankS4: 'rank_s4',
+  /** クリア時評価S4+以上 */
+  RankS4Plus: 'rank_s4_plus',
+  /** True Endアチーブメント達成数 */
+  TrueEndIdols: 'true_end_idols',
+  /** H.I.Fボーナスパネルの進捗数 */
+  HifBonusPanels: 'hif_bonus_panels',
+  /** 『一番星』解放人数 */
+  PrimaStellaIdols: 'prima_stella_idols',
+  /** プロデュース回数 */
+  Productions: 'productions',
+} as const
+
+export type ProductionAchievementId = (typeof ProductionAchievementId)[keyof typeof ProductionAchievementId]
+
+/** アイドル別の達成条件の識別子 */
+export const IdolAchievementMetric = {
+  /** スキルカード使用回数 */
+  SkillCardsUsed: 'skill_cards_used',
+  /** レッスンクリア回数 */
+  LessonsCleared: 'lessons_cleared',
+  /** SPレッスンクリア回数 */
+  SpLessonsCleared: 'sp_lessons_cleared',
+  /** プロデュース回数 */
+  Productions: 'productions',
+  /** 最終試験合格回数 */
+  FinalExamsPassed: 'final_exams_passed',
+  /** ファン人数 */
+  Fans: 'fans',
+  /** プロデュース評価合計 */
+  Evaluation: 'evaluation',
+  /** スキルカード強化回数 */
+  SkillCardsEnhanced: 'skill_cards_enhanced',
+  /** 相談での交換回数 */
+  ConsultExchanges: 'consult_exchanges',
+  /** Pドリンク使用数 */
+  DrinksUsed: 'drinks_used',
+  /** 元気獲得数 */
+  PowerGained: 'power_gained',
+  /** 合計体力消費数 */
+  StaminaSpent: 'stamina_spent',
+  /** 特別指導回数 */
+  SpecialTraining: 'special_training',
+  /** ファン投票数 */
+  FanVotes: 'fan_votes',
+  /** 親愛度 */
+  Affection: 'affection',
+  /** ステータス */
+  Status: 'status',
+  /** 『初』マスター最終試験1位 */
+  MasterFinalExam: 'master_final_exam',
+  /** H.I.F最終試験合格回数 */
+  HifFinalExams: 'hif_final_exams',
+  /** 定期公演『初』True End */
+  TrueEndHatsu: 'true_end_hatsu',
+  /** N.I.A True End */
+  TrueEndNia: 'true_end_nia',
+  /** H.I.F True End */
+  TrueEndHif: 'true_end_hif',
+  /** 特訓段階1〜6 */
+  SpecialTrainingStages1To6: 'special_training_stages_1_to_6',
+  /** 特訓段階7 */
+  SpecialTrainingStage7: 'special_training_stage_7',
+  /** クリア時評価B以上 */
+  RankB: 'rank_b',
+  /** クリア時評価A以上 */
+  RankA: 'rank_a',
+  /** クリア時評価S以上 */
+  RankS: 'rank_s',
+  /** クリア時評価S+以上 */
+  RankSPlus: 'rank_s_plus',
+  /** クリア時評価SS以上 */
+  RankSs: 'rank_ss',
+  /** クリア時評価SS+以上 */
+  RankSsPlus: 'rank_ss_plus',
+  /** クリア時評価SSS以上 */
+  RankSss: 'rank_sss',
+  /** クリア時評価SSS+以上 */
+  RankSssPlus: 'rank_sss_plus',
+  /** クリア時評価S4以上 */
+  RankS4: 'rank_s4',
+  /** クリア時評価S4+以上 */
+  RankS4Plus: 'rank_s4_plus',
+} as const
+
+export type IdolAchievementMetric = (typeof IdolAchievementMetric)[keyof typeof IdolAchievementMetric]
+
+/** Pアイドルごとの達成項目の識別子 */
+export const PIdolCardAchievementId = {
+  /** 最終試験に合格 */
+  FinalExamPassed: 'final_exam_passed',
+  /** 特訓段階3にする */
+  SpecialTraining3: 'special_training_3',
+  /** クリア時評価A+以上 */
+  EvaluationAPlus: 'evaluation_a_plus',
+  /** 特訓段階4にする */
+  SpecialTraining4: 'special_training_4',
+  /** 特訓段階5にする */
+  SpecialTraining5: 'special_training_5',
+  /** 特訓段階6にする */
+  SpecialTraining6: 'special_training_6',
+} as const
+
+export type PIdolCardAchievementId = (typeof PIdolCardAchievementId)[keyof typeof PIdolCardAchievementId]
+
+/** プロデュース報酬を補正する試験結果の識別子 */
+export const ProductionRunRewardAdjustmentId = {
+  /** レギュラー：中間試験不合格 */
+  RegularMidtermFailed: 'regular_midterm_failed',
+  /** レギュラー：最終試験まで到達 */
+  RegularFinalExam: 'regular_final_exam',
+  /** プロ・マスター：試験不合格 */
+  ProMasterFailed: 'pro_master_failed',
+} as const
+
+export type ProductionRunRewardAdjustmentId =
+  (typeof ProductionRunRewardAdjustmentId)[keyof typeof ProductionRunRewardAdjustmentId]
+
+/** その他の経験値を分類するセクションの識別子 */
+export const OtherExperienceSectionId = {
+  /** 初星課題・P課題 */
+  InitialAndPTasks: 'initial_and_p_tasks',
+  /** パネルミッション・N.I.A編 */
+  Nia: 'nia',
+  /** パネルミッション・STEP3編 */
+  Step3: 'step3',
+  /** パネルミッション・H.I.F応援編 */
+  HifSupport: 'hif_support',
+} as const
+
+export type OtherExperienceSectionId = (typeof OtherExperienceSectionId)[keyof typeof OtherExperienceSectionId]
+
+/** アチーブ計算機で切り替える入力カテゴリ */
+export const CalculatorTab = {
+  /** アイドル別のアチーブメント */
+  Idol: 'idol',
+  /** プロデュース全体のアチーブメント */
+  Production: 'production',
+  /** 課題・パネルミッション・アイドルへの道 */
+  Other: 'other',
+} as const
+
+export type CalculatorTab = (typeof CalculatorTab)[keyof typeof CalculatorTab]
+
+/** URLとは独立して切り替えるアプリ内ページ */
+export const AppPage = {
+  /** サポートカードの閲覧・編成 */
+  SupportList: 'support_list',
+  /** アチーブメントと経験値の記録 */
+  AchievementCalculator: 'achievement_calculator',
+} as const
+
+export type AppPage = (typeof AppPage)[keyof typeof AppPage]

@@ -147,9 +147,7 @@ export const CHECKBOX_INPUT = 'w-3.5 h-3.5 rounded border-slate-300 text-blue-60
 export const FILTER_COUNT_BADGE =
   'inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-black leading-none text-white shadow-sm ring-2 ring-white'
 
-/**
- * ヘッダーと下部メニューで共通の選択中状態。境界線幅を固定してサイズ変化を防ぐ
- */
+/** ヘッダーと下部メニューで共通の選択中状態。境界線幅を固定してサイズ変化を防ぐ */
 export const NAV_ITEM_ACTIVE = 'border border-transparent bg-blue-50 text-blue-700 hover:bg-blue-100'
 
 /** セクションラベル（フォーム用） */
@@ -211,3 +209,23 @@ export const MANUAL_SELECTION_WITH_NAV = 'bottom-[calc(5rem+env(safe-area-inset-
 
 /** スマホ下部メニューがないときの選択完了バー位置 */
 export const MANUAL_SELECTION_WITHOUT_NAV = 'bottom-[max(1rem,env(safe-area-inset-bottom))]'
+
+/** 全条件達成済みのアチーブカードの背景と枠 */
+export const ACHIEVEMENT_COMPLETE_CARD_CLASS = 'border-emerald-300 bg-emerald-50'
+/** 単発条件やアイドル選択の達成済みトグル */
+export const ACHIEVEMENT_COMPLETE_TOGGLE_CLASS = 'border-emerald-300 bg-emerald-50 text-emerald-900'
+/** 全EXP獲得済みのカード内報酬バッジ */
+export const ACHIEVEMENT_COMPLETE_EXP_CLASS = 'bg-emerald-100 text-emerald-800'
+/** セクション集計・星数・進捗率の達成済み文字色 */
+export const ACHIEVEMENT_COMPLETE_TEXT_CLASS = 'text-emerald-800'
+/** 全条件達成済みの進捗バーの未充填部分 */
+export const ACHIEVEMENT_COMPLETE_TRACK_CLASS = 'bg-emerald-100'
+/** 全条件達成済みの進捗バーの充填部分 */
+export const ACHIEVEMENT_COMPLETE_FILL_CLASS = 'bg-emerald-500'
+
+/** アチーブ計算機の段階操作・試験回数に共通する増減ボタン */
+export const ACHIEVEMENT_SPINNER_BUTTON_CLASS =
+  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-black text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40'
+/** アチーブ計算機で直接入力する数値欄。幅は項目に合わせて追加する */
+export const ACHIEVEMENT_SPINNER_INPUT_CLASS =
+  'min-h-8 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1 text-right text-sm font-bold tabular-nums text-slate-800 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100'

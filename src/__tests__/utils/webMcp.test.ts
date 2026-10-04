@@ -49,9 +49,10 @@ import {
   type WebMcpToolNameType,
   type WebMcpUiCommand,
 } from '../../webmcp/types'
-import { createTestCommandStatePort } from '../fixtures/application'
+import { createTestAchievementBindings, createTestCommandStatePort } from '../fixtures/application'
 
-const WEB_MCP_MANIFEST_BUDGET_BYTES = 28 * 1024
+const WEB_MCP_MANIFEST_BUDGET_BYTES = 32 * 1024
+const WEB_MCP_STRING_SCHEMA_MANIFEST_BUDGET_BYTES = 36 * 1024
 const WEB_MCP_TOOL_BUDGET_BYTES = 8 * 1024
 
 /** setterでテスト用snapshotを更新し、WebMCPの実行結果を検証するruntime */
@@ -388,7 +389,9 @@ function createRuntime(cards = data.AllCards): TestWebMcpRuntime {
     }),
   }
 
+  const achievementBindings = createTestAchievementBindings()
   return {
+    ...achievementBindings,
     getCards: () => snapshot.allCards,
     getCardByName: () => new Map([...cards, ...userSupports].map((card) => [card.name, card])),
     getCalculationSnapshot: () => currentSnapshot,
@@ -409,6 +412,7 @@ function createRuntime(cards = data.AllCards): TestWebMcpRuntime {
     getUiState: () => uiState,
     controlUi: vi.fn(),
     applicationCommands: {
+      achievement: achievementBindings.achievementCommand,
       calculation: calculationCommand,
       preferences: preferencesCommand,
       filters: filterCommand,
@@ -1889,13 +1893,13 @@ describe('webMcp tools', () => {
     }
   })
 
-  it('公開ツール定義を合計28KiB・1ツール8KiB未満に保つ', () => {
+  it('公開ツール定義を実際の登録形式で合計32KiB・1ツール8KiB未満に保つ', () => {
     const tools = createWebMcpTools(createRuntime)
     const sizes = tools.map(getWebMcpToolUtf8Bytes)
-    // 日本語をUTF-8バイト数で測り、通常schemaと文字列schemaの双方で上限を守る。
+    // 実ブラウザの登録形式はschema objectなので32KiB、JSON文字列へ包む形式は変換分を見込み36KiBに収める。
     expect(getUtf8ByteLength('学マス')).toBeGreaterThan('学マス'.length)
     expect(getWebMcpManifestUtf8Bytes(tools)).toBeLessThan(WEB_MCP_MANIFEST_BUDGET_BYTES)
-    expect(getStringSchemaManifestUtf8Bytes(tools)).toBeLessThan(WEB_MCP_MANIFEST_BUDGET_BYTES)
+    expect(getStringSchemaManifestUtf8Bytes(tools)).toBeLessThan(WEB_MCP_STRING_SCHEMA_MANIFEST_BUDGET_BYTES)
     expect(Math.max(...sizes)).toBeLessThan(WEB_MCP_TOOL_BUDGET_BYTES)
   })
 

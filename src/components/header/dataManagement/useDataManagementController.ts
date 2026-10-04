@@ -124,15 +124,10 @@ export function useDataManagementController({
     changeSelectedKeys([])
   }, [changeSelectedKeys])
 
-  /** JSON入力欄を更新し、構文が正しい場合だけ全選択分の編集元へ反映する */
-  const handleJsonTextChange = useCallback(
-    (value: string) => {
-      setJsonText(value)
-      const mergedSourceText = exportImport.mergeImportJsonText(sourceJsonText, value, selectedKeys)
-      if (mergedSourceText !== null) setSourceJsonText(mergedSourceText)
-    },
-    [selectedKeys, sourceJsonText],
-  )
+  // 入力中は文字列だけを保持し、全文の解析・結合は対象切り替えや反映時に行う
+  const handleJsonTextChange = useCallback((value: string) => {
+    setJsonText(value)
+  }, [])
 
   /** 検証結果をデータ管理欄へ表示し、保存前の確認画面を開く */
   const showImportPreview = useCallback(

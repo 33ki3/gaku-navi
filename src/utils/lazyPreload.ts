@@ -34,9 +34,9 @@ export function createLazyModuleLoader<T>(importer: () => Promise<T>): LazyModul
 }
 
 /**
- * 登録済みの遅延モジュールを起動直後にまとめて取得・評価する。
+ * 登録済みの遅延モジュールをまとめて取得・評価する。
  *
- * Promiseを待たずに呼び出せるため、root描画の開始後に並行して進む。
+ * 初期画面の描画後に呼び出し、以降の操作に向けた表示準備を進める。
  * dynamic importのチャンク構成は維持し、メインJSへは結合しない。
  */
 export function preloadAllLazyModules(loaders: readonly (() => Promise<unknown>)[]): Promise<void> {

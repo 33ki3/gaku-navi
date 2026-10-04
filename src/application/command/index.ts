@@ -1,4 +1,5 @@
 /** 設定の種類ごとの更新処理をまとめて公開する入口 */
+export { createAchievementCalculatorCommand } from './achievementCalculatorCommand'
 export { createCalculationCommand } from './calculationCommand'
 export { createFilterCommand } from './filterCommand'
 export { createImportCommand } from './importCommand'

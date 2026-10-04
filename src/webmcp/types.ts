@@ -4,13 +4,17 @@
  * WebMCPに対応していないブラウザでもアプリを動かせるよう、ブラウザのAPIに
  * 依存しない形で型を定義し、利用可能な環境でだけツールを登録する
  */
+import type { AchievementCalculatorCommand } from '../application/command/achievementCalculatorCommand'
 import type { CalculationCommand } from '../application/command/calculationCommand'
 import type { FilterCommand } from '../application/command/filterCommand'
 import type { ImportCommand } from '../application/command/importCommand'
 import type { PreferencesCommand } from '../application/command/preferencesCommand'
 import type { PresetCommand } from '../application/command/presetCommand'
 import type { UserSupportCommand } from '../application/command/userSupportCommand'
+import type { calculateAchievementSummary } from '../application/query/achievementCalculatorQuery'
+import type { AchievementCalculatorProgress } from '../types/achievementCalculator'
 import type { AppPreferences, PersistedFilterState } from '../types/app'
+import type { DomainStateSnapshot } from '../types/application'
 import type { CalculationSnapshot } from '../types/calculation'
 import type { SupportCard } from '../types/card'
 import type {
@@ -25,8 +29,11 @@ import type {
   DifficultyType,
   EventFilterType,
   FilterSortTab,
+  IdolAchievementMetric,
+  PIdolCardAchievementId,
   ParameterType,
   PlanType,
+  ProductionRunRewardAdjustmentId,
   RarityType,
   ScenarioType,
   SortModeType,
@@ -36,6 +43,7 @@ import type {
 } from '../types/enums'
 import { ApplicationUiAction } from '../types/enums'
 import type { WebMcpCurrentAppStateSectionType, WebMcpToolNameType } from './enums'
+import { AchievementUpdateAction } from './enums'
 export * from './enums'
 
 /** 検索結果などのページ情報。offsetは次の呼び出しへそのまま渡せる */
@@ -602,6 +610,12 @@ export type WebMcpUiCommand =
 
 /** ツール実行時に現在のアプリ状態を取得する窓口 */
 export interface WebMcpRuntime {
+  /** 現在の達成記録と、その記録を識別するrevision・digestを取得する */
+  getAchievementSnapshot: () => DomainStateSnapshot<AchievementCalculatorProgress>
+  /** 指定アイドルのEXP・PLvを、読み取った達成記録と同じ版で集計する */
+  getAchievementSummary: (idolId: string) => DomainStateSnapshot<ReturnType<typeof calculateAchievementSummary>>
+  /** 対象指定を省略した読み取りで使う、画面の選択アイドルを取得する */
+  getSelectedAchievementIdolId: () => string
   /** 組み込みサポートとユーザー定義サポートを合わせた現在の一覧を取得する */
   getCards: () => readonly SupportCard[]
   /** カード名からカード本体を探せる現在の一覧を取得する */
@@ -622,6 +636,8 @@ export interface WebMcpRuntime {
   controlUi: (command: WebMcpUiCommand) => void
   /** 画面操作とWebMCPで共有する保存処理 */
   applicationCommands?: {
+    /** 画面と同じ検証・直列化・保存経路で達成記録を更新する */
+    achievement: AchievementCalculatorCommand
     calculation: CalculationCommand
     filters: FilterCommand
     preferences: PreferencesCommand
@@ -637,3 +653,32 @@ declare global {
     readonly modelContext?: WebMcpModelContext
   }
 }
+
+/** 公開入力を検証してからcommandへ渡す、操作別の更新値 */
+export type WebMcpAchievementCommand = { expectedRevision?: string } & (
+  | { action: typeof AchievementUpdateAction.Production; trackerId: string; value: number }
+  | { action: typeof AchievementUpdateAction.Idol; idolId: string; metric: IdolAchievementMetric; value: number }
+  | {
+      action: typeof AchievementUpdateAction.PIdol
+      cardId: string
+      achievementId: PIdolCardAchievementId
+      completed: boolean
+    }
+  | { action: typeof AchievementUpdateAction.PIdolAll; cardId: string; completed: boolean }
+  | {
+      action: typeof AchievementUpdateAction.RoadStar
+      idolId: string
+      stageIndex: number
+      starIndex: number
+      completed: boolean
+    }
+  | { action: typeof AchievementUpdateAction.RoadAll; idolId: string; completed: boolean }
+  | { action: typeof AchievementUpdateAction.OtherTask; trackerId: string; value: number }
+  | {
+      action: typeof AchievementUpdateAction.ProductionReward
+      adjustmentId: ProductionRunRewardAdjustmentId
+      value: number
+    }
+  | { action: typeof AchievementUpdateAction.TargetLevel; value: number }
+  | { action: typeof AchievementUpdateAction.OtherExp; value: number }
+)

@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import { useCardUIContext } from '../../contexts/CardContext'
 import { useHeaderHeightCssVariable } from '../../hooks/useHeaderHeightCssVariable'
+import type * as enums from '../../types/enums'
 import * as lazyModules from '../../utils/lazyModules'
 import { createPreloadedComponent } from '../../utils/preloadedComponent'
 import { ModalLoadingFallback } from '../ui/ModalLoadingFallback'
@@ -22,6 +23,8 @@ const DataManagementModal = createPreloadedComponent(lazyModules.loadDataManagem
 
 /** ヘッダーに表示する設定と操作 */
 interface AppHeaderProps {
+  /** メニューから指定ページへ切り替える */
+  onNavigatePage: (page: enums.AppPage) => void
   /** スコア設定モーダルを開く関数（モバイル用） */
   onOpenScoreSettings: () => void
   /** スコア設定パネルのピン留めを切り替える関数（PC用） */
@@ -73,6 +76,7 @@ interface AppHeaderProps {
  * @returns 画面上部へ固定するアプリケーションヘッダー
  */
 export default function AppHeader({
+  onNavigatePage,
   onOpenScoreSettings,
   onPinScoreSettings,
   settingsPinned,
@@ -107,6 +111,7 @@ export default function AppHeader({
     openUserCardForm: onOpenUserCardForm,
     openDataManagement: onOpenDataManagement,
     openOptions: onOpenOptions,
+    navigateToPage: onNavigatePage,
     openHelp: () => setHelpOpen(true),
     openAbout: () => setAboutOpen(true),
   }

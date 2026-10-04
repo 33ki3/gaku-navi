@@ -6,7 +6,10 @@ import { useWebMcp } from '../../hooks/useWebMcp'
 import { WEB_MCP_TOOL_MANIFEST_NAMES } from '../../webmcp/manifest'
 import type { WebMcpRuntime } from '../../webmcp/types'
 
+import { createTestAchievementBindings } from '../fixtures/application'
+
 const runtime: WebMcpRuntime = {
+  ...createTestAchievementBindings(),
   getCards: () => [],
   getCardByName: () => new Map(),
   getCalculationSnapshot: () => {

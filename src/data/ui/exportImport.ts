@@ -3,6 +3,7 @@
  * 保存キーの順序と対象範囲をデータ層で一元管理し、入出力処理から分離する。
  */
 import {
+  ACHIEVEMENT_CALCULATOR_STORAGE_KEY,
   APP_PREFERENCES_STORAGE_KEY,
   CARD_COUNT_CUSTOM_KEY,
   FILTER_STORAGE_KEY,
@@ -27,6 +28,7 @@ export const EXPORT_KEYS = [
   UNIT_SIMULATOR_STORAGE_KEY,
   USER_SUPPORTS_STORAGE_KEY,
   APP_PREFERENCES_STORAGE_KEY,
+  ACHIEVEMENT_CALCULATOR_STORAGE_KEY,
 ] as const
 
 /** エクスポート対象として許可するlocalStorageキーの型 */

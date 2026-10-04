@@ -5,6 +5,7 @@
  * 値の検証や部分救出の処理はsrc/utilsへ置く。
  */
 import {
+  ACHIEVEMENT_CALCULATOR_STORAGE_KEY,
   APP_PREFERENCES_STORAGE_KEY,
   CARD_COUNT_CUSTOM_KEY,
   FILTER_STORAGE_KEY,
@@ -147,6 +148,10 @@ export const IMPORT_VALUE_METADATA: Record<ExportKey, ImportValueMetadata> = {
   [USER_SUPPORTS_STORAGE_KEY]: {
     labelKey: 'ui.message.import_item_user_supports',
     invalidReasonKey: 'ui.message.import_reason_invalid_array',
+  },
+  [ACHIEVEMENT_CALCULATOR_STORAGE_KEY]: {
+    labelKey: 'ui.message.import_item_achievement_progress',
+    invalidReasonKey: 'ui.message.import_reason_invalid_structure',
   },
   [APP_PREFERENCES_STORAGE_KEY]: {
     labelKey: 'ui.message.import_item_app_preferences',

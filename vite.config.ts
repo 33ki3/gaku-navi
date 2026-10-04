@@ -1,8 +1,8 @@
 /// <reference types="vitest" />
+import react from '@vitejs/plugin-react'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import react from '@vitejs/plugin-react'
 import { type Plugin, defineConfig, loadEnv } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -152,6 +152,15 @@ export default defineConfig(({ mode }) => {
                 name: 'vendor',
                 test: /[\\/]node_modules[\\/]/,
                 priority: 1,
+              },
+              {
+                // 計算機の表示と集計表示用フックを分離し、共通の状態管理は初期画面でも使う
+                name: 'app-achievement',
+                priority: 2,
+                test: (id) =>
+                  id.includes('/src/components/achievementCalculator/') ||
+                  id.endsWith('/src/hooks/useLoopingHorizontalScroll.ts') ||
+                  id.endsWith('/src/hooks/useAchievementCalculatorSummary.ts'),
               },
               {
                 name: 'app-list',

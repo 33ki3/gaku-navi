@@ -45,6 +45,8 @@ export type DomainIssueCodeType = (typeof DomainIssueCode)[keyof typeof DomainIs
 export const DomainIssuePath = {
   /** 計算条件 */
   Calculation: 'calculation',
+  /** アチーブ計算機の達成記録とEXP補正 */
+  Achievement: 'achievement',
   /** 絞り込み条件 */
   Filter: 'filter',
   /** アプリ設定 */
@@ -96,6 +98,8 @@ export type ApplicationOperationStatusType =
 export const ApplicationDomain = {
   /** 点数・編成・凸数・回数調整 */
   Calculation: 'calculation',
+  /** アチーブ計算機の達成記録とEXP補正 */
+  Achievement: 'achievement',
   /** 検索・絞り込み・並び順 */
   Filters: 'filters',
   /** アプリの表示設定 */

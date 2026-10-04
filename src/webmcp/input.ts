@@ -15,7 +15,9 @@ import { isUserSupportCardFormValue } from '../utils/userSupportCardValidation'
 import { isEnumValue, isFiniteNumber, isRecord } from '../utils/valueValidation'
 import * as webMcpConstant from './constants'
 import { asInputRecord } from './context'
+import { achievementActionProperties } from './schemas'
 import type {
+  WebMcpAchievementCommand,
   WebMcpCardDetailSectionType,
   WebMcpCurrentAppStateOptions,
   WebMcpCurrentAppStateSectionType,
@@ -823,4 +825,115 @@ export function parseCurrentAppStateOptions(value: unknown): WebMcpCurrentAppSta
   const userSupports = parsePageOptions(input.userSupports)
   if (cardMap === null || userSupports === null) return null
   return { sections, cardMap, userSupports }
+}
+
+/**
+ * 読み取り対象の省略は許可し、指定されたIDと未知キーは検証する
+ * @param value 外部から受け取った対象指定。未定義の項目は許可しない
+ * @returns 検証済みのアイドル指定。不正な入力の場合はnull
+ */
+export function parseAchievementReadOptions(value: unknown): { idolId?: string } | null {
+  const input = asInputRecord(value)
+  if (!input || !hasOnlyKeys(input, [webMcp.WebMcpSchemaField.IdolId])) return null
+  const idolId = input[webMcp.WebMcpSchemaField.IdolId]
+  return idolId === undefined ? {} : isEnumValue(idolId, enums.IdolId) ? { idolId } : null
+}
+
+/**
+ * schemaと同じ許可項目・型・範囲を確認し、公開キーをcommandの入力へ変換する
+ * @param value 外部から受け取った操作種別・対象ID・更新値・任意のrevision
+ * @returns 操作種別に対応した更新入力。不正なキー・型・範囲の場合はnull
+ */
+export function parseAchievementCommand(value: unknown): WebMcpAchievementCommand | null {
+  const input = asInputRecord(value)
+  if (!input) return null
+  const action = input[webMcp.WebMcpSchemaField.Action]
+  if (!isEnumValue(action, webMcp.AchievementUpdateAction)) return null
+  const properties = achievementActionProperties[action]
+  if (
+    !hasOnlyKeys(input, [
+      webMcp.WebMcpSchemaField.Action,
+      webMcp.WebMcpSchemaField.ExpectedRevision,
+      ...Object.keys(properties),
+    ]) ||
+    Object.keys(properties).some((key) => !Object.prototype.hasOwnProperty.call(input, key))
+  )
+    return null
+  const expectedRevision = input[webMcp.WebMcpSchemaField.ExpectedRevision]
+  if (expectedRevision !== undefined && (typeof expectedRevision !== 'string' || expectedRevision.length === 0))
+    return null
+  const revision = expectedRevision === undefined ? {} : { expectedRevision }
+  const count = input[webMcp.WebMcpSchemaField.Value]
+  const completed = input[webMcp.WebMcpSchemaField.Completed]
+  const idolId = input[webMcp.WebMcpSchemaField.IdolId]
+  const cardId = input[webMcp.WebMcpSchemaField.CardId]
+  const trackerId = input[webMcp.WebMcpSchemaField.TrackerId]
+  const metric = input[webMcp.WebMcpSchemaField.Metric]
+  const achievementId = input[webMcp.WebMcpSchemaField.AchievementId]
+  const adjustmentId = input[webMcp.WebMcpSchemaField.AdjustmentId]
+  const stageIndex = input[webMcp.WebMcpSchemaField.StageIndex]
+  const starIndex = input[webMcp.WebMcpSchemaField.StarIndex]
+  switch (action) {
+    case webMcp.AchievementUpdateAction.Production:
+    case webMcp.AchievementUpdateAction.OtherTask:
+      return typeof trackerId === 'string' &&
+        trackerId.length > 0 &&
+        typeof count === 'number' &&
+        Number.isSafeInteger(count) &&
+        count >= 0
+        ? { action, trackerId, value: count, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.Idol:
+      return isEnumValue(idolId, enums.IdolId) &&
+        isEnumValue(metric, enums.IdolAchievementMetric) &&
+        typeof count === 'number' &&
+        Number.isSafeInteger(count) &&
+        count >= 0
+        ? { action, idolId, metric, value: count, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.PIdol:
+      return typeof cardId === 'string' &&
+        cardId.length > 0 &&
+        isEnumValue(achievementId, enums.PIdolCardAchievementId) &&
+        typeof completed === 'boolean'
+        ? { action, cardId, achievementId, completed, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.PIdolAll:
+      return typeof cardId === 'string' && cardId.length > 0 && typeof completed === 'boolean'
+        ? { action, cardId, completed, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.RoadStar:
+      return isEnumValue(idolId, enums.IdolId) &&
+        typeof stageIndex === 'number' &&
+        Number.isInteger(stageIndex) &&
+        stageIndex >= 0 &&
+        stageIndex < constant.ROAD_STAGE_COUNT_PER_IDOL &&
+        typeof starIndex === 'number' &&
+        Number.isInteger(starIndex) &&
+        starIndex >= 0 &&
+        starIndex < constant.ROAD_STARS_PER_STAGE &&
+        typeof completed === 'boolean'
+        ? { action, idolId, stageIndex, starIndex, completed, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.RoadAll:
+      return isEnumValue(idolId, enums.IdolId) && typeof completed === 'boolean'
+        ? { action, idolId, completed, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.ProductionReward:
+      return isEnumValue(adjustmentId, enums.ProductionRunRewardAdjustmentId) &&
+        typeof count === 'number' &&
+        Number.isSafeInteger(count) &&
+        count >= 0
+        ? { action, adjustmentId, value: count, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.TargetLevel:
+      return typeof count === 'number' &&
+        Number.isSafeInteger(count) &&
+        count >= 1 &&
+        count <= constant.PRODUCER_LEVEL_CAP
+        ? { action, value: count, ...revision }
+        : null
+    case webMcp.AchievementUpdateAction.OtherExp:
+      return typeof count === 'number' && Number.isSafeInteger(count) ? { action, value: count, ...revision } : null
+  }
 }

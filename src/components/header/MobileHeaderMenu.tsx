@@ -1,10 +1,8 @@
-/**
- * スマホヘッダー右上に表示するドロップダウンメニュー
- */
+/** スマホヘッダー右上に表示するドロップダウンメニュー */
 import { useTranslation } from 'react-i18next'
 import * as navigationStyleUtils from '../../utils/navigationStyles'
 import { MenuIcon } from '../ui/icons'
-import { DeferredMoreMenuItems } from './DeferredMoreMenuItems'
+import { MoreMenuItems } from './MoreMenuItems'
 import { NavigationActionButton } from './NavigationActionButton'
 import { createPrimaryNavigationItems } from './navigationItems'
 import type { MobilePanelNavigation, MoreMenuActions } from './navigationTypes'
@@ -98,7 +96,7 @@ export function MobileHeaderMenu({
             ))}
             <div className="my-1 border-t border-slate-100" />
             {/* その他のメニュー項目 */}
-            <DeferredMoreMenuItems actions={moreMenuActions} onAfterAction={close} />
+            <MoreMenuItems actions={moreMenuActions} onAfterAction={close} />
           </div>
         </>
       )}

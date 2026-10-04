@@ -27,6 +27,10 @@ import {
 import { loadUnitSimulatorSettings } from '../../utils/unitSimulatorSettings'
 import { createTestCommandStatePort } from '../fixtures/application'
 import { createCompleteExportValues } from '../fixtures/exportData'
+import {
+  compactAchievementCalculatorProgress,
+  createAchievementCalculatorProgress,
+} from '../../utils/achievementCalculatorProgress'
 import { importUserDataText } from './importHelpers'
 
 async function savePresetThroughCommand(name: string, settings: ScoreSettings) {
@@ -311,6 +315,9 @@ describe('importUserDataText', () => {
       }
       if (key === constant.FILTER_STORAGE_KEY && !includeV2Settings) {
         expected.cardExclusionFilters = []
+      }
+      if (key === constant.ACHIEVEMENT_CALCULATOR_STORAGE_KEY) {
+        expected = compactAchievementCalculatorProgress(createAchievementCalculatorProgress(expected))
       }
       expect(JSON.parse(localStorage.getItem(key) ?? 'null')).toEqual(expected)
     }

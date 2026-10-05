@@ -50,11 +50,11 @@ export function SpinnerInput({
   const decimals = step < 1 ? Math.max(0, -Math.floor(Math.log10(step))) : 0
 
   // 直接入力の途中でも、表示中の有限値を基準に増減する。空欄や不正入力は直近の確定値を使う
-  const changeValue = (direction: number) => {
+  const changeValue = (direction: number, multiplier = 1) => {
     const draft = inputRef.current?.value ?? ''
     const parsed = draft.trim() === '' ? NaN : Number(draft)
     const current = Number.isFinite(parsed) ? parsed : displayValue
-    const changed = current + direction * step
+    const changed = current + direction * step * multiplier
     const rounded = decimals > 0 ? parseFloat(changed.toFixed(decimals)) : changed
     const next = Math.max(min, max === undefined ? rounded : Math.min(max, rounded))
     handleValueChange(next)
@@ -65,8 +65,8 @@ export function SpinnerInput({
   }
   const decrementDisabled = disabled || displayValue <= min
   const incrementDisabled = disabled || (max !== undefined && displayValue >= max)
-  const decrementPress = usePressRepeat(() => changeValue(-1), decrementDisabled)
-  const incrementPress = usePressRepeat(() => changeValue(1), incrementDisabled)
+  const decrementPress = usePressRepeat((multiplier) => changeValue(-1, multiplier), decrementDisabled)
+  const incrementPress = usePressRepeat((multiplier) => changeValue(1, multiplier), incrementDisabled)
   const defaultInputClassName = `${constant.SPINNER_INPUT} ${fluid ? 'min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none' : ''} ${disabled ? constant.INPUT_LOCKED : 'border-slate-200'}`
 
   return (

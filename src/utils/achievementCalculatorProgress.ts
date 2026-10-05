@@ -31,10 +31,11 @@ export function createAchievementCalculatorProgress(savedValue?: unknown): Achie
     : {}
   const targetLevel = Math.max(
     1,
-    normalizeNonNegativeInteger(saved.producerLevel, constant.PRODUCER_LEVEL_CAP) ??
+    normalizeNonNegativeInteger(saved.producerLevel, constant.PRODUCER_LEVEL_TARGET_MAX) ??
       constant.PRODUCER_LEVEL_DEFAULT_TARGET,
   )
   const otherExp = normalizeInteger(saved.otherExp) ?? 0
+  const oneStepSpinner = typeof saved.oneStepSpinner === 'boolean' ? saved.oneStepSpinner : false
   const production: Record<string, number> = {}
   const idols: Record<string, Record<string, number>> = {}
   const idolRoad: Record<string, Record<string, boolean[]>> = {}
@@ -122,6 +123,7 @@ export function createAchievementCalculatorProgress(savedValue?: unknown): Achie
     productionRewardAdjustments,
     otherExp,
     producerLevel: targetLevel,
+    oneStepSpinner,
   }
 }
 
@@ -148,9 +150,10 @@ export function isAchievementCalculatorProgress(value: unknown): value is Achiev
     Object.values(value.productionRewardAdjustments).every(isNonNegativeSafeInteger) &&
     typeof value.otherExp === 'number' &&
     Number.isSafeInteger(value.otherExp) &&
+    typeof value.oneStepSpinner === 'boolean' &&
     isNonNegativeSafeInteger(value.producerLevel) &&
     value.producerLevel >= 1 &&
-    value.producerLevel <= constant.PRODUCER_LEVEL_CAP
+    value.producerLevel <= constant.PRODUCER_LEVEL_TARGET_MAX
   )
 }
 
@@ -180,6 +183,7 @@ export function compactAchievementCalculatorProgress(
     productionRewardAdjustments: omitZeroValues(progress.productionRewardAdjustments),
     otherExp: progress.otherExp,
     producerLevel: progress.producerLevel,
+    oneStepSpinner: progress.oneStepSpinner,
   }
   const { idols, idolRoad, pIdolCards } = stored
   for (const [id, values] of Object.entries(progress.idols)) {
@@ -209,10 +213,13 @@ export function compactAchievementCalculatorProgress(
  * @returns 数値・条件・ステージ番号が正しい場合はtrue
  */
 export function isStoredAchievementCalculatorProgress(value: unknown): boolean {
-  if (!isRecord(value) || !isRecord(value.idolRoad)) return false
+  if (!isRecord(value)) return false
+  // 設定追加前のバックアップにも対応し、省略されている時だけ既定値を補う
+  const normalized = value.oneStepSpinner === undefined ? { ...value, oneStepSpinner: false } : value
+  if (!isRecord(normalized.idolRoad)) return false
   // 星以外は同じ契約を使い、ステージの表現だけを保存形式に合わせて検証する
-  if (!isAchievementCalculatorProgress({ ...value, idolRoad: {} })) return false
-  return Object.values(value.idolRoad).every((stages) => {
+  if (!isAchievementCalculatorProgress({ ...normalized, idolRoad: {} })) return false
+  return Object.values(normalized.idolRoad).every((stages) => {
     // 配列で保存済みの記録も取り込めるよう、検証後の復元で番号付きの記録へ揃える
     if (Array.isArray(stages))
       return stages.length <= constant.ROAD_STAGE_COUNT_PER_IDOL && stages.every(isRoadStageStars)

@@ -930,7 +930,7 @@ export function parseAchievementCommand(value: unknown): WebMcpAchievementComman
       return typeof count === 'number' &&
         Number.isSafeInteger(count) &&
         count >= 1 &&
-        count <= constant.PRODUCER_LEVEL_CAP
+        count <= constant.PRODUCER_LEVEL_TARGET_MAX
         ? { action, value: count, ...revision }
         : null
     case webMcp.AchievementUpdateAction.OtherExp:

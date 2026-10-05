@@ -1,5 +1,5 @@
 /** EXP付きのアイドル選択を、左右ボタンと横スクロールで表示する */
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import { useLoopingHorizontalScroll } from '../../hooks/useLoopingHorizontalScroll'
@@ -33,10 +33,10 @@ export function IdolAchievementSelector({ items, selectedId, onSelect }: IdolAch
     if (viewport) scrollBy(direction * Math.max(160, viewport.clientWidth * 0.75))
   }
 
-  // タブ再表示や外部からの選択変更でも、選択中のアイドルが画面外に隠れないようにする
-  useEffect(() => {
+  // タブへ戻った直後の描画前に位置を合わせ、選択中のアイドルを見失わないようにする
+  useLayoutEffect(() => {
     const selected = middleCopyRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
-    if (selected) revealElement(selected)
+    if (selected) revealElement(selected, 'auto')
   }, [selectedId, middleCopyRef, revealElement])
 
   return (

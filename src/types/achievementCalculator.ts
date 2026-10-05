@@ -122,6 +122,8 @@ export interface AchievementCalculatorProgress {
   otherExp: number
   /** 入力目標だけを保存し、現在PLvは獲得済みEXPから毎回導出する */
   producerLevel: number
+  /** アチーブメントの+/-ボタンを1ずつ増減する設定 */
+  oneStepSpinner: boolean
 }
 
 /** 現在値に対応するアチーブメント報酬の集計 */
@@ -158,6 +160,8 @@ export interface StoredAchievementCalculatorProgress {
   otherExp: number
   /** 既定値の変更で記録済み目標が変わらないよう、目標は常に保持する */
   producerLevel: number
+  /** アチーブメントの+/-を1ずつ増減する設定 */
+  oneStepSpinner?: boolean
 }
 
 /** 保存処理の結果を待たずに画面から呼ぶ、入力値ごとの更新操作 */
@@ -186,6 +190,8 @@ export interface AchievementCalculatorControls {
   setTargetProducerLevel: (value: number) => void
   /** 登録済み報酬以外の補正EXPを更新する */
   setOtherExp: (value: number) => void
+  /** +/-ボタンを1ずつ増減する設定を更新する */
+  setOneStepSpinner: (value: boolean) => void
 }
 
 /** 各タブで共有する表示集計と達成記録の更新操作 */
@@ -194,6 +200,8 @@ export interface AchievementCalculatorTabProps {
   summary: ReturnType<typeof useAchievementCalculatorSummary>
   /** アプリ全体で共有する入力状態と、保存を伴う項目ごとの更新操作 */
   controls: AchievementCalculatorControls
+  /** アチーブメントスピナーを報酬段階ではなく1刻みで増減するか */
+  oneStepSpinner: boolean
 }
 
 /** アイドル選択ボタンに表示する、翻訳済み名称と達成集計 */

@@ -135,21 +135,25 @@ export function useLoopingHorizontalScroll() {
     })
   }, [])
 
-  // 選択した候補と同じ表示を持つ列のうち、現在の表示範囲に最も近い位置へ移動する
-  const revealElement = useCallback(
-    (element: HTMLElement) => {
-      const viewport = viewportRef.current
-      const cycleWidth = cycleWidthRef.current
-      if (!viewport || cycleWidth <= 0) return
-      let left = element.getBoundingClientRect().left - viewport.getBoundingClientRect().left
-      while (left + element.offsetWidth <= 0) left += cycleWidth
-      while (left >= viewport.clientWidth) left -= cycleWidth
-      if (left < 0) scrollBy(left)
-      else if (left + element.offsetWidth > viewport.clientWidth)
-        scrollBy(left + element.offsetWidth - viewport.clientWidth)
-    },
-    [scrollBy],
-  )
+  // 選択候補と同じ表示を持つ列のうち、表示範囲に最も近い位置へ指定した動きで移動する
+  const revealElement = useCallback((element: HTMLElement, behavior: ScrollBehavior = 'smooth') => {
+    const viewport = viewportRef.current
+    const cycleWidth = cycleWidthRef.current
+    if (!viewport || cycleWidth <= 0) return
+    let left = element.getBoundingClientRect().left - viewport.getBoundingClientRect().left
+    while (left + element.offsetWidth <= 0) left += cycleWidth
+    while (left >= viewport.clientWidth) left -= cycleWidth
+    const distance =
+      left < 0
+        ? left
+        : left + element.offsetWidth > viewport.clientWidth
+          ? left + element.offsetWidth - viewport.clientWidth
+          : 0
+    if (distance === 0) return
+    const effectiveBehavior =
+      behavior === 'smooth' && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : behavior
+    viewport.scrollBy({ left: distance, behavior: effectiveBehavior })
+  }, [])
 
   return { viewportRef, middleCopyRef, positionDotsRef, scrollBy, revealElement }
 }

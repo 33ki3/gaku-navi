@@ -1,4 +1,5 @@
 /** 選択アイドルのTrue End・基本・Pアイドルの達成項目を表示する */
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
@@ -19,7 +20,7 @@ import { PIdolAchievementCard } from './PIdolAchievementCard'
  * @param props 選択アイドルの集計と、独立した条件の更新操作
  * @returns True End・基本・Pアイドルの入力領域。対象がない場合はnull
  */
-export function IdolAchievementsTab({ summary, controls }: AchievementCalculatorTabProps) {
+export function IdolAchievementsTab({ summary, controls, oneStepSpinner }: AchievementCalculatorTabProps) {
   const { t } = useTranslation()
   const {
     selectedIdol,
@@ -32,6 +33,15 @@ export function IdolAchievementsTab({ summary, controls }: AchievementCalculator
     selectedBasicTotalExp,
   } = summary
   const { progress, setIdolValue, setPIdolCardAchievement, setPIdolCardAchievements } = controls
+  // 選択中アイドルと更新先が変わらない間は同じ更新関数を使う
+  const valueChangeByMetric = useMemo(() => {
+    if (!selectedIdol) return new Map()
+    return new Map(
+      selectedIdol.trackers.map(
+        ({ metric }) => [metric, (value: number) => setIdolValue(selectedIdol.id, metric, value)] as const,
+      ),
+    )
+  }, [selectedIdol, setIdolValue])
   // 選択先がマスタに存在しない場合は、別アイドルの記録を表示・編集しない
   if (!selectedIdol) return null
   return (
@@ -95,7 +105,8 @@ export function IdolAchievementsTab({ summary, controls }: AchievementCalculator
                     value={progress.idols[selectedIdol.id]?.[tracker.metric] ?? 0}
                     milestones={getIdolAchievementMilestones(tracker)}
                     allowZeroExpProgression
-                    onValueChange={(value) => setIdolValue(selectedIdol.id, tracker.metric, value)}
+                    oneStepSpinner={oneStepSpinner}
+                    onValueChange={valueChangeByMetric.get(tracker.metric)}
                   />
                 ))}
             </div>

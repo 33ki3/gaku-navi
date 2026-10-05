@@ -697,7 +697,7 @@ export const achievementActionProperties = {
   /** PLvの進捗目標を設定し、獲得済みEXPは変更しない */
   [webMcp.AchievementUpdateAction.TargetLevel]: {
     /** 更新後の整数値。各操作の範囲制約に従う */
-    [webMcp.WebMcpSchemaField.Value]: { type: 'integer', minimum: 1, maximum: constant.PRODUCER_LEVEL_CAP },
+    [webMcp.WebMcpSchemaField.Value]: { type: 'integer', minimum: 1, maximum: constant.PRODUCER_LEVEL_TARGET_MAX },
   },
   /** アチーブ以外のEXPを補正し、負数は累計から差し引く */
   [webMcp.AchievementUpdateAction.OtherExp]: {

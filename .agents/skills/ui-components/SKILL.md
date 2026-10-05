@@ -11,6 +11,7 @@ description: gaku-navi の UI/UX、React コンポーネント、Tailwind スタ
 
 - Tailwind CSS と既存の Grid / Flexbox パターンを使う。
 - 表示文字列は `src/i18n/locales/ja.json` で管理し、コンポーネントでは `useTranslation()` と `t()` を使う。
+- 単位（EXP など）や値の組み合わせ（獲得済み / 合計など）も翻訳キーで管理し、JSXへ表示文字列を直接書かない。装飾記号は既存のアイコンを優先し、文字として表示する場合は翻訳キーを使う。
 - マスタデータと共有定数は `src/data/` と `src/constant/` から取得し、複数画面へ重複定義しない。
 - 型は `src/types/`、UI 専用設定は `src/data/ui/` または `src/constant/` に置く。
 - 検索・フィルターの責務は既存の `src/hooks/useFilteredCards.ts` と周辺 hooks に集約する。

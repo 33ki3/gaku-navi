@@ -1,4 +1,5 @@
 /** アチーブメント1項目の現在値と、到達済み・次のEXP報酬を表示する */
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import { usePressRepeat } from '../../hooks/usePressRepeat'
@@ -20,6 +21,8 @@ interface AchievementTrackerCardProps {
   milestones: readonly AchievementMilestone[]
   /** EXPがない項目でも達成段階を操作できるようにする */
   allowZeroExpProgression?: boolean
+  /** 有効時は+/-で報酬段階を飛ばさず、現在値を1ずつ増減する */
+  oneStepSpinner?: boolean
   /** 指定しない場合は入力操作のない集計表示にする */
   onValueChange?: (value: number) => void
 }
@@ -29,12 +32,13 @@ interface AchievementTrackerCardProps {
  * @param props 累計現在値・段階報酬と、段階を移動する更新通知先
  * @returns 獲得EXP、前後段階への入力操作と達成進捗を示すカード
  */
-export function AchievementTrackerCard({
+export const AchievementTrackerCard = memo(function AchievementTrackerCard({
   title,
   metric,
   value,
   milestones,
   allowZeroExpProgression = false,
+  oneStepSpinner = false,
   onValueChange,
 }: AchievementTrackerCardProps) {
   const { t } = useTranslation()
@@ -46,24 +50,43 @@ export function AchievementTrackerCard({
     (allowZeroExpProgression ? getNextAchievementMilestone(milestones, value, true) : undefined)
   const targetValue = Math.max(0, ...milestones.map(({ threshold }) => threshold))
   // 現在値より小さい直近の報酬条件へ戻す。条件5・40・100の場合、60は40へ、40は5へ戻す
-  const decreaseToPreviousMilestone = () => {
-    const previousValue = milestones.reduce(
-      (previous, { threshold, exp }) =>
-        threshold < value && (allowZeroExpProgression || exp > 0) ? Math.max(previous, threshold) : previous,
-      0,
-    )
-    onValueChange?.(previousValue)
+  const decreaseToPreviousMilestone = (multiplier = 1) => {
+    let nextValue = value
+    // 加速中は報酬境界を複数回たどり、最後に到達した境界だけを保存する
+    for (let step = 0; step < multiplier; step += 1) {
+      nextValue = milestones.reduce(
+        (previous, { threshold, exp }) =>
+          threshold < nextValue && (allowZeroExpProgression || exp > 0) ? Math.max(previous, threshold) : previous,
+        0,
+      )
+      if (nextValue === 0) break
+    }
+    onValueChange?.(nextValue)
+  }
+  // 1刻み設定では通常1ずつ、長押し中は同じ入力を加速段階数だけ反映する
+  const decreaseByStep = (multiplier = 1) => onValueChange?.(Math.max(0, value - multiplier))
+  const increaseByStep = (multiplier = 1) => onValueChange?.(Math.min(targetValue, value + multiplier))
+  const increaseToNextMilestone = (multiplier = 1) => {
+    let nextValue = value
+    // 長押し中は報酬境界を順に進み、到達した最後の境界を一度だけ反映する
+    for (let step = 0; step < multiplier; step += 1) {
+      const nextMilestone = getNextAchievementMilestone(milestones, nextValue, allowZeroExpProgression)
+      if (!nextMilestone) break
+      nextValue = Math.min(targetValue, nextMilestone.threshold)
+    }
+    onValueChange?.(nextValue)
   }
   // 全条件の達成と全EXP獲得を分け、末尾に報酬なしの条件がある場合も表示を保つ
   const isCompleted = targetValue > 0 && value >= targetValue
   const hasAllExp = isCompleted || (summary.totalExp > 0 && summary.earnedExp >= summary.totalExp)
   // 通常タップと長押しを共通化し、上下限や表示専用カードでは操作を無効にする
-  const decreasePress = usePressRepeat(decreaseToPreviousMilestone, !onValueChange || value <= 0)
+  const decreasePress = usePressRepeat(
+    oneStepSpinner ? decreaseByStep : decreaseToPreviousMilestone,
+    !onValueChange || value <= 0,
+  )
   const increasePress = usePressRepeat(
-    () => {
-      if (nextMilestone) onValueChange?.(Math.min(targetValue, nextMilestone.threshold))
-    },
-    !onValueChange || nextMilestone === undefined || value >= targetValue,
+    oneStepSpinner ? increaseByStep : increaseToNextMilestone,
+    !onValueChange || value >= targetValue || (!oneStepSpinner && nextMilestone === undefined),
   )
 
   return (
@@ -94,7 +117,12 @@ export function AchievementTrackerCard({
                 tabIndex={-1}
                 {...decreasePress}
                 disabled={value <= 0}
-                aria-label={t('achievement_calculator.form.decrease_to_previous_reward', { title })}
+                aria-label={t(
+                  oneStepSpinner
+                    ? 'achievement_calculator.form.decrease_value'
+                    : 'achievement_calculator.form.decrease_to_previous_reward',
+                  { title },
+                )}
                 className={`${constant.ACHIEVEMENT_SPINNER_BUTTON_CLASS} touch-none select-none`}
               >
                 {t('ui.symbol.minus')}
@@ -113,11 +141,13 @@ export function AchievementTrackerCard({
                 type="button"
                 tabIndex={-1}
                 {...increasePress}
-                disabled={value >= targetValue || !nextMilestone}
+                disabled={value >= targetValue || (!oneStepSpinner && !nextMilestone)}
                 aria-label={t(
-                  nextMilestone
-                    ? 'achievement_calculator.form.increase_to_next_reward'
-                    : 'achievement_calculator.form.increase_value',
+                  oneStepSpinner
+                    ? 'achievement_calculator.form.increase_value'
+                    : nextMilestone
+                      ? 'achievement_calculator.form.increase_to_next_reward'
+                      : 'achievement_calculator.form.increase_value',
                   { title },
                 )}
                 className={`${constant.ACHIEVEMENT_SPINNER_BUTTON_CLASS} touch-none select-none`}
@@ -130,7 +160,7 @@ export function AchievementTrackerCard({
       )}
 
       {/* 入力値に対する達成率 */}
-      <ProgressBar label={title} value={value} max={targetValue} className="mt-2" />
+      <ProgressBar label={title} value={value} max={targetValue} onValueChange={onValueChange} className="mt-2" />
 
       {/* 次の報酬条件または全獲得の案内と、現在値／達成上限 */}
       <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
@@ -154,4 +184,4 @@ export function AchievementTrackerCard({
       </div>
     </article>
   )
-}
+})

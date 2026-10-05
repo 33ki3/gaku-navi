@@ -8,6 +8,9 @@ import type {
 } from '../types/achievementCalculator'
 import type { IdolAchievementMetric } from '../types/enums'
 
+/** 最後に個別の必要EXPを定義したPLv。それ以降は最後の必要EXPを繰り返し適用する */
+const finalProducerLevelRequirementBoundary = Math.max(...Object.keys(data.PRODUCER_LEVEL_EXP_REQUIREMENTS).map(Number))
+
 /**
  * True Endセクションに表示する項目かを共通ルールから判定する
  * @param metric アイドル固有の達成条件の識別子
@@ -89,8 +92,8 @@ export function calculateProducerLevelFromEarnedExp(earnedExp: number): {
 } {
   let remainingExp = Number.isFinite(earnedExp) ? Math.max(0, Math.floor(earnedExp)) : 0
 
-  // レベルごとの必要量を順に差し引き、初めて不足するレベルで残りEXPを求める
-  for (let level = 1; level < constant.PRODUCER_LEVEL_CAP; level++) {
+  // 個別定義がある範囲では各レベルの必要量を引き、最初に不足する境界を返す
+  for (let level = 1; level < finalProducerLevelRequirementBoundary; level++) {
     const requirement = getProducerLevelExpRequirement(level)
     if (remainingExp < requirement) {
       return { currentLevel: level, remainingExpToNextLevel: requirement - remainingExp }
@@ -98,18 +101,28 @@ export function calculateProducerLevelFromEarnedExp(earnedExp: number): {
     remainingExp -= requirement
   }
 
-  return { currentLevel: constant.PRODUCER_LEVEL_CAP, remainingExpToNextLevel: 0 }
+  // 最終定義以降は同じ必要EXPが続くため、除算で現在PLvを求めて上限を設けない
+  const repeatedRequirement = getProducerLevelExpRequirement(finalProducerLevelRequirementBoundary)
+  const additionalLevels = Math.floor(remainingExp / repeatedRequirement)
+  const earnedWithinCurrentLevel = remainingExp % repeatedRequirement
+  return {
+    currentLevel: finalProducerLevelRequirementBoundary + additionalLevels,
+    remainingExpToNextLevel: repeatedRequirement - earnedWithinCurrentLevel,
+  }
 }
 
 /**
  * PLv1から指定レベルへ到達するまでの累計必要EXPを求める
- * @param targetLevel 到達先のPLv。設定可能な上限内の値を渡す
+ * @param targetLevel 到達先のPLv。最終定義後は同じ必要EXPを各レベルへ適用する
  * @returns PLv1から到達先までのレベル間必要EXPの合計
  */
 function sumLevelRequirements(targetLevel: number): number {
   let total = 0
-  for (let level = 1; level < targetLevel; level++) total += getProducerLevelExpRequirement(level)
-  return total
+  // 個別設定の区間だけを足し、最終境界より先は同じ必要EXPの積でまとめる
+  const lastExplicitLevel = Math.min(targetLevel - 1, finalProducerLevelRequirementBoundary - 1)
+  for (let level = 1; level <= lastExplicitLevel; level++) total += getProducerLevelExpRequirement(level)
+  const repeatedLevelCount = Math.max(0, targetLevel - finalProducerLevelRequirementBoundary)
+  return total + repeatedLevelCount * getProducerLevelExpRequirement(finalProducerLevelRequirementBoundary)
 }
 
 /**
@@ -131,17 +144,13 @@ export function calculateProducerLevelProgress(
   expToTargetLevel: number
   targetProgressPercent: number
 } {
-  const level = Math.min(constant.PRODUCER_LEVEL_CAP, Math.max(1, Math.floor(currentLevel)))
-  const target = Math.min(constant.PRODUCER_LEVEL_CAP, Math.max(1, Math.floor(targetLevel)))
-  const nextLevelRequirement = level < constant.PRODUCER_LEVEL_CAP ? getProducerLevelExpRequirement(level) : 0
-  const nextLevelRemainingExp =
-    level < constant.PRODUCER_LEVEL_CAP
-      ? Math.min(nextLevelRequirement, Math.max(0, Math.floor(remainingExpToNextLevel)))
-      : 0
+  const level = Math.max(1, Math.floor(currentLevel))
+  const target = Math.min(constant.PRODUCER_LEVEL_TARGET_MAX, Math.max(1, Math.floor(targetLevel)))
+  const nextLevelRequirement = getProducerLevelExpRequirement(level)
+  const nextLevelRemainingExp = Math.min(nextLevelRequirement, Math.max(0, Math.floor(remainingExpToNextLevel)))
   // レベル内で獲得済みの分を足し戻し、目標と同じ累計EXPの基準に揃える
   const expAtCurrentLevel = sumLevelRequirements(level)
-  const earnedWithinCurrentLevel =
-    level < constant.PRODUCER_LEVEL_CAP ? nextLevelRequirement - nextLevelRemainingExp : 0
+  const earnedWithinCurrentLevel = nextLevelRequirement - nextLevelRemainingExp
   const currentTotalExp = expAtCurrentLevel + earnedWithinCurrentLevel
   const targetTotalExp = sumLevelRequirements(target)
   const expToTargetLevel = Math.max(0, targetTotalExp - currentTotalExp)

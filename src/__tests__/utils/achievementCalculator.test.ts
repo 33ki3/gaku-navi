@@ -160,14 +160,14 @@ describe('PLvの必要EXP', () => {
       currentLevel: 2,
       remainingExpToNextLevel: 120,
     })
-    // PLv55以降のレベル間EXPも定義どおり加算し、上限999まで到達する累計を求める
-    const total = Array.from({ length: constant.PRODUCER_LEVEL_CAP - 1 }, (_, index) => index + 1).reduce(
+    // PLv55以降の必要EXPを繰り返し加算し、設定上限を超えた現在PLvも求める
+    const total = Array.from({ length: constant.PRODUCER_LEVEL_TARGET_MAX }, (_, index) => index + 1).reduce(
       (sum, level) => sum + calculator.getProducerLevelExpRequirement(level),
       0,
     )
     expect(calculator.calculateProducerLevelFromEarnedExp(total)).toEqual({
-      currentLevel: constant.PRODUCER_LEVEL_CAP,
-      remainingExpToNextLevel: 0,
+      currentLevel: constant.PRODUCER_LEVEL_TARGET_MAX + 1,
+      remainingExpToNextLevel: 70_000,
     })
     expect(calculator.calculateProducerLevelProgress(1, 40, 2)).toEqual({
       nextLevelEarnedExp: 0,

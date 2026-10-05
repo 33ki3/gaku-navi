@@ -19,6 +19,7 @@ description: gaku-navi の TypeScript / React コード、import、コメント�
   - `Kind`: `BreakdownRowKind` のように分類・種別が概念名や判別子として必要な場合に使う。`Type` の代わりとして機械的に付けない。`BreakdownRowKindType` では `Kind` が概念名、`Type` が enum 相当値の命名で、役割が異なる。
   - 接尾辞なし: `LessonPart`・`HifStage`・`CountCustomFilter` のように名詞だけで意味が明確なら汎用接尾辞を足さない。
 - 表示文字列は i18n で管理し、動的な i18n キーをテンプレートリテラルで組み立てない。
+- 単位（EXP など）や値の組み合わせ（獲得済み / 合計など）も翻訳キーで管理し、JSXへ表示文字列を直接書かない。装飾記号は既存のアイコンを優先し、文字として表示する場合は翻訳キーを使う。
 - `as SomeType` は `src/data/` の TS ラッパーに限って使用し、コンポーネントや utils では原則使わない。
 
 ## 実装判断
@@ -49,7 +50,7 @@ import 宣言の並びはエディタの TypeScript `Organize Imports` で揃え
 コメントを追加・変更する場合は [references/comments.md](references/comments.md) を読む。要点は次のとおり。
 
 - コードだけでは分からない責務、制約、理由を日本語で説明する。コードの逐語訳や変更履歴は書かない。
-- `Q:`、`TODO:`、回答文、レビュー相手へのメッセージをソースへ残さない。必要なら `todo-management` を使う。
+- `Q:` / `TODO:` はコードから削除し、レビュー返信や対応報告をコードコメントに書かない。必要な項目は `todo-management` に従って管理する。
 - 同じ説明をファイル、JSDoc、インラインコメントへ重複させない。
 - 処理を持つファイルには先頭に責務の概要を付け、複数段階の処理には各ブロックの目的・理由を説明するコメントを周辺ファイルと同じ粒度で付ける。
 

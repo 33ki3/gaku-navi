@@ -166,8 +166,8 @@ export const CANDIDATE_LIMIT_MAX = 100
 
 /** プロデュース1回あたりの基準EXP */
 export const PRODUCTION_RUN_BASE_EXP = 50
-/** 計算機で設定できるPLvの上限 */
-export const PRODUCER_LEVEL_CAP = 999
+/** 目標PLvとして設定できる最大値 */
+export const PRODUCER_LEVEL_TARGET_MAX = 999
 /** 初期状態の目標PLv */
 export const PRODUCER_LEVEL_DEFAULT_TARGET = 80
 
@@ -182,6 +182,19 @@ export const ROAD_MAX_STARS_PER_IDOL = ROAD_STAGE_COUNT_PER_IDOL * ROAD_STARS_PE
 export const PRESS_REPEAT_DELAY_MS = 400
 /** 長押し中の繰り返し間隔 */
 export const PRESS_REPEAT_INTERVAL_MS = 90
+/** 狭い画面で使う長押しの初期間隔 */
+export const PRESS_REPEAT_NARROW_VIEWPORT_INTERVAL_MS = 120
+/** 長押し開始から繰り返しを加速し始めるまでの時間 */
+export const PRESS_REPEAT_ACCELERATION_START_MS = 1000
+/** 加速開始後の長押し時間に対する二次曲線の増加率 */
+export const PRESS_REPEAT_ACCELERATION_CURVE_FACTOR = 10
+/** 長押し中に1回で進める最大段階数 */
+export const PRESS_REPEAT_MAX_MULTIPLIER = 997
+
+/** 進捗スライダーの操作を親の集計へ反映する間隔 */
+export const PROGRESS_SLIDER_SYNC_INTERVAL_MS = 50
+/** 狭い画面ではスライダーの親集計を間引く間隔 */
+export const PROGRESS_SLIDER_NARROW_VIEWPORT_SYNC_INTERVAL_MS = 120
 
 /** 循環アイドル選択の中央列。前後に同数の補助列を置き、ネイティブの慣性スクロール用の余白を持たせる */
 export const IDOL_SELECTOR_MIDDLE_COPY_INDEX = 5

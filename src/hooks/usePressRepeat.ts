@@ -5,14 +5,14 @@ import * as constant from '../constant'
 
 /**
  * 通常クリックを保ち、長押し後のクリックによる二重反映を防ぐ
- * @param action 通常クリックと長押しの各回で実行する、最新の更新操作
+ * @param action 通常クリックまたは長押しの各回で実行する最新の更新操作と段階数
  * @param disabled 上下限などにより操作を無効にし、継続中の長押しも停止するか
  * @returns ボタンへ渡すポインターとクリックのイベントハンドラー
  */
-export function usePressRepeat(action: () => void, disabled = false) {
+export function usePressRepeat(action: (multiplier: number) => void, disabled = false) {
   const actionRef = useRef(action)
   const delayRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  const repeatTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const repeatedRef = useRef(false)
 
   // 長押し中も最新の値を使い、押し始めた段階を繰り返し設定しないようにする
@@ -23,9 +23,9 @@ export function usePressRepeat(action: () => void, disabled = false) {
   // 指を離す以外に、画面のフォーカス喪失やアンマウントでもタイマーを必ず止める
   const stop = useCallback(function stopPress() {
     clearTimeout(delayRef.current)
-    clearInterval(intervalRef.current)
+    clearTimeout(repeatTimerRef.current)
     delayRef.current = undefined
-    intervalRef.current = undefined
+    repeatTimerRef.current = undefined
     window.removeEventListener('blur', stopPress)
     window.removeEventListener('pointerup', stopPress)
     window.removeEventListener('pointercancel', stopPress)
@@ -44,15 +44,33 @@ export function usePressRepeat(action: () => void, disabled = false) {
     repeatedRef.current = false
     event.currentTarget.setPointerCapture?.(event.pointerId)
     window.addEventListener('blur', stop, { once: true })
-    // OSのメニュー表示やポインターの捕捉解除でも、ボタン外の終了通知で確実に停止する
+    // ボタン外で指を離した場合も、ポインター終了を確実に検知する
     window.addEventListener('pointerup', stop, { once: true })
     window.addEventListener('pointercancel', stop, { once: true })
     document.addEventListener('visibilitychange', stop, { once: true })
+    const isNarrowViewport = window.innerWidth <= constant.BREAKPOINT_2COL
+    const repeatInterval = isNarrowViewport
+      ? constant.PRESS_REPEAT_NARROW_VIEWPORT_INTERVAL_MS
+      : constant.PRESS_REPEAT_INTERVAL_MS
+    const pointerDownAt = performance.now()
+    // 更新頻度を保ち、長押し時間の二次曲線で増加量をなめらかに上げる
+    const scheduleNextRepeat = () => {
+      repeatTimerRef.current = setTimeout(() => {
+        const heldDuration = performance.now() - pointerDownAt
+        const acceleratedSeconds = Math.max(0, (heldDuration - constant.PRESS_REPEAT_ACCELERATION_START_MS) / 1000)
+        const multiplier = Math.min(
+          constant.PRESS_REPEAT_MAX_MULTIPLIER,
+          Math.round(1 + constant.PRESS_REPEAT_ACCELERATION_CURVE_FACTOR * acceleratedSeconds ** 2),
+        )
+        actionRef.current(multiplier)
+        scheduleNextRepeat()
+      }, repeatInterval)
+    }
     // 短いタップではクリックだけを実行し、長押しが確定してから繰り返す
     delayRef.current = setTimeout(() => {
       repeatedRef.current = true
-      actionRef.current()
-      intervalRef.current = setInterval(() => actionRef.current(), constant.PRESS_REPEAT_INTERVAL_MS)
+      actionRef.current(1)
+      scheduleNextRepeat()
     }, constant.PRESS_REPEAT_DELAY_MS)
   }
 
@@ -65,17 +83,14 @@ export function usePressRepeat(action: () => void, disabled = false) {
       repeatedRef.current = false
       return
     }
-    actionRef.current()
+    actionRef.current(1)
   }
 
   // タッチの長押しをスクロール・文字選択・OSのコールアウトへ渡さず、ポインター操作として扱う
   const style: CSSProperties = { touchAction: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }
   return {
     style,
-    onContextMenu: (event: MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault()
-      stop()
-    },
+    onContextMenu: (event: MouseEvent<HTMLButtonElement>) => event.preventDefault(),
     onPointerDown,
     onPointerUp: stop,
     onPointerCancel: stop,

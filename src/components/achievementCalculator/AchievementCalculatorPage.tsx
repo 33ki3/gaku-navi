@@ -7,11 +7,11 @@ import { useAchievementCalculatorSummary } from '../../hooks/useAchievementCalcu
 import type { AchievementCalculatorControls } from '../../types/achievementCalculator'
 import * as enums from '../../types/enums'
 
+import { CheckboxField } from '../ui/CheckboxField'
 import { HelpTooltip } from '../ui/HelpTooltip'
 import { ChevronRightIcon } from '../ui/icons'
 import { NumberInput } from '../ui/NumberInput'
 import { ProgressBar } from '../ui/ProgressBar'
-import { ToggleButton } from '../ui/ToggleButton'
 import { IdolAchievementSelector } from './IdolAchievementSelector'
 import { IdolAchievementsTab } from './IdolAchievementsTab'
 import { OtherExperienceTab } from './OtherExperienceTab'
@@ -42,13 +42,24 @@ export default function AchievementCalculatorPage({
 }: AchievementCalculatorPageProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<enums.CalculatorTab>(enums.CalculatorTab.Idol)
-  const { progress, setTargetProducerLevel, setOtherExp } = controls
+  const { progress, setTargetProducerLevel, setOtherExp, setOneStepSpinner } = controls
   // 0には符号を保存できないため、入力前に選んだマイナスだけを画面内で保持する
   const [isZeroOtherExpNegative, setIsZeroOtherExpNegative] = useState(false)
+  const oneStepSpinner = progress.oneStepSpinner
   const isOtherExpNegative = progress.otherExp < 0 || (progress.otherExp === 0 && isZeroOtherExpNegative)
+  const setOtherExpDirection = (isNegative: boolean) => {
+    setIsZeroOtherExpNegative(isNegative)
+    setOtherExp(isNegative ? -Math.abs(progress.otherExp) : Math.abs(progress.otherExp))
+  }
 
   const summary = useAchievementCalculatorSummary(progress, selectedIdolId)
   const { totalEarnedExp, totalAvailableExp, currentProducerLevel, levelProgress, idolSelectorItems } = summary
+  const currentLevel = currentProducerLevel.currentLevel
+  const currentLevelLabel = t('achievement_calculator.summary.current_level', { level: currentLevel })
+  const nextLevelRangeLabel = t('achievement_calculator.summary.current_and_next_level', {
+    current: currentLevel,
+    next: currentLevel + 1,
+  })
   const activeTabIndex = data.ACHIEVEMENT_CALCULATOR_TABS.findIndex((tab) => tab.id === activeTab)
 
   return (
@@ -79,9 +90,14 @@ export default function AchievementCalculatorPage({
           >
             {/* 全カテゴリの報酬と手入力の補正を合算した獲得済み経験値 */}
             <div className="rounded-xl bg-sky-50 px-3 py-2.5">
-              <p className="whitespace-nowrap text-[10px] font-bold text-sky-700">
-                {t('achievement_calculator.summary.earned')}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                <p className="text-[10px] leading-tight font-bold text-sky-700">
+                  {t('achievement_calculator.summary.earned')}
+                </p>
+                <p className="text-right text-[10px] leading-tight font-bold tabular-nums text-sky-700">
+                  {currentLevelLabel}
+                </p>
+              </div>
               <p className="mt-0.5 text-lg font-black tabular-nums text-sky-950">
                 {totalEarnedExp.toLocaleString()}{' '}
                 <span className="text-xs">{t('achievement_calculator.form.exp')}</span>
@@ -94,18 +110,19 @@ export default function AchievementCalculatorPage({
                 trackClassName="bg-sky-100"
               />
             </div>
-            {/* 次のPLvに必要な残りEXP。上限到達時は残量の代わりに上限表示を出す */}
+            {/* 現在のPLvから次のPLvに必要な残りEXP */}
             <div className="rounded-xl bg-amber-50 px-3 py-2.5">
-              <p className="text-[10px] font-bold text-amber-700">{t('achievement_calculator.summary.next_level')}</p>
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                <p className="text-[10px] leading-tight font-bold text-amber-700">
+                  {t('achievement_calculator.summary.next_level')}
+                </p>
+                <p className="text-right text-[10px] leading-tight font-bold tabular-nums text-amber-700">
+                  {nextLevelRangeLabel}
+                </p>
+              </div>
               <p className="mt-0.5 text-lg font-black tabular-nums text-amber-950">
-                {currentProducerLevel.currentLevel >= constant.PRODUCER_LEVEL_CAP ? (
-                  t('achievement_calculator.summary.level_cap')
-                ) : (
-                  <>
-                    {levelProgress.nextLevelRemainingExp.toLocaleString()}{' '}
-                    <span className="text-xs">{t('achievement_calculator.form.exp')}</span>
-                  </>
-                )}
+                {levelProgress.nextLevelRemainingExp.toLocaleString()}{' '}
+                <span className="text-xs">{t('achievement_calculator.form.exp')}</span>
               </p>
               <ProgressBar
                 label={t('achievement_calculator.summary.next_level')}
@@ -147,7 +164,7 @@ export default function AchievementCalculatorPage({
           </section>
 
           {/* 入力途中の不正値は計算へ反映せず、フォーカスを外した時に範囲内へ丸める */}
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
             <label className="grid min-w-0 gap-1 text-[11px] font-bold text-slate-600">
               <span className="flex items-center gap-1">
                 {t('achievement_calculator.settings.target_level')}
@@ -155,35 +172,57 @@ export default function AchievementCalculatorPage({
               </span>
               <NumberInput
                 min={1}
-                max={constant.PRODUCER_LEVEL_CAP}
+                max={constant.PRODUCER_LEVEL_TARGET_MAX}
                 inputMode="numeric"
                 value={progress.producerLevel}
                 onChange={setTargetProducerLevel}
                 clampOnBlur
-                inputClassName="min-h-10 min-w-0 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold tabular-nums text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                inputClassName="min-h-10 min-w-0 w-full rounded-lg border border-slate-300 bg-white px-2 text-sm font-bold tabular-nums text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
               />
             </label>
-            <div className="grid min-w-0 gap-1 text-[11px] font-bold text-slate-600">
-              <span className="flex items-center gap-1">
-                {t('achievement_calculator.settings.other_exp')}
+            <div className="grid min-w-0 content-start gap-1 text-[11px] font-bold text-slate-600">
+              <div className="flex items-center gap-1">
+                <span>{t('achievement_calculator.settings.other_exp')}</span>
                 <HelpTooltip text={t('achievement_calculator.settings.other_exp_tip')} />
-              </span>
-              {/* 符号と絶対値を分け、マイナスキーのないスマホでも数字キーボードで入力する */}
-              <div className="flex min-w-0 gap-1.5">
-                <ToggleButton
-                  isActive={isOtherExpNegative}
-                  onClick={() => {
-                    const nextNegative = !isOtherExpNegative
-                    setIsZeroOtherExpNegative(nextNegative)
-                    setOtherExp(nextNegative ? -Math.abs(progress.otherExp) : Math.abs(progress.otherExp))
-                  }}
-                  activeClass="border border-sky-300 bg-sky-50 text-sky-800"
-                  inactiveClass="border border-slate-300 bg-white text-slate-700"
-                  className="min-h-10 min-w-10 shrink-0 text-lg"
-                >
-                  <span aria-hidden="true">{isOtherExpNegative ? '−' : '+'}</span>
-                  <span className="sr-only">{t('achievement_calculator.settings.other_exp_negative')}</span>
-                </ToggleButton>
+              </div>
+              <div className="flex min-w-0 items-center gap-1">
+                {/* 補正方向を左、入力値を右に置き、狭い欄でも符号を切り替えやすくする */}
+                <fieldset className="m-0 flex h-10 w-8 shrink-0 rounded-lg border border-slate-300 bg-white p-0.5">
+                  <legend className="sr-only">{t('achievement_calculator.settings.other_exp_direction')}</legend>
+                  <button
+                    type="button"
+                    aria-label={`${t('achievement_calculator.settings.other_exp_direction')}: ${t(
+                      isOtherExpNegative
+                        ? 'achievement_calculator.settings.other_exp_subtract'
+                        : 'achievement_calculator.settings.other_exp_add',
+                    )}`}
+                    aria-pressed={isOtherExpNegative}
+                    onClick={() => setOtherExpDirection(!isOtherExpNegative)}
+                    className="relative flex min-h-0 flex-1 cursor-pointer flex-col rounded-md border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-500"
+                  >
+                    {/* 選択背景を上下へ滑らせ、補正方向の切替を見せる */}
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-md bg-sky-100 transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                        isOtherExpNegative ? 'translate-y-full' : ''
+                      }`}
+                    />
+                    <span
+                      className={`relative z-10 flex w-full flex-1 items-center justify-center rounded-md text-[9px] font-bold whitespace-nowrap transition-colors sm:text-[10px] ${
+                        isOtherExpNegative ? 'text-slate-600' : 'text-sky-800'
+                      }`}
+                    >
+                      <span aria-hidden="true">{t('ui.symbol.plus')}</span>
+                    </span>
+                    <span
+                      className={`relative z-10 flex w-full flex-1 items-center justify-center rounded-md text-[9px] font-bold whitespace-nowrap transition-colors sm:text-[10px] ${
+                        isOtherExpNegative ? 'text-sky-800' : 'text-slate-600'
+                      }`}
+                    >
+                      <span aria-hidden="true">{t('ui.symbol.minus')}</span>
+                    </span>
+                  </button>
+                </fieldset>
                 <NumberInput
                   min={0}
                   max={Number.MAX_SAFE_INTEGER}
@@ -195,7 +234,20 @@ export default function AchievementCalculatorPage({
                     setOtherExp(isOtherExpNegative ? -value : value)
                   }}
                   clampOnBlur
-                  inputClassName="min-h-10 min-w-0 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold tabular-nums text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                  inputClassName="min-h-10 min-w-0 w-full flex-1 rounded-lg border border-slate-300 bg-white px-1 text-xs font-bold tabular-nums text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 sm:px-2 sm:text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid min-w-0 content-start gap-1 text-[11px] font-bold text-slate-600">
+              <div className="flex items-center gap-1 whitespace-nowrap">
+                <span>{t('achievement_calculator.settings.one_step_spinner_heading')}</span>
+                <HelpTooltip text={t('achievement_calculator.settings.one_step_spinner_tip')} />
+              </div>
+              <div className="flex h-10 items-center">
+                <CheckboxField
+                  label={t('achievement_calculator.settings.one_step_spinner')}
+                  checked={oneStepSpinner}
+                  onChange={setOneStepSpinner}
                 />
               </div>
             </div>
@@ -250,15 +302,19 @@ export default function AchievementCalculatorPage({
         {/* 選択中の入力カテゴリだけ描画し、達成記録はページ共通の状態に保持する */}
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           {/* 選択アイドルのTrue End・基本・Pアイドルの入力 */}
-          {activeTab === enums.CalculatorTab.Idol && <IdolAchievementsTab summary={summary} controls={controls} />}
+          {activeTab === enums.CalculatorTab.Idol && (
+            <IdolAchievementsTab summary={summary} controls={controls} oneStepSpinner={oneStepSpinner} />
+          )}
 
           {/* アイドルを問わないプロデュース全体のアチーブ入力 */}
           {activeTab === enums.CalculatorTab.Production && (
-            <ProductionAchievementsTab summary={summary} controls={controls} />
+            <ProductionAchievementsTab summary={summary} controls={controls} oneStepSpinner={oneStepSpinner} />
           )}
 
           {/* プロデュース報酬・課題・パネル・アイドルへの道の入力 */}
-          {activeTab === enums.CalculatorTab.Other && <OtherExperienceTab summary={summary} controls={controls} />}
+          {activeTab === enums.CalculatorTab.Other && (
+            <OtherExperienceTab summary={summary} controls={controls} oneStepSpinner={oneStepSpinner} />
+          )}
         </div>
       </main>
     </div>

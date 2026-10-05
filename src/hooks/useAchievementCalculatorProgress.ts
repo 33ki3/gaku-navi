@@ -61,6 +61,7 @@ export function useAchievementCalculatorProgress() {
         run(commands.setPIdolCardAchievements(id, completed, options)),
       setTargetProducerLevel: (value: number) => run(commands.setTargetProducerLevel(value, options)),
       setOtherExp: (value: number) => run(commands.setOtherExp(value, options)),
+      setOneStepSpinner: (value: boolean) => run(commands.setOneStepSpinner(value, options)),
     }
   }, [commands])
   return { progress, commands, query, ...handlers }

@@ -7,6 +7,10 @@ import { EXPORT_KEYS } from '../../data/ui'
 import { ApplicationDomain } from '../../types/application'
 import type { ScoreSettings } from '../../types/card'
 import * as enums from '../../types/enums'
+import {
+  compactAchievementCalculatorProgress,
+  createAchievementCalculatorProgress,
+} from '../../utils/achievementCalculatorProgress'
 import { loadAppPreferences } from '../../utils/appPreferences'
 import {
   applyImportPreview,
@@ -27,10 +31,6 @@ import {
 import { loadUnitSimulatorSettings } from '../../utils/unitSimulatorSettings'
 import { createTestCommandStatePort } from '../fixtures/application'
 import { createCompleteExportValues } from '../fixtures/exportData'
-import {
-  compactAchievementCalculatorProgress,
-  createAchievementCalculatorProgress,
-} from '../../utils/achievementCalculatorProgress'
 import { importUserDataText } from './importHelpers'
 
 async function savePresetThroughCommand(name: string, settings: ScoreSettings) {
@@ -342,6 +342,28 @@ describe('importUserDataText', () => {
       includeV2Settings ? Object.values(enums.CardExclusionFilterType) : [],
     )
     expect(loadUnitSimulatorSettings().excludedCardNames).toEqual(includeV2Settings ? ['互換テスト除外'] : [])
+  })
+
+  it('1刻み設定を保存・エクスポートし、設定のないデータは既定値falseで補う', () => {
+    const key = constant.ACHIEVEMENT_CALCULATOR_STORAGE_KEY
+    const recorded = compactAchievementCalculatorProgress(
+      createAchievementCalculatorProgress({ oneStepSpinner: true, otherExp: -123 }),
+    )
+    localStorage.setItem(key, JSON.stringify(recorded))
+
+    const exported = JSON.parse(getUserDataJson()) as { data: Record<string, Record<string, unknown>> }
+    expect(exported.data[key]).toMatchObject({ oneStepSpinner: true, otherExp: -123 })
+
+    // 設定追加前のバックアップを模し、新しいフィールドだけを省いて再インポートする
+    const legacy = { ...recorded }
+    delete legacy.oneStepSpinner
+    const preview = prepareImportText(makeImportData({ [key]: legacy }))
+    localStorage.removeItem(key)
+    const result = applyImportPreview(preview)
+
+    expect(preview.canImport).toBe(true)
+    expect(result.success).toBe(true)
+    expect(JSON.parse(localStorage.getItem(key) ?? 'null')).toMatchObject({ oneStepSpinner: false, otherExp: -123 })
   })
 
   it('一部の保存値が壊れていても、正しい項目は反映して警告する', () => {

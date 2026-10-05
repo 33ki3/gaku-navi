@@ -1,4 +1,5 @@
 /** プロデュース報酬・課題・パネルミッション・アイドルへの道の入力を表示する */
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
@@ -17,7 +18,7 @@ import { IdolRoadSummary } from './IdolRoadSummary'
  * @param props 課題・プロデュース報酬・アイドルへの道の集計と更新操作
  * @returns アチーブ以外のEXP獲得元を入力するタブ
  */
-export function OtherExperienceTab({ summary, controls }: AchievementCalculatorTabProps) {
+export function OtherExperienceTab({ summary, controls, oneStepSpinner }: AchievementCalculatorTabProps) {
   const { t } = useTranslation()
   const {
     productionCountTracker,
@@ -37,6 +38,21 @@ export function OtherExperienceTab({ summary, controls }: AchievementCalculatorT
     setIdolRoadStageStar,
     setIdolRoadStars,
   } = controls
+  // 回数と課題の更新関数を項目ごとに固定し、他カードの再描画を避ける
+  const productionValueChangeByTrackerId = useMemo(
+    () =>
+      new Map(
+        data.PRODUCTION_ACHIEVEMENTS.map(({ id }) => [id, (value: number) => setProductionValue(id, value)] as const),
+      ),
+    [setProductionValue],
+  )
+  const otherTaskValueChangeByTrackerId = useMemo(
+    () =>
+      new Map(
+        data.OTHER_EXPERIENCE_TRACKERS.map(({ id }) => [id, (value: number) => setOtherTaskValue(id, value)] as const),
+      ),
+    [setOtherTaskValue],
+  )
   return (
     <section id="achievement-panel-other" role="tabpanel" aria-labelledby="achievement-tab-other">
       {/* プロデュース回数と試験結果によるプレイ報酬の補正 */}
@@ -66,7 +82,8 @@ export function OtherExperienceTab({ summary, controls }: AchievementCalculatorT
               metric={t(productionCountTracker.metricKey)}
               value={productionRunCount}
               milestones={productionCountTracker.milestones}
-              onValueChange={(value) => setProductionValue(productionCountTracker.id, value)}
+              oneStepSpinner={oneStepSpinner}
+              onValueChange={productionValueChangeByTrackerId.get(productionCountTracker.id)}
             />
           </div>
         )}
@@ -144,7 +161,8 @@ export function OtherExperienceTab({ summary, controls }: AchievementCalculatorT
                     metric={t(tracker.metricKey)}
                     value={progress.otherTasks[tracker.id] ?? 0}
                     milestones={tracker.milestones}
-                    onValueChange={(value) => setOtherTaskValue(tracker.id, value)}
+                    oneStepSpinner={oneStepSpinner}
+                    onValueChange={otherTaskValueChangeByTrackerId.get(tracker.id)}
                   />
                 ))}
               </div>

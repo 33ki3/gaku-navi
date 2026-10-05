@@ -47,15 +47,14 @@ export function createAchievementCalculatorCommand(
 
   /**
    * 全体置換にも同じ検証と保存を適用し、WebMCPが画面入力を迂回して不正値を記録できないようにする
-   * @param value 全項目形式の達成記録。保存用の省略形式は復元してから渡す
+   * @param value 実行時スナップショットなど、全項目を含む達成記録
    * @param options 中断・revision確認・画面反映待ちの設定。省略時は表示同期を待つ
    * @returns 保存後の記録・revision、または検証・保存・同期の失敗を返すPromise
    */
   const replace = (value: unknown, options?: CommandOptions) =>
-    runUpdate(
-      () => (isAchievementCalculatorProgress(value) ? createAchievementCalculatorProgress(value) : undefined),
-      options,
-    )
+    runUpdate(() => {
+      return isAchievementCalculatorProgress(value) ? createAchievementCalculatorProgress(value) : undefined
+    }, options)
 
   /**
    * プロデュース項目の現在値だけを更新し、最終条件を超えないようにする
@@ -281,7 +280,8 @@ export function createAchievementCalculatorCommand(
 
       const targetLevel = Math.max(
         1,
-        normalizeNonNegativeInteger(value, constant.PRODUCER_LEVEL_CAP) ?? constant.PRODUCER_LEVEL_DEFAULT_TARGET,
+        normalizeNonNegativeInteger(value, constant.PRODUCER_LEVEL_TARGET_MAX) ??
+          constant.PRODUCER_LEVEL_DEFAULT_TARGET,
       )
       return {
         ...current,
@@ -300,6 +300,18 @@ export function createAchievementCalculatorCommand(
       if (normalizeInteger(value) === undefined) return
 
       return { ...current, otherExp: normalizeInteger(value) ?? 0 }
+    }, options)
+
+  /**
+   * アチーブメントの+/-ボタンの増減幅を保存する
+   * @param value 1ずつ増減する場合はtrue
+   * @param options 中断・revision確認・画面反映待ちの設定。省略時は表示同期を待つ
+   * @returns 保存後の記録・revision、または検証・保存・同期の失敗を返すPromise
+   */
+  const setOneStepSpinner = (value: boolean, options: CommandOptions = {}) =>
+    runUpdate((current) => {
+      if (typeof value !== 'boolean') return
+      return { ...current, oneStepSpinner: value }
     }, options)
 
   /**
@@ -332,6 +344,7 @@ export function createAchievementCalculatorCommand(
     setPIdolCardAchievement,
     setTargetProducerLevel,
     setOtherExp,
+    setOneStepSpinner,
     setPIdolCardAchievements,
   }
 }

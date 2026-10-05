@@ -1368,10 +1368,11 @@
     },
     "summary": {
       "earned": "獲得済み経験値",
-      "next_level": "次のレベルまで",
-      "target_remaining": "目標レベルまで",
-      "current_and_target_level": "PLv {{current}} → {{target}}",
-      "level_cap": "上限到達"
+      "current_level": "PLv{{level}}",
+      "next_level": "次のPLvまで",
+      "target_remaining": "目標PLvまで",
+      "current_and_target_level": "PLv{{current}} → {{target}}",
+      "current_and_next_level": "PLv{{current}} → {{next}}"
     },
     "section": {
       "production": "プロデュースアチーブメント",
@@ -1387,6 +1388,7 @@
       "exp": "EXP",
       "increase_to_next_reward": "{{title}}を次の報酬まで進める",
       "decrease_to_previous_reward": "{{title}}を前の報酬まで戻す",
+      "decrease_value": "{{title}}を1つ減らす",
       "registered_rewards_complete": "すべてのEXP報酬を獲得済みです",
       "input_tabs": "アチーブメントカテゴリ",
       "increase_value": "{{title}}を1つ増やす",
@@ -1406,10 +1408,15 @@
     },
     "settings": {
       "target_level": "目標PLv",
-      "target_level_tip": "PLv55以降は、次のレベルまでに必要なEXPを70,000として計算しています。",
+      "target_level_tip": "PLv55以降は、次のPLvまでに必要なEXPを70,000として計算しています。",
       "other_exp": "その他の経験値",
-      "other_exp_negative": "その他の経験値をマイナスにする",
-      "other_exp_tip": "実際の獲得済みEXPとの差を補正します。\n数値が合わない場合に差分を入力してください。"
+      "other_exp_direction": "その他の経験値の補正方向",
+      "other_exp_add": "加算",
+      "other_exp_subtract": "減算",
+      "other_exp_tip": "獲得済みEXPとの差分を加算または減算します。\nゲーム内と数値が合わない場合に補正してください。",
+      "one_step_spinner_heading": "+ / - の増加値",
+      "one_step_spinner": "1ずつ増減",
+      "one_step_spinner_tip": "オンにするとアチーブメントの + / - ボタンを押すたびに現在値を1ずつ増減します。\nオフの場合EXP報酬がもらえる次または前の段階へ移動します。"
     },
     "other": {
       "production_reward": {

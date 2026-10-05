@@ -618,7 +618,7 @@
       },
       "update_achievement_progress": {
         "title": "アチーブ計算機の達成状況を更新",
-        "description": "actionで指定した1項目を画面と同じ保存処理で更新する。IDはget_achievement_catalogで取得。road_starのstage_indexとstar_indexは0始まりで、星は独立。other_expは負数可。expected_revision指定時は古い状態の上書きを拒否する。保存と画面反映の完了後に集計を返す"
+        "description": "actionで指定した1項目を画面と同じ保存処理で更新する。IDはget_achievement_catalogで取得。road_starのstage_indexとstar_indexは0始まりで、星は独立。other_expは負数可。expected_revision指定時は古い状態の上書きを拒否する。更新後は変更項目・revision・EXP/PLv概要を返す。詳細な状態はget_achievement_stateで取得する"
       },
       "search_support_cards": {
         "title": "サポートカード検索",
@@ -1414,7 +1414,7 @@
       "other_exp_add": "加算",
       "other_exp_subtract": "減算",
       "other_exp_tip": "獲得済みEXPとの差分を加算または減算します。\nゲーム内と数値が合わない場合に補正してください。",
-      "one_step_spinner_heading": "+ / - の増加値",
+      "one_step_spinner_heading": "+ / - の増減値",
       "one_step_spinner": "1ずつ増減",
       "one_step_spinner_tip": "オンにするとアチーブメントの + / - ボタンを押すたびに現在値を1ずつ増減します。\nオフの場合EXP報酬がもらえる次または前の段階へ移動します。"
     },

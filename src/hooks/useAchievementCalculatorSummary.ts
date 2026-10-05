@@ -1,4 +1,5 @@
 /** Reactに依存しないqueryの集計を、翻訳済みの画面表示へ変換する */
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { calculateAchievementSummary } from '../application/query/achievementCalculatorQuery'
 import type { AchievementCalculatorProgress, IdolAchievementSelectorItem } from '../types/achievementCalculator'
@@ -11,12 +12,13 @@ import type { AchievementCalculatorProgress, IdolAchievementSelectorItem } from 
  */
 export function useAchievementCalculatorSummary(progress: AchievementCalculatorProgress, selectedIdolId: string) {
   const { t } = useTranslation()
-  const summary = calculateAchievementSummary(progress, selectedIdolId)
+  // タブ切替だけでは達成値が変わらないため、全アイドル分の集計を使い回す
+  const summary = useMemo(() => calculateAchievementSummary(progress, selectedIdolId), [progress, selectedIdolId])
   // アイドル選択ボタン用の名称と、各アイドルのTrue End・基本・PアイドルのEXP集計
-  const idolSelectorItems: IdolAchievementSelectorItem[] = summary.idolSelectorItems.map((item) => ({
-    ...item,
-    name: t(item.nameKey),
-  }))
+  const idolSelectorItems = useMemo<IdolAchievementSelectorItem[]>(
+    () => summary.idolSelectorItems.map((item) => ({ ...item, name: t(item.nameKey) })),
+    [summary.idolSelectorItems, t],
+  )
   return {
     ...summary,
     idolSelectorItems,

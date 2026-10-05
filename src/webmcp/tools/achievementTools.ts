@@ -1,9 +1,11 @@
 /** 表示ページに依存せず公開するアチーブ計算機ツール。UIと同じcommand・queryだけを経由する */
 import type { AchievementCalculatorCommand } from '../../application/command/achievementCalculatorCommand'
 import type { CommandOptions } from '../../application/command/ports'
+import { calculateAchievementSummary } from '../../application/query/achievementCalculatorQuery'
 import * as constant from '../../constant'
 import * as data from '../../data'
 import i18n from '../../i18n'
+import type { AchievementCalculatorProgress } from '../../types/achievementCalculator'
 import { getIdolAchievementMilestones } from '../../utils/achievementCalculator'
 import type { WebMcpToolFactoryContext } from '../context'
 import { createCommandToolError } from '../context'
@@ -45,6 +47,35 @@ function executeUpdate(
       return commands.setTargetProducerLevel(input.value, options)
     case webMcp.AchievementUpdateAction.OtherExp:
       return commands.setOtherExp(input.value, options)
+  }
+}
+
+/**
+ * commandの入力値と保存後の値が異なる場合に備え、応答を実際の記録に合わせる
+ * @param command 検証済みの更新操作
+ * @param progress 更新後に保存される正規化済みの達成記録
+ * @returns 保存値を反映した更新操作
+ */
+function getAppliedAchievementCommand(
+  command: WebMcpAchievementCommand,
+  progress: AchievementCalculatorProgress,
+): WebMcpAchievementCommand {
+  switch (command.action) {
+    case webMcp.AchievementUpdateAction.Production:
+      return { ...command, value: progress.production[command.trackerId] }
+    case webMcp.AchievementUpdateAction.Idol:
+      return { ...command, value: progress.idols[command.idolId][command.metric] }
+    case webMcp.AchievementUpdateAction.OtherTask:
+      return { ...command, value: progress.otherTasks[command.trackerId] }
+    case webMcp.AchievementUpdateAction.ProductionReward:
+      return { ...command, value: progress.productionRewardAdjustments[command.adjustmentId] }
+    case webMcp.AchievementUpdateAction.TargetLevel:
+      return { ...command, value: progress.producerLevel }
+    case webMcp.AchievementUpdateAction.OtherExp:
+      return { ...command, value: progress.otherExp }
+    default:
+      // boolean操作は入力値をそのまま保存するため、command全体を維持する
+      return command
   }
 }
 
@@ -225,7 +256,23 @@ export function createAchievementTools(context: WebMcpToolFactoryContext): WebMc
           undo: async () => (await commands.replace(before.value, { expectedRevision: result.revision })).ok,
           isRestored: () => runtime.getAchievementSnapshot().digest === before.digest,
         })
-        return { ...result, summary: runtime.getAchievementSummary(runtime.getSelectedAchievementIdolId()).value }
+        // 保存結果には全達成記録が含まれるため、WebMCPには変更差分と小さなPLv集計だけを返す
+        const summary = calculateAchievementSummary(result.value, runtime.getSelectedAchievementIdolId())
+        return {
+          applied: true,
+          changed: result.changed,
+          updated: getAppliedAchievementCommand(command, result.value),
+          revision: result.revision,
+          digest: result.digest,
+          summary: {
+            totalEarnedExp: summary.totalEarnedExp,
+            totalAvailableExp: summary.totalAvailableExp,
+            producerLevel: summary.currentProducerLevel.currentLevel,
+            expToNextLevel: summary.currentProducerLevel.remainingExpToNextLevel,
+            targetLevel: result.value.producerLevel,
+            expToTargetLevel: summary.levelProgress.expToTargetLevel,
+          },
+        }
       },
     },
   ]

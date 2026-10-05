@@ -20,6 +20,7 @@ export function useLoopingHorizontalScroll() {
     let idleTimer: ReturnType<typeof setTimeout> | undefined
     let pointerActive = false
     let previousMiddleOffset = 0
+    let wasHidden = viewport.clientWidth === 0 || middle.clientWidth === 0
 
     // スクロール位置の取得を1フレームにまとめ、表示範囲のドットだけを更新する
     const paintPosition = () => {
@@ -47,7 +48,7 @@ export function useLoopingHorizontalScroll() {
     }
     // 慣性や指の移動中には位置を変えず、同じ見た目の中央列へ操作終了後に戻す
     const recenterPosition = () => {
-      if (cycleWidthRef.current <= 0) return
+      if (viewport.clientWidth === 0 || cycleWidthRef.current <= 0) return
       const cycleWidth = cycleWidthRef.current
       const relative = viewport.scrollLeft - middle.offsetLeft
       const fraction = ((relative % cycleWidth) + cycleWidth) % cycleWidth
@@ -94,10 +95,21 @@ export function useLoopingHorizontalScroll() {
     }
     // 列の幅を測り直し、表示位置を維持したまま循環幅を更新する
     const measure = () => {
+      // 非表示中の幅0で、次に表示した時のスクロール計算を壊さない
+      if (viewport.clientWidth === 0 || middle.clientWidth === 0) {
+        wasHidden = true
+        return
+      }
       const middleOffset = middle.offsetLeft
       cycleWidthRef.current = middleOffset / constant.IDOL_SELECTOR_MIDDLE_COPY_INDEX
       viewport.scrollLeft += middleOffset - previousMiddleOffset
       previousMiddleOffset = middleOffset
+      // タブ復帰時だけ位置を確認し、選択中のアイドルが画面外なら表示範囲へ戻す
+      if (wasHidden) {
+        const selected = middle.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
+        if (selected) revealElementInViewport(viewport, cycleWidthRef.current, selected, 'auto')
+        wasHidden = false
+      }
       paintPosition()
     }
     const observer = new ResizeObserver(measure)
@@ -139,21 +151,51 @@ export function useLoopingHorizontalScroll() {
   const revealElement = useCallback((element: HTMLElement, behavior: ScrollBehavior = 'smooth') => {
     const viewport = viewportRef.current
     const cycleWidth = cycleWidthRef.current
-    if (!viewport || cycleWidth <= 0) return
-    let left = element.getBoundingClientRect().left - viewport.getBoundingClientRect().left
-    while (left + element.offsetWidth <= 0) left += cycleWidth
-    while (left >= viewport.clientWidth) left -= cycleWidth
-    const distance =
-      left < 0
-        ? left
-        : left + element.offsetWidth > viewport.clientWidth
-          ? left + element.offsetWidth - viewport.clientWidth
-          : 0
-    if (distance === 0) return
+    if (!viewport || cycleWidth <= 0 || viewport.clientWidth <= 0) return
     const effectiveBehavior =
       behavior === 'smooth' && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : behavior
-    viewport.scrollBy({ left: distance, behavior: effectiveBehavior })
+    revealElementInViewport(viewport, cycleWidth, element, effectiveBehavior)
   }, [])
 
   return { viewportRef, middleCopyRef, positionDotsRef, scrollBy, revealElement }
+}
+
+/**
+ * 循環列の複製候補を比べ、対象要素が見える最短のスクロール位置へ移動する
+ * @param viewport 横スクロールを行う表示領域
+ * @param cycleWidth アイドル列1周分の幅
+ * @param element 表示範囲へ収める対象要素
+ * @param behavior スクロールの動作方法
+ */
+function revealElementInViewport(
+  viewport: HTMLDivElement,
+  cycleWidth: number,
+  element: HTMLElement,
+  behavior: ScrollBehavior,
+) {
+  if (cycleWidth <= 0 || viewport.clientWidth <= 0) return
+  // スクロール位置が先頭へ戻った場合も、中央列と前後の複製列から最短で見せられる位置を選ぶ
+  const currentScrollLeft = viewport.scrollLeft
+  const elementContentLeft =
+    currentScrollLeft + element.getBoundingClientRect().left - viewport.getBoundingClientRect().left
+  const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+  let targetScrollLeft: number | undefined
+  let shortestDistance = Number.POSITIVE_INFINITY
+  for (
+    let copyOffset = -constant.IDOL_SELECTOR_MIDDLE_COPY_INDEX;
+    copyOffset <= constant.IDOL_SELECTOR_MIDDLE_COPY_INDEX;
+    copyOffset += 1
+  ) {
+    const candidateLeft = elementContentLeft + copyOffset * cycleWidth
+    const minScrollLeft = Math.max(0, candidateLeft + element.offsetWidth - viewport.clientWidth)
+    const maxCandidateScrollLeft = Math.min(maxScrollLeft, candidateLeft)
+    if (minScrollLeft > maxCandidateScrollLeft) continue
+    const candidateScrollLeft = Math.min(Math.max(currentScrollLeft, minScrollLeft), maxCandidateScrollLeft)
+    const distance = Math.abs(candidateScrollLeft - currentScrollLeft)
+    if (distance < shortestDistance) {
+      targetScrollLeft = candidateScrollLeft
+      shortestDistance = distance
+    }
+  }
+  if (targetScrollLeft !== undefined && shortestDistance > 1) viewport.scrollTo({ left: targetScrollLeft, behavior })
 }

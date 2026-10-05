@@ -1,5 +1,5 @@
 /** 学マスのアチーブメントとアイドルへの道で得られるプロデューサーEXPを集計する */
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
 import * as data from '../../data'
@@ -12,6 +12,7 @@ import { HelpTooltip } from '../ui/HelpTooltip'
 import { ChevronRightIcon } from '../ui/icons'
 import { NumberInput } from '../ui/NumberInput'
 import { ProgressBar } from '../ui/ProgressBar'
+import type { IdolAchievementSelectorHandle } from './IdolAchievementSelector'
 import { IdolAchievementSelector } from './IdolAchievementSelector'
 import { IdolAchievementsTab } from './IdolAchievementsTab'
 import { OtherExperienceTab } from './OtherExperienceTab'
@@ -43,6 +44,7 @@ export default function AchievementCalculatorPage({
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<enums.CalculatorTab>(enums.CalculatorTab.Idol)
   const { progress, setTargetProducerLevel, setOtherExp, setOneStepSpinner } = controls
+  const idolSelectorRef = useRef<IdolAchievementSelectorHandle>(null)
   // 0には符号を保存できないため、入力前に選んだマイナスだけを画面内で保持する
   const [isZeroOtherExpNegative, setIsZeroOtherExpNegative] = useState(false)
   const oneStepSpinner = progress.oneStepSpinner
@@ -61,6 +63,11 @@ export default function AchievementCalculatorPage({
     next: currentLevel + 1,
   })
   const activeTabIndex = data.ACHIEVEMENT_CALCULATOR_TABS.findIndex((tab) => tab.id === activeTab)
+
+  // DOMを保持したままタブへ戻る時、選択アイドルが見える位置へスクロールする
+  useLayoutEffect(() => {
+    if (activeTab === enums.CalculatorTab.Idol) idolSelectorRef.current?.revealSelected()
+  }, [activeTab])
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -293,10 +300,19 @@ export default function AchievementCalculatorPage({
               )
             })}
           </nav>
-          {/* アイドルタブで編集する対象を選ぶ横スクロールのボタン列 */}
-          {activeTab === enums.CalculatorTab.Idol && (
-            <IdolAchievementSelector selectedId={selectedIdolId} onSelect={onSelectIdol} items={idolSelectorItems} />
-          )}
+          {/* 表示だけ隠してスクロール領域をレイアウトに残し、タブ復帰時も横位置を保つ */}
+          <div
+            aria-hidden={activeTab !== enums.CalculatorTab.Idol}
+            inert={activeTab !== enums.CalculatorTab.Idol}
+            className={activeTab === enums.CalculatorTab.Idol ? '' : 'invisible h-0 overflow-hidden'}
+          >
+            <IdolAchievementSelector
+              ref={idolSelectorRef}
+              selectedId={selectedIdolId}
+              onSelect={onSelectIdol}
+              items={idolSelectorItems}
+            />
+          </div>
         </div>
 
         {/* 選択中の入力カテゴリだけ描画し、達成記録はページ共通の状態に保持する */}

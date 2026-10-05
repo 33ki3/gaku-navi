@@ -17,12 +17,19 @@ async function fetchJsonAsset(metaName: string, fallbackName: string): Promise<u
   return response.json()
 }
 
-registerSW({
-  immediate: true,
-  onRegisterError(error) {
+/** 初期画面のasset取得と初期化が済んでから更新監視を始める */
+function registerServiceWorker(): void {
+  try {
+    registerSW({
+      immediate: true,
+      onRegisterError(error) {
+        console.error('Service Worker registration failed:', error)
+      },
+    })
+  } catch (error) {
     console.error('Service Worker registration failed:', error)
-  },
-})
+  }
+}
 
 // 初期画面に必要なアプリ本体だけを取得する。未表示の画面はReactの描画後に先読みする
 const applicationBootstrapPromise = import('./appBootstrap')
@@ -35,6 +42,8 @@ void Promise.all([
 ])
   .then(async ([{ startApp }, rawCards, rawLocale]) => {
     await startApp(rawCards, rawLocale)
+    // 起動中に新しいService Workerが古いasset cacheを置き換える競合を避ける
+    registerServiceWorker()
   })
   .catch((error: unknown) => {
     console.error('Application entry failed:', error)

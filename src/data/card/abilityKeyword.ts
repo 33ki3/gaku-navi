@@ -219,7 +219,7 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.customize',
     badge: 'card.badge.customize',
     isParamCategory: false,
-    triggers: [TriggerKeyType.Customize],
+    triggers: [TriggerKeyType.Customize, TriggerKeyType.CustomizeCount],
   },
   {
     id: AbilityKeywordType.PItem,

@@ -67,6 +67,7 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.PDrinkExchange]: ActionIdType.PDrinkExchange,
   [TriggerKeyType.Rest]: ActionIdType.Rest,
   [TriggerKeyType.Customize]: ActionIdType.Customize,
+  [TriggerKeyType.CustomizeCount]: ActionIdType.Customize,
   [TriggerKeyType.PItemAcquire]: ActionIdType.PItemAcquire,
   [TriggerKeyType.SpLesson20]: ActionIdType.SpLesson20,
   [TriggerKeyType.SpecialTraining]: ActionIdType.SpecialTraining,

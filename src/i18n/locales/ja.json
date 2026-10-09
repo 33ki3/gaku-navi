@@ -152,6 +152,7 @@
       "sp_lesson_hp": "{{param}}SPレッスン終了時、体力回復{{value}}",
       "sp_lesson_hp_all": "SPレッスン終了時、体力回復{{value}}",
       "customize": "スキルカードカスタマイズ時、{{param}}上昇+{{value}}（プロデュース中{{count}}回）",
+      "customize_count": "スキルカードカスタマイズ時、{{param}}上昇+{{value}}（プロデュース中{{count}}回）",
       "exam_hp": "試験・オーディション終了時、体力回復{{value}}（プロデュース中{{count}}回）",
       "activity_supply_gift_hp": "活動支給・差し入れ選択時、体力回復{{value}}",
       "ssr_card_acquire": "スキルカード（SSR）獲得時、{{param}}上昇+{{value}}",

@@ -35,6 +35,7 @@ export const ABILITY_MAX_COUNT: Partial<Record<enums.AbilityNameKeyType, number>
   [enums.AbilityNameKeyType.Change]: 3,
   [enums.AbilityNameKeyType.BasicCardChange]: 3,
   [enums.AbilityNameKeyType.Customize]: 6,
+  [enums.AbilityNameKeyType.CustomizeCount]: 3,
   [enums.AbilityNameKeyType.ExamEnd]: 2,
   [enums.AbilityNameKeyType.Exam15]: 5,
   [enums.AbilityNameKeyType.ExamHp]: 1,

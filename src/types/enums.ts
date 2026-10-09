@@ -406,6 +406,8 @@ export const AbilityNameKeyType = {
   SpLessonHpAll: 'sp_lesson_hp_all',
   /** カスタマイズ */
   Customize: 'customize',
+  /** カスタマイズ（回数制限） */
+  CustomizeCount: 'customize_count',
   /** 試験終了時体力回復 */
   ExamHp: 'exam_hp',
   /** 活動支給・差し入れ選択時体力回復 */
@@ -1152,6 +1154,8 @@ export const TriggerKeyType = {
   Rest: 'rest',
   /** カスタマイズ */
   Customize: 'customize',
+  /** カスタマイズ（回数制限） */
+  CustomizeCount: 'customize_count',
   /** Pアイテム獲得 */
   PItemAcquire: 'p_item_acquire',
   /** SPレッスン終了時カード20枚以上 */

@@ -24676,5 +24676,221 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "これがあのかぼちゃ……",
+    "rarity": "ssr",
+    "plan": "logic",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "gravure_limited",
+    "release_date": "2026/10/09",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vi_initial_stat",
+        "parameter_type": "visual",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vi_sp_lesson_rate",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "customize_count",
+        "trigger_key": "customize_count",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 3
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "花海ファームランタン",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_enhance",
+          "keyword": "motivation"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 900
+        },
+        "body": [
+          {
+            "key": "pp_gain",
+            "value": 40
+          },
+          {
+            "key": "param_up",
+            "param": "visual",
+            "value": 30
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      },
+      "boost": {
+        "trigger_key": "skill_enhance",
+        "parameter_type": "visual",
+        "value": 30,
+        "max_count": 2
+      }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "ふたりで衣装作り",
+    "rarity": "sr",
+    "plan": "logic",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "gravure_limited",
+    "release_date": "2026/10/09",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "da_initial_stat",
+        "parameter_type": "dance",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "da_sp_lesson_rate",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "consult_count",
+        "trigger_key": "consult_count",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 2
+      },
+      {
+        "name_key": "motivation_card_acquire_8",
+        "trigger_key": "motivation_card_acquire_8",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "お手製ぴったり衣装",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_enhance",
+          "keyword": "motivation"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "dance",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "dance",
+            "value": 20
+          },
+          {
+            "key": "pp_gain",
+            "value": 10
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 3
+        }
+      },
+      "boost": {
+        "trigger_key": "skill_enhance",
+        "parameter_type": "dance",
+        "value": 20,
+        "max_count": 3
+      }
+    },
+    "skill_card": null
   }
 ]

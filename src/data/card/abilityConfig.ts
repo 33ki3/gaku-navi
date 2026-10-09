@@ -113,6 +113,10 @@ export const ABILITY_CONFIG: Partial<Record<AbilityNameKeyType, AbilityAutoConfi
     needsParameterType: true,
     baseTriggerKey: TriggerKeyType.Exam15,
   },
+  [AbilityNameKeyType.CustomizeCount]: {
+    needsParameterType: true,
+    baseTriggerKey: TriggerKeyType.CustomizeCount,
+  },
   // パラメータ種別がないアビリティは、名前と同じ発動条件を使う
   [AbilityNameKeyType.EventBoost]: {
     needsParameterType: false,

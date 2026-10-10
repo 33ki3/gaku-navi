@@ -38,10 +38,11 @@ const applicationBootstrapPromise = import('./appBootstrap')
 void Promise.all([
   applicationBootstrapPromise,
   fetchJsonAsset('card-asset-url', 'assets/cards.json'),
+  fetchJsonAsset('p-idol-asset-url', 'assets/p-idol.json'),
   fetchJsonAsset('locale-asset-url', 'assets/ja.json'),
 ])
-  .then(async ([{ startApp }, rawCards, rawLocale]) => {
-    await startApp(rawCards, rawLocale)
+  .then(async ([{ startApp }, rawCards, rawPIdols, rawLocale]) => {
+    await startApp(rawCards, rawPIdols, rawLocale)
     // 起動中に新しいService Workerが古いasset cacheを置き換える競合を避ける
     registerServiceWorker()
   })

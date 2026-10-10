@@ -35,7 +35,7 @@ function gtagPlugin(gaId: string): Plugin {
 }
 
 /**
- * cards.jsonとja.jsonをJavaScriptへ結合せず、ハッシュ付きJSON assetとして出力する
+ * cards.json・pIdol.json・ja.jsonをJavaScriptへ結合せず、ハッシュ付きJSON assetとして出力する
  * データ更新時もアプリ本体のJS・vendor・一覧画面用JSを再取得しない
  *
  * @param basePath - asset URLの基準パス
@@ -43,17 +43,20 @@ function gtagPlugin(gaId: string): Plugin {
  */
 function jsonAssetPlugin(basePath: string): Plugin {
   const cardJsonPath = resolve(process.cwd(), 'src/data/json/cards.json')
+  const pIdolJsonPath = resolve(process.cwd(), 'src/data/json/pIdol.json')
   const localeJsonPath = resolve(process.cwd(), 'src/i18n/locales/ja.json')
   const readJsonAsset = (filePath: string) => JSON.stringify(JSON.parse(readFileSync(filePath, 'utf8')))
   const cardJson = readJsonAsset(cardJsonPath)
+  const pIdolJson = readJsonAsset(pIdolJsonPath)
   const localeJson = readJsonAsset(localeJsonPath)
   const cardAssetFileName = `assets/cards-${createHash('sha256').update(cardJson).digest('hex').slice(0, 8)}.json`
+  const pIdolAssetFileName = `assets/p-idol-${createHash('sha256').update(pIdolJson).digest('hex').slice(0, 8)}.json`
   const localeAssetFileName = `assets/ja-${createHash('sha256').update(localeJson).digest('hex').slice(0, 8)}.json`
 
   return {
     name: 'json-assets',
     configureServer(server) {
-      server.watcher.add([cardJsonPath, localeJsonPath])
+      server.watcher.add([cardJsonPath, pIdolJsonPath, localeJsonPath])
       server.middlewares.use((request, response, next) => {
         const pathname = request.url?.split('?')[0]
         if (request.method !== 'GET') {
@@ -64,9 +67,11 @@ function jsonAssetPlugin(basePath: string): Plugin {
         const assetPath =
           pathname?.endsWith(cardAssetFileName) || pathname?.endsWith('/cards.json')
             ? cardJsonPath
-            : pathname?.endsWith(localeAssetFileName) || pathname?.endsWith('/ja.json')
-              ? localeJsonPath
-              : undefined
+            : pathname?.endsWith(pIdolAssetFileName) || pathname?.endsWith('/p-idol.json')
+              ? pIdolJsonPath
+              : pathname?.endsWith(localeAssetFileName) || pathname?.endsWith('/ja.json')
+                ? localeJsonPath
+                : undefined
         if (assetPath === undefined) {
           next()
           return
@@ -83,7 +88,7 @@ function jsonAssetPlugin(basePath: string): Plugin {
       })
     },
     hotUpdate({ file }) {
-      if (file !== cardJsonPath && file !== localeJsonPath) return
+      if (file !== cardJsonPath && file !== pIdolJsonPath && file !== localeJsonPath) return
 
       try {
         readJsonAsset(file)
@@ -99,12 +104,18 @@ function jsonAssetPlugin(basePath: string): Plugin {
     transformIndexHtml: (html) =>
       html
         .replace('__CARD_ASSET_URL__', `${basePath}${cardAssetFileName}`)
+        .replace('__P_IDOL_ASSET_URL__', `${basePath}${pIdolAssetFileName}`)
         .replace('__LOCALE_ASSET_URL__', `${basePath}${localeAssetFileName}`),
     generateBundle() {
       this.emitFile({
         type: 'asset',
         fileName: cardAssetFileName,
         source: cardJson,
+      })
+      this.emitFile({
+        type: 'asset',
+        fileName: pIdolAssetFileName,
+        source: pIdolJson,
       })
       this.emitFile({
         type: 'asset',
@@ -134,6 +145,7 @@ export default defineConfig(({ mode }) => {
         workbox: {
           skipWaiting: true,
           clientsClaim: true,
+          globPatterns: ['**/*.{js,css,html}', 'assets/*.json'],
           navigateFallbackDenylist: [/\/(sitemap\.xml|robots\.txt)$/],
           // 実験的なWebMCPコードは対応ブラウザが要求した場合だけ取得し、
           // 通常のPWA利用では事前配信しない

@@ -24,6 +24,8 @@ import { exhaustiveOptimizeAsync } from '../utils/unitSimulator'
 const targetCardName = 'もうすぐ本番ですね'
 // 全サポートから総当たりする最適編成の観測には、Vitest既定の5秒より長い上限を設ける
 const optimizerObservationTimeoutMs = 120_000
+// 通常のVitestでは重い最適化を実行せず、回帰コマンドが指定した場合だけ観測する
+const regressionObservationTest = it.skipIf(!env.REGRESSION_OUTPUT)
 
 interface CalculationObservation {
   id: string
@@ -114,7 +116,7 @@ async function observeOptimizer(
   })
 }
 
-it('support-card-score-basic: default score observation', async () => {
+regressionObservationTest('support-card-score-basic: default score observation', async () => {
   const card = data.AllCards.find((candidate) => candidate.name === targetCardName)
   expect(card, `card data for ${targetCardName}`).toBeDefined()
   if (!card) return
@@ -147,7 +149,7 @@ it('support-card-score-basic: default score observation', async () => {
   })
 })
 
-it('score-settings-custom: custom score observation', async () => {
+regressionObservationTest('score-settings-custom: custom score observation', async () => {
   const card = data.AllCards.find((candidate) => candidate.name === targetCardName)
   expect(card, `card data for ${targetCardName}`).toBeDefined()
   if (!card) return
@@ -187,7 +189,7 @@ it('score-settings-custom: custom score observation', async () => {
   })
 })
 
-it(
+regressionObservationTest(
   'optimization-basic: default optimizer observation',
   async () => {
     await observeOptimizer(
@@ -199,7 +201,7 @@ it(
   optimizerObservationTimeoutMs,
 )
 
-it(
+regressionObservationTest(
   'optimization-filtered: exclude assist cards from optimizer observation',
   async () => {
     await observeOptimizer(
@@ -213,7 +215,7 @@ it(
   optimizerObservationTimeoutMs,
 )
 
-it(
+regressionObservationTest(
   'optimization-logic: logic plan observation',
   async () => {
     await observeOptimizer(
@@ -225,7 +227,7 @@ it(
   optimizerObservationTimeoutMs,
 )
 
-it(
+regressionObservationTest(
   'optimization-anomaly: anomaly plan observation',
   async () => {
     await observeOptimizer(
@@ -237,7 +239,7 @@ it(
   optimizerObservationTimeoutMs,
 )
 
-it(
+regressionObservationTest(
   'optimization-dance-bonus: parameter bonus observation',
   async () => {
     await observeOptimizer(
@@ -251,7 +253,7 @@ it(
   optimizerObservationTimeoutMs,
 )
 
-it(
+regressionObservationTest(
   'optimization-type-balance: balanced type count constraint observation',
   async () => {
     await observeOptimizer(

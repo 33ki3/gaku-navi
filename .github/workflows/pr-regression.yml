@@ -1,0 +1,142 @@
+name: PR Regression
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: Compare base and head and publish PR comment
+    runs-on: ubuntu-24.04
+    # gh pr comment --attachにpush権限が必要なため、コメントと画像添付の権限を付ける
+    # PRコードも同じジョブで実行されるため、コメント投稿は同一リポジトリのPRに限定する
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            base/package-lock.json
+            head/package-lock.json
+      # 回帰テスト導入前のbaseにはrunnerがないため、存在するときだけ基準値を取る
+      - name: Check whether base has the regression runner
+        id: base
+        working-directory: base
+        run: |
+          AVAILABLE=false
+          if [[ -f package-lock.json && -f tests/e2e/scenarios.spec.ts ]] && \
+            jq -e '.scripts.regression and .devDependencies["@playwright/test"]' package.json > /dev/null; then
+            AVAILABLE=true
+          fi
+          echo "available=${AVAILABLE}" >> "$GITHUB_OUTPUT"
+      - name: Install base dependencies
+        id: base-install
+        if: steps.base.outputs.available == 'true'
+        continue-on-error: true
+        working-directory: base
+        run: npm ci
+      - name: Build base
+        id: base-build
+        if: steps.base.outputs.available == 'true' && steps.base-install.outcome == 'success'
+        continue-on-error: true
+        working-directory: base
+        run: npm run build
+      - name: Install base browsers
+        id: base-browsers
+        if: steps.base.outputs.available == 'true' && steps.base-build.outcome == 'success'
+        continue-on-error: true
+        working-directory: base
+        run: npx playwright install --with-deps chromium webkit
+      - name: Capture base observations
+        id: base-capture
+        if: steps.base.outputs.available == 'true' && steps.base-browsers.outcome == 'success'
+        continue-on-error: true
+        working-directory: base
+        run: npm run regression -- capture
+        env:
+          E2E_PREVIEW: '1'
+          REGRESSION_BRANCH: base
+          REGRESSION_COMMIT: ${{ github.event.pull_request.base.sha }}
+          REGRESSION_OUTPUT: tmp/regression-results/base
+      - name: Install head dependencies
+        id: head-install
+        working-directory: head
+        run: npm ci
+      - name: Install head browsers
+        id: head-browsers
+        if: steps.head-install.outcome == 'success'
+        working-directory: head
+        # base/headでPlaywrightの版が異なる場合に備え、各checkoutで対応するbrowserを導入する
+        run: npx playwright install --with-deps chromium webkit
+      - name: Build head
+        id: head-build
+        if: steps.head-install.outcome == 'success'
+        working-directory: head
+        run: npm run build
+      - name: Capture and compare head observations
+        id: head-capture
+        if: always() && steps.head-build.outcome == 'success' && steps.head-browsers.outcome == 'success'
+        working-directory: head
+        run: npm run regression -- capture
+        env:
+          E2E_PREVIEW: '1'
+          REGRESSION_BRANCH: head
+          REGRESSION_COMMIT: ${{ github.event.pull_request.head.sha }}
+          REGRESSION_OUTPUT: tmp/regression-results/head
+          REGRESSION_BASE_SCREENSHOT_DIR: ../base/tmp/regression-results/base/visual
+          REGRESSION_COMPARE_BASELINE: '1'
+      - name: Compare observations, write report, and prepare PR comment
+        if: always()
+        working-directory: head
+        run: npm run regression -- compare ../base/tmp/regression-results/base tmp/regression-results/head tmp/regression-results/report
+        env:
+          REGRESSION_VALIDATION_RESULT: ${{ steps.head-build.outcome == 'success' && steps.head-capture.outcome == 'success' && 'success' || 'failure' }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+      - name: Add report to Actions summary
+        if: always() && hashFiles('head/tmp/regression-results/report/report.md') != ''
+        working-directory: head
+        run: cat tmp/regression-results/report/report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Post PR regression comment
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          COMMENT_FILE=head/tmp/pr-comment-assets/comment.md
+          if [[ ! -f "$COMMENT_FILE" ]]; then
+            mkdir -p head/tmp/pr-comment-assets
+            printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n回帰レポートを作成できませんでした。\n' > "$COMMENT_FILE"
+          fi
+
+          mkdir -p head/tmp/pr-comment-assets/images
+          mapfile -d '' SCREENSHOTS < <(find head/tmp/pr-comment-assets/images -type f -name '*.png' -print0 | sort -z)
+          ATTACH_ARGS=()
+          for screenshot in "${SCREENSHOTS[@]}"; do
+            ATTACH_ARGS+=(--attach "$screenshot")
+          done
+
+          # 毎回新しいコメントとして、サマリーと画面差分を一緒に投稿する
+          gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE" "${ATTACH_ARGS[@]}"

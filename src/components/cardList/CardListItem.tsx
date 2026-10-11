@@ -83,6 +83,7 @@ export const CardListItem = memo(function CardListItem({
   const handleUncapChange = useCallback((u: UncapType) => onUncapChange(card.name, u), [onUncapChange, card.name])
   return (
     <div
+      data-testid="support-card"
       onClick={handleClick}
       className={`${constant.CARD_ITEM_CONTAINER} ${typeEntry.stripe} ${isUnitCardSelectMode ? (eligible ? 'ring-2 ring-blue-300 cursor-copy' : 'opacity-40 grayscale cursor-not-allowed') : ''} ${isCardExclusionEditMode ? 'cursor-pointer' : ''}`}
     >
@@ -137,7 +138,7 @@ export const CardListItem = memo(function CardListItem({
         {/* スコア行 */}
         <div onClick={handleScoreClick} className={constant.CARD_SCORE_ROW} title={t('card.click_breakdown')}>
           {/* スコア値 */}
-          <span className={`text-xs font-black ${typeEntry.text} shrink-0`}>
+          <span data-testid="support-card-score" className={`text-xs font-black ${typeEntry.text} shrink-0`}>
             {score}
             {t('ui.unit.score')}
           </span>

@@ -254,7 +254,7 @@ export default function UnitResult({
   }, [paramCap, breakdownTotal])
 
   return (
-    <div className="space-y-3">
+    <div data-testid="unit-result-panel" className="space-y-3">
       {/* 合計スコアとパラメータ内訳 */}
       <UnitResultBreakdown
         useCustomMode={useCustomMode}

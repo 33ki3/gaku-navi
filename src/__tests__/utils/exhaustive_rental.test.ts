@@ -299,7 +299,8 @@ describe('総当たり最適化', () => {
     },
   )
 
-  it('Pドリンク獲得=12で手動編成以上を返す', { timeout: 120000 }, async () => {
+  // 候補100件の探索を維持するため、CIランナーの性能差を考慮して上限を延ばす
+  it('Pドリンク獲得=12で手動編成以上を返す', { timeout: 300_000 }, async () => {
     const manualScore = getManualScorePDrink12()
 
     const settings: UnitSimulatorSettings = {

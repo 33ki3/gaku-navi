@@ -105,7 +105,7 @@ export function ScoreSettingsContent({
   ])
 
   return (
-    <div className="space-y-5 px-5 pb-5 pt-0">
+    <div data-testid="score-settings-content" className="space-y-5 px-5 pb-5 pt-0">
       {/* プリセットセクション */}
       <div className="pt-3">
         {/* プリセット設定セクション */}

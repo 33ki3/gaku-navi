@@ -4,7 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "knip": {
-    "entry": ["i18next.config.ts", "src/main.tsx", "src/appBootstrap.tsx"],
+    "entry": [
+      "i18next.config.ts",
+      "src/main.tsx",
+      "src/appBootstrap.tsx",
+      "scripts/regression.ts"
+    ],
     "ignore": [
       "src/i18n/i18next.d.ts",
       "src/env.d.ts"
@@ -17,6 +22,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "test": "vitest",
     "test:run": "vitest run",
+    "regression": "tsc -p scripts/tsconfig.json && node node_modules/.tmp/regression/regression.js",
     "i18n:check": "i18next-cli status && i18next-cli status --unused && vitest run src/__tests__/i18n"
   },
   "dependencies": {
@@ -28,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.63.0",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",

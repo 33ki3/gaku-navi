@@ -1,0 +1,190 @@
+{
+  "version": 2,
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "gaku-navi-score-settings": {
+      "scenario": "hif",
+      "difficulty": "none",
+      "manualParameterBonusBase": {
+        "vocal": 370,
+        "dance": 1000,
+        "visual": 870
+      },
+      "actionCounts": {
+        "sp_lesson_vo": 0,
+        "sp_lesson_da": 8,
+        "sp_lesson_vi": 0,
+        "class_work": 6,
+        "outing": 2,
+        "rest": 0,
+        "consult": 2,
+        "activity_supply_gift": 4,
+        "special_training": 0,
+        "exam_end": 3,
+        "exam_p_item_acquire": 0,
+        "normal_lesson_vo": 0,
+        "normal_lesson_da": 0,
+        "normal_lesson_vi": 0,
+        "sp_lesson_20": 4,
+        "exam_15": 10,
+        "skill_acquire": 20,
+        "a_skill_acquire": 5,
+        "m_skill_acquire": 15,
+        "ssr_card_acquire": 5,
+        "drowsy_acquire": 3,
+        "vitality_card_acquire": 10,
+        "vitality_card_acquire_8": 10,
+        "good_condition_card_acquire": 10,
+        "good_condition_card_acquire_8": 10,
+        "concentration_card_acquire": 10,
+        "concentration_card_acquire_8": 10,
+        "good_impression_card_acquire": 10,
+        "good_impression_card_acquire_8": 10,
+        "motivation_card_acquire": 10,
+        "motivation_card_acquire_8": 10,
+        "aggressive_card_acquire": 10,
+        "aggressive_card_acquire_8": 10,
+        "reserve_card_acquire": 10,
+        "reserve_card_acquire_8": 10,
+        "full_power_card_acquire": 10,
+        "full_power_card_acquire_8": 10,
+        "consult_skill_card_acquire": 10,
+        "skill_enhance": 3,
+        "a_skill_enhance": 3,
+        "m_skill_enhance": 3,
+        "delete": 3,
+        "a_skill_delete": 3,
+        "m_skill_delete": 3,
+        "trouble_delete": 3,
+        "p_drink_acquire": 26,
+        "p_drink_exchange": 12,
+        "change": 5,
+        "basic_card_change": 5,
+        "customize": 6,
+        "p_item_acquire": 1
+      },
+      "scheduleSelections": {
+        "1": "class_vo",
+        "2": "class_vo",
+        "3": "activity_supply",
+        "4": "da_lesson",
+        "5": "activity_supply",
+        "6": "class_da",
+        "7": "da_lesson",
+        "8": "consult",
+        "9": "special_training",
+        "10": "mid_exam",
+        "11": "activity_supply",
+        "12": "da_lesson",
+        "13": "activity_supply",
+        "14": "da_lesson",
+        "15": "class_vo",
+        "16": "vi_lesson",
+        "17": "consult",
+        "18": "final_exam"
+      },
+      "useScheduleLimits": true,
+      "includeSelfTrigger": true,
+      "includePItem": true,
+      "useFixedUncap": true,
+      "useCustomMode": false,
+      "customParamBonusRows": [
+        {
+          "vocal": 500,
+          "dance": 300,
+          "visual": 200
+        },
+        {
+          "vocal": 100,
+          "dance": 200,
+          "visual": 300
+        }
+      ],
+      "customClassBonus": {
+        "vocal": 100,
+        "dance": 0,
+        "visual": 0
+      },
+      "customNonBonusGain": {
+        "vocal": 200,
+        "dance": 0,
+        "visual": 0
+      },
+      "hifExamRatios": [
+        {
+          "vocal": 0,
+          "dance": 0,
+          "visual": 0
+        },
+        {
+          "vocal": 0,
+          "dance": 0,
+          "visual": 0
+        },
+        {
+          "vocal": 0,
+          "dance": 0,
+          "visual": 0
+        }
+      ],
+      "hifLessonSplitSub": true
+    },
+    "gaku-navi-schedule-selections": {
+      "hif": {
+        "1": "supply_gift",
+        "2": "da_lesson",
+        "3": "class_vi",
+        "4": "da_lesson",
+        "5": "outing",
+        "6": "class_vi",
+        "7": "final_exam",
+        "8": "supply_gift",
+        "9": "da_lesson",
+        "10": "class_vo",
+        "11": "da_lesson",
+        "12": "consult",
+        "13": "final_exam",
+        "14": "outing",
+        "15": "da_lesson",
+        "16": "supply_gift",
+        "17": "class_vo",
+        "18": "da_lesson",
+        "19": "consult",
+        "20": "mid_exam",
+        "21": "class_vi",
+        "22": "da_lesson",
+        "23": "supply_gift",
+        "24": "class_vi",
+        "25": "vi_lesson",
+        "26": "consult",
+        "27": "final_exam",
+        "28": "interval",
+        "29": "final_exam"
+      }
+    },
+    "gaku-navi-unit-builder": {
+      "plan": "sense",
+      "typeCountMin": {
+        "vocal": 0,
+        "dance": 3,
+        "visual": 0
+      },
+      "typeCountMax": {
+        "vocal": 4,
+        "dance": 4,
+        "visual": 4
+      },
+      "paramBonusPercent": {
+        "vocal": 30,
+        "dance": 30,
+        "visual": 30
+      },
+      "initialParams": {
+        "vocal": 300,
+        "dance": 300,
+        "visual": 300
+      },
+      "exhaustiveCandidateLimit": 30
+    }
+  }
+}

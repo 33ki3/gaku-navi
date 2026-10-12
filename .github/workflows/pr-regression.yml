@@ -38,6 +38,11 @@ jobs:
           cache-dependency-path: |
             base/package-lock.json
             head/package-lock.json
+      # Linux上の画面比較で日本語の字形を使うため、Noto CJKフォントを導入する
+      - name: Install Japanese fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fonts-noto-cjk
       # 回帰テスト導入前のbaseにはrunnerがないため、存在するときだけ基準値を取る
       - name: Check whether base has the regression runner
         id: base

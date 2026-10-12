@@ -355,12 +355,11 @@ async function openOptimizerApp(page: Page): Promise<void> {
   })
 }
 
-/** 保存済み基準画像がある場合に画面を比較し、差分を観測値として返す */
+/** 保存済み基準画像がある場合に取得済み画像を比較し、差分を観測値として返す */
 async function compareScreenshot(
   scenario: ScenarioDefinition,
   testInfo: TestInfo,
-  page: Page,
-  screenshotTarget?: Locator,
+  screenshot: Buffer,
 ): Promise<ScenarioObservation['visualComparison']> {
   // 比較を有効にしていない実行では通常の画面確認だけを行う
   if (process.env.REGRESSION_COMPARE_BASELINE !== '1') return undefined
@@ -369,13 +368,9 @@ async function compareScreenshot(
   // 初回追加シナリオには比較元がないため、画像を新規差分として扱わない
   if (!existsSync(snapshotPath)) return undefined
 
-  const options = { animations: 'disabled' as const, caret: 'hide' as const, threshold: 0.1 }
+  const options = { threshold: 0.1 }
   try {
-    if (screenshotTarget) {
-      await expect(screenshotTarget).toHaveScreenshot(`${scenario.id}.png`, options)
-    } else {
-      await expect(page).toHaveScreenshot(`${scenario.id}.png`, options)
-    }
+    expect(screenshot).toMatchSnapshot(`${scenario.id}.png`, options)
     return { matches: true }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -409,12 +404,12 @@ async function saveObservation(
   const observationPath = path.join(regressionOutput, 'observations', device, `${scenario.id}.json`)
   await mkdir(path.dirname(screenshotPath), { recursive: true })
   await mkdir(path.dirname(observationPath), { recursive: true })
-  if (screenshotTarget) {
-    await screenshotTarget.screenshot({ path: screenshotPath, animations: 'disabled', caret: 'hide' })
-  } else {
-    await page.screenshot({ path: screenshotPath, animations: 'disabled', caret: 'hide' })
-  }
-  const visualComparison = await compareScreenshot(scenario, testInfo, page, screenshotTarget)
+  // 添付画像と差分判定が別の画面状態にならないよう、同じ画像バッファを保存して比較する
+  const screenshot = screenshotTarget
+    ? await screenshotTarget.screenshot({ animations: 'disabled', caret: 'hide' })
+    : await page.screenshot({ animations: 'disabled', caret: 'hide' })
+  await writeFile(screenshotPath, screenshot)
+  const visualComparison = await compareScreenshot(scenario, testInfo, screenshot)
 
   observations.set(`${device}/${scenario.id}`, {
     screenshot: path.relative(regressionOutput, screenshotPath),

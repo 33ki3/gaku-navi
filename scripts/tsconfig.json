@@ -10,5 +10,5 @@
     "rootDir": ".",
     "outDir": "../node_modules/.tmp/regression"
   },
-  "include": ["regression.ts", "preparePrRegressionComment.ts"]
+  "include": ["regression.ts", "regressionSummary.ts"]
 }

@@ -14,10 +14,10 @@ jobs:
   regression:
     name: Compare base and head and publish PR comment
     runs-on: ubuntu-24.04
-    # gh pr comment --attachにpush権限が必要なため、コメントと画像添付の権限を付ける
+    # コメント本文はGITHUB_TOKENで投稿し、画像添付には対応するPATを使う
     # PRコードも同じジョブで実行されるため、コメント投稿は同一リポジトリのPRに限定する
     permissions:
-      contents: write
+      contents: read
       issues: write
       pull-requests: write
     steps:
@@ -124,12 +124,17 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          PR_REGRESSION_TOKEN: ${{ secrets.PR_REGRESSION_TOKEN }}
         run: |
           set -euo pipefail
           COMMENT_FILE=head/tmp/pr-comment-assets/comment.md
+          COMMENT_WITHOUT_IMAGES_FILE=head/tmp/pr-comment-assets/comment-no-images.md
           if [[ ! -f "$COMMENT_FILE" ]]; then
             mkdir -p head/tmp/pr-comment-assets
             printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n回帰レポートを作成できませんでした。\n' > "$COMMENT_FILE"
+          fi
+          if [[ ! -f "$COMMENT_WITHOUT_IMAGES_FILE" ]]; then
+            printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n回帰レポートを作成できませんでした。\n' > "$COMMENT_WITHOUT_IMAGES_FILE"
           fi
 
           mkdir -p head/tmp/pr-comment-assets/images
@@ -140,4 +145,13 @@ jobs:
           done
 
           # 毎回新しいコメントとして、サマリーと画面差分を一緒に投稿する
-          gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE" "${ATTACH_ARGS[@]}"
+          if (( ${#SCREENSHOTS[@]} > 0 )); then
+            if [[ -n "$PR_REGRESSION_TOKEN" ]]; then
+              GH_TOKEN="$PR_REGRESSION_TOKEN" gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE" "${ATTACH_ARGS[@]}"
+            else
+              echo "::warning::PR_REGRESSION_TOKEN が未設定のため、比較画像を省略してコメントを投稿します。"
+              gh pr comment "$PR_NUMBER" --body-file "$COMMENT_WITHOUT_IMAGES_FILE"
+            fi
+          else
+            gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE"
+          fi

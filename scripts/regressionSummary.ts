@@ -19,6 +19,7 @@ const checkoutRoots = {
 const reportRoot = path.join(projectRoot, 'tmp/regression-results/report')
 const outputRoot = path.join(projectRoot, 'tmp/pr-comment-assets')
 const imagesRoot = path.join(outputRoot, 'images')
+const commentWithoutImagesPath = path.join(outputRoot, 'comment-no-images.md')
 const summaryMarker = '<!-- pr-regression-visual-report -->'
 // GitHub CLIの1コメントあたりの画像添付上限に合わせ、Base/Head比較は最大25件にする。
 const maxAttachedImages = 50
@@ -129,7 +130,8 @@ function escapeMarkdownAlt(value: string): string {
     .replace(/[\r\n]+/g, ' ')
 }
 
-function createImageCell(imagePath: string | null, label: string): string {
+function createImageCell(imagePath: string | null, label: string, includeImageAttachments: boolean): string {
+  if (!includeImageAttachments) return '画像を添付できませんでした'
   if (!imagePath) return '画像を用意できませんでした'
 
   // GitHub CLIがローカル画像参照を添付URLへ置き換えられるよう、workspace相対のMarkdownにする
@@ -164,7 +166,7 @@ function getRunLabel(): string {
   return attempt ? `Run #${process.env.GITHUB_RUN_ID}（試行 ${attempt}）` : `Run #${process.env.GITHUB_RUN_ID}`
 }
 
-function createCommentBody(summary: CommentSummary): string {
+function createCommentBody(summary: CommentSummary, includeImageAttachments: boolean): string {
   const lines = [summaryMarker, '## 回帰テスト結果', '', `実行: ${getRunLabel()}`, '']
   const runUrl = getRunUrl()
 
@@ -192,7 +194,11 @@ function createCommentBody(summary: CommentSummary): string {
   }
   if (runUrl) lines.push(`[Actionsの実行結果](${runUrl})`, '')
 
-  lines.push('## 画面差分', '')
+  if (!includeImageAttachments && summary.totalVisualChangeCount > 0) {
+    lines.push('比較画像は添付されていません。Actions の設定を確認してください。', '')
+  }
+
+  lines.push('<details>', '<summary>画面差分</summary>', '', '## 画面差分', '')
   if (!summary.reportAvailable || !summary.baselineAvailable) {
     lines.push('比較画像はありません。', '')
   } else if (summary.totalVisualChangeCount === 0) {
@@ -215,17 +221,18 @@ function createCommentBody(summary: CommentSummary): string {
         '| --- | --- |',
       )
       lines.push(
-        `| ${createImageCell(change.baseImage, `${imageTitle} base`)} | ${createImageCell(change.headImage, `${imageTitle} head`)} |`,
+        `| ${createImageCell(change.baseImage, `${imageTitle} base`, includeImageAttachments)} | ${createImageCell(change.headImage, `${imageTitle} head`, includeImageAttachments)} |`,
         '',
       )
     }
   }
 
+  lines.push('</details>', '')
   return `${lines.join('\n')}\n`
 }
 
-/** 比較レポートとbase/head画像から、同じジョブ内で投稿するPRコメントを準備する */
-export async function preparePrRegressionComment(): Promise<void> {
+/** 比較レポートとbase/head画像から、PRコメント用サマリーを保存する */
+export async function writeRegressionSummary(): Promise<void> {
   // 比較レポートがない場合も、失敗したことを示すコメント用データを作る
   const report = await readJson(path.join(reportRoot, 'report.json'))
 
@@ -285,6 +292,7 @@ export async function preparePrRegressionComment(): Promise<void> {
     omittedVisualChangeCount: Math.max(0, parsedChanges.length - commentVisualChanges.length),
   }
 
-  // サマリーと画面差分を一つのコメント本文にまとめる
-  await writeFile(path.join(outputRoot, 'comment.md'), createCommentBody(summary))
+  // GITHUB_TOKENで画像を添付できない場合も、リンク切れのないコメント本文を用意する
+  await writeFile(path.join(outputRoot, 'comment.md'), createCommentBody(summary, true))
+  await writeFile(commentWithoutImagesPath, createCommentBody(summary, false))
 }

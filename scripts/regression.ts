@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { preparePrRegressionComment } from './preparePrRegressionComment.js'
+import { writeRegressionSummary } from './regressionSummary.js'
 import {
   type JsonObject,
   RegressionDevice,
@@ -741,7 +741,7 @@ async function compare(): Promise<void> {
   await writeFile(path.join(outputRoot, 'report.json'), JSON.stringify(report, null, 2))
   await writeFile(path.join(outputRoot, 'report.md'), buildMarkdown(report))
   console.log(`Regression report: ${path.relative(projectRoot, path.join(outputRoot, 'report.md'))}`)
-  await preparePrRegressionComment()
+  await writeRegressionSummary()
 }
 
 const command = process.argv[2]

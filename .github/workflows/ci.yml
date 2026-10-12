@@ -115,8 +115,33 @@ jobs:
           key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
       - run: npm test -- --run
 
+  cp-sat:
+    name: CP-SAT
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/cache/restore@v6
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: verification/cp_sat/requirements-dev.txt
+      - run: python -m pip install -r verification/cp_sat/requirements-dev.txt
+      - run: python -m ruff check verification/cp_sat
+      - run: python -m ruff format --check verification/cp_sat
+      - run: python -m mypy verification/cp_sat
+      - run: python -m unittest discover -s verification/cp_sat -p 'test_*.py'
+      - run: npm run verify:cp-sat
+
   check:
-    needs: [typecheck, lint, format, unused, i18n, test]
+    needs: [typecheck, lint, format, unused, i18n, test, cp-sat]
     runs-on: ubuntu-latest
     steps:
       - run: echo "All checks passed"

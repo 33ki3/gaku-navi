@@ -97,7 +97,7 @@ function resolveExhaustiveBatchSize(totalCombos: number): number {
  * @param input - 最適化入力
  * @returns パラメータキャップ最適化コンテキスト
  */
-function buildParameterContext(input: OptimizeInput): ParameterContext {
+export function createUnitScoringContext(input: OptimizeInput): ParameterContext {
   const { settings, scoreSettings } = input
   const { scenario, scheduleSelections } = scoreSettings
 
@@ -241,7 +241,7 @@ function buildResult(
     members,
     parameterBonusRows,
     outsidePercent,
-    buildParameterContext(input),
+    createUnitScoringContext(input),
   )
 
   return {
@@ -273,7 +273,7 @@ async function optimizeSearchBranches(
   isCancelled: () => boolean,
   onBetterResult?: (result: UnitResult) => void,
 ): Promise<OptimizeBranchResult> {
-  const paramCtx = buildParameterContext(input)
+  const paramCtx = createUnitScoringContext(input)
   // 固定レンタルの1枝も自動レンタルの複数枝も、同じ条件から総件数を求める
   const total = branches.reduce((sum, branch) => sum + branch.totalCombos, 0)
   const rentalBranchesVisited = getLockedRentalCardName(input.settings) ? 0 : branches.length

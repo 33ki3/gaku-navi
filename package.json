@@ -8,7 +8,8 @@
       "i18next.config.ts",
       "src/main.tsx",
       "src/appBootstrap.tsx",
-      "scripts/regression.ts"
+      "scripts/regression.ts",
+      "scripts/cpSatSummary.ts"
     ],
     "ignore": [
       "src/i18n/i18next.d.ts",
@@ -22,6 +23,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "test": "vitest",
     "test:run": "vitest run",
+    "verify:cp-sat": "RUN_CP_SAT_VERIFICATION=1 vitest run --no-file-parallelism src/__tests__/verification/cpSatOptimizer.test.ts src/__tests__/verification/optimizerMatrix.test.ts",
     "regression": "tsc -p scripts/tsconfig.json && node node_modules/.tmp/regression/regression.js",
     "i18n:check": "i18next-cli status && i18next-cli status --unused && vitest run src/__tests__/i18n"
   },

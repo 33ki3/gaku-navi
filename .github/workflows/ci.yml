@@ -115,8 +115,144 @@ jobs:
           key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
       - run: npm test -- --run
 
+  cp-sat:
+    name: CP-SAT (${{ matrix.shard }})
+    needs: setup
+    outputs:
+      report_hif_7_1: ${{ steps.report.outputs.report_hif_7_1 }}
+      report_hif_6_2: ${{ steps.report.outputs.report_hif_6_2 }}
+      report_hif_8: ${{ steps.report.outputs.report_hif_8 }}
+      report_hajime: ${{ steps.report.outputs.report_hajime }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [hif-7-1, hif-6-2, hif-8, hajime]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/cache/restore@v6
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: verification/cp_sat/requirements-dev.txt
+      - run: python -m pip install -r verification/cp_sat/requirements-dev.txt
+      - run: python -m ruff check verification/cp_sat
+      - run: python -m ruff format --check verification/cp_sat
+      - run: python -m mypy verification/cp_sat
+      - run: python -m unittest discover -s verification/cp_sat -p 'test_*.py'
+      - run: npm run verify:cp-sat
+        env:
+          GAKU_NAVI_CP_SAT_SHARD: ${{ matrix.shard }}
+      - name: Expose CP-SAT report to summary job
+        id: report
+        if: always()
+        env:
+          CP_SAT_SHARD: ${{ matrix.shard }}
+          REPORT_PATH: tmp/optimizer-validation/cp-sat-optimizer-matrix-results-${{ matrix.shard }}.json
+        run: |
+          if [[ ! -f "$REPORT_PATH" ]]; then
+            echo "No CP-SAT report found for $CP_SAT_SHARD"
+            exit 0
+          fi
+          output_name="report_${CP_SAT_SHARD//-/_}"
+          # job outputにはサイズ上限があるため、圧縮してからBase64文字列として渡す。
+          report_base64=$(gzip -c "$REPORT_PATH" | base64 -w 0)
+          if (( ${#report_base64} > 450000 )); then
+            echo "::error::Compressed CP-SAT report exceeds the safe job-output size for $CP_SAT_SHARD"
+            exit 1
+          fi
+          echo "$output_name=$report_base64" >> "$GITHUB_OUTPUT"
+
+  cp-sat-summary:
+    name: CP-SAT summary
+    if: always()
+    needs: cp-sat
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/cache/restore@v6
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
+      - name: Compile CP-SAT report scripts
+        run: npx tsc -p scripts/tsconfig.json
+      - name: Build CP-SAT summary
+        if: always()
+        env:
+          # 各shardは別ランナーなので、圧縮したjob outputを集計スクリプトで復元する。
+          CP_SAT_REPORT_HIF_7_1: ${{ needs.cp-sat.outputs.report_hif_7_1 }}
+          CP_SAT_REPORT_HIF_6_2: ${{ needs.cp-sat.outputs.report_hif_6_2 }}
+          CP_SAT_REPORT_HIF_8: ${{ needs.cp-sat.outputs.report_hif_8 }}
+          CP_SAT_REPORT_HAJIME: ${{ needs.cp-sat.outputs.report_hajime }}
+        run: |
+          node node_modules/.tmp/regression/cpSatSummary.js tmp/cp-sat-summary
+          cat tmp/cp-sat-summary/report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Check whether CP-SAT PR report changed
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: report_change
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -o pipefail
+          if [[ ! -s tmp/cp-sat-summary/comment.md ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # マーカー付きコメントだけを作成順に取り出し、最後のものを前回結果として比較する。
+          if ! gh api --paginate "repos/$GH_REPO/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("<!-- cp-sat-optimizer-report -->")) | .body | @base64' > tmp/cp-sat-summary/previous-comments.txt; then
+            echo "::warning::Could not read the previous CP-SAT PR report; posting the current report"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          current_hash=$(sha256sum tmp/cp-sat-summary/comment.md | cut -d ' ' -f 1)
+          previous_report=$(tail -n 1 tmp/cp-sat-summary/previous-comments.txt)
+          if [[ -z "$previous_report" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          previous_hash=$(printf '%s' "$previous_report" | base64 --decode | sha256sum | cut -d ' ' -f 1)
+          if [[ "$current_hash" == "$previous_hash" ]]; then
+            # コメント本文に変化がないときは、新しいPRコメントを増やさない。
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "CP-SAT PR report is unchanged; skipping the comment"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "CP-SAT PR report changed; posting an updated comment"
+          fi
+      - name: Post CP-SAT report as PR comment
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.report_change.outputs.changed != 'false'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ ! -s tmp/cp-sat-summary/comment.md ]]; then
+            mkdir -p tmp/cp-sat-summary
+            printf '<!-- cp-sat-optimizer-report -->\n## 最適編成検証結果\n検証レポートを作成できませんでした。\n' > tmp/cp-sat-summary/comment.md
+          fi
+          gh pr comment "$PR_NUMBER" --body-file tmp/cp-sat-summary/comment.md
+
   check:
-    needs: [typecheck, lint, format, unused, i18n, test]
+    needs: [typecheck, lint, format, unused, i18n, test, cp-sat, cp-sat-summary]
     runs-on: ubuntu-latest
     steps:
       - run: echo "All checks passed"

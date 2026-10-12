@@ -43,6 +43,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes fonts-noto-cjk
+          JP_FONT_FAMILY="$(fc-match --format='%{family}' 'Noto Sans CJK JP:lang=ja')"
+          echo "Japanese screenshot font: ${JP_FONT_FAMILY}"
+          if [[ "${JP_FONT_FAMILY}" != *"Noto Sans CJK JP"* ]]; then
+            echo "Noto Sans CJK JP is unavailable on the runner" >&2
+            exit 1
+          fi
       # 回帰テスト導入前のbaseにはrunnerがないため、存在するときだけ基準値を取る
       - name: Check whether base has the regression runner
         id: base

@@ -21,6 +21,14 @@ const regressionOutput = process.env.REGRESSION_OUTPUT
 const targetCardName = 'もうすぐ本番ですね'
 const appStorageKeys = readAppStorageKeys()
 
+// 比較画像では日本語の字形を揃え、画面確認に不要なアニメーションを除く
+const regressionScreenshotFontStyle = `
+  body, body * { font-family: "Noto Sans CJK JP", sans-serif !important; }
+`
+const regressionScreenshotStyle = `${regressionScreenshotFontStyle}
+  nav[aria-label="主要メニュー"].fixed { display: none !important; }
+`
+
 /** 内部計算JSONから、指定した計算結果の数値を検証付きで取り出す */
 function readInternalNumber(observation: unknown, key: string): number {
   if (observation === null || typeof observation !== 'object') {
@@ -43,6 +51,8 @@ function readInternalNumber(observation: unknown, key: string): number {
 interface ScenarioDefinition {
   /** Playwrightのテストタイトルと対応し、ブランチ間で固定する識別子 */
   id: string
+  /** 下部ナビの見た目も比較するシナリオ */
+  showMobileBottomNavigation?: boolean
   /** 回帰レポートでシナリオの操作内容を伝える短い説明 */
   description: string
   /** 差分対象にする画面状態・操作条件。内容はscenarioHashにも反映する */
@@ -85,8 +95,9 @@ const defaultScoreInput: ScoreScenarioInput = {
 const scenarios: Record<string, ScenarioDefinition> = {
   'home-default': {
     id: 'home-default',
+    showMobileBottomNavigation: true,
     description: '保存状態が空の初期画面',
-    semanticInput: { route: '/', storage: 'empty' },
+    semanticInput: { route: '/', storage: 'empty', showMobileBottomNavigation: true },
   },
   'support-card-search-basic': {
     id: 'support-card-search-basic',
@@ -355,6 +366,28 @@ async function openOptimizerApp(page: Page): Promise<void> {
   })
 }
 
+/** 撮影前にスクロール枠を先頭へ戻し、比較条件を揃えて画像を取得する */
+async function captureRegressionScreenshot(
+  page: Page,
+  screenshotTarget?: Locator,
+  showMobileBottomNavigation = false,
+): Promise<Buffer> {
+  await page.evaluate(() => {
+    window.scrollTo(0, 0)
+    for (const element of document.querySelectorAll<HTMLElement>('*')) {
+      if (element.scrollHeight > element.clientHeight) element.scrollTop = 0
+      if (element.scrollWidth > element.clientWidth) element.scrollLeft = 0
+    }
+  })
+
+  const options = {
+    animations: 'disabled' as const,
+    caret: 'hide' as const,
+    style: showMobileBottomNavigation ? regressionScreenshotFontStyle : regressionScreenshotStyle,
+  }
+  return screenshotTarget ? screenshotTarget.screenshot(options) : page.screenshot(options)
+}
+
 /** 保存済み基準画像がある場合に取得済み画像を比較し、差分を観測値として返す */
 async function compareScreenshot(
   scenario: ScenarioDefinition,
@@ -405,9 +438,7 @@ async function saveObservation(
   await mkdir(path.dirname(screenshotPath), { recursive: true })
   await mkdir(path.dirname(observationPath), { recursive: true })
   // 添付画像と差分判定が別の画面状態にならないよう、同じ画像バッファを保存して比較する
-  const screenshot = screenshotTarget
-    ? await screenshotTarget.screenshot({ animations: 'disabled', caret: 'hide' })
-    : await page.screenshot({ animations: 'disabled', caret: 'hide' })
+  const screenshot = await captureRegressionScreenshot(page, screenshotTarget, scenario.showMobileBottomNavigation)
   await writeFile(screenshotPath, screenshot)
   const visualComparison = await compareScreenshot(scenario, testInfo, screenshot)
 
@@ -483,7 +514,8 @@ test.afterEach(async ({ page }, testInfo) => {
     await mkdir(path.dirname(screenshotPath), { recursive: true })
     // 途中までの撮影に失敗したケースでも、画面状態を調査できるよう再取得する
     try {
-      await page.screenshot({ path: screenshotPath, animations: 'disabled', caret: 'hide' })
+      const screenshot = await captureRegressionScreenshot(page, undefined, scenario.showMobileBottomNavigation)
+      await writeFile(screenshotPath, screenshot)
       failureScreenshot = path.relative(regressionOutput, screenshotPath)
     } catch (error) {
       console.warn(`Failed to capture ${scenario.id} after a test failure`, error)
@@ -516,6 +548,9 @@ test.afterEach(async ({ page }, testInfo) => {
 test('home-default', async ({ page }, testInfo) => {
   await openApp(page)
   await expect(page.getByRole('searchbox', { name: 'サポート名 / Pアイテム / スキルカード' })).toBeVisible()
+  if (testInfo.project.name !== 'desktop') {
+    await expect(page.getByRole('navigation', { name: '主要メニュー' })).toBeVisible()
+  }
   await saveObservation(scenarios['home-default'], testInfo, page)
 })
 
@@ -1110,7 +1145,14 @@ test('options-modal-actions', async ({ page }, testInfo) => {
   const bottomNavigation = dialog.getByRole('checkbox', { name: 'スマホで下部メニューを表示' })
   await bottomNavigation.uncheck()
   await expect(bottomNavigation).not.toBeChecked()
+  if (testInfo.project.name !== 'desktop') {
+    await expect(page.getByRole('navigation', { name: '主要メニュー' })).toBeHidden()
+  }
   await bottomNavigation.check()
+  await expect(bottomNavigation).toBeChecked()
+  if (testInfo.project.name !== 'desktop') {
+    await expect(page.getByRole('navigation', { name: '主要メニュー' })).toBeVisible()
+  }
 
   const unitSection = dialog.getByRole('button', { name: '最適編成', exact: true })
   await unitSection.click()

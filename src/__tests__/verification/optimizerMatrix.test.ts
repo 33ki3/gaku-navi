@@ -50,7 +50,7 @@ const matrixRunEnabled = process.env.RUN_CP_SAT_VERIFICATION === '1'
 /** Solverを呼ばずに候補数だけを記録するプレビューを有効にする */
 const candidatePreviewEnabled = process.env[optimizerEnv('PREVIEW')] === '1'
 
-/** 主属性の枚数を3枚と4枚に分けて別ケースで検証する */
+/** 主属性の枚数を固定して別ケースで検証する */
 const splitMainTypeCounts = process.env[optimizerEnv('SPLIT_MAIN_COUNTS')] === '1'
 
 /** 通常実行では重いマトリクスをスキップする */
@@ -83,6 +83,15 @@ const plans = [
   { label: 'Anomaly', value: enums.PlanType.Anomaly },
 ]
 
+/** GitHub Actionsで独立実行する検証マトリクスの分割単位 */
+const optimizerShards = ['hif-7-1', 'hif-6-2', 'hif-8', 'hajime'] as const
+type OptimizerShard = (typeof optimizerShards)[number]
+const matrixShardValue = process.env[optimizerEnv('SHARD')]
+if (matrixShardValue !== undefined && !optimizerShards.includes(matrixShardValue as OptimizerShard)) {
+  throw new Error(`${optimizerEnv('SHARD')} must be one of: ${optimizerShards.join(', ')}`)
+}
+const matrixShard = matrixShardValue as OptimizerShard | undefined
+
 /** レポートへ出す属性の略称 */
 const typeLabels: Record<enums.ParameterType, string> = {
   [enums.ParameterType.Vocal]: 'Vo',
@@ -90,8 +99,19 @@ const typeLabels: Record<enums.ParameterType, string> = {
   [enums.ParameterType.Visual]: 'Vi',
 }
 
-/** 検証条件と育成プランを組み合わせた総ケース数 */
-const matrixCaseCount = buildVariants().length * plans.length
+/** 1つのActions shardに割り当てる検証ケース数 */
+const expectedCasesPerShard = 36
+
+/** 選択したshardの検証ケース数。全条件の実行ではマトリクス全体の件数 */
+const matrixCaseCount = matrixShard ? expectedCasesPerShard : buildVariants().length * plans.length
+
+/** 全shardの件数が均等で、全条件を分割できていることを確認する */
+for (const shard of optimizerShards) {
+  const shardCaseCount = buildVariants().filter((variant) => getOptimizerShard(variant) === shard).length * plans.length
+  if (shardCaseCount !== expectedCasesPerShard) {
+    throw new Error(`Expected ${expectedCasesPerShard} cases in ${shard}, got ${shardCaseCount}`)
+  }
+}
 
 /** ケース数と並列数からVitest全体のタイムアウトを見積もる */
 const matrixTestTimeoutMs =
@@ -115,6 +135,17 @@ interface Variant {
   hifLessonSplitSub?: boolean
 }
 
+/** 検証条件を、レッスン配分ごとのActions shardへ割り当てる */
+function getOptimizerShard(variant: Variant): OptimizerShard {
+  if (variant.scenario === enums.ScenarioType.Hajime) return 'hajime'
+
+  const lessonCounts = Object.values(variant.lessonCounts)
+  if (lessonCounts.includes(7)) return 'hif-7-1'
+  if (lessonCounts.includes(6)) return 'hif-6-2'
+  if (lessonCounts.includes(8)) return 'hif-8'
+  throw new Error(`No CP-SAT shard matches HIF variant ${variant.label}`)
+}
+
 /** アプリOptimizerが出した基準編成と点数 */
 interface OptimizerMatrixResult {
   /** 基準編成を計算したシナリオ */
@@ -127,6 +158,18 @@ interface OptimizerMatrixResult {
   score: number
   /** 6枚の編成とレンタル枠のカード */
   members: { name: string; isRental: boolean }[]
+}
+
+/** Actionsログに載せる編成名を、Verifierとアプリの両方の形式から整形する */
+function formatLineup(value: unknown): string {
+  if (!Array.isArray(value)) return '未記録'
+  const names = value.flatMap((member): string[] => {
+    if (typeof member !== 'object' || member === null || !('name' in member) || typeof member.name !== 'string')
+      return []
+    const rentalLabel = 'isRental' in member && member.isRental === true ? '（レンタル）' : ''
+    return [`${member.name}${rentalLabel}`]
+  })
+  return names.length > 0 ? names.join('、') : '未記録'
 }
 
 /** 設定条件を固定する共有fixtureの保存形式 */
@@ -896,21 +939,26 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
       // 条件表と育成プランの直積を作り、ケース指定があれば対象を絞る
       const variants = buildVariants()
       const matrixCases = variants.flatMap((variant) => plans.map((plan) => ({ variant, plan })))
-      const selectedCases = normalizedCaseFilter
-        ? matrixCases.filter(
-            ({ variant, plan }) => `${variant.scenario}:${variant.label}:${plan.label}` === normalizedCaseFilter,
-          )
-        : matrixCases
+      const selectedCases = matrixCases.filter(({ variant, plan }) => {
+        if (matrixShard && getOptimizerShard(variant) !== matrixShard) return false
+        return !normalizedCaseFilter || `${variant.scenario}:${variant.label}:${plan.label}` === normalizedCaseFilter
+      })
       if (selectedCases.length === 0) throw new Error(`No optimizer case matches ${caseFilter ?? 'the matrix'}`)
+      if (!normalizedCaseFilter) expect(selectedCases).toHaveLength(matrixCaseCount)
       const resultKeys = new Set<string>()
       const reportPath = resolve(
-        process.env[optimizerEnv('REPORT_PATH')] ?? 'tmp/optimizer-validation/cp-sat-optimizer-matrix-results.json',
+        process.env[optimizerEnv('REPORT_PATH')] ??
+          `tmp/optimizer-validation/cp-sat-optimizer-matrix-results${matrixShard ? `-${matrixShard}` : ''}.json`,
       )
       const failures: string[] = []
-      const branchCounts: (3 | 4 | undefined)[] = splitMainTypeCounts ? [3, 4] : [undefined]
-      // 主属性枚数を分割するときは、同じ条件を3枚固定と4枚固定のジョブに分ける
       const jobs = selectedCases.flatMap(({ variant, plan }, caseIndex) => {
         const key = `${variant.scenario}:${variant.label}`
+        const branchCounts: (2 | 3 | 4 | undefined)[] = splitMainTypeCounts
+          ? variant.mainType === enums.ParameterType.Visual
+            ? [2, 3, 4]
+            : [3, 4]
+          : [undefined]
+        // Vi主属性だけ2枚固定も含め、それ以外は3枚・4枚固定で比較する
         return branchCounts.map((mainTypeCount, branchIndex) => {
           const resultKey = `${key}:${plan.label}${mainTypeCount === undefined ? '' : `:main-${mainTypeCount}`}`
           if (resultKeys.has(resultKey)) throw new Error(`Duplicate optimizer result: ${resultKey}`)
@@ -969,10 +1017,11 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           // HIFは初期値300・パラボ30%、初レジェンドは初期値200・パラボ20%で計算する
           const initialValue = variant.scenario === enums.ScenarioType.Hif ? 300 : 200
           const paramBonusValue = variant.scenario === enums.ScenarioType.Hif ? 30 : 20
-          // 既定の3〜4枚条件を使い、分割実行時だけ主属性の枚数を固定する
+          // Vi主属性は2〜4枚、それ以外は従来の3〜4枚で探索し、指定時だけ枚数を固定する
           const typeCountMin = { ...storedUnit.typeCountMin }
           const typeCountMax = { ...storedUnit.typeCountMax }
-          typeCountMin[variant.mainType] = mainTypeCount ?? 3
+          const mainTypeMinimum = variant.mainType === enums.ParameterType.Visual ? 2 : 3
+          typeCountMin[variant.mainType] = mainTypeCount ?? mainTypeMinimum
           typeCountMax[variant.mainType] = mainTypeCount ?? 4
           const settings: UnitSimulatorSettings = {
             ...storedUnit,
@@ -1002,7 +1051,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             { onStats: (stats) => (evaluatedCombos = stats.evaluatedCombos) },
           )
           if (!optimized) {
-            const countLabel = mainTypeCount === undefined ? '3–4' : String(mainTypeCount)
+            const countLabel = mainTypeCount === undefined ? `${mainTypeMinimum}–4` : String(mainTypeCount)
             throw new Error(`No legal optimizer result with ${typeLabels[variant.mainType]}${countLabel} cards`)
           }
           const verificationResult: OptimizerMatrixResult = {
@@ -1023,6 +1072,11 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             mainType: variant.mainType,
             mainTypeCount: mainTypeCount ?? null,
             candidateScore: verificationResult.score,
+            appOptimizerLineup: optimized.members.map(({ card, isRental }) => ({
+              name: card.name,
+              parameterType: card.parameter_type,
+              isRental,
+            })),
             appOptimizerEvaluatedCombos: evaluatedCombos,
             ...payload.candidatePool,
             typeCountMin: payload.problem.typeCountMin,
@@ -1030,10 +1084,17 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             ...output,
           }
           if (!candidatePreviewEnabled && status !== 'optimal') failures.push(`${resultKey}: ${JSON.stringify(output)}`)
-          // 条件、点数、探索規模を記録し、ケース単位の進捗を表示する
+          const verifiedScore = [output.optimalScore, output.bestKnownScore].find(
+            (value): value is number => typeof value === 'number',
+          )
+          const appLineup = formatLineup(verificationResult.members)
+          const verifiedLineup = formatLineup(output.bestLineup)
+          // ケースごとの条件、点数、両方の編成をActionsログへ残す
           console.log(
-            `${completedCount + 1}/${jobs.length} ${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${status}` +
-              ` (app combinations=${evaluatedCombos}, ` +
+            `${completedCount + 1}/${jobs.length} ${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${status}; ` +
+              `アプリ ${verificationResult.score}点 [${appLineup}]; ` +
+              `CP-SAT ${verifiedScore === undefined ? '未確定' : `${verifiedScore}点`} [${verifiedLineup}] ` +
+              `(app combinations=${evaluatedCombos}, ` +
               `${payload.candidatePool.afterSafePruning}/${payload.candidatePool.beforeSafePruning} CP-SAT candidates)`,
           )
         } catch (error) {
@@ -1062,7 +1123,6 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
 
       // 全ケースを処理し、最適性未証明や計算エラーをテスト失敗として返す
       await Promise.all(Array.from({ length: workerCount }, () => runWorker()))
-      if (!caseFilter) expect(selectedCases).toHaveLength(variants.length * plans.length)
       expect(resultKeys.size).toBe(jobs.length)
       expect(failures, `${failures.join('\n')}\nSee ${reportPath}`).toEqual([])
     },

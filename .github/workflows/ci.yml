@@ -137,7 +137,7 @@ jobs:
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
@@ -252,7 +252,7 @@ jobs:
           gh pr comment "$PR_NUMBER" --body-file tmp/cp-sat-summary/comment.md
 
   check:
-    needs: [typecheck, lint, format, unused, i18n, test, cp-sat, cp-sat-summary]
+    needs: [typecheck, lint, format, unused, i18n, test, cp-sat-summary]
     runs-on: ubuntu-latest
     steps:
       - run: echo "All checks passed"

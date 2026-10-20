@@ -177,6 +177,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -239,7 +240,6 @@ jobs:
           fi
       - name: Post CP-SAT report as PR comment
         if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.report_change.outputs.changed != 'false'
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -252,7 +252,27 @@ jobs:
           gh pr comment "$PR_NUMBER" --body-file tmp/cp-sat-summary/comment.md
 
   check:
+    if: always()
     needs: [typecheck, lint, format, unused, i18n, test, cp-sat-summary]
     runs-on: ubuntu-latest
     steps:
+      - env:
+          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          FORMAT_RESULT: ${{ needs.format.result }}
+          UNUSED_RESULT: ${{ needs.unused.result }}
+          I18N_RESULT: ${{ needs.i18n.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          CP_SAT_SUMMARY_RESULT: ${{ needs.cp-sat-summary.result }}
+        run: |
+          if [[ "$TYPECHECK_RESULT" != "success" ||
+                "$LINT_RESULT" != "success" ||
+                "$FORMAT_RESULT" != "success" ||
+                "$UNUSED_RESULT" != "success" ||
+                "$I18N_RESULT" != "success" ||
+                "$TEST_RESULT" != "success" ||
+                "$CP_SAT_SUMMARY_RESULT" != "success" ]]; then
+            echo "::error::One or more required checks did not pass"
+            exit 1
+          fi
       - run: echo "All checks passed"

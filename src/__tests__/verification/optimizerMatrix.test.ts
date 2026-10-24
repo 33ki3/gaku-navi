@@ -102,6 +102,17 @@ const typeLabels: Record<enums.ParameterType, string> = {
 /** 1つのActions shardに割り当てる検証ケース数 */
 const expectedCasesPerShard = 36
 
+/** 初レジェンドで候補不足が見つかった条件に使う候補上限 */
+const hajimeExpandedCandidateLimit = 45
+
+/** 候補上限35でも最適性を確認できなかった初レジェンドの条件 */
+const hajimeExpandedCandidateLimitCases = new Set([
+  'Vo5_授業Da:Sense',
+  'Vo5_授業Da:Anomaly',
+  'Vo5_授業Vi:Sense',
+  'Vo5_授業Vi:Anomaly',
+])
+
 /** 選択したshardの検証ケース数。全条件の実行ではマトリクス全体の件数 */
 const matrixCaseCount = matrixShard ? expectedCasesPerShard : buildVariants().length * plans.length
 
@@ -1023,8 +1034,16 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           const mainTypeMinimum = variant.mainType === enums.ParameterType.Visual ? 2 : 3
           typeCountMin[variant.mainType] = mainTypeCount ?? mainTypeMinimum
           typeCountMax[variant.mainType] = mainTypeCount ?? 4
+          const needsExpandedCandidateLimit = hajimeExpandedCandidateLimitCases.has(`${variant.label}:${plan.label}`)
           const settings: UnitSimulatorSettings = {
             ...storedUnit,
+            exhaustiveCandidateLimit:
+              variant.scenario === enums.ScenarioType.Hajime && needsExpandedCandidateLimit
+                ? Math.max(
+                    storedUnit.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT,
+                    hajimeExpandedCandidateLimit,
+                  )
+                : storedUnit.exhaustiveCandidateLimit,
             plan: plan.value,
             typeCountMin,
             typeCountMax,

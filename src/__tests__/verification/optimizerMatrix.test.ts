@@ -446,6 +446,7 @@ interface OptimizerMatrixResult {
     parameterType: enums.ParameterType
     uncap: enums.UncapType
     isRental: boolean
+    cardScore: number
   }[]
 }
 
@@ -479,7 +480,7 @@ function formatLineup(value: unknown): string {
 }
 
 /** CP-SAT編成にも同じ所持状態の凸数を付けて結果へ記録する */
-function addUncapsToLineup(value: unknown, cardUncaps: Record<string, enums.UncapType>): unknown {
+function addUncapsToLineup(value: unknown, cardUncaps: Record<string, enums.UncapType>, cardScores: unknown): unknown {
   if (!Array.isArray(value)) return value
 
   return value.map((member) => {
@@ -488,7 +489,11 @@ function addUncapsToLineup(value: unknown, cardUncaps: Record<string, enums.Unca
     }
     const uncap = 'isRental' in member && member.isRental === true ? enums.UncapType.Four : cardUncaps[member.name]
     if (uncap === undefined) throw new Error(`No uncap level was generated for ${member.name}`)
-    return { ...member, uncap }
+    const cardScore =
+      typeof cardScores === 'object' && cardScores !== null && 'cardId' in member && typeof member.cardId === 'string'
+        ? Reflect.get(cardScores, member.cardId)
+        : undefined
+    return { ...member, uncap, ...(typeof cardScore === 'number' ? { cardScore } : {}) }
   })
 }
 
@@ -1830,16 +1835,25 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             variant: variant.label,
             plan: plan.label,
             score: optimized.totalScore,
-            members: optimized.members.map(({ card, isRental }) => {
+            members: optimized.members.map(({ card, isRental, result, supportSynergy }) => {
               const uncap = isRental ? enums.UncapType.Four : cardUncaps[card.name]
               if (uncap === undefined) throw new Error(`No uncap level was generated for ${card.name}`)
-              return { name: card.name, parameterType: card.parameter_type, uncap, isRental }
+              return {
+                name: card.name,
+                parameterType: card.parameter_type,
+                uncap,
+                isRental,
+                cardScore: result.totalIncrease - result.parameterBonus + supportSynergy,
+              }
             }),
           }
           // 候補プールを作り、プレビューでなければPython側のCP-SAT Solverを実行する
           const payload = makePayload(input, verificationResult)
           const output = candidatePreviewEnabled ? { status: 'preview' } : await runVerifier(payload)
-          const outputWithUncaps = { ...output, bestLineup: addUncapsToLineup(output.bestLineup, cardUncaps) }
+          const outputWithUncaps = {
+            ...output,
+            bestLineup: addUncapsToLineup(output.bestLineup, cardUncaps, output.bestLineupCardScores),
+          }
           const status = String(output.status)
           caseResults[index] = {
             kind,

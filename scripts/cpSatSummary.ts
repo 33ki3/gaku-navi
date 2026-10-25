@@ -11,6 +11,7 @@ const parameterTypeLabels = {
   dance: 'Da',
   visual: 'Vi',
 } as const
+const parameterTypeSortOrder: Record<string, number> = { vocal: 0, dance: 1, visual: 2 }
 
 interface ReportCases {
   reportCount: number
@@ -234,19 +235,35 @@ function uncapLabel(value: unknown): string {
   return '不明'
 }
 
-function renderLineupTable(value: unknown): string {
+function renderLineupTable(value: unknown, totalScore?: number): string {
   if (!Array.isArray(value)) return '編成データがありません。'
   const members = value.filter(isRecord)
   if (members.length === 0) return '編成データがありません。'
+  const sortedMembers = [...members].sort((left, right) => {
+    const leftTypeOrder = typeof left.parameterType === 'string' ? (parameterTypeSortOrder[left.parameterType] ?? 3) : 3
+    const rightTypeOrder =
+      typeof right.parameterType === 'string' ? (parameterTypeSortOrder[right.parameterType] ?? 3) : 3
+    if (leftTypeOrder !== rightTypeOrder) return leftTypeOrder - rightTypeOrder
+    const leftName = typeof left.name === 'string' ? left.name : '名称不明'
+    const rightName = typeof right.name === 'string' ? right.name : '名称不明'
+    return leftName.localeCompare(rightName, 'ja')
+  })
+  const cardScores = sortedMembers.map((member) => firstNumber(member.cardScore))
+  const cardScoreTotal = cardScores.every((score): score is number => score !== undefined)
+    ? cardScores.reduce((total, score) => total + score, 0)
+    : undefined
 
   return [
-    '| タイプ | カード | 凸数 |',
-    '| --- | --- | ---: |',
-    ...members.map((member) => {
+    '| タイプ | カード | 凸数 | カード点（連携込み） |',
+    '| --- | --- | ---: | ---: |',
+    ...sortedMembers.map((member) => {
       const type = typeLabel(member.parameterType) || '—'
       const rentalLabel = member.isRental === true ? '（レンタル）' : ''
-      return `| ${type} | ${escapeCell(typeof member.name === 'string' ? member.name : '名称不明')} | ${uncapLabel(member.uncap)}${rentalLabel} |`
+      const cardScore = firstNumber(member.cardScore)
+      return `| ${type} | ${escapeCell(typeof member.name === 'string' ? member.name : '名称不明')} | ${uncapLabel(member.uncap)}${rentalLabel} | ${cardScore ?? '—'} |`
     }),
+    `|  | カード点合計 |  | ${cardScoreTotal ?? '未集計'} |`,
+    `|  | 総合点 |  | ${totalScore ?? '未確定'} |`,
   ].join('\n')
 }
 
@@ -270,17 +287,19 @@ function renderLineupDetails(results: JsonRecord[], title: string): string {
     ...rows.flatMap((result) => {
       const { label, plan } = conditionLabel(result)
       const status = statusLabel(result.status)
+      const appScore = firstNumber(result.candidateScore)
+      const solverScore = theoryScore(result)
       return [
         '<details>',
         `<summary>${escapeCell(label)} / ${escapeCell(plan)} / ${status}</summary>`,
         '',
         '**最適編成（アプリの結果）**',
         '',
-        renderLineupTable(result.appOptimizerLineup),
+        renderLineupTable(result.appOptimizerLineup, appScore),
         '',
         '**理論編成（CP-SATの結果）**',
         '',
-        renderLineupTable(result.bestLineup),
+        renderLineupTable(result.bestLineup, solverScore),
         '',
         '</details>',
         '',
@@ -446,6 +465,7 @@ function renderReport(
     '「最適編成」はアプリ側の探索結果、「理論編成」はCP-SATの探索結果です。optimalは最適性を証明済み、non_optimalは制限時間内に証明できなかった状態です。',
     '固定4凸とランダム検証は別々に点数順位・カード採用回数を集計します。採用回数にはレンタル枠のカードも含みます。',
     '各条件をSense・Logic・Anomalyの3プランで検証するため、点数表にプランを表示します。',
+    '編成表のカード点はカード本体点と編成内連携点の合計です。総合点には初期パラ・パラボなど編成全体の点も含まれます。',
   )
 
   if (fixedResults.length > 0) {

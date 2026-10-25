@@ -21,8 +21,5 @@ npm run dev
 ## 主な確認コマンド
 
 ```bash
-npm run lint
-npx tsc -p tsconfig.app.json --noEmit
-npx vitest run
-npx knip --reporter compact
+npm run checks
 ```

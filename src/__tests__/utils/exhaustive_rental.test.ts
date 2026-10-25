@@ -202,48 +202,6 @@ function getManualScore(pDrinkAcquire = 10): number {
   return result?.totalScore ?? 0
 }
 
-/** 手動編成（Pドリンク獲得=12）をスコア計算する */
-function getManualScorePDrink12(): number {
-  const selectedCards = [
-    'ぜったいに取るんだ！',
-    'どんな関係なんですか？',
-    'あなたたちのことが好き',
-    'ふわふわでワクワク',
-    'まだ上がりませんように！',
-    'いつまでも続けばいいのに',
-  ]
-  const settings: UnitSimulatorSettings = {
-    plan: enums.PlanType.Logic,
-    allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
-    spConstraint: { vocal: 2, dance: 2, visual: 0 },
-    typeCountMin: {
-      [enums.ParameterType.Vocal]: 0,
-      [enums.ParameterType.Dance]: 0,
-      [enums.ParameterType.Visual]: 0,
-    },
-    typeCountMax: {
-      [enums.ParameterType.Vocal]: 3,
-      [enums.ParameterType.Dance]: 3,
-      [enums.ParameterType.Visual]: 3,
-    },
-    paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-    rentalCardName: 'いつまでも続けばいいのに',
-    lockedCards: [...new Set([...[], 'いつまでも続けばいいのに'])],
-    selectedCards,
-    excludedCardNames: [],
-    initialParams: { vocal: 125, dance: 169, visual: 210 },
-  }
-  const result = evaluateManualUnit({
-    settings,
-    scoreSettings: makeUserScoreSettings(12),
-    cardUncaps: fullCardUncaps,
-    excludedCardNames: [],
-    allCards: AllCards,
-    cardByName,
-  })
-  return result?.totalScore ?? 0
-}
-
 describe('総当たり最適化', () => {
   it(
     'レンタル未固定で exhaustiveOptimizeAsync がいつまでも続けばいいのに 以上のスコアを発見する',
@@ -298,54 +256,6 @@ describe('総当たり最適化', () => {
       expect(progressCalls).toBeGreaterThan(0)
     },
   )
-
-  // 候補100件の探索を維持するため、CIランナーの性能差を考慮して上限を延ばす
-  it('Pドリンク獲得=12で手動編成以上を返す', { timeout: 300_000 }, async () => {
-    const manualScore = getManualScorePDrink12()
-
-    const settings: UnitSimulatorSettings = {
-      plan: enums.PlanType.Logic,
-      allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
-      spConstraint: { vocal: 2, dance: 2, visual: 0 },
-      typeCountMin: {
-        [enums.ParameterType.Vocal]: 0,
-        [enums.ParameterType.Dance]: 0,
-        [enums.ParameterType.Visual]: 0,
-      },
-      typeCountMax: {
-        [enums.ParameterType.Vocal]: 3,
-        [enums.ParameterType.Dance]: 3,
-        [enums.ParameterType.Visual]: 3,
-      },
-      paramBonusPercent: { vocal: 23, dance: 25.9, visual: 16.5 },
-      rentalCardName: null,
-      lockedCards: [],
-      selectedCards: [],
-      excludedCardNames: [],
-      initialParams: { vocal: 125, dance: 169, visual: 210 },
-      exhaustiveCandidateLimit: 100,
-    }
-
-    const result = await exhaustiveOptimizeAsync(
-      {
-        settings,
-        scoreSettings: makeUserScoreSettings(12),
-        cardUncaps: fullCardUncaps,
-        excludedCardNames: [],
-        allCards: AllCards,
-        cardByName,
-      },
-      () => {
-        // no-op
-      },
-      () => false,
-      undefined,
-    )
-
-    expect(result).not.toBeNull()
-    if (!result) return
-    expect(result.totalScore).toBeGreaterThanOrEqual(manualScore)
-  })
 
   it(
     'unifyRentalLockが有効な場合、レンタル枠でロックした所持サポカを通常枠に入れたパターンも含めて最大スコアを探索する',

@@ -11,7 +11,8 @@ permissions:
   contents: read
 
 jobs:
-  setup:
+  node-setup:
+    name: Node dependencies
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,15 +20,22 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/restore@v6
+        id: node-modules-cache
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
+      - if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+      - if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
 
-  typecheck:
-    name: TypeScript
-    needs: setup
+  node-checks:
+    name: Node checks
+    needs: node-setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -38,86 +46,59 @@ jobs:
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - run: npx tsc -p tsconfig.app.json --noEmit
+      - run: npm run checks
 
-  lint:
-    name: ESLint
-    needs: setup
+  python-setup:
+    name: Python dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      python_version: ${{ steps.py.outputs.python-version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        id: py
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            verification/cp_sat/requirements.txt
+            verification/cp_sat/requirements-dev.txt
+      - uses: actions/cache/restore@v6
+        id: python-venv-cache
+        with:
+          path: .venv
+          key: python-venv-${{ runner.os }}-${{ steps.py.outputs.python-version }}-${{ hashFiles('verification/cp_sat/requirements.txt', 'verification/cp_sat/requirements-dev.txt') }}
+      - if: steps.python-venv-cache.outputs.cache-hit != 'true'
+        run: python -m venv .venv
+      - if: steps.python-venv-cache.outputs.cache-hit != 'true'
+        run: .venv/bin/python -m pip install -r verification/cp_sat/requirements-dev.txt
+      - if: steps.python-venv-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: .venv
+          key: python-venv-${{ runner.os }}-${{ steps.py.outputs.python-version }}-${{ hashFiles('verification/cp_sat/requirements.txt', 'verification/cp_sat/requirements-dev.txt') }}
+
+  python-checks:
+    name: Python checks
+    needs: python-setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-python@v7
         with:
-          node-version: 22
+          python-version: ${{ needs.python-setup.outputs.python_version }}
       - uses: actions/cache/restore@v6
         with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - run: npm run lint
-
-  format:
-    name: Prettier
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - uses: actions/cache/restore@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - run: npx prettier --check "src/**/*.{ts,tsx}"
-
-  unused:
-    name: Knip
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - uses: actions/cache/restore@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - run: npx knip --reporter compact
-
-  i18n:
-    name: i18n
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - uses: actions/cache/restore@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - run: npm run i18n:check
-
-  test:
-    name: Vitest
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - uses: actions/cache/restore@v6
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
-      - run: npm test -- --run
+          path: .venv
+          key: python-venv-${{ runner.os }}-${{ needs.python-setup.outputs.python_version }}-${{ hashFiles('verification/cp_sat/requirements.txt', 'verification/cp_sat/requirements-dev.txt') }}
+      - run: .venv/bin/python -m ruff check verification/cp_sat
+      - run: .venv/bin/python -m ruff format --check verification/cp_sat
+      - run: .venv/bin/python -m mypy verification/cp_sat
+      - run: .venv/bin/python -m unittest discover -s verification/cp_sat -p 'test_*.py'
 
   cp-sat:
     name: CP-SAT (${{ matrix.shard }})
-    needs: setup
+    needs: [node-setup, python-setup]
     outputs:
       report_hif_7_1: ${{ steps.report.outputs.report_hif_7_1 }}
       report_hif_6_2: ${{ steps.report.outputs.report_hif_6_2 }}
@@ -139,17 +120,15 @@ jobs:
           key: node-modules-${{ runner.os }}-node-22-${{ hashFiles('package-lock.json') }}
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.13'
-          cache: pip
-          cache-dependency-path: verification/cp_sat/requirements-dev.txt
-      - run: python -m pip install -r verification/cp_sat/requirements-dev.txt
-      - run: python -m ruff check verification/cp_sat
-      - run: python -m ruff format --check verification/cp_sat
-      - run: python -m mypy verification/cp_sat
-      - run: python -m unittest discover -s verification/cp_sat -p 'test_*.py'
-      - run: npm run verify:cp-sat
+          python-version: ${{ needs.python-setup.outputs.python_version }}
+      - uses: actions/cache/restore@v6
+        with:
+          path: .venv
+          key: python-venv-${{ runner.os }}-${{ needs.python-setup.outputs.python_version }}-${{ hashFiles('verification/cp_sat/requirements.txt', 'verification/cp_sat/requirements-dev.txt') }}
+      - run: npm run cp-sat
         env:
           GAKU_NAVI_CP_SAT_SHARD: ${{ matrix.shard }}
+          GAKU_NAVI_CP_SAT_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
       - name: Expose CP-SAT report to summary job
         id: report
         if: always()
@@ -253,26 +232,18 @@ jobs:
 
   check:
     if: always()
-    needs: [typecheck, lint, format, unused, i18n, test, cp-sat-summary]
+    needs: [node-checks, python-checks, cp-sat-summary]
     runs-on: ubuntu-latest
     steps:
       - env:
-          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
-          LINT_RESULT: ${{ needs.lint.result }}
-          FORMAT_RESULT: ${{ needs.format.result }}
-          UNUSED_RESULT: ${{ needs.unused.result }}
-          I18N_RESULT: ${{ needs.i18n.result }}
-          TEST_RESULT: ${{ needs.test.result }}
+          NODE_CHECKS_RESULT: ${{ needs.node-checks.result }}
+          PYTHON_CHECKS_RESULT: ${{ needs.python-checks.result }}
           CP_SAT_SUMMARY_RESULT: ${{ needs.cp-sat-summary.result }}
         run: |
-          if [[ "$TYPECHECK_RESULT" != "success" ||
-                "$LINT_RESULT" != "success" ||
-                "$FORMAT_RESULT" != "success" ||
-                "$UNUSED_RESULT" != "success" ||
-                "$I18N_RESULT" != "success" ||
-                "$TEST_RESULT" != "success" ||
+          if [[ "$NODE_CHECKS_RESULT" != "success" ||
+                "$PYTHON_CHECKS_RESULT" != "success" ||
                 "$CP_SAT_SUMMARY_RESULT" != "success" ]]; then
-            echo "::error::One or more required checks did not pass"
+            echo "::error::Node checks, Python checks, or CP-SAT summary did not pass"
             exit 1
           fi
-      - run: echo "All checks passed"
+      - run: echo "Required checks passed"

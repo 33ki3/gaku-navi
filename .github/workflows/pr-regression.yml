@@ -13,7 +13,7 @@ permissions:
 jobs:
   regression:
     name: Compare base and head and publish PR comment
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     # コメント本文はGITHUB_TOKENで投稿し、画像添付には対応するPATを使う
     # PRコードも同じジョブで実行されるため、コメント投稿は同一リポジトリのPRに限定する
     permissions:

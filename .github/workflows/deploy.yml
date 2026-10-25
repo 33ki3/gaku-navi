@@ -8,6 +8,10 @@ on:
       - '.github/**'
       - '.vscode/**'
       - 'LICENSE'
+      - 'src/__tests__/**'
+      - 'tests/**'
+      - 'verification/**'
+      - 'scripts/**'
   workflow_dispatch:
 
 permissions:

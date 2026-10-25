@@ -1,28 +1,37 @@
 /** 現在のカードデータでアプリの最適編成を求め、同じ条件の最適性をCP-SATで検証する */
 import { spawn } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
 import * as constant from '../../constant'
-import { AllCards } from '../../data'
+import {
+  ABILITY_MAX_COUNT,
+  ActionCategoryList,
+  AllCards,
+  LinkedActionGroups,
+  ScheduleControlledIds,
+  getScheduleData,
+  isScheduleActivityAllowed,
+} from '../../data'
 import { initializeCards } from '../../data/card/cards'
-import type { ParameterValues, ScoreSettings, SupportCard } from '../../types/card'
+import type { ActionCounts, ParameterValues, ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
 import type { OptimizeInput } from '../../types/unitOptimizer'
 import { createCardScoreCalculationContext } from '../../utils/calculator/calculateCardScores'
 import { calculateParameterBonus } from '../../utils/calculator/parameterBonus'
+import { mergeScheduleCounts, normalizeScoreSettingsDerived } from '../../utils/scoreSettings'
+import { getLockedRentalCardName } from '../../utils/unitCardSelection'
 import {
   createFixedCandidates,
   createRentalPool,
   prepareCandidates,
 } from '../../utils/unitOptimizer/candidatePreparation'
 import { getSynergyExtraCount } from '../../utils/unitOptimizer/synergyScore'
-import { normalizeScoreSettingsDerived } from '../../utils/scoreSettings'
 import { createUnitScoringContext, exhaustiveOptimizeAsync } from '../../utils/unitSimulator'
-import { getLockedRentalCardName } from '../../utils/unitCardSelection'
 
 /** 数値設定を検証して読み、誤入力で検証を無制限に実行しない
  *
@@ -70,6 +79,12 @@ const workerLimit = matrixRunEnabled
   ? readPositiveIntegerEnv(optimizerEnv('WORKERS'), defaultWorkerLimit)
   : defaultWorkerLimit
 
+/** Verifierごとの制限時間を超えてプロセスを終了するまでの猶予 */
+const verifierProcessGracePeriodMs = 30_000
+
+/** マトリクス全体の起動・終了処理に見込む猶予 */
+const matrixSetupGracePeriodMs = 60_000
+
 /** シナジー提供数をVerifierの入力形式へ変換するためのアクション順 */
 const actionIds = Object.values(enums.ActionIdType)
 
@@ -92,6 +107,9 @@ if (matrixShardValue !== undefined && !optimizerShards.includes(matrixShardValue
 }
 const matrixShard = matrixShardValue as OptimizerShard | undefined
 
+/** 同じActions実行内で全shardを再現できるseed。ローカル実行では毎回新しいseedを作る */
+const matrixRunSeed = process.env[optimizerEnv('SEED')] ?? randomUUID()
+
 /** レポートへ出す属性の略称 */
 const typeLabels: Record<enums.ParameterType, string> = {
   [enums.ParameterType.Vocal]: 'Vo',
@@ -99,13 +117,10 @@ const typeLabels: Record<enums.ParameterType, string> = {
   [enums.ParameterType.Visual]: 'Vi',
 }
 
-/** 1つのActions shardに割り当てる検証ケース数 */
-const expectedCasesPerShard = 36
-
 /** 初レジェンドで候補不足が見つかった条件に使う候補上限 */
 const hajimeExpandedCandidateLimit = 45
 
-/** 候補上限35でも最適性を確認できなかった初レジェンドの条件 */
+/** 候補上限30でも最適性を確認できなかった初レジェンドの条件 */
 const hajimeExpandedCandidateLimitCases = new Set([
   'Vo5_授業Da:Sense',
   'Vo5_授業Da:Anomaly',
@@ -113,20 +128,153 @@ const hajimeExpandedCandidateLimitCases = new Set([
   'Vo5_授業Vi:Anomaly',
 ])
 
-/** 選択したshardの検証ケース数。全条件の実行ではマトリクス全体の件数 */
-const matrixCaseCount = matrixShard ? expectedCasesPerShard : buildVariants().length * plans.length
-
-/** 全shardの件数が均等で、全条件を分割できていることを確認する */
-for (const shard of optimizerShards) {
-  const shardCaseCount = buildVariants().filter((variant) => getOptimizerShard(variant) === shard).length * plans.length
-  if (shardCaseCount !== expectedCasesPerShard) {
-    throw new Error(`Expected ${expectedCasesPerShard} cases in ${shard}, got ${shardCaseCount}`)
-  }
+/** 整数値のランダム範囲 */
+interface IntegerRange {
+  min: number
+  max: number
 }
 
-/** ケース数と並列数からVitest全体のタイムアウトを見積もる */
-const matrixTestTimeoutMs =
-  Math.ceil(matrixCaseCount / Math.min(matrixCaseCount, workerLimit)) * (verificationTimeoutMs + 30_000) + 60_000
+/** アビリティ上限を必須値として読み、上限定義の不足を設定ミスとして検出する */
+function getAbilityMaximumCount(abilityName: enums.AbilityNameKeyType): number {
+  const maximum = ABILITY_MAX_COUNT[abilityName]
+  if (maximum === undefined) throw new Error(`Missing ability maximum count for ${abilityName}`)
+  return maximum
+}
+
+/** シナリオ別に持つVo・Da・Viの基準値 */
+type ScenarioParameterValues = Record<Variant['scenario'], ParameterValues>
+
+/** CP-SATのランダム条件で使う値の範囲。値を散らす幅はここだけを編集する */
+const randomCaseValueRanges: {
+  randomizeOtherScheduleActivities: boolean
+  manualActionCounts: {
+    byAction: Partial<Record<enums.ActionIdType, IntegerRange>>
+  }
+  initialParams: {
+    baselineByScenario: ScenarioParameterValues
+    variation: number
+  }
+  paramBonusPercent: { baselineByScenario: ScenarioParameterValues; variationPercentagePoints: number; step: number }
+} = {
+  /** レッスン・授業以外の変更可能な週を、その週の候補からseed付きで選び直す */
+  randomizeOtherScheduleActivities: true,
+  /** スケジュールで自動調整されない点数設定の回数範囲。各項目を個別に指定する */
+  manualActionCounts: {
+    byAction: {
+      [enums.ActionIdType.SpLesson20]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.SpLesson20),
+      },
+      [enums.ActionIdType.Exam15]: { min: 0, max: getAbilityMaximumCount(enums.AbilityNameKeyType.Exam15) },
+      [enums.ActionIdType.SkillAcquire]: { min: 15, max: 20 },
+      [enums.ActionIdType.ASkillAcquire]: { min: 5, max: 10 },
+      [enums.ActionIdType.MSkillAcquire]: { min: 10, max: 15 },
+      [enums.ActionIdType.SsrCardAcquire]: { min: 0, max: 8 },
+      [enums.ActionIdType.DrowsyAcquire]: { min: 0, max: 4 },
+      [enums.ActionIdType.VitalityCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.VitalityCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.VitalityCardAcquire8),
+      },
+      [enums.ActionIdType.GoodConditionCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.GoodConditionCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.GoodConditionCardAcquire8),
+      },
+      [enums.ActionIdType.ConcentrationCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.ConcentrationCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.ConcentrationCardAcquire8),
+      },
+      [enums.ActionIdType.GoodImpressionCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.GoodImpressionCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.GoodImpressionCardAcquire8),
+      },
+      [enums.ActionIdType.MotivationCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.MotivationCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.MotivationCardAcquire8),
+      },
+      [enums.ActionIdType.AggressiveCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.AggressiveCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.AggressiveCardAcquire8),
+      },
+      [enums.ActionIdType.ReserveCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.ReserveCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.ReserveCardAcquire8),
+      },
+      [enums.ActionIdType.FullPowerCardAcquire]: { min: 4, max: 10 },
+      [enums.ActionIdType.FullPowerCardAcquire8]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.FullPowerCardAcquire8),
+      },
+      [enums.ActionIdType.ConsultSkillCardAcquire]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.ConsultSkillCardAcquire),
+      },
+      [enums.ActionIdType.SkillEnhance]: { min: 0, max: 8 },
+      [enums.ActionIdType.ASkillEnhance]: { min: 0, max: 8 },
+      [enums.ActionIdType.MSkillEnhance]: { min: 0, max: 8 },
+      [enums.ActionIdType.Delete]: { min: 0, max: 8 },
+      [enums.ActionIdType.ASkillDelete]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.ASkillDelete),
+      },
+      [enums.ActionIdType.MSkillDelete]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.MSkillDelete),
+      },
+      [enums.ActionIdType.TroubleDelete]: { min: 0, max: 8 },
+      [enums.ActionIdType.PDrinkAcquire]: { min: 10, max: 30 },
+      [enums.ActionIdType.PDrinkExchange]: { min: 0, max: 15 },
+      [enums.ActionIdType.Change]: { min: 0, max: getAbilityMaximumCount(enums.AbilityNameKeyType.Change) },
+      [enums.ActionIdType.BasicCardChange]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.BasicCardChange),
+      },
+      [enums.ActionIdType.Customize]: { min: 0, max: getAbilityMaximumCount(enums.AbilityNameKeyType.Customize) },
+      [enums.ActionIdType.PItemAcquire]: {
+        min: 0,
+        max: getAbilityMaximumCount(enums.AbilityNameKeyType.PItemAcquire),
+      },
+    },
+  },
+  /** 初期パラメータの基準値と、前後に散らす幅 */
+  initialParams: {
+    baselineByScenario: {
+      [enums.ScenarioType.Hif]: { vocal: 300, dance: 300, visual: 300 },
+      [enums.ScenarioType.Hajime]: { vocal: 200, dance: 200, visual: 200 },
+    },
+    variation: 100,
+  },
+  /** 初期パラメータボーナスの基準値と、前後に散らすポイント数 */
+  paramBonusPercent: {
+    baselineByScenario: {
+      [enums.ScenarioType.Hif]: { vocal: 30, dance: 30, visual: 30 },
+      [enums.ScenarioType.Hajime]: { vocal: 20, dance: 20, visual: 20 },
+    },
+    variationPercentagePoints: 10,
+    step: constant.PARAMETER_BONUS_PERCENT_STEP,
+  },
+}
+
+/** Variantのスケジュールでレッスン週を数えるため、通常レッスンの内訳は追加しない */
+const normalLessonActionIds = new Set<enums.ActionIdType>([
+  enums.ActionIdType.NormalLessonVo,
+  enums.ActionIdType.NormalLessonDa,
+  enums.ActionIdType.NormalLessonVi,
+])
+
+/** スケジュール連動項目と通常レッスン内訳以外は、個別範囲を必須にする */
+for (const { id } of ActionCategoryList) {
+  if (ScheduleControlledIds.has(id) || normalLessonActionIds.has(id)) continue
+  if (!randomCaseValueRanges.manualActionCounts.byAction[id]) {
+    throw new Error(`Missing random range for actionCounts.${id}`)
+  }
+}
 
 /** 1つの検証条件で使うシナリオ、レッスン配分、授業属性 */
 interface Variant {
@@ -146,7 +294,7 @@ interface Variant {
   hifLessonSplitSub?: boolean
 }
 
-/** 検証条件を、レッスン配分ごとのActions shardへ割り当てる */
+/** Variantが属するActions shardを返す。matrixShardはこの値と比較する実行側の指定 */
 function getOptimizerShard(variant: Variant): OptimizerShard {
   if (variant.scenario === enums.ScenarioType.Hajime) return 'hajime'
 
@@ -156,6 +304,65 @@ function getOptimizerShard(variant: Variant): OptimizerShard {
   if (lessonCounts.includes(8)) return 'hif-8'
   throw new Error(`No CP-SAT shard matches HIF variant ${variant.label}`)
 }
+
+type OptimizerCaseKind = 'all-four-control' | 'randomized'
+
+interface OptimizerMatrixCase {
+  /** シナリオ、レッスン配分、授業属性の組み合わせ */
+  variant: Variant
+  /** 同じ条件を検証する育成プラン */
+  plan: (typeof plans)[number]
+  /** 固定4凸対照か、凸数なども散らすランダム条件か */
+  kind: OptimizerCaseKind
+}
+
+/** HIFの全レッスン配分方向と初の全条件を固定対照で検証し、各shardにランダム条件も加える */
+function buildOptimizerMatrixCases(seed: string): OptimizerMatrixCase[] {
+  const variants = buildVariants()
+  return optimizerShards.flatMap((shard) => {
+    // 全shard候補には固定対照に使う条件と、ランダム条件だけで使うサブ指定条件の両方がある
+    const allShardVariants = variants.filter((variant) => getOptimizerShard(variant) === shard)
+    if (allShardVariants.length === 0) throw new Error(`No variant matches ${shard}`)
+
+    // HIFの固定対照は半分割モードの全方向。初レジェンドは全条件が固定対照になる
+    const fixedControlVariants = allShardVariants.filter(
+      (variant) => variant.scenario === enums.ScenarioType.Hajime || variant.hifLessonSplitSub === true,
+    )
+    if (fixedControlVariants.length === 0) throw new Error(`No 4凸 control variants match ${shard}`)
+
+    // この抽選でレッスン配分・授業属性・副属性モードをまとめたVariantを選ぶ
+    // 例えばHIF 7+1 shardなら6方向×2モードの12候補から1つ選び、下で同じVariantを3プランに使う
+    const nextRandom = createSeededRandom(`${seed}:${shard}:variant`)
+    const randomizedVariantIndex = Math.floor(nextRandom() * allShardVariants.length)
+    const randomizedVariant = allShardVariants[randomizedVariantIndex]
+    if (!randomizedVariant) throw new Error(`No randomized variant was selected for ${shard}`)
+
+    const cases: OptimizerMatrixCase[] = [
+      ...fixedControlVariants.flatMap((variant) =>
+        plans.map((plan) => ({ variant, plan, kind: 'all-four-control' as const })),
+      ),
+      ...plans.map((plan) => ({ variant: randomizedVariant, plan, kind: 'randomized' as const })),
+    ]
+    const expectedCaseCount = (fixedControlVariants.length + 1) * plans.length
+    if (cases.length !== expectedCaseCount) {
+      throw new Error(`Expected ${expectedCaseCount} cases in ${shard}, got ${cases.length}`)
+    }
+    return cases
+  })
+}
+
+/** 実行seedで作った全shardのケース一覧 */
+const optimizerMatrixCases = buildOptimizerMatrixCases(matrixRunSeed)
+/** この実行が担当するケース数。shard未指定のローカル実行では全shardを数える */
+const matrixCaseCount = optimizerMatrixCases.filter(
+  ({ variant }) => !matrixShard || getOptimizerShard(variant) === matrixShard,
+).length
+
+/** ケースごとに設定したVerifier timeoutと30秒の終了猶予を見込み、全体に60秒を足す */
+const matrixTestTimeoutMs =
+  Math.ceil(matrixCaseCount / Math.min(matrixCaseCount, workerLimit)) *
+    (verificationTimeoutMs + verifierProcessGracePeriodMs) +
+  matrixSetupGracePeriodMs
 
 /** アプリOptimizerが出した基準編成と点数 */
 interface OptimizerMatrixResult {
@@ -381,6 +588,317 @@ function buildVariants(): Variant[] {
     }
   }
   return [...hif, ...hajime]
+}
+
+/** seedの文字列から、呼び出すたびに次の再現可能な乱数を作る */
+function createSeededRandom(seed: string): () => number {
+  // FNV-1aの初期値から始め、seedの全文字を32bitの状態へ畳み込む
+  let state = 2166136261
+  for (const character of seed) {
+    // 文字コードを現在のハッシュへ混ぜ、FNV素数との積で次の状態へ進める
+    state ^= character.charCodeAt(0)
+    state = Math.imul(state, 16777619)
+  }
+
+  return () => {
+    // Mulberry32の定数を加えて、この呼び出し専用の状態を作る
+    state += 0x6d2b79f5
+    // 後続のビット演算で次回用の状態を壊さないよう作業値へコピーする
+    let value = state
+    // 15bit右へずらした値をXORし、奇数との乗算でビットを拡散する
+    value = Math.imul(value ^ (value >>> 15), value | 1)
+    // 7bit右シフト後の値をXORし、61とのORで乗算用の値を作る
+    const shiftedValue = value ^ (value >>> 7)
+    const multiplier = value | 61
+    // 混合値との積を元の値へ加算してからXORし、さらにビットを拡散する
+    value ^= value + Math.imul(shiftedValue, multiplier)
+    // 最後に14bit右シフト値をXORし、符号なし整数を0以上1未満へ変換する
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/** 範囲の欠落や逆転を拒否し、両端を含む整数をseed付きで選ぶ */
+function randomIntegerInRange(range: IntegerRange, nextRandom: () => number, label: string): number {
+  if (!Number.isSafeInteger(range.min) || !Number.isSafeInteger(range.max) || range.min < 0 || range.max < range.min) {
+    throw new Error(`${label} range must have non-negative safe integer bounds`)
+  }
+  return range.min + Math.floor(nextRandom() * (range.max - range.min + 1))
+}
+
+/** 設定範囲を、アビリティ上限とスケジュール上限の範囲に収める */
+function getRandomActionRange(
+  id: enums.ActionIdType,
+  scheduleMaximumCounts: Partial<Record<enums.ActionIdType, number>>,
+): IntegerRange {
+  const range = randomCaseValueRanges.manualActionCounts.byAction[id]
+  if (!range) throw new Error(`Missing random range for actionCounts.${id}`)
+  if (
+    !Number.isSafeInteger(range.min) ||
+    !Number.isSafeInteger(range.max) ||
+    range.min < 0 ||
+    range.max < range.min ||
+    range.max > constant.ACTION_COUNT_MAX
+  ) {
+    throw new Error(`actionCounts.${id} range must be integers from 0 to ${constant.ACTION_COUNT_MAX}`)
+  }
+
+  // スケジュール上限がある項目だけ個別範囲をさらに狭める
+  const scheduleMaximum = scheduleMaximumCounts[id]
+  const maximum = scheduleMaximum === undefined ? range.max : Math.min(range.max, scheduleMaximum)
+  if (range.min > maximum) {
+    throw new Error(`actionCounts.${id} minimum ${range.min} exceeds its maximum ${maximum}`)
+  }
+  return { min: range.min, max: Math.min(range.max, maximum) }
+}
+
+/** 親合計を一様に選び、その合計になる子配分も一様に選ぶ
+ *
+ * 子の範囲が同じなら、属性を入れ替えた配分は同じ確率になる
+ */
+function createRandomizedLinkedActionGroup(
+  parentId: enums.ActionIdType,
+  childIds: enums.ActionIdType[],
+  nextRandom: () => number,
+  actionCounts: ActionCounts,
+  scheduleMaximumCounts: Partial<Record<enums.ActionIdType, number>>,
+): void {
+  const parentRange = getRandomActionRange(parentId, scheduleMaximumCounts)
+  const childRanges = childIds.map((id) => getRandomActionRange(id, scheduleMaximumCounts))
+  // 親の回数は、親自身と子の合計範囲の両方に入る値から選ぶ
+  // 子のminが全て0なら親も0から選べる。子にminを設定した場合は、その合計が親の下限になる
+  const minimumTotal = Math.max(
+    parentRange.min,
+    childRanges.reduce((total, range) => total + range.min, 0),
+  )
+  const maximumTotal = Math.min(
+    parentRange.max,
+    childRanges.reduce((total, range) => total + range.max, 0),
+  )
+  if (minimumTotal > maximumTotal) {
+    throw new Error(`actionCounts.${parentId} range cannot match its subtype ranges`)
+  }
+
+  const parentTotal = randomIntegerInRange(
+    { min: minimumTotal, max: maximumTotal },
+    nextRandom,
+    `actionCounts.${parentId}`,
+  )
+
+  const distributions: number[][] = []
+  const currentDistribution: number[] = []
+
+  // 選んだ親合計に一致する子の配分だけを、子の指定範囲内で再帰的に列挙する
+  function enumerateDistributions(childIndex: number, remainingTotal: number) {
+    if (childIndex === childRanges.length) {
+      // 全ての子を割り当て終わり、合計も一致した配分を候補に残す
+      if (remainingTotal === 0) distributions.push([...currentDistribution])
+      return
+    }
+
+    const childRange = childRanges[childIndex]
+    if (!childRange) throw new Error(`Missing range for actionCounts.${childIds[childIndex]}`)
+    const remainingRanges = childRanges.slice(childIndex + 1)
+    const remainingMinimum = remainingRanges.reduce((total, range) => total + range.min, 0)
+    const remainingMaximum = remainingRanges.reduce((total, range) => total + range.max, 0)
+    // 残りの子が各min/maxを守れるように、現在の子へ割り当てられる範囲を絞る
+    const feasibleRange = {
+      min: Math.max(childRange.min, remainingTotal - remainingMaximum),
+      max: Math.min(childRange.max, remainingTotal - remainingMinimum),
+    }
+    for (let childCount = feasibleRange.min; childCount <= feasibleRange.max; childCount += 1) {
+      currentDistribution.push(childCount)
+      enumerateDistributions(childIndex + 1, remainingTotal - childCount)
+      currentDistribution.pop()
+    }
+  }
+
+  enumerateDistributions(0, parentTotal)
+  if (distributions.length === 0) {
+    throw new Error(`actionCounts.${parentId} has no subtype distribution for total ${parentTotal}`)
+  }
+  const selectedDistribution = distributions[Math.floor(nextRandom() * distributions.length)]
+  if (!selectedDistribution) throw new Error(`No subtype distribution was selected for actionCounts.${parentId}`)
+  childIds.forEach((childId, index) => {
+    const childCount = selectedDistribution[index]
+    if (childCount === undefined) throw new Error(`Missing generated count for actionCounts.${childId}`)
+    actionCounts[childId] = childCount
+  })
+  actionCounts[parentId] = parentTotal
+}
+
+/** スケジュールで自動調整されない点数設定を、条件に合う回数で作る */
+function createRandomizedManualActionCounts(nextRandom: () => number, scheduleCounts: ActionCounts): ActionCounts {
+  const actionCounts: ActionCounts = {}
+  const scheduleMaximumCounts: Partial<Record<enums.ActionIdType, number>> = {
+    [enums.ActionIdType.Exam15]: scheduleCounts[enums.ActionIdType.ExamEnd] ?? 0,
+    [enums.ActionIdType.SpLesson20]: scheduleCounts[enums.ActionIdType.SpLesson] ?? 0,
+  }
+
+  for (const { id } of ActionCategoryList) {
+    if (ScheduleControlledIds.has(id)) continue
+    if (normalLessonActionIds.has(id)) {
+      actionCounts[id] = 0
+      continue
+    }
+    // LinkedActionGroupsは親=子の合計を表す。BasicCardChangeはChange以下という別制約なので後で処理する
+    if (LinkedActionGroups.some((group) => group.includes(id)) || id === enums.ActionIdType.BasicCardChange) continue
+    const range = getRandomActionRange(id, scheduleMaximumCounts)
+    actionCounts[id] = randomIntegerInRange(range, nextRandom, `actionCounts.${id}`)
+  }
+
+  for (const [parentId, ...childIds] of LinkedActionGroups) {
+    createRandomizedLinkedActionGroup(parentId, childIds, nextRandom, actionCounts, scheduleMaximumCounts)
+  }
+
+  // 基本カード変更だけは通常Changeを超えない範囲で抽選する
+  const changeCount = actionCounts[enums.ActionIdType.Change]
+  if (changeCount === undefined) throw new Error('Missing generated count for actionCounts.change')
+  const basicCardChangeRange = getRandomActionRange(enums.ActionIdType.BasicCardChange, scheduleMaximumCounts)
+  const basicCardChangeMaximum = Math.min(basicCardChangeRange.max, changeCount)
+  if (basicCardChangeRange.min > basicCardChangeMaximum) {
+    throw new Error('actionCounts.basic_card_change minimum exceeds the generated change count')
+  }
+  actionCounts[enums.ActionIdType.BasicCardChange] = randomIntegerInRange(
+    { min: basicCardChangeRange.min, max: basicCardChangeMaximum },
+    nextRandom,
+    `actionCounts.${enums.ActionIdType.BasicCardChange}`,
+  )
+
+  return actionCounts
+}
+
+/** 3属性ごとの初期パラメータを、個別に指定した整数範囲から作る */
+function createRandomizedInitialParams(nextRandom: () => number, scenario: Variant['scenario']): ParameterValues {
+  const baseline = randomCaseValueRanges.initialParams.baselineByScenario[scenario]
+  const variation = randomCaseValueRanges.initialParams.variation
+  if (!Number.isSafeInteger(variation) || variation < 0) {
+    throw new Error('initialParams.variation must be a non-negative integer')
+  }
+
+  return {
+    [enums.ParameterType.Vocal]: randomIntegerInRange(
+      {
+        min: Math.max(0, baseline.vocal - variation),
+        max: Math.min(constant.INITIAL_PARAMETER_MAX, baseline.vocal + variation),
+      },
+      nextRandom,
+      `initialParams.${enums.ParameterType.Vocal}`,
+    ),
+    [enums.ParameterType.Dance]: randomIntegerInRange(
+      {
+        min: Math.max(0, baseline.dance - variation),
+        max: Math.min(constant.INITIAL_PARAMETER_MAX, baseline.dance + variation),
+      },
+      nextRandom,
+      `initialParams.${enums.ParameterType.Dance}`,
+    ),
+    [enums.ParameterType.Visual]: randomIntegerInRange(
+      {
+        min: Math.max(0, baseline.visual - variation),
+        max: Math.min(constant.INITIAL_PARAMETER_MAX, baseline.visual + variation),
+      },
+      nextRandom,
+      `initialParams.${enums.ParameterType.Visual}`,
+    ),
+  }
+}
+
+/** 3属性ごとの初期パラメータボーナスを、設定した刻み幅で作る */
+function createRandomizedParamBonusPercent(nextRandom: () => number, scenario: Variant['scenario']): ParameterValues {
+  const baseline = randomCaseValueRanges.paramBonusPercent.baselineByScenario[scenario]
+  const variation = randomCaseValueRanges.paramBonusPercent.variationPercentagePoints
+  const step = randomCaseValueRanges.paramBonusPercent.step
+  if (!Number.isFinite(variation) || variation < 0) {
+    throw new Error('paramBonusPercent.variationPercentagePoints must be non-negative')
+  }
+
+  const randomValue = (type: enums.ParameterType) => {
+    const baselineValue = baseline[type]
+    const minimum = Math.max(0, baselineValue - variation)
+    const maximum = Math.min(constant.PARAMETER_BONUS_PERCENT_MAX, baselineValue + variation)
+    const stepCount = (maximum - minimum) / step
+    const firstStep = minimum / step
+    if (
+      !Number.isFinite(minimum) ||
+      !Number.isFinite(maximum) ||
+      !Number.isFinite(step) ||
+      minimum < 0 ||
+      maximum < minimum ||
+      maximum > constant.PARAMETER_BONUS_PERCENT_MAX ||
+      step < constant.PARAMETER_BONUS_PERCENT_STEP ||
+      Math.abs(stepCount - Math.round(stepCount)) > 1e-8 ||
+      Math.abs(firstStep - Math.round(firstStep)) > 1e-8
+    ) {
+      throw new Error(`paramBonusPercent.${type} range must fit the supported step and bounds`)
+    }
+    const stepIndex = randomIntegerInRange(
+      { min: 0, max: Math.round(stepCount) },
+      nextRandom,
+      `paramBonusPercent.${type}`,
+    )
+    return Number((minimum + stepIndex * step).toPrecision(12))
+  }
+
+  return {
+    [enums.ParameterType.Vocal]: randomValue(enums.ParameterType.Vocal),
+    [enums.ParameterType.Dance]: randomValue(enums.ParameterType.Dance),
+    [enums.ParameterType.Visual]: randomValue(enums.ParameterType.Visual),
+  }
+}
+
+/** 変更可能なレッスン・授業以外の週から、候補内の活動をseed付きで選ぶ */
+function randomizeOtherScheduleActivities(
+  selections: Record<number, enums.ActivityIdType>,
+  scenario: Variant['scenario'],
+  difficulty: enums.DifficultyType,
+  hifLessonSplitSub: boolean,
+  nextRandom: () => number,
+): Record<number, enums.ActivityIdType> {
+  const updated = { ...selections }
+  for (const week of getScheduleData(scenario, difficulty)) {
+    const current = updated[week.week]
+    const isSelectionFixed = week.fixed && !week.canRest
+    if (isSelectionFixed || current === undefined || lessonActivities.has(current) || classActivities.has(current))
+      continue
+
+    const candidates = [
+      ...week.activities.map(({ id }) => id),
+      ...(week.canRest ? [enums.ActivityIdType.Rest] : []),
+    ].filter(
+      (activity) =>
+        !lessonActivities.has(activity) &&
+        !classActivities.has(activity) &&
+        isScheduleActivityAllowed(week, activity, scenario, hifLessonSplitSub),
+    )
+    if (candidates.length === 0) throw new Error(`No random activity is available for week ${week.week}`)
+    const selected = candidates[Math.floor(nextRandom() * candidates.length)]
+    if (selected === undefined) throw new Error(`No random activity was selected for week ${week.week}`)
+    updated[week.week] = selected
+  }
+  return updated
+}
+
+/** seedからカードごとの凸数を再現可能に割り当てる */
+function createSeededCardUncaps(seed: string): Record<string, enums.UncapType> {
+  const nextRandom = createSeededRandom(seed)
+  const uncapTypes = [
+    enums.UncapType.NotOwned,
+    enums.UncapType.Zero,
+    enums.UncapType.One,
+    enums.UncapType.Two,
+    enums.UncapType.Three,
+    enums.UncapType.Four,
+  ]
+  const sortedCards = [...AllCards].sort((left, right) =>
+    left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+  )
+  return Object.fromEntries(
+    sortedCards.map(({ name }) => {
+      const uncapType = uncapTypes[Math.floor(nextRandom() * uncapTypes.length)]
+      if (uncapType === undefined) throw new Error(`No uncap level was generated for ${name}`)
+      return [name, uncapType]
+    }),
+  )
 }
 
 /** 固定fixtureにあるレッスン週・授業週を、1つのVariantの条件へ置き換える
@@ -947,13 +1465,31 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
         ...exported.data[constant.UNIT_SIMULATOR_STORAGE_KEY],
       }
       const customCounts = exported.data[constant.CARD_COUNT_CUSTOM_KEY] ?? {}
-      // 条件表と育成プランの直積を作り、ケース指定があれば対象を絞る
+      // ケース絞り込み時に、seed付きマトリクス外の任意条件も指定できるよう全Variantを用意する
       const variants = buildVariants()
-      const matrixCases = variants.flatMap((variant) => plans.map((plan) => ({ variant, plan })))
-      const selectedCases = matrixCases.filter(({ variant, plan }) => {
+      // 例: variant.label=Vo7Da1_半分割 (scenario=HIF, lessonCounts={vocal:7,dance:1}, classType=visual), plan=Sense, kind=all-four-control。
+      // hif-7-1はこの形式で固定18件+seedで選ぶVariantの3プラン=21件。凸数・点数・予定の値はverifyJobで別に作る。
+      // CASE_FILTERを指定した場合は、variant名とplanが一致する行だけを選ぶ。
+      const selectedCases = optimizerMatrixCases.filter(({ variant, plan }) => {
         if (matrixShard && getOptimizerShard(variant) !== matrixShard) return false
         return !normalizedCaseFilter || `${variant.scenario}:${variant.label}:${plan.label}` === normalizedCaseFilter
       })
+      if (normalizedCaseFilter && selectedCases.length === 0) {
+        // CASE_FILTER未指定ならこの分岐には入らず、このshardの固定ケースとseedで選んだVariantの3プランを実行する
+        // 例: HIF:Vo7Da1_サブ指定:Senseがseed抽選に含まれない場合も、指定されたVariantとSenseを1件追加する
+        const [scenario, variantLabel, planLabel] = normalizedCaseFilter.split(':')
+        const requestedVariant = variants.find(
+          (variant) => variant.scenario === scenario && variant.label === variantLabel,
+        )
+        const requestedPlan = plans.find((plan) => plan.label === planLabel)
+        if (
+          requestedVariant &&
+          requestedPlan &&
+          (!matrixShard || getOptimizerShard(requestedVariant) === matrixShard)
+        ) {
+          selectedCases.push({ variant: requestedVariant, plan: requestedPlan, kind: 'randomized' })
+        }
+      }
       if (selectedCases.length === 0) throw new Error(`No optimizer case matches ${caseFilter ?? 'the matrix'}`)
       if (!normalizedCaseFilter) expect(selectedCases).toHaveLength(matrixCaseCount)
       const resultKeys = new Set<string>()
@@ -962,7 +1498,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           `tmp/optimizer-validation/cp-sat-optimizer-matrix-results${matrixShard ? `-${matrixShard}` : ''}.json`,
       )
       const failures: string[] = []
-      const jobs = selectedCases.flatMap(({ variant, plan }, caseIndex) => {
+      const jobs = selectedCases.flatMap(({ variant, plan, kind }, caseIndex) => {
         const key = `${variant.scenario}:${variant.label}`
         const branchCounts: (2 | 3 | 4 | undefined)[] = splitMainTypeCounts
           ? variant.mainType === enums.ParameterType.Visual
@@ -971,7 +1507,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           : [undefined]
         // Vi主属性だけ2枚固定も含め、それ以外は3枚・4枚固定で比較する
         return branchCounts.map((mainTypeCount, branchIndex) => {
-          const resultKey = `${key}:${plan.label}${mainTypeCount === undefined ? '' : `:main-${mainTypeCount}`}`
+          const resultKey = `${key}:${plan.label}:${kind}${mainTypeCount === undefined ? '' : `:main-${mainTypeCount}`}`
           if (resultKeys.has(resultKey)) throw new Error(`Duplicate optimizer result: ${resultKey}`)
           resultKeys.add(resultKey)
           return {
@@ -979,6 +1515,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             resultKey,
             variant,
             plan,
+            kind,
             mainTypeCount,
           }
         })
@@ -994,7 +1531,10 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
         writeFileSync(
           reportPath,
           JSON.stringify(
-            { cases: caseResults.filter((entry): entry is Record<string, unknown> => entry !== undefined) },
+            {
+              runSeed: matrixRunSeed,
+              cases: caseResults.filter((entry): entry is Record<string, unknown> => entry !== undefined),
+            },
             null,
             2,
           ),
@@ -1004,30 +1544,54 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
 
       /** 1ケースのTypeScript基準を作り、同じ入力でCP-SATの最適性を調べる */
       async function verifyJob(job: (typeof jobs)[number]) {
-        const { index, resultKey, variant, plan, mainTypeCount } = job
+        const { index, resultKey, variant, plan, kind, mainTypeCount } = job
+        const isAllFourControl = kind === 'all-four-control'
+        const conditionKey = `${variant.scenario}:${variant.label}:${mainTypeCount ?? 'flexible'}`
+        const uncapSeed = isAllFourControl ? undefined : `${matrixRunSeed}:${conditionKey}:uncaps`
+        const randomizedSettingsSeed = isAllFourControl ? undefined : `${matrixRunSeed}:${conditionKey}:settings`
+        const nextRandom = randomizedSettingsSeed ? createSeededRandom(randomizedSettingsSeed) : undefined
+        const cardUncaps = uncapSeed
+          ? createSeededCardUncaps(uncapSeed)
+          : Object.fromEntries(AllCards.map(({ name }) => [name, enums.UncapType.Four]))
+        let randomizedSettings: Record<string, unknown> | null = null
         try {
-          const scheduleSelections = applyScheduleVariant(
+          const variantScheduleSelections = applyScheduleVariant(
             variant.scenario === enums.ScenarioType.Hif ? storedSchedule.hif : storedScore.scheduleSelections,
             variant,
           )
-          const scoreSettings = normalizeScoreSettingsDerived({
+          const difficulty =
+            variant.scenario === enums.ScenarioType.Hif ? enums.DifficultyType.None : enums.DifficultyType.Legend
+          const scheduleSelections =
+            nextRandom && randomCaseValueRanges.randomizeOtherScheduleActivities
+              ? randomizeOtherScheduleActivities(
+                  variantScheduleSelections,
+                  variant.scenario,
+                  difficulty,
+                  variant.hifLessonSplitSub ?? storedScore.hifLessonSplitSub,
+                  nextRandom,
+                )
+              : variantScheduleSelections
+          const baseScoreSettings = normalizeScoreSettingsDerived({
             ...storedScore,
             scenario: variant.scenario,
             hifLessonSplitSub: variant.hifLessonSplitSub ?? storedScore.hifLessonSplitSub,
-            difficulty:
-              variant.scenario === enums.ScenarioType.Hif ? enums.DifficultyType.None : enums.DifficultyType.Legend,
-            actionCounts: {
-              ...storedScore.actionCounts,
-              [enums.ActionIdType.PDrinkAcquire]:
-                variant.scenario === enums.ScenarioType.Hif
-                  ? storedScore.actionCounts[enums.ActionIdType.PDrinkAcquire]
-                  : 20,
-            },
+            difficulty,
             scheduleSelections,
           })
-          // HIFは初期値300・パラボ30%、初レジェンドは初期値200・パラボ20%で計算する
-          const initialValue = variant.scenario === enums.ScenarioType.Hif ? 300 : 200
-          const paramBonusValue = variant.scenario === enums.ScenarioType.Hif ? 30 : 20
+          const scheduleCounts = mergeScheduleCounts(
+            { ...baseScoreSettings, useScheduleLimits: true },
+            getScheduleData(variant.scenario, difficulty),
+          )
+          const actionCounts = nextRandom
+            ? { ...storedScore.actionCounts, ...createRandomizedManualActionCounts(nextRandom, scheduleCounts) }
+            : {
+                ...storedScore.actionCounts,
+                [enums.ActionIdType.PDrinkAcquire]:
+                  variant.scenario === enums.ScenarioType.Hif
+                    ? storedScore.actionCounts[enums.ActionIdType.PDrinkAcquire]
+                    : 20,
+              }
+          const scoreSettings = normalizeScoreSettingsDerived({ ...baseScoreSettings, actionCounts })
           // Vi主属性は2〜4枚、それ以外は従来の3〜4枚で探索し、指定時だけ枚数を固定する
           const typeCountMin = { ...storedUnit.typeCountMin }
           const typeCountMax = { ...storedUnit.typeCountMax }
@@ -1047,18 +1611,36 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             plan: plan.value,
             typeCountMin,
             typeCountMax,
-            initialParams: { vocal: initialValue, dance: initialValue, visual: initialValue },
-            paramBonusPercent: { vocal: paramBonusValue, dance: paramBonusValue, visual: paramBonusValue },
+            initialParams: nextRandom
+              ? createRandomizedInitialParams(nextRandom, variant.scenario)
+              : { ...randomCaseValueRanges.initialParams.baselineByScenario[variant.scenario] },
+            paramBonusPercent: nextRandom
+              ? createRandomizedParamBonusPercent(nextRandom, variant.scenario)
+              : { ...randomCaseValueRanges.paramBonusPercent.baselineByScenario[variant.scenario] },
           }
           const input: OptimizeInput = {
             settings,
             scoreSettings,
-            // 検証条件では全カードを4凸にし、fixtureのカスタム所持枚数はそのまま渡す
-            cardUncaps: Object.fromEntries(AllCards.map(({ name }) => [name, enums.UncapType.Four])),
+            // 凸数をseedで変え、各ケースで同じ所持状態を再現できるようにする
+            cardUncaps,
             cardCountCustom: customCounts,
             allCards: AllCards,
             cardByName: new Map(AllCards.map((card) => [card.name, card])),
             excludedCardNames: settings.excludedCardNames,
+          }
+          randomizedSettings = nextRandom
+            ? {
+                scheduleSelections: scoreSettings.scheduleSelections,
+                actionCounts: mergeScheduleCounts(scoreSettings, getScheduleData(variant.scenario, difficulty)),
+                parameterBonusBase: scoreSettings.parameterBonusBase,
+                initialParams: settings.initialParams,
+                paramBonusPercent: settings.paramBonusPercent,
+              }
+            : null
+          if (randomizedSettings) {
+            console.log(
+              `CP-SAT randomized settings ${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${JSON.stringify(randomizedSettings)}`,
+            )
           }
           // 全カードからTypeScript側の最適編成を求め、その編成を比較基準にする
           let evaluatedCombos = 0
@@ -1085,9 +1667,15 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           const output = candidatePreviewEnabled ? { status: 'preview' } : await runVerifier(payload)
           const status = String(output.status)
           caseResults[index] = {
+            kind,
+            runSeed: matrixRunSeed,
             scenario: scenarioLabels[variant.scenario],
             variant: variant.label,
             plan: plan.label,
+            uncapProfile: uncapSeed ? 'seeded-random-not-owned-to-4' : 'all-four-control',
+            uncapSeed: uncapSeed ?? null,
+            randomizedSettingsSeed: randomizedSettingsSeed ?? null,
+            randomizedSettings,
             mainType: variant.mainType,
             mainTypeCount: mainTypeCount ?? null,
             candidateScore: verificationResult.score,
@@ -1110,7 +1698,10 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           const verifiedLineup = formatLineup(output.bestLineup)
           // ケースごとの条件、点数、両方の編成をActionsログへ残す
           console.log(
-            `${completedCount + 1}/${jobs.length} ${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${status}; ` +
+            `${completedCount + 1}/${jobs.length} ${kind === 'all-four-control' ? '4凸対照' : 'ランダム'} ` +
+              `${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${status}; ` +
+              `${uncapSeed ? `凸数seed=${uncapSeed}` : '全カード4凸'}; ` +
+              `${randomizedSettingsSeed ? `設定seed=${randomizedSettingsSeed}; ` : ''}` +
               `アプリ ${verificationResult.score}点 [${appLineup}]; ` +
               `CP-SAT ${verifiedScore === undefined ? '未確定' : `${verifiedScore}点`} [${verifiedLineup}] ` +
               `(app combinations=${evaluatedCombos}, ` +
@@ -1123,6 +1714,10 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             scenario: scenarioLabels[variant.scenario],
             variant: variant.label,
             plan: plan.label,
+            uncapProfile: uncapSeed ? 'seeded-random-not-owned-to-4' : 'all-four-control',
+            uncapSeed: uncapSeed ?? null,
+            randomizedSettingsSeed: randomizedSettingsSeed ?? null,
+            randomizedSettings,
             status: 'error',
             message,
           }

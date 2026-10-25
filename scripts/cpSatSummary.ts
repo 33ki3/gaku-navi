@@ -26,10 +26,11 @@ function findJsonFiles(directory: string): string[] {
 /** 独立したランナーからjob outputで受け取ったレポートを展開し、不正なシャードを除いて集計する */
 function readReportsFromJobOutputs(): ReportCases | null {
   const reportOutputs: [string, string | undefined][] = [
-    ['hif-7-1', process.env.CP_SAT_REPORT_HIF_7_1],
+    ['hajime-4-1', process.env.CP_SAT_REPORT_HAJIME_4_1],
+    ['hajime-5', process.env.CP_SAT_REPORT_HAJIME_5],
     ['hif-6-2', process.env.CP_SAT_REPORT_HIF_6_2],
+    ['hif-7-1', process.env.CP_SAT_REPORT_HIF_7_1],
     ['hif-8', process.env.CP_SAT_REPORT_HIF_8],
-    ['hajime', process.env.CP_SAT_REPORT_HAJIME],
   ]
   if (!reportOutputs.some(([, encodedReport]) => encodedReport)) return null
 

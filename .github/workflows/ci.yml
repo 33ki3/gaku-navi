@@ -100,14 +100,15 @@ jobs:
     name: CP-SAT (${{ matrix.shard }})
     needs: [node-setup, python-setup]
     outputs:
-      report_hif_7_1: ${{ steps.report.outputs.report_hif_7_1 }}
+      report_hajime_4_1: ${{ steps.report.outputs.report_hajime_4_1 }}
+      report_hajime_5: ${{ steps.report.outputs.report_hajime_5 }}
       report_hif_6_2: ${{ steps.report.outputs.report_hif_6_2 }}
+      report_hif_7_1: ${{ steps.report.outputs.report_hif_7_1 }}
       report_hif_8: ${{ steps.report.outputs.report_hif_8 }}
-      report_hajime: ${{ steps.report.outputs.report_hajime }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [hif-7-1, hif-6-2, hif-8, hajime]
+        shard: [hajime-4-1, hajime-5, hif-6-2, hif-7-1, hif-8]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -173,10 +174,11 @@ jobs:
         if: always()
         env:
           # 各shardは別ランナーなので、圧縮したjob outputを集計スクリプトで復元する。
-          CP_SAT_REPORT_HIF_7_1: ${{ needs.cp-sat.outputs.report_hif_7_1 }}
+          CP_SAT_REPORT_HAJIME_4_1: ${{ needs.cp-sat.outputs.report_hajime_4_1 }}
+          CP_SAT_REPORT_HAJIME_5: ${{ needs.cp-sat.outputs.report_hajime_5 }}
           CP_SAT_REPORT_HIF_6_2: ${{ needs.cp-sat.outputs.report_hif_6_2 }}
+          CP_SAT_REPORT_HIF_7_1: ${{ needs.cp-sat.outputs.report_hif_7_1 }}
           CP_SAT_REPORT_HIF_8: ${{ needs.cp-sat.outputs.report_hif_8 }}
-          CP_SAT_REPORT_HAJIME: ${{ needs.cp-sat.outputs.report_hajime }}
         run: |
           node node_modules/.tmp/regression/cpSatSummary.js tmp/cp-sat-summary
           cat tmp/cp-sat-summary/report.md >> "$GITHUB_STEP_SUMMARY"

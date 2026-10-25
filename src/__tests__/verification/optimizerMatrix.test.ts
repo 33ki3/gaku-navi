@@ -99,7 +99,7 @@ const plans = [
 ]
 
 /** GitHub Actionsで独立実行する検証マトリクスの分割単位 */
-const optimizerShards = ['hif-7-1', 'hif-6-2', 'hif-8', 'hajime'] as const
+const optimizerShards = ['hajime-4-1', 'hajime-5', 'hif-6-2', 'hif-7-1', 'hif-8'] as const
 type OptimizerShard = (typeof optimizerShards)[number]
 const matrixShardValue = process.env[optimizerEnv('SHARD')]
 if (matrixShardValue !== undefined && !optimizerShards.includes(matrixShardValue as OptimizerShard)) {
@@ -296,11 +296,16 @@ interface Variant {
 
 /** Variantが属するActions shardを返す。matrixShardはこの値と比較する実行側の指定 */
 function getOptimizerShard(variant: Variant): OptimizerShard {
-  if (variant.scenario === enums.ScenarioType.Hajime) return 'hajime'
+  if (variant.scenario === enums.ScenarioType.Hajime) {
+    const lessonCounts = Object.values(variant.lessonCounts)
+    if (lessonCounts.includes(4)) return 'hajime-4-1'
+    if (lessonCounts.includes(5)) return 'hajime-5'
+    throw new Error(`No CP-SAT shard matches Hajime variant ${variant.label}`)
+  }
 
   const lessonCounts = Object.values(variant.lessonCounts)
-  if (lessonCounts.includes(7)) return 'hif-7-1'
   if (lessonCounts.includes(6)) return 'hif-6-2'
+  if (lessonCounts.includes(7)) return 'hif-7-1'
   if (lessonCounts.includes(8)) return 'hif-8'
   throw new Error(`No CP-SAT shard matches HIF variant ${variant.label}`)
 }
@@ -316,7 +321,7 @@ interface OptimizerMatrixCase {
   kind: OptimizerCaseKind
 }
 
-/** HIFの全レッスン配分方向と初の全条件を固定対照で検証し、各shardにランダム条件も加える */
+/** HIFの全レッスン配分方向と初の各条件を固定対照で検証し、各shardにランダム条件も加える */
 function buildOptimizerMatrixCases(seed: string): OptimizerMatrixCase[] {
   const variants = buildVariants()
   return optimizerShards.flatMap((shard) => {
@@ -324,14 +329,13 @@ function buildOptimizerMatrixCases(seed: string): OptimizerMatrixCase[] {
     const allShardVariants = variants.filter((variant) => getOptimizerShard(variant) === shard)
     if (allShardVariants.length === 0) throw new Error(`No variant matches ${shard}`)
 
-    // HIFの固定対照は半分割モードの全方向。初レジェンドは全条件が固定対照になる
+    // HIFの固定対照は半分割モードの全方向。初レジェンドはshard内の全条件が固定対照になる
     const fixedControlVariants = allShardVariants.filter(
       (variant) => variant.scenario === enums.ScenarioType.Hajime || variant.hifLessonSplitSub === true,
     )
     if (fixedControlVariants.length === 0) throw new Error(`No 4凸 control variants match ${shard}`)
 
-    // この抽選でレッスン配分・授業属性・副属性モードをまとめたVariantを選ぶ
-    // 例えばHIF 7+1 shardなら6方向×2モードの12候補から1つ選び、下で同じVariantを3プランに使う
+    // shard内のレッスン配分・授業属性から1条件を選び、同じ条件を3プランへ使う
     const nextRandom = createSeededRandom(`${seed}:${shard}:variant`)
     const randomizedVariantIndex = Math.floor(nextRandom() * allShardVariants.length)
     const randomizedVariant = allShardVariants[randomizedVariantIndex]

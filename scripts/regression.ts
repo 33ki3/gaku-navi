@@ -2,6 +2,7 @@
 import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 import { writeRegressionSummary } from './regressionSummary.js'
 import {
@@ -272,6 +273,7 @@ async function capture() {
 
   await mkdir(observationsRoot, { recursive: true })
   // 内部計算を先に保存し、後からE2Eが出す画面観測と同じシナリオIDで統合する
+  const calculationStartedAt = performance.now()
   const calculationRun = spawnSync(
     process.execPath,
     [vitestPath, 'run', 'src/__tests__/regressionObservations.test.ts'],
@@ -281,7 +283,11 @@ async function capture() {
       stdio: 'inherit',
     },
   )
+  console.log(
+    `[regression] Calculation observations (Vitest): ${((performance.now() - calculationStartedAt) / 1000).toFixed(1)}s`,
+  )
   // ブラウザー起動前にE2E設定を型検査し、前段の失敗時はPlaywrightを実行しない
+  const typecheckStartedAt = performance.now()
   const typecheck =
     calculationRun.status === 0
       ? spawnSync(process.execPath, [typecheckPath, '-p', 'tests/tsconfig.e2e.json', '--noEmit'], {
@@ -290,7 +296,11 @@ async function capture() {
           stdio: 'inherit',
         })
       : calculationRun
+  if (calculationRun.status === 0) {
+    console.log(`[regression] E2E TypeScript check: ${((performance.now() - typecheckStartedAt) / 1000).toFixed(1)}s`)
+  }
   const playwrightStarted = typecheck.status === 0
+  const playwrightStartedAt = performance.now()
   const testRun = playwrightStarted
     ? spawnSync(process.execPath, [cliPath, 'test', 'tests/e2e/scenarios.spec.ts'], {
         cwd: projectRoot,
@@ -298,6 +308,9 @@ async function capture() {
         stdio: 'inherit',
       })
     : typecheck
+  if (playwrightStarted) {
+    console.log(`[regression] Playwright capture: ${((performance.now() - playwrightStartedAt) / 1000).toFixed(1)}s`)
+  }
 
   const scenarios = new Map<string, ScenarioReport>()
   const calculations = new Map<string, CalculationObservation>()

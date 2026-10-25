@@ -123,6 +123,26 @@ describe('supportSynergy', () => {
     expect(provided[enums.ActionIdType.SkillAcquire]).toBe(10)
   })
 
+  it('トラブル削除をスキルカード削除の合計へ一度だけ加える', () => {
+    const card = makeCard(
+      {
+        trigger: { key: enums.EffectTemplateKeyType.LessonStart },
+        body: [],
+      },
+      [],
+    )
+    card.p_item!.provided_action_ids = {
+      [enums.ActionIdType.Delete]: 1,
+      [enums.ActionIdType.MSkillDelete]: 2,
+      [enums.ActionIdType.ASkillDelete]: 3,
+      [enums.ActionIdType.TroubleDelete]: 4,
+    }
+
+    const provided = getProvidedActions(card)
+
+    expect(provided[enums.ActionIdType.Delete]).toBe(10)
+  })
+
   it('プロデュース全体の回数制限はスケジュール回数をさらに掛けない', () => {
     const effect: PItemEffect = {
       trigger: { key: enums.EffectTemplateKeyType.OutingEnd },

@@ -19,13 +19,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "test": "vitest",
-    "test:run": "vitest run",
-    "verify:cp-sat": "RUN_CP_SAT_VERIFICATION=1 vitest run --no-file-parallelism src/__tests__/verification/cpSatOptimizer.test.ts src/__tests__/verification/optimizerMatrix.test.ts",
-    "regression": "tsc -p scripts/tsconfig.json && node node_modules/.tmp/regression/regression.js",
-    "i18n:check": "i18next-cli status && i18next-cli status --unused && vitest run src/__tests__/i18n"
+    "checks": "eslint . && prettier --check \"src/**/*.{ts,tsx}\" && knip --reporter compact && i18next-cli status && i18next-cli status --unused && tsc -p tsconfig.app.json --noEmit && vitest run",
+    "cp-sat": "RUN_CP_SAT_VERIFICATION=1 vitest run --no-file-parallelism src/__tests__/verification/cpSatOptimizer.test.ts src/__tests__/verification/optimizerMatrix.test.ts",
+    "regression": "tsc -p scripts/tsconfig.json && node node_modules/.tmp/regression/regression.js"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.19",

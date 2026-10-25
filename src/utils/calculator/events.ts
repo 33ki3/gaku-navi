@@ -245,11 +245,6 @@ export function getSelfAcquisitionBonus(
         rolledUp[parentId] = (rolledUp[parentId] ?? 0) + childSum
       }
     }
-    // TroubleDelete は Delete も同時に提供する（トラブル削除＝スキルカード削除）
-    const troubleDeleteCount = rolledUp[enums.ActionIdType.TroubleDelete] ?? 0
-    if (troubleDeleteCount > 0) {
-      rolledUp[enums.ActionIdType.Delete] = (rolledUp[enums.ActionIdType.Delete] ?? 0) + troubleDeleteCount
-    }
     for (const ability of card.abilities) {
       if (!ability.trigger_key || ability.skip_calculation) continue
       const actionId = TriggerActionMap[ability.trigger_key]

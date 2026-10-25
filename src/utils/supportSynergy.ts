@@ -139,12 +139,6 @@ export function getProvidedActions(
       }
     }
 
-    // TroubleDelete は Delete も同時に提供する（トラブル削除＝スキルカード削除）
-    const troubleCount = provided[enums.ActionIdType.TroubleDelete] ?? 0
-    if (troubleCount > 0) {
-      provided[enums.ActionIdType.Delete] = (provided[enums.ActionIdType.Delete] ?? 0) + troubleCount
-    }
-
     // イベント由来のアクションも追加する
     const hasEventEffectType = (...types: enums.EventEffectType[]) =>
       includeSelfTrigger && card.events.some((e: SupportEvent) => types.includes(e.effect_type))

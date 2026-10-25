@@ -497,6 +497,14 @@ async function expectOptimizerReady(optimizeButton: Locator): Promise<void> {
   await expect(optimizeButton).toHaveText('最適編成を計算', { timeout: 120_000 })
 }
 
+/** 条件違いの最適化はdesktopで検証し、モバイルでは基本ケースを代表実行する */
+function skipDetailedOptimizerVariantsOnMobile(testInfo: TestInfo): void {
+  test.skip(
+    testInfo.project.name !== 'desktop',
+    'Detailed optimizer variants run on desktop; mobile projects keep the default optimization case.',
+  )
+}
+
 // 失敗時の画面も残せるよう、テスト終了後に状態と観測ファイルを保存する
 test.afterEach(async ({ page }, testInfo) => {
   const scenario = scenarios[testInfo.title]
@@ -509,7 +517,11 @@ test.afterEach(async ({ page }, testInfo) => {
   const existingObservation = observations.get(`${device}/${scenario.id}`)
   let failureScreenshot: string | undefined
 
-  if (testInfo.status !== testInfo.expectedStatus && !existingObservation?.screenshot) {
+  if (
+    testInfo.status !== 'skipped' &&
+    testInfo.status !== testInfo.expectedStatus &&
+    !existingObservation?.screenshot
+  ) {
     const screenshotPath = path.join(regressionOutput, 'visual', device, `${scenario.id}.png`)
     await mkdir(path.dirname(screenshotPath), { recursive: true })
     // 途中までの撮影に失敗したケースでも、画面状態を調査できるよう再取得する
@@ -915,6 +927,7 @@ test('optimization-basic', async ({ page }, testInfo) => {
 
 /** アシストタイプを除外すると、その条件で最適編成が再計算されることを確認する */
 test('optimization-filtered', async ({ page }, testInfo) => {
+  skipDetailedOptimizerVariantsOnMobile(testInfo)
   test.setTimeout(120_000)
   await openOptimizerApp(page)
   const optimizeButton = await openUnitSimulator(page)
@@ -939,6 +952,7 @@ test('optimization-filtered', async ({ page }, testInfo) => {
 
 /** ロジックプランを選んだ最適編成の合計値を記録する */
 test('optimization-logic', async ({ page }, testInfo) => {
+  skipDetailedOptimizerVariantsOnMobile(testInfo)
   test.setTimeout(120_000)
   await openOptimizerApp(page)
   const optimizeButton = await openUnitSimulator(page)
@@ -961,6 +975,7 @@ test('optimization-logic', async ({ page }, testInfo) => {
 
 /** アノマリープランを選んだ最適編成の合計値を記録する */
 test('optimization-anomaly', async ({ page }, testInfo) => {
+  skipDetailedOptimizerVariantsOnMobile(testInfo)
   test.setTimeout(120_000)
   await openOptimizerApp(page)
   const optimizeButton = await openUnitSimulator(page)
@@ -983,6 +998,7 @@ test('optimization-anomaly', async ({ page }, testInfo) => {
 
 /** Daパラメータボーナスを加えた条件で最適編成を再計算する */
 test('optimization-dance-bonus', async ({ page }, testInfo) => {
+  skipDetailedOptimizerVariantsOnMobile(testInfo)
   test.setTimeout(120_000)
   await openOptimizerApp(page)
   const optimizeButton = await openUnitSimulator(page)
@@ -1006,6 +1022,7 @@ test('optimization-dance-bonus', async ({ page }, testInfo) => {
 
 /** Vo・Da・Viの上限・下限を各2枚にして、編成結果の枚数を確認する */
 test('optimization-type-balance', async ({ page }, testInfo) => {
+  skipDetailedOptimizerVariantsOnMobile(testInfo)
   test.setTimeout(120_000)
   await openOptimizerApp(page)
   const optimizeButton = await openUnitSimulator(page)

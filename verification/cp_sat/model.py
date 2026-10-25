@@ -444,23 +444,21 @@ def _candidate_is_legal(problem: Problem, cards: list[Card], candidate: Candidat
     return None
 
 
-def _score_candidate(problem: Problem, cards: list[Card], candidate_ids: tuple[str, ...]) -> int:
-    """基準編成の点数をアプリと同じ切り捨て順で再計算する
+def _score_support_by_card(problem: Problem, cards: list[Card], selected_ids: set[str]) -> dict[str, int]:
+    """カード本体点と編成内連携点を、連携を持つカードへ集計する
 
     Args:
         problem: 編成全体に適用するスコア条件
         cards: Verifierに渡された全候補カード
-        candidate_ids: 基準編成に含まれるカードID
+        selected_ids: 編成に含まれるカードID
 
     Returns:
-        基準編成の合計点
+        カードIDごとのカード点
     """
-    selected_ids = set(candidate_ids)
     selected_cards = [card for card in cards if card.id in selected_ids]
-    support = {parameter_type: 0 for parameter_type in PARAMETER_TYPES}
+    support_by_card: dict[str, int] = {}
     for card in selected_cards:
-        parameter_type = card.parameter_type
-        support[parameter_type] += card.base_score_without_param_bonus
+        card_score = card.base_score_without_param_bonus
         for ability in card.synergy_abilities:
             provider_count = sum(
                 other.provided_actions.get(ability.action_id, 0) for other in selected_cards if other.name != card.name
@@ -483,7 +481,29 @@ def _score_candidate(problem: Problem, cards: list[Card], candidate_ids: tuple[s
             )
             extra_count = min(provider_count, remaining_count)
             # Math.floorと同じ下方向の切り捨てを使い、負の小数も0方向へ丸めない
-            support[parameter_type] += floor(ability.parsed_value * extra_count)
+            card_score += floor(ability.parsed_value * extra_count)
+        support_by_card[card.id] = card_score
+
+    return support_by_card
+
+
+def _score_candidate(problem: Problem, cards: list[Card], candidate_ids: tuple[str, ...]) -> int:
+    """基準編成の点数をアプリと同じ切り捨て順で再計算する
+
+    Args:
+        problem: 編成全体に適用するスコア条件
+        cards: Verifierに渡された全候補カード
+        candidate_ids: 基準編成に含まれるカードID
+
+    Returns:
+        基準編成の合計点
+    """
+    selected_ids = set(candidate_ids)
+    selected_cards = [card for card in cards if card.id in selected_ids]
+    support_by_card = _score_support_by_card(problem, cards, selected_ids)
+    support = {parameter_type: 0 for parameter_type in PARAMETER_TYPES}
+    for card in selected_cards:
+        support[card.parameter_type] += support_by_card[card.id]
 
     total_percent = {
         parameter_type: problem.outside_param_bonus_percent[parameter_type]
@@ -800,6 +820,7 @@ def verify_optimizer(payload: Any) -> dict[str, Any]:
 
     card_by_id = {card.id: card for card in cards}
     best_ids = [card.id for card in cards if solver.boolean_value(selected[card.id])]
+    best_support_by_card = _score_support_by_card(problem, cards, set(best_ids))
     best_rental_ids = [card_id for card_id, rental in rental_selected.items() if solver.boolean_value(rental)]
     # 最終点は上で定義したスコア式を、Solverが選んだカードで評価した値
     best_score = solver.value(score)
@@ -826,6 +847,7 @@ def verify_optimizer(payload: Any) -> dict[str, Any]:
         "bestKnownScore": best_score,
         "bestObjectiveBound": int(objective_bound) if objective_bound.is_integer() else objective_bound,
         "bestLineup": best_lineup,
+        "bestLineupCardScores": best_support_by_card,
         "bestCardIds": best_ids,
         "bestRentalCardId": best_rental_ids[0] if best_rental_ids else None,
         "scoreDifference": best_score - candidate.score,

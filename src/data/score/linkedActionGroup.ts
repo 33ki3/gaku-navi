@@ -9,6 +9,6 @@ import { ActionIdType } from '../../types/enums'
 /** 連動アクショングループ一覧（先頭が親アクション） */
 export const LinkedActionGroups: ActionIdType[][] = [
   [ActionIdType.SkillEnhance, ActionIdType.MSkillEnhance, ActionIdType.ASkillEnhance],
-  [ActionIdType.Delete, ActionIdType.MSkillDelete, ActionIdType.ASkillDelete],
+  [ActionIdType.Delete, ActionIdType.MSkillDelete, ActionIdType.ASkillDelete, ActionIdType.TroubleDelete],
   [ActionIdType.SkillAcquire, ActionIdType.MSkillAcquire, ActionIdType.ASkillAcquire],
 ]

@@ -498,7 +498,10 @@ function renderReport(
 
   lines.push(
     '',
-    `## ランダム検証（${randomizedResults.length}件）`,
+    '<details>',
+    forPrComment
+      ? `<summary>ランダム検証の結果を表示（${randomizedResults.length}件）</summary>`
+      : `<summary>ランダム検証（${randomizedResults.length}件）</summary>`,
     '',
     '固定4凸の結果とは別に、ランダム検証だけの点数順位とカード採用回数を集計します。全シャード共通の手動点数設定・初期値・カード凸数と、配分ごとのスケジュールおよび自動調整値を記録します。',
     '',
@@ -520,6 +523,7 @@ function renderReport(
       lines.push('', `#### ${group}（${groupResults.length}件）`, renderCardFrequency(groupResults, true))
     }
   }
+  lines.push('</details>')
   return `${lines.join('\n')}\n`
 }
 

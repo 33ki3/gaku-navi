@@ -321,9 +321,71 @@ interface OptimizerMatrixCase {
   kind: OptimizerCaseKind
 }
 
-/** HIFの全レッスン配分方向と初の各条件を固定対照で検証し、各shardにランダム条件も加える */
+/** 全シャードで属性・授業条件を共有し、レッスン配分だけを変えたランダム条件を作る */
+function buildSharedRandomVariants(seed: string): Record<OptimizerShard, Variant> {
+  const mainTypeIndex = Math.floor(createSeededRandom(`${seed}:random-lesson-main`)() * parameterTypes.length)
+  const mainType = parameterTypes[mainTypeIndex]
+  if (!mainType) throw new Error('No randomized main lesson type was selected')
+
+  const otherTypes = parameterTypes.filter((type) => type !== mainType)
+  const classTypeIndex = Math.floor(createSeededRandom(`${seed}:random-class-type`)() * otherTypes.length)
+  const classType = otherTypes[classTypeIndex]
+  if (!classType) throw new Error('No randomized class type was selected')
+  const minorType = otherTypes.find((type) => type !== classType)
+  if (!minorType) throw new Error(`No secondary lesson type matches ${mainType}/${classType}`)
+
+  const hifLessonSplitSub = createSeededRandom(`${seed}:random-hif-split`)() >= 0.5
+  const hifModeLabel = hifLessonSplitSub ? '半分割' : 'サブ指定'
+
+  return {
+    'hif-7-1': {
+      scenario: enums.ScenarioType.Hif,
+      label: `${typeLabels[mainType]}7${typeLabels[minorType]}1_${hifModeLabel}`,
+      mainType,
+      lessonCounts: { [mainType]: 7, [minorType]: 1 },
+      classType,
+      hifSubType: minorType,
+      hifLessonSplitSub,
+    },
+    'hif-6-2': {
+      scenario: enums.ScenarioType.Hif,
+      label: `${typeLabels[mainType]}6${typeLabels[minorType]}2_${hifModeLabel}`,
+      mainType,
+      lessonCounts: { [mainType]: 6, [minorType]: 2 },
+      classType,
+      hifSubType: minorType,
+      hifLessonSplitSub,
+    },
+    'hif-8': {
+      scenario: enums.ScenarioType.Hif,
+      label: `${typeLabels[mainType]}8_授業${typeLabels[classType]}_${hifModeLabel}`,
+      mainType,
+      lessonCounts: { [mainType]: 8 },
+      classType,
+      hifSubType: classType,
+      hifLessonSplitSub,
+    },
+    'hajime-4-1': {
+      scenario: enums.ScenarioType.Hajime,
+      label: `${typeLabels[mainType]}4${typeLabels[minorType]}1`,
+      mainType,
+      lessonCounts: { [mainType]: 4, [minorType]: 1 },
+      classType,
+    },
+    'hajime-5': {
+      scenario: enums.ScenarioType.Hajime,
+      label: `${typeLabels[mainType]}5_授業${typeLabels[classType]}`,
+      mainType,
+      lessonCounts: { [mainType]: 5 },
+      classType,
+    },
+  }
+}
+
+/** HIFの全レッスン配分方向と初の各条件を固定対照で検証し、全シャードに共通のランダム条件を加える */
 function buildOptimizerMatrixCases(seed: string): OptimizerMatrixCase[] {
   const variants = buildVariants()
+  const randomizedVariants = buildSharedRandomVariants(seed)
   return optimizerShards.flatMap((shard) => {
     // 全shard候補には固定対照に使う条件と、ランダム条件だけで使うサブ指定条件の両方がある
     const allShardVariants = variants.filter((variant) => getOptimizerShard(variant) === shard)
@@ -335,11 +397,11 @@ function buildOptimizerMatrixCases(seed: string): OptimizerMatrixCase[] {
     )
     if (fixedControlVariants.length === 0) throw new Error(`No 4凸 control variants match ${shard}`)
 
-    // shard内のレッスン配分・授業属性から1条件を選び、同じ条件を3プランへ使う
-    const nextRandom = createSeededRandom(`${seed}:${shard}:variant`)
-    const randomizedVariantIndex = Math.floor(nextRandom() * allShardVariants.length)
-    const randomizedVariant = allShardVariants[randomizedVariantIndex]
-    if (!randomizedVariant) throw new Error(`No randomized variant was selected for ${shard}`)
+    // 属性・授業条件は実行全体で固定し、shardごとにレッスン回数だけ変える
+    const randomizedVariant = randomizedVariants[shard]
+    if (getOptimizerShard(randomizedVariant) !== shard) {
+      throw new Error(`Randomized variant ${randomizedVariant.label} does not belong to ${shard}`)
+    }
 
     const cases: OptimizerMatrixCase[] = [
       ...fixedControlVariants.flatMap((variant) =>
@@ -379,7 +441,12 @@ interface OptimizerMatrixResult {
   /** Verifierで再計算して一致を確認する基準点 */
   score: number
   /** 6枚の編成とレンタル枠のカード */
-  members: { name: string; isRental: boolean }[]
+  members: {
+    name: string
+    parameterType: enums.ParameterType
+    uncap: enums.UncapType
+    isRental: boolean
+  }[]
 }
 
 /** Actionsログに載せる編成名を、Verifierとアプリの両方の形式から整形する */
@@ -388,10 +455,41 @@ function formatLineup(value: unknown): string {
   const names = value.flatMap((member): string[] => {
     if (typeof member !== 'object' || member === null || !('name' in member) || typeof member.name !== 'string')
       return []
+    const parameterType = 'parameterType' in member ? member.parameterType : undefined
+    const parameterTypeLabel =
+      parameterType === enums.ParameterType.Vocal
+        ? 'Vo'
+        : parameterType === enums.ParameterType.Dance
+          ? 'Da'
+          : parameterType === enums.ParameterType.Visual
+            ? 'Vi'
+            : undefined
+    const uncap = 'uncap' in member ? member.uncap : undefined
+    const uncapLabel =
+      uncap === enums.UncapType.NotOwned
+        ? '未所持'
+        : typeof uncap === 'number' && uncap >= enums.UncapType.Zero && uncap <= enums.UncapType.Four
+          ? `${uncap}凸`
+          : undefined
     const rentalLabel = 'isRental' in member && member.isRental === true ? '（レンタル）' : ''
-    return [`${member.name}${rentalLabel}`]
+    const details = [parameterTypeLabel, uncapLabel].filter((value): value is string => value !== undefined).join('・')
+    return [`${member.name}${details ? `（${details}）` : ''}${rentalLabel}`]
   })
   return names.length > 0 ? names.join('、') : '未記録'
+}
+
+/** CP-SAT編成にも同じ所持状態の凸数を付けて結果へ記録する */
+function addUncapsToLineup(value: unknown, cardUncaps: Record<string, enums.UncapType>): unknown {
+  if (!Array.isArray(value)) return value
+
+  return value.map((member) => {
+    if (typeof member !== 'object' || member === null || !('name' in member) || typeof member.name !== 'string') {
+      return member
+    }
+    const uncap = 'isRental' in member && member.isRental === true ? enums.UncapType.Four : cardUncaps[member.name]
+    if (uncap === undefined) throw new Error(`No uncap level was generated for ${member.name}`)
+    return { ...member, uncap }
+  })
 }
 
 /** 設定条件を固定する共有fixtureの保存形式 */
@@ -771,45 +869,37 @@ function createRandomizedManualActionCounts(nextRandom: () => number, scheduleCo
   return actionCounts
 }
 
-/** 3属性ごとの初期パラメータを、個別に指定した整数範囲から作る */
-function createRandomizedInitialParams(nextRandom: () => number, scenario: Variant['scenario']): ParameterValues {
-  const baseline = randomCaseValueRanges.initialParams.baselineByScenario[scenario]
+/** HIFと初レジェンドの設定範囲が重なる値から、全シャード共通の初期パラメータを作る */
+function createSharedRandomizedInitialParams(seed: string): ParameterValues {
+  const scenarioBaselines = Object.values(randomCaseValueRanges.initialParams.baselineByScenario)
   const variation = randomCaseValueRanges.initialParams.variation
   if (!Number.isSafeInteger(variation) || variation < 0) {
     throw new Error('initialParams.variation must be a non-negative integer')
   }
 
+  const randomValue = (type: enums.ParameterType) => {
+    const minimum = Math.max(0, ...scenarioBaselines.map((baseline) => baseline[type] - variation))
+    const maximum = Math.min(
+      constant.INITIAL_PARAMETER_MAX,
+      ...scenarioBaselines.map((baseline) => baseline[type] + variation),
+    )
+    return randomIntegerInRange(
+      { min: minimum, max: maximum },
+      createSeededRandom(`${seed}:${type}`),
+      `initialParams.${type}`,
+    )
+  }
+
   return {
-    [enums.ParameterType.Vocal]: randomIntegerInRange(
-      {
-        min: Math.max(0, baseline.vocal - variation),
-        max: Math.min(constant.INITIAL_PARAMETER_MAX, baseline.vocal + variation),
-      },
-      nextRandom,
-      `initialParams.${enums.ParameterType.Vocal}`,
-    ),
-    [enums.ParameterType.Dance]: randomIntegerInRange(
-      {
-        min: Math.max(0, baseline.dance - variation),
-        max: Math.min(constant.INITIAL_PARAMETER_MAX, baseline.dance + variation),
-      },
-      nextRandom,
-      `initialParams.${enums.ParameterType.Dance}`,
-    ),
-    [enums.ParameterType.Visual]: randomIntegerInRange(
-      {
-        min: Math.max(0, baseline.visual - variation),
-        max: Math.min(constant.INITIAL_PARAMETER_MAX, baseline.visual + variation),
-      },
-      nextRandom,
-      `initialParams.${enums.ParameterType.Visual}`,
-    ),
+    [enums.ParameterType.Vocal]: randomValue(enums.ParameterType.Vocal),
+    [enums.ParameterType.Dance]: randomValue(enums.ParameterType.Dance),
+    [enums.ParameterType.Visual]: randomValue(enums.ParameterType.Visual),
   }
 }
 
-/** 3属性ごとの初期パラメータボーナスを、設定した刻み幅で作る */
-function createRandomizedParamBonusPercent(nextRandom: () => number, scenario: Variant['scenario']): ParameterValues {
-  const baseline = randomCaseValueRanges.paramBonusPercent.baselineByScenario[scenario]
+/** HIFと初レジェンドの設定範囲が重なる値から、全シャード共通のパラメータボーナスを作る */
+function createSharedRandomizedParamBonusPercent(seed: string): ParameterValues {
+  const scenarioBaselines = Object.values(randomCaseValueRanges.paramBonusPercent.baselineByScenario)
   const variation = randomCaseValueRanges.paramBonusPercent.variationPercentagePoints
   const step = randomCaseValueRanges.paramBonusPercent.step
   if (!Number.isFinite(variation) || variation < 0) {
@@ -817,27 +907,25 @@ function createRandomizedParamBonusPercent(nextRandom: () => number, scenario: V
   }
 
   const randomValue = (type: enums.ParameterType) => {
-    const baselineValue = baseline[type]
-    const minimum = Math.max(0, baselineValue - variation)
-    const maximum = Math.min(constant.PARAMETER_BONUS_PERCENT_MAX, baselineValue + variation)
+    const minimum = Math.max(0, ...scenarioBaselines.map((baseline) => baseline[type] - variation))
+    const maximum = Math.min(
+      constant.PARAMETER_BONUS_PERCENT_MAX,
+      ...scenarioBaselines.map((baseline) => baseline[type] + variation),
+    )
     const stepCount = (maximum - minimum) / step
-    const firstStep = minimum / step
     if (
-      !Number.isFinite(minimum) ||
-      !Number.isFinite(maximum) ||
       !Number.isFinite(step) ||
-      minimum < 0 ||
       maximum < minimum ||
       maximum > constant.PARAMETER_BONUS_PERCENT_MAX ||
       step < constant.PARAMETER_BONUS_PERCENT_STEP ||
       Math.abs(stepCount - Math.round(stepCount)) > 1e-8 ||
-      Math.abs(firstStep - Math.round(firstStep)) > 1e-8
+      Math.abs(minimum / step - Math.round(minimum / step)) > 1e-8
     ) {
-      throw new Error(`paramBonusPercent.${type} range must fit the supported step and bounds`)
+      throw new Error(`paramBonusPercent.${type} common range must fit the supported step and bounds`)
     }
     const stepIndex = randomIntegerInRange(
       { min: 0, max: Math.round(stepCount) },
-      nextRandom,
+      createSeededRandom(`${seed}:${type}`),
       `paramBonusPercent.${type}`,
     )
     return Number((minimum + stepIndex * step).toPrecision(12))
@@ -856,7 +944,7 @@ function randomizeOtherScheduleActivities(
   scenario: Variant['scenario'],
   difficulty: enums.DifficultyType,
   hifLessonSplitSub: boolean,
-  nextRandom: () => number,
+  seed: string,
 ): Record<number, enums.ActivityIdType> {
   const updated = { ...selections }
   for (const week of getScheduleData(scenario, difficulty)) {
@@ -875,6 +963,7 @@ function randomizeOtherScheduleActivities(
         isScheduleActivityAllowed(week, activity, scenario, hifLessonSplitSub),
     )
     if (candidates.length === 0) throw new Error(`No random activity is available for week ${week.week}`)
+    const nextRandom = createSeededRandom(`${seed}:week:${week.week}`)
     const selected = candidates[Math.floor(nextRandom() * candidates.length)]
     if (selected === undefined) throw new Error(`No random activity was selected for week ${week.week}`)
     updated[week.week] = selected
@@ -1496,6 +1585,92 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
       }
       if (selectedCases.length === 0) throw new Error(`No optimizer case matches ${caseFilter ?? 'the matrix'}`)
       if (!normalizedCaseFilter) expect(selectedCases).toHaveLength(matrixCaseCount)
+
+      const randomizedVariants = [
+        ...optimizerMatrixCases.filter(({ kind }) => kind === 'randomized').map(({ variant }) => variant),
+        ...selectedCases.filter(({ kind }) => kind === 'randomized').map(({ variant }) => variant),
+      ]
+      const randomizedScheduleProfiles = new Map<
+        string,
+        {
+          scheduleSelections: Record<number, enums.ActivityIdType>
+          difficulty: enums.DifficultyType
+          scheduleCounts: ActionCounts
+        }
+      >()
+      const getRandomizedScheduleProfile = (variant: Variant) => {
+        const key = `${variant.scenario}:${variant.label}`
+        const existing = randomizedScheduleProfiles.get(key)
+        if (existing) return existing
+
+        const variantScheduleSelections = applyScheduleVariant(
+          variant.scenario === enums.ScenarioType.Hif ? storedSchedule.hif : storedScore.scheduleSelections,
+          variant,
+        )
+        const difficulty =
+          variant.scenario === enums.ScenarioType.Hif ? enums.DifficultyType.None : enums.DifficultyType.Legend
+        const scheduleSelections = randomCaseValueRanges.randomizeOtherScheduleActivities
+          ? randomizeOtherScheduleActivities(
+              variantScheduleSelections,
+              variant.scenario,
+              difficulty,
+              variant.hifLessonSplitSub ?? storedScore.hifLessonSplitSub,
+              `${matrixRunSeed}:schedule`,
+            )
+          : variantScheduleSelections
+        const baseScoreSettings = normalizeScoreSettingsDerived({
+          ...storedScore,
+          scenario: variant.scenario,
+          hifLessonSplitSub: variant.hifLessonSplitSub ?? storedScore.hifLessonSplitSub,
+          difficulty,
+          scheduleSelections,
+        })
+        const scheduleCounts = mergeScheduleCounts(
+          { ...baseScoreSettings, useScheduleLimits: true },
+          getScheduleData(variant.scenario, difficulty),
+        )
+        const profile = { scheduleSelections, difficulty, scheduleCounts }
+        randomizedScheduleProfiles.set(key, profile)
+        return profile
+      }
+
+      const uniqueRandomizedVariants = [
+        ...new Map(randomizedVariants.map((variant) => [`${variant.scenario}:${variant.label}`, variant])).values(),
+      ]
+      const allRandomizedScheduleProfiles = uniqueRandomizedVariants.map(getRandomizedScheduleProfile)
+      if (allRandomizedScheduleProfiles.length === 0) {
+        throw new Error('No randomized schedule profiles were generated')
+      }
+      const commonScheduleMaximumCounts: Partial<Record<enums.ActionIdType, number>> = {
+        [enums.ActionIdType.Exam15]: Math.min(
+          ...allRandomizedScheduleProfiles.map(({ scheduleCounts }) => scheduleCounts[enums.ActionIdType.ExamEnd] ?? 0),
+        ),
+        [enums.ActionIdType.SpLesson20]: Math.min(
+          ...allRandomizedScheduleProfiles.map(
+            ({ scheduleCounts }) => scheduleCounts[enums.ActionIdType.SpLesson] ?? 0,
+          ),
+        ),
+      }
+      const sharedSettingsSeed = `${matrixRunSeed}:shared-settings`
+      const sharedUncapSeed = `${matrixRunSeed}:shared-uncaps`
+      const sharedCardUncaps = createSeededCardUncaps(sharedUncapSeed)
+      const sharedManualActionCounts = createRandomizedManualActionCounts(
+        createSeededRandom(`${sharedSettingsSeed}:action-counts`),
+        commonScheduleMaximumCounts,
+      )
+      const sharedInitialParams = createSharedRandomizedInitialParams(`${sharedSettingsSeed}:initial-params`)
+      const sharedParamBonusPercent = createSharedRandomizedParamBonusPercent(`${sharedSettingsSeed}:param-bonus`)
+      const sharedRandomProfile = {
+        runSeed: matrixRunSeed,
+        settingsSeed: sharedSettingsSeed,
+        uncapSeed: sharedUncapSeed,
+        manualActionCounts: sharedManualActionCounts,
+        initialParams: sharedInitialParams,
+        paramBonusPercent: sharedParamBonusPercent,
+        cardUncaps: sharedCardUncaps,
+      }
+      console.log(`CP-SAT shared randomized profile ${JSON.stringify(sharedRandomProfile)}`)
+
       const resultKeys = new Set<string>()
       const reportPath = resolve(
         process.env[optimizerEnv('REPORT_PATH')] ??
@@ -1528,6 +1703,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
       const workerCount = Math.min(workerLimit, jobs.length)
       let nextJobIndex = 0
       let completedCount = 0
+      const loggedRandomizedSettingKeys = new Set<string>()
 
       // ケースごとの結果を都度保存し、途中終了しても完了分を確認できるようにする
       function writeReport() {
@@ -1537,6 +1713,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           JSON.stringify(
             {
               runSeed: matrixRunSeed,
+              randomizedProfile: sharedRandomProfile,
               cases: caseResults.filter((entry): entry is Record<string, unknown> => entry !== undefined),
             },
             null,
@@ -1550,13 +1727,13 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
       async function verifyJob(job: (typeof jobs)[number]) {
         const { index, resultKey, variant, plan, kind, mainTypeCount } = job
         const isAllFourControl = kind === 'all-four-control'
-        const conditionKey = `${variant.scenario}:${variant.label}:${mainTypeCount ?? 'flexible'}`
-        const uncapSeed = isAllFourControl ? undefined : `${matrixRunSeed}:${conditionKey}:uncaps`
-        const randomizedSettingsSeed = isAllFourControl ? undefined : `${matrixRunSeed}:${conditionKey}:settings`
-        const nextRandom = randomizedSettingsSeed ? createSeededRandom(randomizedSettingsSeed) : undefined
-        const cardUncaps = uncapSeed
-          ? createSeededCardUncaps(uncapSeed)
+        const isRandomized = kind === 'randomized'
+        const uncapSeed = isRandomized ? sharedUncapSeed : undefined
+        const randomizedSettingsSeed = isRandomized ? sharedSettingsSeed : undefined
+        const cardUncaps = isRandomized
+          ? sharedCardUncaps
           : Object.fromEntries(AllCards.map(({ name }) => [name, enums.UncapType.Four]))
+        const randomizedScheduleProfile = isRandomized ? getRandomizedScheduleProfile(variant) : undefined
         let randomizedSettings: Record<string, unknown> | null = null
         try {
           const variantScheduleSelections = applyScheduleVariant(
@@ -1565,16 +1742,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           )
           const difficulty =
             variant.scenario === enums.ScenarioType.Hif ? enums.DifficultyType.None : enums.DifficultyType.Legend
-          const scheduleSelections =
-            nextRandom && randomCaseValueRanges.randomizeOtherScheduleActivities
-              ? randomizeOtherScheduleActivities(
-                  variantScheduleSelections,
-                  variant.scenario,
-                  difficulty,
-                  variant.hifLessonSplitSub ?? storedScore.hifLessonSplitSub,
-                  nextRandom,
-                )
-              : variantScheduleSelections
+          const scheduleSelections = randomizedScheduleProfile?.scheduleSelections ?? variantScheduleSelections
           const baseScoreSettings = normalizeScoreSettingsDerived({
             ...storedScore,
             scenario: variant.scenario,
@@ -1582,12 +1750,8 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             difficulty,
             scheduleSelections,
           })
-          const scheduleCounts = mergeScheduleCounts(
-            { ...baseScoreSettings, useScheduleLimits: true },
-            getScheduleData(variant.scenario, difficulty),
-          )
-          const actionCounts = nextRandom
-            ? { ...storedScore.actionCounts, ...createRandomizedManualActionCounts(nextRandom, scheduleCounts) }
+          const actionCounts = isRandomized
+            ? { ...storedScore.actionCounts, ...sharedManualActionCounts }
             : {
                 ...storedScore.actionCounts,
                 [enums.ActionIdType.PDrinkAcquire]:
@@ -1615,11 +1779,11 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             plan: plan.value,
             typeCountMin,
             typeCountMax,
-            initialParams: nextRandom
-              ? createRandomizedInitialParams(nextRandom, variant.scenario)
+            initialParams: isRandomized
+              ? sharedInitialParams
               : { ...randomCaseValueRanges.initialParams.baselineByScenario[variant.scenario] },
-            paramBonusPercent: nextRandom
-              ? createRandomizedParamBonusPercent(nextRandom, variant.scenario)
+            paramBonusPercent: isRandomized
+              ? sharedParamBonusPercent
               : { ...randomCaseValueRanges.paramBonusPercent.baselineByScenario[variant.scenario] },
           }
           const input: OptimizeInput = {
@@ -1632,7 +1796,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             cardByName: new Map(AllCards.map((card) => [card.name, card])),
             excludedCardNames: settings.excludedCardNames,
           }
-          randomizedSettings = nextRandom
+          randomizedSettings = isRandomized
             ? {
                 scheduleSelections: scoreSettings.scheduleSelections,
                 actionCounts: mergeScheduleCounts(scoreSettings, getScheduleData(variant.scenario, difficulty)),
@@ -1641,9 +1805,11 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
                 paramBonusPercent: settings.paramBonusPercent,
               }
             : null
-          if (randomizedSettings) {
+          const randomizedSettingLogKey = `${variant.scenario}:${variant.label}`
+          if (randomizedSettings && !loggedRandomizedSettingKeys.has(randomizedSettingLogKey)) {
+            loggedRandomizedSettingKeys.add(randomizedSettingLogKey)
             console.log(
-              `CP-SAT randomized settings ${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${JSON.stringify(randomizedSettings)}`,
+              `CP-SAT randomized schedule ${scenarioLabels[variant.scenario]} ${variant.label}: ${JSON.stringify(randomizedSettings)}`,
             )
           }
           // 全カードからTypeScript側の最適編成を求め、その編成を比較基準にする
@@ -1664,17 +1830,25 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             variant: variant.label,
             plan: plan.label,
             score: optimized.totalScore,
-            members: optimized.members.map(({ card, isRental }) => ({ name: card.name, isRental })),
+            members: optimized.members.map(({ card, isRental }) => {
+              const uncap = isRental ? enums.UncapType.Four : cardUncaps[card.name]
+              if (uncap === undefined) throw new Error(`No uncap level was generated for ${card.name}`)
+              return { name: card.name, parameterType: card.parameter_type, uncap, isRental }
+            }),
           }
           // 候補プールを作り、プレビューでなければPython側のCP-SAT Solverを実行する
           const payload = makePayload(input, verificationResult)
           const output = candidatePreviewEnabled ? { status: 'preview' } : await runVerifier(payload)
+          const outputWithUncaps = { ...output, bestLineup: addUncapsToLineup(output.bestLineup, cardUncaps) }
           const status = String(output.status)
           caseResults[index] = {
             kind,
             runSeed: matrixRunSeed,
             scenario: scenarioLabels[variant.scenario],
             variant: variant.label,
+            lessonCounts: variant.lessonCounts,
+            classType: variant.classType,
+            hifLessonSplitSub: variant.hifLessonSplitSub ?? null,
             plan: plan.label,
             uncapProfile: uncapSeed ? 'seeded-random-not-owned-to-4' : 'all-four-control',
             uncapSeed: uncapSeed ?? null,
@@ -1683,31 +1857,27 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             mainType: variant.mainType,
             mainTypeCount: mainTypeCount ?? null,
             candidateScore: verificationResult.score,
-            appOptimizerLineup: optimized.members.map(({ card, isRental }) => ({
-              name: card.name,
-              parameterType: card.parameter_type,
-              isRental,
-            })),
+            appOptimizerLineup: verificationResult.members,
             appOptimizerEvaluatedCombos: evaluatedCombos,
             ...payload.candidatePool,
             typeCountMin: payload.problem.typeCountMin,
             typeCountMax: payload.problem.typeCountMax,
-            ...output,
+            ...outputWithUncaps,
           }
           if (!candidatePreviewEnabled && status !== 'optimal') failures.push(`${resultKey}: ${JSON.stringify(output)}`)
           const verifiedScore = [output.optimalScore, output.bestKnownScore].find(
             (value): value is number => typeof value === 'number',
           )
           const appLineup = formatLineup(verificationResult.members)
-          const verifiedLineup = formatLineup(output.bestLineup)
+          const verifiedLineup = formatLineup(outputWithUncaps.bestLineup)
           // ケースごとの条件、点数、両方の編成をActionsログへ残す
           console.log(
-            `${completedCount + 1}/${jobs.length} ${kind === 'all-four-control' ? '4凸対照' : 'ランダム'} ` +
+            `${completedCount + 1}/${jobs.length} ${isAllFourControl ? '4凸対照' : 'ランダム'} ` +
               `${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${status}; ` +
               `${uncapSeed ? `凸数seed=${uncapSeed}` : '全カード4凸'}; ` +
               `${randomizedSettingsSeed ? `設定seed=${randomizedSettingsSeed}; ` : ''}` +
-              `アプリ ${verificationResult.score}点 [${appLineup}]; ` +
-              `CP-SAT ${verifiedScore === undefined ? '未確定' : `${verifiedScore}点`} [${verifiedLineup}] ` +
+              `最適編成 ${verificationResult.score}点 [${appLineup}]; ` +
+              `理論編成 ${verifiedScore === undefined ? '未確定' : `${verifiedScore}点`} [${verifiedLineup}] ` +
               `(app combinations=${evaluatedCombos}, ` +
               `${payload.candidatePool.afterSafePruning}/${payload.candidatePool.beforeSafePruning} CP-SAT candidates)`,
           )
@@ -1715,9 +1885,16 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           const message = error instanceof Error ? error.message : String(error)
           failures.push(`${resultKey}: ${message}`)
           caseResults[index] = {
+            kind,
+            runSeed: matrixRunSeed,
             scenario: scenarioLabels[variant.scenario],
             variant: variant.label,
+            lessonCounts: variant.lessonCounts,
+            classType: variant.classType,
+            hifLessonSplitSub: variant.hifLessonSplitSub ?? null,
             plan: plan.label,
+            mainType: variant.mainType,
+            mainTypeCount: mainTypeCount ?? null,
             uncapProfile: uncapSeed ? 'seeded-random-not-owned-to-4' : 'all-four-control',
             uncapSeed: uncapSeed ?? null,
             randomizedSettingsSeed: randomizedSettingsSeed ?? null,

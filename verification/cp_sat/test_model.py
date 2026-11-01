@@ -52,6 +52,7 @@ def make_payload(candidate_id: str, candidate_score: int) -> dict:
 
 def make_flexible_lock_payload() -> dict:
     """カード名の固定を保ち、通常枠とレンタル枠の最適な配置を比べる2枚fixture"""
+
     def card(
         card_id: str,
         name: str,

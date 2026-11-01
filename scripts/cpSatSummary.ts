@@ -143,11 +143,13 @@ function scoreFor(result: JsonRecord): number {
   return firstNumber(result.bestKnownScore, result.optimalScore, result.candidateScore) ?? Number.NEGATIVE_INFINITY
 }
 
-function statusLabel(value: unknown): string {
-  if (value === 'optimal') return '🟢 optimal'
-  if (value === 'non_optimal') return '🔴 non_optimal'
-  if (value === 'unknown') return '🟡 unknown'
-  return `🔴 ${typeof value === 'string' ? value : '不明'}`
+function statusLabel(value: unknown, nonBlocking = false): string {
+  if (nonBlocking) return `⚠️ non-blocking (${typeof value === 'string' ? value : 'unknown'})`
+  if (value === 'optimal') return '✅ optimal'
+  if (value === 'recovered_at_45') return '⚠️ recovered'
+  if (value === 'non_optimal') return '❌ non_optimal'
+  if (value === 'unknown') return '❓ unknown'
+  return `❌ ${typeof value === 'string' ? value : 'unknown status'}`
 }
 
 function theoryScore(result: JsonRecord): number | undefined {
@@ -180,7 +182,7 @@ function renderScoreTable(results: JsonRecord[]): string {
         ? theoryLineupScore - optimalLineupScore
         : undefined
     const cells = [
-      statusLabel(result.status),
+      statusLabel(result.status, result.kind === 'randomized' && result.nonBlocking === true),
       String(index + 1),
       escapeCell(label),
       escapeCell(plan),
@@ -326,6 +328,7 @@ function renderRandomizedProfiles(profiles: JsonRecord[]): string {
   return uniqueProfiles
     .map((profile, index) => {
       const { cardUncaps, ...settings } = profile
+      const heading = uniqueProfiles.length === 1 ? '### 共通設定' : `### 共通設定 ${index + 1}`
       const cardsByUncap = new Map<string, string[]>()
       if (isRecord(cardUncaps)) {
         for (const [name, uncap] of Object.entries(cardUncaps)) {
@@ -348,7 +351,7 @@ function renderRandomizedProfiles(profiles: JsonRecord[]): string {
       })
 
       return [
-        `### 共通設定 ${index + 1}`,
+        heading,
         '',
         '<details>',
         '<summary>点数・育成設定</summary>',
@@ -407,15 +410,68 @@ function renderRandomizedScheduleSettings(results: JsonRecord[]): string {
 function statusSummary(results: JsonRecord[]): string {
   const statusCounts = new Map<string, number>()
   for (const result of results) {
-    const status = typeof result.status === 'string' ? result.status : '不明'
-    statusCounts.set(status, (statusCounts.get(status) ?? 0) + 1)
+    const status = typeof result.status === 'string' ? result.status : 'unknown'
+    const label = statusLabel(status, result.kind === 'randomized' && result.nonBlocking === true)
+    statusCounts.set(label, (statusCounts.get(label) ?? 0) + 1)
   }
   return (
     [...statusCounts]
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([status, count]) => `${status} ${count}件`)
+      .map(([label, count]) => `${label} ${count}件`)
       .join('、') || '結果なし'
   )
+}
+
+function candidatePoolLabel(attempt: JsonRecord): string {
+  const candidatePool = attempt.candidatePool
+  if (!isRecord(candidatePool)) return '—'
+  return `${firstNumber(candidatePool.afterSafePruning) ?? '—'}/${firstNumber(candidatePool.beforeSafePruning) ?? '—'}`
+}
+
+function candidateScoreLabel(attempt: JsonRecord): string {
+  const candidateScore = firstNumber(attempt.candidateScore)
+  const theoryScore = firstNumber(attempt.bestKnownScore, attempt.optimalScore)
+  if (candidateScore === undefined || theoryScore === undefined) return '—'
+  const difference = theoryScore - candidateScore
+  return `${candidateScore}→${theoryScore}（差 ${difference >= 0 ? '+' : ''}${difference}）`
+}
+
+function renderCandidateLimitRetries(results: JsonRecord[]): string[] {
+  const retries = results.flatMap((result) => {
+    if (!isRecord(result.candidateLimitRetry)) return []
+    const { initial, retry, recovered, nonBlocking } = result.candidateLimitRetry
+    if (!isRecord(initial) || !isRecord(retry)) return []
+    return [{ result, initial, retry, recovered: recovered === true, nonBlocking: nonBlocking === true }]
+  })
+  const recoveredCount = retries.filter(({ recovered }) => recovered).length
+  const nonBlockingCount = retries.filter(({ nonBlocking }) => nonBlocking).length
+  const initialLimit = firstNumber(retries[0]?.initial.candidateLimit)
+  const retryLimit = firstNumber(retries[0]?.retry.candidateLimit)
+  const title =
+    initialLimit === undefined || retryLimit === undefined
+      ? '候補上限を増やした再試行'
+      : `候補上限${initialLimit}→${retryLimit}の再試行`
+  const summary =
+    retries.length === 0
+      ? '候補上限を増やした再試行の対象はありません。'
+      : `${initialLimit}枚で不一致になったランダムケース: ${retries.length}件（recovered: ${recoveredCount} / non-blocking: ${nonBlockingCount} / retry failed: ${retries.length - recoveredCount - nonBlockingCount}）`
+  const lines = [`### ${title}`, summary]
+  if (retries.length === 0) return lines
+
+  lines.push(
+    '',
+    `| 条件 | プラン | seed | ${initialLimit ?? '—'}枚: 候補数・点数 | ${initialLimit ?? '—'}枚の状態 | ${retryLimit ?? '—'}枚: 候補数・点数 | ${retryLimit ?? '—'}枚の状態 |`,
+    '| --- | --- | --- | --- | --- | --- | --- |',
+  )
+  for (const { result, initial, retry, recovered, nonBlocking } of retries) {
+    const { label, plan } = conditionLabel(result)
+    const seed = typeof initial.runSeed === 'string' ? initial.runSeed : 'unknown'
+    const retryStatus = recovered ? 'recovered_at_45' : String(retry.status ?? 'unknown')
+    lines.push(
+      `| ${escapeCell(label)} | ${escapeCell(plan)} | ${escapeCell(seed)} | ${initial.candidateLimit ?? '—'}枚 / ${candidatePoolLabel(initial)} / ${candidateScoreLabel(initial)} | ${statusLabel(initial.status)} | ${retry.candidateLimit ?? '—'}枚 / ${candidatePoolLabel(retry)} / ${candidateScoreLabel(retry)} | ${statusLabel(retryStatus, nonBlocking)} |`,
+    )
+  }
+  return lines
 }
 
 /** Actions表示とPRコメントで共通の結果を使い、実行情報だけを出し分ける */
@@ -440,6 +496,16 @@ function renderReport(
   lines.push(
     '',
     `読み込んだレポート: ${reportCount}件 / 固定4凸: ${fixedResults.length}件 / ランダム検証: ${randomizedResults.length}件`,
+    '',
+    '<details>',
+    '<summary>結果の見方</summary>',
+    '',
+    '- 最適編成はアプリの探索結果、理論編成はCP-SATの結果です。',
+    '- ✅ optimalは最適性が証明されたケース、❌ non_optimalはより高得点の編成が見つかったケース、❓ unknownは判定不能です。⚠️ recoveredは再試行で最適値に一致、⚠️ non-blockingはランダムケースの不一致・未証明を警告として記録した状態です。',
+    '- ランダムケースの不一致・未証明は必須チェックを止めません。固定4凸ケースの不一致・未証明と、Solverやモデルのエラーは失敗します。',
+    '- 各条件はSense・Logic・Anomalyの3プランで検証します。カード点は本体点と編成内連携点の合計、総合点には初期パラ・パラボなども含みます。',
+    '- 点数順位と採用回数は固定4凸・ランダム検証で別集計し、採用回数にはレンタル枠も含みます。',
+    '</details>',
   )
 
   if (results.length === 0 && randomizedProfiles.length === 0) {
@@ -457,26 +523,8 @@ function renderReport(
     HIF: randomizedResults.filter((result) => conditionLabel(result).scenario === 'HIF'),
     総合: randomizedResults,
   }
-  lines.push(
-    '',
-    `固定4凸の結果: ${statusSummary(fixedResults)}`,
-    `ランダム検証の結果: ${statusSummary(randomizedResults)}`,
-    '',
-    '「最適編成」はアプリ側の探索結果、「理論編成」はCP-SATの探索結果です。optimalは最適性を証明済み、non_optimalは制限時間内に証明できなかった状態です。',
-    '固定4凸とランダム検証は別々に点数順位・カード採用回数を集計します。採用回数にはレンタル枠のカードも含みます。',
-    '各条件をSense・Logic・Anomalyの3プランで検証するため、点数表にプランを表示します。',
-    '編成表のカード点はカード本体点と編成内連携点の合計です。総合点には初期パラ・パラボなど編成全体の点も含まれます。',
-  )
-
   if (fixedResults.length > 0) {
-    lines.push(
-      '',
-      '<details>',
-      forPrComment
-        ? `<summary>固定4凸の検証結果を表示（${fixedResults.length}件）</summary>`
-        : '<summary>固定4凸の検証結果</summary>',
-      '',
-    )
+    lines.push('', '<details>', `<summary>固定4凸の結果: ${statusSummary(fixedResults)}</summary>`, '')
     lines.push(
       `## 全条件（${fixedResults.length}件）`,
       '',
@@ -499,15 +547,15 @@ function renderReport(
   lines.push(
     '',
     '<details>',
-    forPrComment
-      ? `<summary>ランダム検証の結果を表示（${randomizedResults.length}件）</summary>`
-      : `<summary>ランダム検証（${randomizedResults.length}件）</summary>`,
+    `<summary>ランダム検証の結果: ${statusSummary(randomizedResults)}</summary>`,
     '',
-    '固定4凸の結果とは別に、ランダム検証だけの点数順位とカード採用回数を集計します。全シャード共通の手動点数設定・初期値・カード凸数と、配分ごとのスケジュールおよび自動調整値を記録します。',
+    '固定4凸とは別に順位・採用回数を集計します。共通の点数・初期値・カード凸数と、配分ごとのスケジュール・自動調整値を記録します。',
     '',
     renderRandomizedProfiles(randomizedProfiles),
     '',
     renderRandomizedScheduleSettings(randomizedResults),
+    '',
+    ...renderCandidateLimitRetries(randomizedResults),
   )
   if (randomizedResults.length > 0) {
     lines.push(

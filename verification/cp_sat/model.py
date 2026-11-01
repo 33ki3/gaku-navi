@@ -52,6 +52,7 @@ class RawProblem(TypedDict):
     nonSupportParams: dict[str, int]
     paramCap: NotRequired[int | None]
     fixedCardIds: NotRequired[list[str]]
+    fixedCardNames: NotRequired[list[str]]
     fixedRentalCardIds: NotRequired[list[str]]
 
 
@@ -113,6 +114,7 @@ class Problem:
     non_support_params: dict[str, int]
     param_cap: int | None
     fixed_card_ids: tuple[str, ...]
+    fixed_card_names: tuple[str, ...]
     fixed_rental_card_ids: tuple[str, ...]
 
 
@@ -362,6 +364,16 @@ def _load_problem(payload: Any) -> tuple[Problem, list[Card], Candidate]:
     if any(not card_by_id[card_id].rental_allowed for card_id in fixed_rental_card_ids):
         raise ValueError("problem.fixedRentalCardIds contains a card that cannot be rented")
 
+    fixed_card_names = raw_problem.get("fixedCardNames", [])
+    card_names = {card.name for card in cards}
+    if (
+        not isinstance(fixed_card_names, list)
+        or any(not isinstance(name, str) for name in fixed_card_names)
+        or len(set(fixed_card_names)) != len(fixed_card_names)
+        or not set(fixed_card_names).issubset(card_names)
+    ):
+        raise ValueError("problem.fixedCardNames has duplicate or unknown names")
+
     candidate_ids = raw_candidate.get("cardIds")
     rental_card_id = raw_candidate.get("rentalCardId")
     if not isinstance(candidate_ids, list) or any(not isinstance(card_id, str) for card_id in candidate_ids):
@@ -386,6 +398,7 @@ def _load_problem(payload: Any) -> tuple[Problem, list[Card], Candidate]:
         non_support_params=_integer_parameter_values(raw_problem.get("nonSupportParams"), "problem.nonSupportParams"),
         param_cap=param_cap,
         fixed_card_ids=fixed_card_ids,
+        fixed_card_names=tuple(fixed_card_names),
         fixed_rental_card_ids=fixed_rental_card_ids,
     )
     candidate = Candidate(
@@ -417,6 +430,8 @@ def _candidate_is_legal(problem: Problem, cards: list[Card], candidate: Candidat
         return "candidate contains the same card more than once"
     if not set(problem.fixed_card_ids).issubset(candidate_ids):
         return "candidate omits a fixed card"
+    if not set(problem.fixed_card_names).issubset({card.name for card in picked}):
+        return "candidate omits a fixed card name"
     rental_card_id = candidate.rental_card_id
     if rental_card_id is None:
         rental_only = [card for card in picked if card.rental_allowed and not card.normal_allowed]
@@ -756,12 +771,14 @@ def verify_optimizer(payload: Any) -> dict[str, Any]:
     model.add(sum(rental_selected.values()) == 1)
     for card_id in problem.fixed_card_ids:
         model.add(selected[card_id] == 1)
-    for card_id in problem.fixed_rental_card_ids:
-        model.add(rental_selected[card_id] == 1)
-
     cards_by_name: dict[str, list[Card]] = {}
     for card in cards:
         cards_by_name.setdefault(card.name, []).append(card)
+    for card_name in problem.fixed_card_names:
+        model.add(sum(selected[card.id] for card in cards_by_name[card_name]) == 1)
+    for card_id in problem.fixed_rental_card_ids:
+        model.add(rental_selected[card_id] == 1)
+
     # 同名の通常・レンタル候補は別IDでも同じカードなので、同時選択を禁止する
     for variants in cards_by_name.values():
         if len(variants) > 1:

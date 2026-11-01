@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import * as constant from '../../constant'
-import type { Ability, ScoreSettings, SupportCard } from '../../types/card'
+import type { Ability, ParameterValues, ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitResult, UnitSimulatorSettings } from '../../types/unit'
 import type { OptimizeInput } from '../../types/unitOptimizer'
@@ -280,7 +280,7 @@ function makePayload(input: OptimizeInput, result: UnitResult, candidate?: { car
 }
 
 /** Python verifierを同期実行し、終了コードとJSON判定を返す */
-function runVerifier(payload: ReturnType<typeof makePayload>) {
+function runVerifier(payload: object) {
   // 小規模fixtureでは並列起動の負荷を避け、3回の判定を安定して終えるため1 workerにする
   const result = spawnSync(python, [verifierPath], {
     input: JSON.stringify(payload),
@@ -296,6 +296,233 @@ function runVerifier(payload: ReturnType<typeof makePayload>) {
   return { exitCode: result.status, output: JSON.parse(result.stdout) as Record<string, unknown> }
 }
 
+/** CP-SATへ渡す1枚分のカード情報。通常枠とレンタル枠への配置可否を別々に持つ */
+interface IndependentVerifierCard {
+  id: string
+  name: string
+  type: string
+  parameterType: string
+  spCategory: string
+  baseScoreWithoutParamBonus: number
+  paramBonusPercent: ParameterValues
+  providedActions: Record<string, number>
+  synergyAbilities: never[]
+  normalAllowed: boolean
+  rentalAllowed: boolean
+}
+
+/** 候補生成を通さずVerifierへ渡す、制約・カード一覧・比較用候補のfixture */
+interface IndependentVerifierPayload {
+  payloadVersion: number
+  problem: {
+    unitSize: number
+    typeCountMin: ParameterValues
+    typeCountMax: ParameterValues
+    spConstraint: ParameterValues
+    outsideParamBonusPercent: ParameterValues
+    parameterBonusRows: ParameterValues[]
+    nonSupportParams: ParameterValues
+    paramCap: null
+    fixedCardIds: string[]
+    fixedCardNames: string[]
+    fixedRentalCardIds: string[]
+  }
+  cards: IndependentVerifierCard[]
+  candidate: { cardIds: string[]; rentalCardId: string; score: number }
+  timeoutMs: number
+}
+
+/** アプリ候補生成を通さず、CP-SATへ渡す固定・タイプ・SP条件を作る */
+function makeIndependentLockPayload(): IndependentVerifierPayload {
+  const makeModelCard = (
+    id: string,
+    name: string,
+    type: string,
+    spCategory: string,
+    baseScoreWithoutParamBonus: number,
+    normalAllowed = true,
+    rentalAllowed = false,
+  ): IndependentVerifierCard => ({
+    id,
+    name,
+    type,
+    parameterType: type === enums.CardType.Assist ? enums.ParameterType.Vocal : type,
+    spCategory,
+    baseScoreWithoutParamBonus,
+    paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
+    providedActions: {},
+    synergyAbilities: [],
+    normalAllowed,
+    rentalAllowed,
+  })
+
+  const excludedNames = new Set(['除外カード'])
+  const eligibleCards = [
+    makeModelCard('locked-vocal', '固定Vo', enums.CardType.Vocal, enums.SpCategoryType.None, 3),
+    makeModelCard('all-normal', '同名AllSP', enums.CardType.Assist, enums.SpCategoryType.All, 10, true, true),
+    makeModelCard('all-rental', '同名AllSP', enums.CardType.Assist, enums.SpCategoryType.All, 10, false, true),
+    makeModelCard('dance-high', 'Da高得点', enums.CardType.Dance, enums.SpCategoryType.None, 20),
+    makeModelCard('dance-extra', 'Da補助', enums.CardType.Dance, enums.SpCategoryType.None, 6),
+    makeModelCard('visual-high', 'Vi高得点', enums.CardType.Visual, enums.SpCategoryType.None, 8),
+    makeModelCard('visual-extra', 'Vi補助', enums.CardType.Visual, enums.SpCategoryType.None, 2),
+    makeModelCard('assist-extra', 'Assist候補', enums.CardType.Assist, enums.SpCategoryType.None, 7),
+    makeModelCard('vocal-extra', 'Vo候補', enums.CardType.Vocal, enums.SpCategoryType.None, 4),
+    makeModelCard('excluded-high', '除外カード', enums.CardType.Dance, enums.SpCategoryType.None, 1_000),
+  ].filter((card) => !excludedNames.has(card.name))
+
+  return {
+    payloadVersion: 1,
+    problem: {
+      unitSize: 6,
+      typeCountMin: { vocal: 1, dance: 1, visual: 1 },
+      typeCountMax: { vocal: 2, dance: 2, visual: 2 },
+      spConstraint: { vocal: 1, dance: 1, visual: 1 },
+      outsideParamBonusPercent: { vocal: 0, dance: 0, visual: 0 },
+      parameterBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+      nonSupportParams: { vocal: 0, dance: 0, visual: 0 },
+      paramCap: null,
+      fixedCardIds: ['locked-vocal'],
+      fixedCardNames: [],
+      fixedRentalCardIds: ['all-rental'],
+    },
+    cards: eligibleCards,
+    candidate: {
+      cardIds: ['locked-vocal', 'all-rental', 'dance-high', 'dance-extra', 'visual-high', 'assist-extra'],
+      rentalCardId: 'all-rental',
+      score: 54,
+    },
+    timeoutMs: 10_000,
+  }
+}
+
+/** 固定カード名は保ったまま、通常・レンタル配置をCP-SATへ選ばせるfixture */
+function makeFlexibleLockPayload(): IndependentVerifierPayload {
+  const makeModelCard = (
+    id: string,
+    name: string,
+    type: string,
+    spCategory: string,
+    baseScoreWithoutParamBonus: number,
+    normalAllowed: boolean,
+    rentalAllowed: boolean,
+  ): IndependentVerifierCard => ({
+    id,
+    name,
+    type,
+    parameterType: type === enums.CardType.Assist ? enums.ParameterType.Vocal : type,
+    spCategory,
+    baseScoreWithoutParamBonus,
+    paramBonusPercent: { vocal: 0, dance: 0, visual: 0 },
+    providedActions: {},
+    synergyAbilities: [],
+    normalAllowed,
+    rentalAllowed,
+  })
+
+  return {
+    payloadVersion: 1,
+    problem: {
+      unitSize: 2,
+      typeCountMin: { vocal: 1, dance: 1, visual: 0 },
+      typeCountMax: { vocal: 1, dance: 1, visual: 2 },
+      spConstraint: { vocal: 1, dance: 1, visual: 0 },
+      outsideParamBonusPercent: { vocal: 0, dance: 0, visual: 0 },
+      parameterBonusRows: [{ vocal: 0, dance: 0, visual: 0 }],
+      nonSupportParams: { vocal: 0, dance: 0, visual: 0 },
+      paramCap: null,
+      fixedCardIds: [],
+      fixedCardNames: ['固定カード', 'もう1枚の固定カード'],
+      fixedRentalCardIds: [],
+    },
+    cards: [
+      makeModelCard('locked-normal', '固定カード', enums.CardType.Vocal, enums.SpCategoryType.All, 5, true, false),
+      makeModelCard('locked-rental', '固定カード', enums.CardType.Vocal, enums.SpCategoryType.All, 100, false, true),
+      makeModelCard(
+        'other-normal',
+        'もう1枚の固定カード',
+        enums.CardType.Dance,
+        enums.SpCategoryType.None,
+        1,
+        true,
+        false,
+      ),
+      makeModelCard(
+        'other-rental',
+        'もう1枚の固定カード',
+        enums.CardType.Dance,
+        enums.SpCategoryType.None,
+        10,
+        false,
+        true,
+      ),
+    ],
+    candidate: {
+      cardIds: ['locked-rental', 'other-normal'],
+      rentalCardId: 'locked-rental',
+      score: 101,
+    },
+    timeoutMs: 10_000,
+  }
+}
+
+/** 小規模の生カードfixtureを全組み合わせ列挙し、Verifierの最適点を独立に求める */
+function findIndependentVerifierOptimum(payload: IndependentVerifierPayload): {
+  ids: string[]
+  rentalId: string
+  score: number
+} {
+  const { problem, cards } = payload
+  let best: { ids: string[]; rentalId: string; score: number } | null = null
+  const selected: IndependentVerifierCard[] = []
+
+  function enumerate(start: number): void {
+    if (selected.length === problem.unitSize) {
+      const ids = new Set(selected.map((card) => card.id))
+      const names = new Set(selected.map((card) => card.name))
+      if (names.size !== problem.unitSize) return
+      if (problem.fixedCardIds.some((id) => !ids.has(id))) return
+      if (problem.fixedCardNames.some((name) => !names.has(name))) return
+
+      for (const rental of selected.filter((card) => card.rentalAllowed)) {
+        if (problem.fixedRentalCardIds.some((id) => id !== rental.id)) continue
+        if (selected.some((card) => !card.normalAllowed && card.id !== rental.id)) continue
+
+        let satisfiesConstraints = true
+        for (const parameter of Object.values(enums.ParameterType)) {
+          const typeCount = selected.filter((card) => card.type === parameter).length
+          const spCount = selected.filter(
+            (card) => card.spCategory === parameter || card.spCategory === enums.SpCategoryType.All,
+          ).length
+          if (typeCount < problem.typeCountMin[parameter] || typeCount > problem.typeCountMax[parameter]) {
+            satisfiesConstraints = false
+            break
+          }
+          if (spCount < problem.spConstraint[parameter]) {
+            satisfiesConstraints = false
+            break
+          }
+        }
+        if (!satisfiesConstraints) continue
+
+        const score = selected.reduce((sum, card) => sum + card.baseScoreWithoutParamBonus, 0)
+        if (!best || score > best.score) best = { ids: [...ids].sort(), rentalId: rental.id, score }
+      }
+      return
+    }
+
+    const remaining = problem.unitSize - selected.length
+    for (let index = start; index <= cards.length - remaining; index++) {
+      selected.push(cards[index])
+      enumerate(index + 1)
+      selected.pop()
+    }
+  }
+
+  enumerate(0)
+  if (!best) throw new Error('Independent CP-SAT fixture has no legal lineup')
+  return best
+}
+
 /** 手動編成評価で指定した名前順のカードを採点する */
 function scoreManualDeck(input: OptimizeInput, cardIds: string[]): UnitResult {
   const result = evaluateManualUnit({
@@ -307,6 +534,46 @@ function scoreManualDeck(input: OptimizeInput, cardIds: string[]): UnitResult {
 }
 
 describeCpSat('CP-SATによる最適編成検証', () => {
+  it('アプリ候補生成から独立した固定・レンタル・SP All fixtureを全列挙oracleと照合する', () => {
+    const payload = makeIndependentLockPayload()
+    const oracle = findIndependentVerifierOptimum(payload)
+
+    expect(oracle.score).toBe(54)
+    expect(oracle.ids).toEqual(payload.candidate.cardIds.slice().sort())
+
+    const result = runVerifier(payload)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.output.status).toBe('optimal')
+    expect(result.output.optimalScore).toBe(oracle.score)
+    expect(result.output.bestRentalCardId).toBe(oracle.rentalId)
+    const bestCardIds = result.output.bestCardIds
+    if (!Array.isArray(bestCardIds) || bestCardIds.some((id) => typeof id !== 'string')) {
+      throw new Error('CP-SAT verifier returned invalid best card IDs')
+    }
+    expect([...bestCardIds].sort()).toEqual(oracle.ids)
+  }, 30_000)
+
+  it('ロック位置を固定名だけで表し、通常・レンタル候補配置を全列挙oracleと照合する', () => {
+    const payload = makeFlexibleLockPayload()
+    const oracle = findIndependentVerifierOptimum(payload)
+    expect(oracle.score).toBe(101)
+    expect(oracle.ids).toEqual(['locked-rental', 'other-normal'])
+    expect(oracle.rentalId).toBe('locked-rental')
+
+    const result = runVerifier(payload)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.output.status).toBe('optimal')
+    expect(result.output.optimalScore).toBe(oracle.score)
+    expect(result.output.bestRentalCardId).toBe(oracle.rentalId)
+    const bestCardIds = result.output.bestCardIds
+    if (!Array.isArray(bestCardIds) || bestCardIds.some((id) => typeof id !== 'string')) {
+      throw new Error('CP-SAT verifier returned invalid best card IDs')
+    }
+    expect([...bestCardIds].sort()).toEqual(oracle.ids)
+  }, 30_000)
+
   it('同点編成を受け入れ、低スコア候補と点数不一致を検出する', async () => {
     // 指定した小規模条件をTypeScript Optimizerで解き、6枚編成の最良候補を作る
     const input = makeInput()

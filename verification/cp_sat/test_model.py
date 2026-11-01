@@ -50,6 +50,58 @@ def make_payload(candidate_id: str, candidate_score: int) -> dict:
     }
 
 
+def make_flexible_lock_payload() -> dict:
+    """カード名の固定を保ち、通常枠とレンタル枠の最適な配置を比べる2枚fixture"""
+
+    def card(
+        card_id: str,
+        name: str,
+        card_type: str,
+        sp_category: str,
+        score: int,
+        normal_allowed: bool,
+        rental_allowed: bool,
+    ) -> dict:
+        return {
+            "id": card_id,
+            "name": name,
+            "type": card_type,
+            "parameterType": card_type,
+            "spCategory": sp_category,
+            "normalAllowed": normal_allowed,
+            "rentalAllowed": rental_allowed,
+            "baseScoreWithoutParamBonus": score,
+            "paramBonusPercent": {"vocal": 0, "dance": 0, "visual": 0},
+            "providedActions": {},
+            "synergyAbilities": [],
+        }
+
+    return {
+        "payloadVersion": 1,
+        "problem": {
+            "unitSize": 2,
+            "typeCountMin": {"vocal": 1, "dance": 1, "visual": 0},
+            "typeCountMax": {"vocal": 1, "dance": 1, "visual": 0},
+            "spConstraint": {"vocal": 1, "dance": 1, "visual": 0},
+            "outsideParamBonusPercent": {"vocal": 0, "dance": 0, "visual": 0},
+            "parameterBonusRows": [{"vocal": 0, "dance": 0, "visual": 0}],
+            "nonSupportParams": {"vocal": 0, "dance": 0, "visual": 0},
+            "paramCap": None,
+            "fixedCardIds": [],
+            "fixedCardNames": ["locked", "other"],
+            "fixedRentalCardIds": [],
+        },
+        "cards": [
+            card("locked-normal", "locked", "vocal", "all", 5, True, False),
+            card("locked-rental", "locked", "vocal", "all", 100, False, True),
+            card("other-normal", "other", "dance", "none", 1, True, False),
+            card("other-rental", "other", "dance", "none", 10, False, True),
+        ],
+        "candidate": {"cardIds": ["locked-rental", "other-normal"], "rentalCardId": "locked-rental", "score": 101},
+        "timeoutMs": 5_000,
+    }
+
+
 class VerifyOptimizerTests(unittest.TestCase):
     """小さな入力でVerifierの判定と最適編成を確認する。"""
 
@@ -82,6 +134,15 @@ class VerifyOptimizerTests(unittest.TestCase):
         self.assertTrue(result["optimalityProven"])
         self.assertEqual(result["optimalScore"], 10)
         self.assertEqual(result["bestLineup"][0]["cardId"], "rental-high")
+
+    def test_keeps_fixed_card_names_while_comparing_normal_and_rental_assignments(self) -> None:
+        """ロック名を固定したまま、CP-SATが通常・レンタル配置を比較する。"""
+        result = verify_optimizer(make_flexible_lock_payload())
+
+        self.assertEqual(result["status"], "optimal")
+        self.assertEqual(result["optimalScore"], 101)
+        self.assertEqual(result["bestRentalCardId"], "locked-rental")
+        self.assertEqual(set(result["bestCardIds"]), {"locked-rental", "other-normal"})
 
 
 if __name__ == "__main__":

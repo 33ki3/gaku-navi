@@ -425,7 +425,15 @@ export function createRentalPool(
 ): CandidateCard[] {
   const fixedRentalName = getLockedRentalCardName(input.settings)
   const fixedRentalCard = fixedRentalName ? input.cardByName.get(fixedRentalName) : undefined
-  const rentalCards = fixedRentalName ? (fixedRentalCard ? [fixedRentalCard] : []) : input.allCards
+  // 固定レンタルは通常候補のプラン判定を通らないため、ここで適合性を確認する
+  const fixedRentalPlanCompatible =
+    fixedRentalCard !== undefined &&
+    (fixedRentalCard.plan === input.settings.plan || fixedRentalCard.plan === enums.PlanType.Free)
+  const rentalCards = fixedRentalName
+    ? fixedRentalPlanCompatible && fixedRentalCard
+      ? [fixedRentalCard]
+      : []
+    : input.allCards
   const allExcludedNames = new Set([...excludedNames, ...input.excludedCardNames])
   const scoredCards: CandidateCard[] = []
 
@@ -508,6 +516,8 @@ export function createSearchBranches(
 ): SearchBranch[] {
   const types = Object.values(enums.ParameterType)
   const fixedRentalName = getLockedRentalCardName(settings)
+  // 未登録・プラン不適合などで固定レンタルを候補に含められない場合、レンタルなしの枝を作らない
+  if (fixedRentalName && !fixedCandidates.some((candidate) => candidate.card.name === fixedRentalName)) return []
   // レンタルが固定済みなら固定カードをそのまま使い、自動なら候補を1枚ずつ仮採用する
   const choices = fixedRentalName
     ? [{ fixed: fixedCandidates, rentalName: fixedRentalName }]
@@ -536,12 +546,12 @@ export function createSearchBranches(
       // AllSPは各タイプの必要枚数を同時に満たす
       spNeeds[type] = Math.max(0, settings.spConstraint[type] - fixedSp)
     }
-    // 自動レンタル枝では、自由枠のSP候補が不足する枝を事前に除外する
+    // AllSPも各属性の必要数に使えるため、属性SPと合算して不足する枝だけを事前に除外する
     if (
       !fixedRentalName &&
-      (pools.voSpPool.length < spNeeds.vocal ||
-        pools.daSpPool.length < spNeeds.dance ||
-        pools.viSpPool.length < spNeeds.visual)
+      (pools.voSpPool.length + pools.allSpPool.length < spNeeds.vocal ||
+        pools.daSpPool.length + pools.allSpPool.length < spNeeds.dance ||
+        pools.viSpPool.length + pools.allSpPool.length < spNeeds.visual)
     )
       continue
 

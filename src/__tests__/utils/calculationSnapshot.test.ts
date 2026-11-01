@@ -203,6 +203,10 @@ describe('calculationSnapshot', () => {
     expect(input.excludedCardNames).toEqual([cardName])
     expect(input.settings).toBe(variant!.unitSettings)
     expect(input.cardByName).toBe(variant!.cardByName)
+
+    const ignoredVariant = applyUnitSettingsVariant(variant!, { ignoreCardExclusions: true })
+    expect(ignoredVariant).not.toBeNull()
+    expect(createOptimizeInput(ignoredVariant!).excludedCardNames).toEqual([])
   })
 
   it('固定したsnapshotだけでカードスコアを計算できる', () => {

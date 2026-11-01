@@ -21,6 +21,14 @@ import type { ActionCounts, ParameterValues, ScoreSettings, SupportCard } from '
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
 import type { OptimizeInput } from '../../types/unitOptimizer'
+import {
+  type OptimizerCaseKind,
+  expandedCandidateLimit,
+  getCandidateRetryLimit,
+  getInitialCandidateLimit,
+  historicalCandidateLimitRegressions,
+  isNonBlockingRandomizedResult,
+} from './cpSatCandidateLimitPolicy'
 import { createCardScoreCalculationContext } from '../../utils/calculator/calculateCardScores'
 import { calculateParameterBonus } from '../../utils/calculator/parameterBonus'
 import { mergeScheduleCounts, normalizeScoreSettingsDerived } from '../../utils/scoreSettings'
@@ -116,17 +124,6 @@ const typeLabels: Record<enums.ParameterType, string> = {
   [enums.ParameterType.Dance]: 'Da',
   [enums.ParameterType.Visual]: 'Vi',
 }
-
-/** 初レジェンドで候補不足が見つかった条件に使う候補上限 */
-const hajimeExpandedCandidateLimit = 45
-
-/** 候補上限30でも最適性を確認できなかった初レジェンドの条件 */
-const hajimeExpandedCandidateLimitCases = new Set([
-  'Vo5_授業Da:Sense',
-  'Vo5_授業Da:Anomaly',
-  'Vo5_授業Vi:Sense',
-  'Vo5_授業Vi:Anomaly',
-])
 
 /** 整数値のランダム範囲 */
 interface IntegerRange {
@@ -310,8 +307,6 @@ function getOptimizerShard(variant: Variant): OptimizerShard {
   throw new Error(`No CP-SAT shard matches HIF variant ${variant.label}`)
 }
 
-type OptimizerCaseKind = 'all-four-control' | 'randomized'
-
 interface OptimizerMatrixCase {
   /** シナリオ、レッスン配分、授業属性の組み合わせ */
   variant: Variant
@@ -320,6 +315,36 @@ interface OptimizerMatrixCase {
   /** 固定4凸対照か、凸数なども散らすランダム条件か */
   kind: OptimizerCaseKind
 }
+
+describe('CP-SAT候補上限ポリシー', () => {
+  it.each(historicalCandidateLimitRegressions)(
+    'run #199の固定回帰 $variant / $plan を45枚で検証する',
+    ({ variant, plan }) => {
+      expect(getInitialCandidateLimit('all-four-control', 'hajime', variant, plan, 30)).toBe(expandedCandidateLimit)
+      expect(getInitialCandidateLimit('randomized', 'hajime', variant, plan, 30)).toBe(30)
+    },
+  )
+
+  it('ランダムケースだけ、CP-SATが上回った場合に45枚で再試行する', () => {
+    expect(getCandidateRetryLimit('randomized', 30, 6074, 6076)).toBe(expandedCandidateLimit)
+    expect(getCandidateRetryLimit('randomized', 30, 6074, 6074)).toBeUndefined()
+    expect(getCandidateRetryLimit('randomized', 30, 6074, undefined)).toBeUndefined()
+    expect(getCandidateRetryLimit('all-four-control', 30, 6074, 6076)).toBeUndefined()
+    expect(getCandidateRetryLimit('randomized', expandedCandidateLimit, 6074, 6076)).toBeUndefined()
+  })
+
+  it.each(['non_optimal', 'unknown'])('ランダムケースの%sは必須チェックを止めない', (status) => {
+    expect(isNonBlockingRandomizedResult('randomized', status)).toBe(true)
+    expect(isNonBlockingRandomizedResult('all-four-control', status)).toBe(false)
+  })
+
+  it.each(['model_invalid', 'no_legal_lineup', 'solver_error', 'error'])(
+    'ランダムケースでも%sは失敗扱いにする',
+    (status) => {
+      expect(isNonBlockingRandomizedResult('randomized', status)).toBe(false)
+    },
+  )
+})
 
 /** 全シャードで属性・授業条件を共有し、レッスン配分だけを変えたランダム条件を作る */
 function buildSharedRandomVariants(seed: string): Record<OptimizerShard, Variant> {
@@ -448,6 +473,43 @@ interface OptimizerMatrixResult {
     isRental: boolean
     cardScore: number
   }[]
+}
+
+interface OptimizerCandidateAttempt {
+  candidateLimit: number
+  evaluatedCombos: number
+  verificationResult: OptimizerMatrixResult
+  payload: ReturnType<typeof makePayload>
+  output: Record<string, unknown>
+  outputWithUncaps: Record<string, unknown>
+  status: string
+}
+
+function serializeCandidateAttempt(
+  attempt: OptimizerCandidateAttempt,
+  seeds: { runSeed: string; uncapSeed?: string; settingsSeed?: string },
+): Record<string, unknown> {
+  const candidateScore = attempt.verificationResult.score
+  const bestKnownScore = typeof attempt.output.bestKnownScore === 'number' ? attempt.output.bestKnownScore : null
+  const optimalScore = typeof attempt.output.optimalScore === 'number' ? attempt.output.optimalScore : null
+  const theoreticalScore = bestKnownScore ?? optimalScore
+
+  return {
+    candidateLimit: attempt.candidateLimit,
+    runSeed: seeds.runSeed,
+    uncapSeed: seeds.uncapSeed ?? null,
+    randomizedSettingsSeed: seeds.settingsSeed ?? null,
+    candidatePool: attempt.payload.candidatePool,
+    candidateScore,
+    bestKnownScore,
+    optimalScore,
+    scoreDifference: theoreticalScore === null ? null : theoreticalScore - candidateScore,
+    status: attempt.status,
+    solverStatus: attempt.output.solverStatus ?? null,
+    optimalityProven: attempt.output.optimalityProven ?? null,
+    appOptimizerLineup: attempt.verificationResult.members,
+    bestLineup: attempt.outputWithUncaps.bestLineup ?? null,
+  }
 }
 
 /** Actionsログに載せる編成名を、Verifierとアプリの両方の形式から整形する */
@@ -1718,6 +1780,9 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           JSON.stringify(
             {
               runSeed: matrixRunSeed,
+              runId: process.env.GITHUB_RUN_ID ?? null,
+              runAttempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
+              commitSha: process.env.GITHUB_SHA ?? null,
               randomizedProfile: sharedRandomProfile,
               cases: caseResults.filter((entry): entry is Record<string, unknown> => entry !== undefined),
             },
@@ -1740,6 +1805,8 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           : Object.fromEntries(AllCards.map(({ name }) => [name, enums.UncapType.Four]))
         const randomizedScheduleProfile = isRandomized ? getRandomizedScheduleProfile(variant) : undefined
         let randomizedSettings: Record<string, unknown> | null = null
+        let candidateLimitRetry: Record<string, unknown> | null = null
+        let candidateRetryLogLabel: string | null = null
         try {
           const variantScheduleSelections = applyScheduleVariant(
             variant.scenario === enums.ScenarioType.Hif ? storedSchedule.hif : storedScore.scheduleSelections,
@@ -1771,16 +1838,16 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           const mainTypeMinimum = variant.mainType === enums.ParameterType.Visual ? 2 : 3
           typeCountMin[variant.mainType] = mainTypeCount ?? mainTypeMinimum
           typeCountMax[variant.mainType] = mainTypeCount ?? 4
-          const needsExpandedCandidateLimit = hajimeExpandedCandidateLimitCases.has(`${variant.label}:${plan.label}`)
+          const configuredCandidateLimit = storedUnit.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT
           const settings: UnitSimulatorSettings = {
             ...storedUnit,
-            exhaustiveCandidateLimit:
-              variant.scenario === enums.ScenarioType.Hajime && needsExpandedCandidateLimit
-                ? Math.max(
-                    storedUnit.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT,
-                    hajimeExpandedCandidateLimit,
-                  )
-                : storedUnit.exhaustiveCandidateLimit,
+            exhaustiveCandidateLimit: getInitialCandidateLimit(
+              kind,
+              variant.scenario,
+              variant.label,
+              plan.label,
+              configuredCandidateLimit,
+            ),
             plan: plan.value,
             typeCountMin,
             typeCountMax,
@@ -1817,44 +1884,103 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
               `CP-SAT randomized schedule ${scenarioLabels[variant.scenario]} ${variant.label}: ${JSON.stringify(randomizedSettings)}`,
             )
           }
-          // 全カードからTypeScript側の最適編成を求め、その編成を比較基準にする
-          let evaluatedCombos = 0
-          const optimized = await exhaustiveOptimizeAsync(
-            input,
-            () => {},
-            () => false,
-            undefined,
-            { onStats: (stats) => (evaluatedCombos = stats.evaluatedCombos) },
+          async function verifyCandidateAttempt(attemptInput: OptimizeInput): Promise<OptimizerCandidateAttempt> {
+            // 同じ入力条件のまま候補上限だけを変え、アプリ候補とCP-SATを両方再計算する
+            let evaluatedCombos = 0
+            const optimized = await exhaustiveOptimizeAsync(
+              attemptInput,
+              () => {},
+              () => false,
+              undefined,
+              { onStats: (stats) => (evaluatedCombos = stats.evaluatedCombos) },
+            )
+            if (!optimized) {
+              const countLabel = mainTypeCount === undefined ? `${mainTypeMinimum}–4` : String(mainTypeCount)
+              throw new Error(`No legal optimizer result with ${typeLabels[variant.mainType]}${countLabel} cards`)
+            }
+            const verificationResult: OptimizerMatrixResult = {
+              scenario: variant.scenario,
+              variant: variant.label,
+              plan: plan.label,
+              score: optimized.totalScore,
+              members: optimized.members.map(({ card, isRental, result, supportSynergy }) => {
+                const uncap = isRental ? enums.UncapType.Four : cardUncaps[card.name]
+                if (uncap === undefined) throw new Error(`No uncap level was generated for ${card.name}`)
+                return {
+                  name: card.name,
+                  parameterType: card.parameter_type,
+                  uncap,
+                  isRental,
+                  cardScore: result.totalIncrease - result.parameterBonus + supportSynergy,
+                }
+              }),
+            }
+            const payload = makePayload(attemptInput, verificationResult)
+            const output: Record<string, unknown> = candidatePreviewEnabled
+              ? { status: 'preview' }
+              : await runVerifier(payload)
+            const outputWithUncaps = {
+              ...output,
+              bestLineup: addUncapsToLineup(output.bestLineup, cardUncaps, output.bestLineupCardScores),
+            }
+            return {
+              candidateLimit: attemptInput.settings.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT,
+              evaluatedCombos,
+              verificationResult,
+              payload,
+              output,
+              outputWithUncaps,
+              status: String(output.status),
+            }
+          }
+
+          const firstAttempt = await verifyCandidateAttempt(input)
+          let finalAttempt = firstAttempt
+          let status = firstAttempt.status
+          const retryLimit = getCandidateRetryLimit(
+            kind,
+            firstAttempt.candidateLimit,
+            firstAttempt.verificationResult.score,
+            firstAttempt.output.bestKnownScore,
           )
-          if (!optimized) {
-            const countLabel = mainTypeCount === undefined ? `${mainTypeMinimum}–4` : String(mainTypeCount)
-            throw new Error(`No legal optimizer result with ${typeLabels[variant.mainType]}${countLabel} cards`)
-          }
-          const verificationResult: OptimizerMatrixResult = {
-            scenario: variant.scenario,
-            variant: variant.label,
-            plan: plan.label,
-            score: optimized.totalScore,
-            members: optimized.members.map(({ card, isRental, result, supportSynergy }) => {
-              const uncap = isRental ? enums.UncapType.Four : cardUncaps[card.name]
-              if (uncap === undefined) throw new Error(`No uncap level was generated for ${card.name}`)
-              return {
-                name: card.name,
-                parameterType: card.parameter_type,
-                uncap,
-                isRental,
-                cardScore: result.totalIncrease - result.parameterBonus + supportSynergy,
+          if (retryLimit !== undefined) {
+            const seeds = { runSeed: matrixRunSeed, uncapSeed, settingsSeed: randomizedSettingsSeed }
+            candidateRetryLogLabel = `候補上限${firstAttempt.candidateLimit}枚で不一致→${retryLimit}枚を再試行`
+            const initialAttempt = serializeCandidateAttempt(firstAttempt, seeds)
+            try {
+              const retryAttempt = await verifyCandidateAttempt({
+                ...input,
+                settings: { ...input.settings, exhaustiveCandidateLimit: retryLimit },
+              })
+              const recovered = retryAttempt.status === 'optimal'
+              candidateLimitRetry = {
+                initial: initialAttempt,
+                retry: serializeCandidateAttempt(retryAttempt, seeds),
+                recovered,
+                nonBlocking: isNonBlockingRandomizedResult(kind, retryAttempt.status),
               }
-            }),
+              finalAttempt = retryAttempt
+              status = recovered ? 'recovered_at_45' : retryAttempt.status
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              candidateLimitRetry = {
+                initial: initialAttempt,
+                retry: {
+                  candidateLimit: retryLimit,
+                  ...seeds,
+                  status: 'error',
+                  message,
+                },
+                recovered: false,
+              }
+              throw error
+            }
           }
-          // 候補プールを作り、プレビューでなければPython側のCP-SAT Solverを実行する
-          const payload = makePayload(input, verificationResult)
-          const output = candidatePreviewEnabled ? { status: 'preview' } : await runVerifier(payload)
-          const outputWithUncaps = {
-            ...output,
-            bestLineup: addUncapsToLineup(output.bestLineup, cardUncaps, output.bestLineupCardScores),
+          const nonBlocking = isNonBlockingRandomizedResult(kind, status)
+          if (!candidatePreviewEnabled && status !== 'optimal' && status !== 'recovered_at_45' && !nonBlocking) {
+            failures.push(`${resultKey}: ${JSON.stringify(finalAttempt.output)}`)
           }
-          const status = String(output.status)
+          const { payload, verificationResult, evaluatedCombos, output, outputWithUncaps } = finalAttempt
           caseResults[index] = {
             kind,
             runSeed: matrixRunSeed,
@@ -1870,6 +1996,9 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             randomizedSettings,
             mainType: variant.mainType,
             mainTypeCount: mainTypeCount ?? null,
+            candidateLimit: finalAttempt.candidateLimit,
+            candidateLimitRetry,
+            nonBlocking,
             candidateScore: verificationResult.score,
             appOptimizerLineup: verificationResult.members,
             appOptimizerEvaluatedCombos: evaluatedCombos,
@@ -1877,8 +2006,8 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             typeCountMin: payload.problem.typeCountMin,
             typeCountMax: payload.problem.typeCountMax,
             ...outputWithUncaps,
+            status,
           }
-          if (!candidatePreviewEnabled && status !== 'optimal') failures.push(`${resultKey}: ${JSON.stringify(output)}`)
           const verifiedScore = [output.optimalScore, output.bestKnownScore].find(
             (value): value is number => typeof value === 'number',
           )
@@ -1890,9 +2019,10 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
               `${scenarioLabels[variant.scenario]} ${variant.label} ${plan.label}: ${status}; ` +
               `${uncapSeed ? `凸数seed=${uncapSeed}` : '全カード4凸'}; ` +
               `${randomizedSettingsSeed ? `設定seed=${randomizedSettingsSeed}; ` : ''}` +
+              `${candidateRetryLogLabel ? `${candidateRetryLogLabel}; ` : ''}` +
               `最適編成 ${verificationResult.score}点 [${appLineup}]; ` +
               `理論編成 ${verifiedScore === undefined ? '未確定' : `${verifiedScore}点`} [${verifiedLineup}] ` +
-              `(app combinations=${evaluatedCombos}, ` +
+              `(candidate limit=${finalAttempt.candidateLimit}, app combinations=${evaluatedCombos}, ` +
               `${payload.candidatePool.afterSafePruning}/${payload.candidatePool.beforeSafePruning} CP-SAT candidates)`,
           )
         } catch (error) {
@@ -1913,6 +2043,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             uncapSeed: uncapSeed ?? null,
             randomizedSettingsSeed: randomizedSettingsSeed ?? null,
             randomizedSettings,
+            candidateLimitRetry,
             status: 'error',
             message,
           }

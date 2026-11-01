@@ -234,18 +234,20 @@ jobs:
 
   check:
     if: always()
-    needs: [node-checks, python-checks, cp-sat-summary]
+    needs: [node-checks, python-checks, cp-sat, cp-sat-summary]
     runs-on: ubuntu-latest
     steps:
       - env:
           NODE_CHECKS_RESULT: ${{ needs.node-checks.result }}
           PYTHON_CHECKS_RESULT: ${{ needs.python-checks.result }}
+          CP_SAT_RESULT: ${{ needs.cp-sat.result }}
           CP_SAT_SUMMARY_RESULT: ${{ needs.cp-sat-summary.result }}
         run: |
           if [[ "$NODE_CHECKS_RESULT" != "success" ||
                 "$PYTHON_CHECKS_RESULT" != "success" ||
+                "$CP_SAT_RESULT" != "success" ||
                 "$CP_SAT_SUMMARY_RESULT" != "success" ]]; then
-            echo "::error::Node checks, Python checks, or CP-SAT summary did not pass"
+            echo "::error::Node checks, Python checks, CP-SAT verification, or summary did not pass"
             exit 1
           fi
       - run: echo "Required checks passed"

@@ -152,6 +152,14 @@ const scenarios: Record<string, ScenarioDefinition> = {
     description: 'テスト用点数設定で最適編成を計算する',
     semanticInput: createTestOptimizerScenarioInput(),
   },
+  'optimization-lock-exclusion': {
+    id: 'optimization-lock-exclusion',
+    description: '固定カードを結果へ反映し、除外後の再計算で結果から外す',
+    semanticInput: {
+      ...createTestOptimizerScenarioInput({ lockedCards: [targetCardName] }),
+      actions: ['calculate-with-lock', 'unlock-result-card', 'exclude-card', 'recalculate'],
+    },
+  },
   'optimization-filtered': {
     id: 'optimization-filtered',
     description: 'アシストを候補から除外して最適編成を計算する',
@@ -923,6 +931,56 @@ test('optimization-basic', async ({ page }, testInfo) => {
   await expect(lockButton).toHaveAttribute('title', '固定')
   await lockButton.click()
   await expect(lockButton).toHaveAttribute('title', '')
+})
+
+/** 固定ロックを結果へ反映し、解除後に候補除外すると再計算結果から消えることを確認する */
+test('optimization-lock-exclusion', async ({ page }, testInfo) => {
+  skipDetailedOptimizerVariantsOnMobile(testInfo)
+  test.setTimeout(240_000)
+  await openApp(page, {
+    scoreSettings: testScoreSettingsOptions.scoreSettings,
+    scenarioSchedules: testScoreSettingsOptions.scenarioSchedules,
+    unitSettings: {
+      ...testScoreSettingsOptions.unitSettings,
+      lockedCards: [targetCardName],
+    },
+  })
+  const optimizeButton = await openUnitSimulator(page)
+  await optimizeButton.click()
+  const resultPanel = page.getByTestId('unit-result-panel')
+  await expect(resultPanel).toBeVisible({ timeout: 120_000 })
+  await expectOptimizerReady(optimizeButton)
+
+  const targetMember = resultPanel.locator('div.border-l-4').filter({ hasText: targetCardName })
+  await expect(targetMember).toHaveCount(1)
+  const targetLock = targetMember.getByRole('button').first()
+  await expect(targetLock).toHaveAttribute('title', '固定')
+  await targetLock.click()
+  await expect(targetLock).toHaveAttribute('title', '')
+
+  await page.getByRole('button', { name: 'オプション', exact: true }).click()
+  await page.getByRole('button', { name: '除外設定', exact: true }).click()
+  const finishExclusion = page.getByRole('button', { name: '除外設定を終了', exact: true })
+  await expect(finishExclusion).toBeVisible()
+  await page.getByRole('searchbox', { name: 'サポート名 / Pアイテム / スキルカード' }).fill(targetCardName)
+  const targetCard = page
+    .getByTestId('support-card')
+    .filter({ has: page.getByRole('heading', { name: targetCardName, exact: true }) })
+  await expect(targetCard).toHaveCount(1)
+  await targetCard.click()
+  await expect(targetCard.getByText('除外中', { exact: true })).toBeVisible()
+  await finishExclusion.click()
+
+  await optimizeButton.click()
+  await expectOptimizerReady(optimizeButton)
+  await expect(resultPanel.locator('div.border-l-4').filter({ hasText: targetCardName })).toHaveCount(0)
+  await saveObservation(
+    scenarios['optimization-lock-exclusion'],
+    testInfo,
+    page,
+    { ui: { lockedCard: targetCardName, excludedAfterUnlock: true, excludedCardAbsentAfterRecalculation: true } },
+    resultPanel,
+  )
 })
 
 /** アシストタイプを除外すると、その条件で最適編成が再計算されることを確認する */

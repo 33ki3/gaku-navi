@@ -140,8 +140,8 @@ function* combinations<T>(arr: T[], k: number): Generator<T[]> {
  * @returns キャッシュキー
  */
 function buildPoolKey<T extends OptimizerCardLike>(pool: T[]): string {
-  // 呼び出し元でプール順は安定しているためソートを省略してキー生成コストを下げる
-  return pool.map((c) => c.card.name).join('\u001f')
+  // タイプ変更後も同じプール名にならないよう、カード名とタイプを組にしてキー化する
+  return JSON.stringify(pool.map((candidate) => [candidate.card.name, candidate.card.type]))
 }
 
 /**
@@ -263,7 +263,7 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
   const daKey = buildPoolKey(daSpPool)
   const viKey = buildPoolKey(viSpPool)
   const allKey = buildPoolKey(allSpPool)
-  const countCacheKey = [
+  const countCacheKey = JSON.stringify([
     voKey,
     daKey,
     viKey,
@@ -282,7 +282,7 @@ export function countSpTypeConstrainedCombos<T extends OptimizerCardLike>(input:
     typeDaMax,
     typeViMax,
     totalSlots,
-  ].join('|')
+  ])
   const countCached = spTypeCountCache.get(countCacheKey)
   if (countCached !== undefined) return countCached
 

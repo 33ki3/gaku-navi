@@ -314,6 +314,8 @@ interface OptimizerMatrixCase {
   plan: (typeof plans)[number]
   /** 固定4凸対照か、凸数なども散らすランダム条件か */
   kind: OptimizerCaseKind
+  /** 固定カードと候補除外を同時に伝播させる回帰条件 */
+  lockExclusion?: true
 }
 
 describe('CP-SAT候補上限ポリシー', () => {
@@ -434,7 +436,19 @@ function buildOptimizerMatrixCases(seed: string): OptimizerMatrixCase[] {
       ),
       ...plans.map((plan) => ({ variant: randomizedVariant, plan, kind: 'randomized' as const })),
     ]
-    const expectedCaseCount = (fixedControlVariants.length + 1) * plans.length
+    // 固定対照とランダム条件を各planで実行し、hajime-5ではロック/除外回帰を1件加える
+    if (shard === 'hajime-5') {
+      const sourceVariant = fixedControlVariants.find((variant) => variant.scenario === enums.ScenarioType.Hajime)
+      const sensePlan = plans.find((plan) => plan.label === 'Sense')
+      if (!sourceVariant || !sensePlan) throw new Error('Missing deterministic lock/exclusion regression inputs')
+      cases.push({
+        variant: { ...sourceVariant, label: `${sourceVariant.label}_lock_exclusion` },
+        plan: sensePlan,
+        kind: 'all-four-control',
+        lockExclusion: true,
+      })
+    }
+    const expectedCaseCount = (fixedControlVariants.length + 1) * plans.length + (shard === 'hajime-5' ? 1 : 0)
     if (cases.length !== expectedCaseCount) {
       throw new Error(`Expected ${expectedCaseCount} cases in ${shard}, got ${cases.length}`)
     }
@@ -1744,7 +1758,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           `tmp/optimizer-validation/cp-sat-optimizer-matrix-results${matrixShard ? `-${matrixShard}` : ''}.json`,
       )
       const failures: string[] = []
-      const jobs = selectedCases.flatMap(({ variant, plan, kind }, caseIndex) => {
+      const jobs = selectedCases.flatMap(({ variant, plan, kind, lockExclusion }, caseIndex) => {
         const key = `${variant.scenario}:${variant.label}`
         const branchCounts: (2 | 3 | 4 | undefined)[] = splitMainTypeCounts
           ? variant.mainType === enums.ParameterType.Visual
@@ -1763,6 +1777,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             plan,
             kind,
             mainTypeCount,
+            lockExclusion,
           }
         })
       })
@@ -1795,7 +1810,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
 
       /** 1ケースのTypeScript基準を作り、同じ入力でCP-SATの最適性を調べる */
       async function verifyJob(job: (typeof jobs)[number]) {
-        const { index, resultKey, variant, plan, kind, mainTypeCount } = job
+        const { index, resultKey, variant, plan, kind, mainTypeCount, lockExclusion } = job
         const isAllFourControl = kind === 'all-four-control'
         const isRandomized = kind === 'randomized'
         const uncapSeed = isRandomized ? sharedUncapSeed : undefined
@@ -1838,6 +1853,21 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
           const mainTypeMinimum = variant.mainType === enums.ParameterType.Visual ? 2 : 3
           typeCountMin[variant.mainType] = mainTypeCount ?? mainTypeMinimum
           typeCountMax[variant.mainType] = mainTypeCount ?? 4
+          // 回帰対象を絞るため、主属性カードを1枚ロックし、別の適格カードを1枚除外する
+          const lockExclusionSettings = (() => {
+            if (!lockExclusion) return {}
+            const isPlanCompatible = (card: SupportCard) =>
+              card.plan === plan.value || card.plan === enums.PlanType.Free
+            const lockedCard = AllCards.find((card) => card.type === variant.mainType && isPlanCompatible(card))
+            if (!lockedCard) throw new Error(`No ${variant.mainType} lock card is available for the fixture`)
+            const excludedCard = AllCards.find((card) => card.name !== lockedCard.name && isPlanCompatible(card))
+            if (!excludedCard) throw new Error('No card is available for the exclusion fixture')
+            return {
+              lockedCards: [lockedCard.name],
+              excludedCardNames: [excludedCard.name],
+              unifyRentalLock: false,
+            }
+          })()
           const configuredCandidateLimit = storedUnit.exhaustiveCandidateLimit ?? constant.EXHAUSTIVE_CANDIDATE_LIMIT
           const settings: UnitSimulatorSettings = {
             ...storedUnit,
@@ -1857,6 +1887,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             paramBonusPercent: isRandomized
               ? sharedParamBonusPercent
               : { ...randomCaseValueRanges.paramBonusPercent.baselineByScenario[variant.scenario] },
+            ...lockExclusionSettings,
           }
           const input: OptimizeInput = {
             settings,

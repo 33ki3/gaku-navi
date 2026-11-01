@@ -418,6 +418,14 @@ function calculateTotalCombos(
   return branches.reduce((sum, branch) => sum + branch.totalCombos, 0)
 }
 
+/** 凸数未記録カードも通常候補と同じ既定凸数で所持判定する */
+function isOwnedOptimizerCard(input: OptimizeInput, cardName: string): boolean {
+  return (
+    !!input.scoreSettings.useFixedUncap ||
+    (input.cardUncaps[cardName] ?? constant.DEFAULT_UNCAP) !== enums.UncapType.NotOwned
+  )
+}
+
 /**
  * レンタル枠の固定方法をそろえる設定が有効なとき、比較する探索経路を作る
  *
@@ -425,7 +433,7 @@ function calculateTotalCombos(
  * @returns 比較する最適編成条件（現状維持を含む）
  */
 function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
-  const { settings, scoreSettings } = input
+  const { settings } = input
   const origRental = getLockedRentalCardName(settings)
 
   // レンタル枠・通常枠の固定がなければ、比較する固定方法はない
@@ -440,13 +448,14 @@ function buildUnifyRentalPathConfigs(input: OptimizeInput): OptimizeInput[] {
     },
   ]
 
+  const isOriginalRentalOwned = origRental === null || isOwnedOptimizerCard(input, origRental)
+  // 未所持の固定レンタルは通常枠へ移せないため、その配置を維持する
+  if (origRental && !isOriginalRentalOwned) return configs
+
   for (const lockedName of settings.lockedCards) {
     // 固定レンタルの現状維持はすでに比較するため、同じ探索経路を増やさない
     if (lockedName === origRental) continue
-    const isOwned =
-      !!scoreSettings.useFixedUncap ||
-      (input.cardUncaps[lockedName] !== undefined && input.cardUncaps[lockedName] !== enums.UncapType.NotOwned)
-    if (!isOwned) continue
+    if (!isOwnedOptimizerCard(input, lockedName)) continue
 
     // 通常枠の固定カードをレンタル枠へ移し、元のレンタルカードがあれば通常枠へ入れ替える
     const lockedCards = settings.lockedCards
@@ -516,17 +525,9 @@ export async function exhaustiveOptimizeAsync(
   // ロック統合が有効で、所持済みの固定対象がある場合だけ別の固定方法も比較する
   // レンタルロックが所持済みカードかを確認する（未所持カードは昇格対象外）
   const lockedRentalName = getLockedRentalCardName(settings)
-  const isRentalLockOwned =
-    lockedRentalName !== null &&
-    (!!scoreSettings.useFixedUncap ||
-      (input.cardUncaps[lockedRentalName] !== undefined &&
-        input.cardUncaps[lockedRentalName] !== enums.UncapType.NotOwned))
+  const isRentalLockOwned = lockedRentalName !== null && isOwnedOptimizerCard(input, lockedRentalName)
   // 通常ロックの中に所持済みカードが1枚でもあるかを確認する
-  const hasOwnedLockedCard = settings.lockedCards.some(
-    (n) =>
-      !!scoreSettings.useFixedUncap ||
-      (input.cardUncaps[n] !== undefined && input.cardUncaps[n] !== enums.UncapType.NotOwned),
-  )
+  const hasOwnedLockedCard = settings.lockedCards.some((name) => isOwnedOptimizerCard(input, name))
   // どちらかの条件を満たす場合に限り、複数の固定方法を比較する
   const shouldTryUnifyPaths = !!settings.unifyRentalLock && (isRentalLockOwned || hasOwnedLockedCard)
 

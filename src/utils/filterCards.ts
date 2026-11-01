@@ -214,15 +214,11 @@ export function sortCards(cards: readonly SupportCard[], params: SortParams): Su
       return b.release_date.localeCompare(a.release_date)
     })
   } else if (sortMode === enums.SortModeType.Date) {
-    // 日付順: 実装日 降順 → レアリティ 降順 → 凸数 降順
+    // 日付順: 実装日 降順 → レアリティ 降順
     sorted.sort((a, b) => {
       const dateCompare = b.release_date.localeCompare(a.release_date)
       if (dateCompare !== 0) return dateCompare
-      const rarityCompare = data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
-      if (rarityCompare !== 0) return rarityCompare
-      const uncapA = sortCardUncaps[a.name] ?? constant.DEFAULT_UNCAP
-      const uncapB = sortCardUncaps[b.name] ?? constant.DEFAULT_UNCAP
-      return uncapB - uncapA
+      return data.getRarityEntry(b.rarity).order - data.getRarityEntry(a.rarity).order
     })
   } else {
     // デフォルト（レアリティ順）: レアリティ 降順 → 凸数 降順 → リリース日 降順

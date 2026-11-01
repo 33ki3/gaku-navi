@@ -556,10 +556,20 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.RankS4,
         titleKey: 'achievement_calculator.achievement_name.idol.tsubame.produce_rank.s4',
       },
+      // H.I.F最終試験で評価S4+以上
+      {
+        metric: enums.IdolAchievementMetric.RankS4Plus,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.produce_rank.s4_plus',
+      },
       // プロデュース回数
       {
         metric: enums.IdolAchievementMetric.Productions,
         titleKey: 'achievement_calculator.achievement_name.idol.tsubame.productions',
+      },
+      // H.I.F最終試験合格回数
+      {
+        metric: enums.IdolAchievementMetric.HifFinalExams,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.hif_final_exams',
       },
       // 特訓段階1〜6
       {

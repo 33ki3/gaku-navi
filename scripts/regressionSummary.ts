@@ -41,6 +41,7 @@ interface VisualChange extends Omit<VisualChangeInput, 'baseScreenshot' | 'headS
 
 interface TestSummary {
   passed: number
+  skipped: number
   total: number
 }
 
@@ -144,13 +145,16 @@ function parseTestSummary(value: unknown): TestSummary | null {
     !isRecord(value) ||
     typeof value.passed !== 'number' ||
     !Number.isFinite(value.passed) ||
+    typeof value.skipped !== 'number' ||
+    !Number.isFinite(value.skipped) ||
     typeof value.total !== 'number' ||
-    !Number.isFinite(value.total)
+    !Number.isFinite(value.total) ||
+    value.skipped > value.total
   ) {
     return null
   }
 
-  return { passed: value.passed, total: value.total }
+  return { passed: value.passed, skipped: value.skipped, total: value.total }
 }
 
 function getRunUrl(): string | null {
@@ -188,7 +192,9 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
   }
 
   if (summary.e2e) {
-    lines.push(`E2E: ${summary.e2e.passed}/${summary.e2e.total} 件成功 · 検証 ${escapeHtml(summary.validation)}`, '')
+    const executed = summary.e2e.total - summary.e2e.skipped
+    const skipped = summary.e2e.skipped > 0 ? ` · ${summary.e2e.skipped} 件スキップ` : ''
+    lines.push(`E2E: ${summary.e2e.passed}/${executed} 件成功${skipped} · 検証 ${escapeHtml(summary.validation)}`, '')
   } else if (summary.validation) {
     lines.push(`検証: ${escapeHtml(summary.validation)}`, '')
   }

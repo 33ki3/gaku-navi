@@ -25303,5 +25303,109 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "こんなお写真もありますわ",
+    "rarity": "ssr",
+    "plan": "sense",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "event",
+    "source_detail": "氷渡香名江「エピソード0」",
+    "is_event_source": true,
+    "release_date": "2026/11/08",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vo_initial_stat",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "activity_supply_gift",
+        "trigger_key": "activity_supply_gift",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "ssr_card_acquire",
+        "trigger_key": "ssr_card_acquire",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "仲良しの証"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": "いっぱいの思い出"
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": "永遠のアイドル"
+      }
+    ],
+    "p_item": {
+      "name": "仲良しアルバム",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "activity_supply_gift_selection"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "vocal",
+          "threshold": 400
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 20
+          },
+          {
+            "key": "hp_recovery",
+            "value": 3
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

@@ -1670,8 +1670,10 @@ export const EffectTemplateKeyType = {
   EnthusiasmAdd: 'enthusiasm_add',
   /** 熱意ブースト */
   EnthusiasmBoost: 'enthusiasm_boost',
-  /** やる気増加後 */
-  MotivationIncreaseAfter: 'motivation_increase_after',
+  /** 直接効果でキーワードになった時 */
+  DirectKeywordGain: 'direct_keyword_gain',
+  /** 直接効果でキーワード増加後 */
+  DirectKeywordIncreaseAfter: 'direct_keyword_increase_after',
 
   /** ターン遅延（Nターン後に効果が発動する）。表示例:「2ターン後、」 */
   Delay: 'delay',

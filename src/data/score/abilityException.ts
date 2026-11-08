@@ -15,7 +15,7 @@ type SlotMap = Record<string, AbilityValues>
 type DataType = Record<string, SlotMap>
 
 const data: DataType = {
-  'はじめてのお友達': {
+  はじめてのお友達: {
     '1': { '0': '65', '1': '71', '2': '76', '3': '81', '4': '86' },
   },
   食欲の秋なんです: {

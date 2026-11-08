@@ -25184,5 +25184,108 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "みんなも読んでみてっ！",
+    "rarity": "ssr",
+    "plan": "logic",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "hatsuboshi_fes",
+    "release_date": "2026/11/06",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "delete_count",
+        "trigger_key": "delete_count",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "過激め？チョイス",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "skill_acquire"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "vocal",
+          "threshold": 900
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 25
+          },
+          {
+            "key": "random_enhance"
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

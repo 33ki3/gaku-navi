@@ -38,6 +38,8 @@ export default defineConfig({
       name: 'desktop',
       use: {
         browserName: 'chromium',
+        channel: 'chrome',
+        launchOptions: { chromiumSandbox: true },
         viewport: { width: 1440, height: 900 },
         deviceScaleFactor: 1,
       },
@@ -54,6 +56,8 @@ export default defineConfig({
       use: {
         ...android,
         browserName: 'chromium',
+        channel: 'chrome',
+        launchOptions: { chromiumSandbox: true },
       },
     },
   ],

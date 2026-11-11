@@ -17,9 +17,71 @@ import {
   testScoreSettingsOptions,
 } from '../fixtures/testScoreSettings'
 
+interface AddedPIdol {
+  id: string
+  idolId: string
+  name: string
+}
+
 const regressionOutput = process.env.REGRESSION_OUTPUT
 const targetCardName = 'もうすぐ本番ですね'
 const appStorageKeys = readAppStorageKeys()
+
+/** baseにないカード名を検証対象として受け取り、検索欄への表示を確認する */
+function readAddedSupportCardNames(): string[] {
+  const names: unknown = process.env.REGRESSION_ADDED_CARD_NAMES
+    ? JSON.parse(process.env.REGRESSION_ADDED_CARD_NAMES)
+    : []
+  if (!Array.isArray(names) || !names.every((name: unknown) => typeof name === 'string')) {
+    throw new Error('REGRESSION_ADDED_CARD_NAMES must be a JSON array of strings')
+  }
+  return names.filter((name: unknown): name is string => typeof name === 'string')
+}
+
+const addedSupportCardNames = readAddedSupportCardNames()
+
+/** baseにないPアイドルを受け取り、対応するアイドルのアチーブタブで確認する */
+function readAddedPIdols(): AddedPIdol[] {
+  const pIdols: unknown = process.env.REGRESSION_ADDED_P_IDOLS ? JSON.parse(process.env.REGRESSION_ADDED_P_IDOLS) : []
+  if (
+    !Array.isArray(pIdols) ||
+    !pIdols.every(
+      (pIdol: unknown): pIdol is AddedPIdol =>
+        pIdol !== null &&
+        typeof pIdol === 'object' &&
+        !Array.isArray(pIdol) &&
+        'id' in pIdol &&
+        typeof pIdol.id === 'string' &&
+        'idolId' in pIdol &&
+        typeof pIdol.idolId === 'string' &&
+        /^[a-z0-9_-]+$/.test(pIdol.idolId) &&
+        'name' in pIdol &&
+        typeof pIdol.name === 'string',
+    )
+  ) {
+    throw new Error('REGRESSION_ADDED_P_IDOLS must be an array of P-idol entries')
+  }
+  return pIdols.map((pIdol: AddedPIdol) => ({ id: pIdol.id, idolId: pIdol.idolId, name: pIdol.name }))
+}
+
+const addedPIdols = readAddedPIdols()
+
+/** baseにないIdolIdを受け取り、アチーブ計算機の選択肢に現れることを確認する */
+function readAddedIdolIds(): string[] {
+  const idolIds: unknown = process.env.REGRESSION_ADDED_IDOL_IDS
+    ? JSON.parse(process.env.REGRESSION_ADDED_IDOL_IDS)
+    : []
+  if (
+    !Array.isArray(idolIds) ||
+    !idolIds.every((idolId: unknown) => typeof idolId === 'string' && /^[a-z0-9_-]+$/.test(idolId)) ||
+    new Set(idolIds).size !== idolIds.length
+  ) {
+    throw new Error('REGRESSION_ADDED_IDOL_IDS must be an array of unique IdolId strings')
+  }
+  return idolIds
+}
+
+const addedIdolIds = readAddedIdolIds()
 
 // 比較画像では日本語の字形を揃え、画面確認に不要なアニメーションを除く
 const regressionScreenshotFontStyle = `
@@ -27,6 +89,22 @@ const regressionScreenshotFontStyle = `
 `
 const regressionScreenshotStyle = `${regressionScreenshotFontStyle}
   nav[aria-label="主要メニュー"].fixed { display: none !important; }
+`
+const regressionModalPanelStyle = `
+  [data-testid="modal-backdrop"] {
+    background: #fff !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+  }
+`
+const regressionModalOverlayStyle = `
+  body > :not([data-testid="modal-overlay-root"]) { visibility: hidden !important; }
+  [data-testid="modal-overlay-root"] [role="dialog"] { visibility: hidden !important; }
+`
+const regressionMenuPanelStyle = `
+  [data-testid="desktop-more-menu"], [data-testid="mobile-more-menu"] {
+    border-radius: 0 !important;
+  }
 `
 
 /** 内部計算JSONから、指定した計算結果の数値を検証付きで取り出す */
@@ -53,6 +131,20 @@ interface ScenarioDefinition {
   id: string
   /** 下部ナビの見た目も比較するシナリオ */
   showMobileBottomNavigation?: boolean
+  /** パネル比較では背面の一覧色が角から透けないよう背景を固定する */
+  neutralizeModalBackdrop?: boolean
+  /** 背景レイヤー単体の比較用にページ内容とダイアログを隠す */
+  isolateModalOverlay?: boolean
+  /** メニュー比較でカード一覧が角から透けないよう撮影時だけ角を平らにする */
+  squareScreenshotTarget?: boolean
+  /** ページ内の縦スクロール領域を一時展開して全内容を撮影する */
+  captureScrollableContent?: boolean
+  /** スクロール領域がないページの文書全体を撮影する */
+  fullPageScreenshot?: boolean
+  /** 全ページ撮影時に横スクロール位置を保持する */
+  preserveHorizontalScroll?: boolean
+  /** 比較レポートに撮影範囲を明示する */
+  screenshotScope?: 'full-scrollable-content' | 'full-page'
   /** 回帰レポートでシナリオの操作内容を伝える短い説明 */
   description: string
   /** 差分対象にする画面状態・操作条件。内容はscenarioHashにも反映する */
@@ -106,11 +198,23 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'support-card-detail': {
     id: 'support-card-detail',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'サポートカード詳細を開く',
     semanticInput: { route: '/', cardName: targetCardName, action: 'open-detail' },
   },
+  'modal-overlay-appearance': {
+    id: 'modal-overlay-appearance',
+    isolateModalOverlay: true,
+    description: 'カード一覧を隠してモーダル背景レイヤーを確認する',
+    semanticInput: { route: '/', modal: 'support-card-detail', action: 'compare-overlay' },
+  },
   'support-card-score-detail': {
     id: 'support-card-score-detail',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'サポートカードの点数行から内訳モーダルを開く',
     semanticInput: { route: '/', cardName: targetCardName, action: 'open-score-detail' },
   },
@@ -121,6 +225,9 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'filter-sort-actions': {
     id: 'filter-sort-actions',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: '一覧の並び順とフィルターを切り替える',
     semanticInput: {
       route: '/',
@@ -149,11 +256,15 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'optimization-basic': {
     id: 'optimization-basic',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'テスト用点数設定で最適編成を計算する',
     semanticInput: createTestOptimizerScenarioInput(),
   },
   'optimization-lock-exclusion': {
     id: 'optimization-lock-exclusion',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: '固定カードを結果へ反映し、除外後の再計算で結果から外す',
     semanticInput: {
       ...createTestOptimizerScenarioInput({ lockedCards: [targetCardName] }),
@@ -162,6 +273,8 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'optimization-filtered': {
     id: 'optimization-filtered',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'アシストを候補から除外して最適編成を計算する',
     semanticInput: createTestOptimizerScenarioInput({
       allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
@@ -169,16 +282,22 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'optimization-logic': {
     id: 'optimization-logic',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'ロジックプランの条件で最適編成を計算する',
     semanticInput: createTestOptimizerScenarioInput({ plan: enums.PlanType.Logic }),
   },
   'optimization-anomaly': {
     id: 'optimization-anomaly',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'アノマリープランの条件で最適編成を計算する',
     semanticInput: createTestOptimizerScenarioInput({ plan: enums.PlanType.Anomaly }),
   },
   'optimization-dance-bonus': {
     id: 'optimization-dance-bonus',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'テスト用点数設定からDaボーナス率を変更して計算する',
     semanticInput: createTestOptimizerScenarioInput({
       paramBonusPercent: parameterValues(30, 40, 30),
@@ -186,6 +305,8 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'optimization-type-balance': {
     id: 'optimization-type-balance',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'Vo・Da・Viを各2枚に制限して最適編成する',
     semanticInput: createTestOptimizerScenarioInput({
       typeCountMin: parameterValues(2, 2, 2),
@@ -194,11 +315,15 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'score-settings-default': {
     id: 'score-settings-default',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: '既定の点数設定パネルを表示する',
     semanticInput: { panel: enums.SettingsPanelType.Score, settings: defaultScoreInput },
   },
   'score-settings-custom': {
     id: 'score-settings-custom',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'カスタム上昇値を入力した点数設定パネルを表示する',
     semanticInput: {
       panel: enums.SettingsPanelType.Score,
@@ -212,6 +337,8 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'score-settings-actions': {
     id: 'score-settings-actions',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'シナリオ・難易度とスケジュール・アクション回数・計算オプションを操作する',
     semanticInput: {
       panel: enums.SettingsPanelType.Score,
@@ -221,6 +348,8 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'score-preset-actions': {
     id: 'score-preset-actions',
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: '点数設定プリセットを保存・読込・上書き・削除する',
     semanticInput: {
       panel: enums.SettingsPanelType.Score,
@@ -230,9 +359,11 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'unit-settings-actions': {
     id: 'unit-settings-actions',
+    captureScrollableContent: true,
     description: '最適編成のプラン・タイプ・数値・オプション設定を操作する',
     semanticInput: {
       panel: enums.SettingsPanelType.UnitSimulator,
+      screenshotScope: 'full-scrollable-content',
       plan: enums.PlanType.Logic,
       excludedType: enums.CardType.Assist,
       initialParams: parameterValues(100, 0, 0),
@@ -241,15 +372,20 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'unit-manual-selection': {
     id: 'unit-manual-selection',
+    captureScrollableContent: true,
     description: '空き枠からカードを手動編成へ追加して再び外す',
     semanticInput: {
       panel: enums.SettingsPanelType.UnitSimulator,
+      screenshotScope: 'full-scrollable-content',
       cardName: targetCardName,
       actions: ['add-to-slot', 'remove-from-slot'],
     },
   },
   'options-modal-actions': {
     id: 'options-modal-actions',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'オプションの各セクションとチェック設定を操作する',
     semanticInput: {
       modal: 'options',
@@ -258,6 +394,9 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'data-management-actions': {
     id: 'data-management-actions',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'データ選択、ファイル出力、JSON文字列操作を行う',
     semanticInput: {
       modal: 'data-management',
@@ -266,6 +405,9 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'user-card-form-actions': {
     id: 'user-card-form-actions',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'ユーザーサポートを追加・編集・削除する',
     semanticInput: {
       modal: 'user-card-form',
@@ -275,6 +417,9 @@ const scenarios: Record<string, ScenarioDefinition> = {
   },
   'help-about-actions': {
     id: 'help-about-actions',
+    neutralizeModalBackdrop: true,
+    captureScrollableContent: true,
+    screenshotScope: 'full-scrollable-content',
     description: 'ヘルプとAboutをメニューから開いて閉じる',
     semanticInput: { modals: ['help', 'about'], actions: ['open-from-menu', 'close'] },
   },
@@ -288,10 +433,38 @@ const scenarios: Record<string, ScenarioDefinition> = {
       actions: ['increment-progress', 'return-to-list'],
     },
   },
+  'achievement-calculator-idol-tab': {
+    id: 'achievement-calculator-idol-tab',
+    fullPageScreenshot: true,
+    preserveHorizontalScroll: true,
+    screenshotScope: 'full-page',
+    description: 'アチーブ計算機のアイドルタブと新規アイドル・Pアイドルの表示を確認する',
+    semanticInput: {
+      page: enums.AppPage.AchievementCalculator,
+      tab: enums.CalculatorTab.Idol,
+      addedIdolIds,
+      addedPIdols: addedPIdols.map(({ idolId, name }) => ({ idolId, name })),
+    },
+  },
+  'achievement-calculator-production-tab': {
+    id: 'achievement-calculator-production-tab',
+    fullPageScreenshot: true,
+    screenshotScope: 'full-page',
+    description: 'アチーブ計算機のプロデュースタブを全体表示する',
+    semanticInput: { page: enums.AppPage.AchievementCalculator, tab: enums.CalculatorTab.Production },
+  },
+  'achievement-calculator-other-tab': {
+    id: 'achievement-calculator-other-tab',
+    fullPageScreenshot: true,
+    screenshotScope: 'full-page',
+    description: 'アチーブ計算機のその他タブを全体表示する',
+    semanticInput: { page: enums.AppPage.AchievementCalculator, tab: enums.CalculatorTab.Other },
+  },
   'header-more-menu': {
     id: 'header-more-menu',
+    squareScreenshotTarget: true,
     description: '画面幅ごとのその他メニューを開閉する',
-    semanticInput: { route: '/', menu: 'more', action: 'open-and-close' },
+    semanticInput: { route: '/', menu: 'more', screenshotScope: 'menu-panel', action: 'open-and-close' },
   },
 }
 
@@ -311,9 +484,15 @@ function canonicalize(value: unknown): unknown {
 }
 
 /** 意味入力をキー順で正規化してからhash化し、キーの記述順では差分にしない */
+function semanticInputForScenario(scenario: ScenarioDefinition): Record<string, unknown> {
+  return scenario.screenshotScope
+    ? { ...scenario.semanticInput, screenshotScope: scenario.screenshotScope }
+    : scenario.semanticInput
+}
+
 function scenarioHash(scenario: ScenarioDefinition): string {
   return createHash('sha256')
-    .update(JSON.stringify(canonicalize(scenario.semanticInput)))
+    .update(JSON.stringify(canonicalize(semanticInputForScenario(scenario))))
     .digest('hex')
 }
 
@@ -374,26 +553,97 @@ async function openOptimizerApp(page: Page): Promise<void> {
   })
 }
 
+/** 撮影後に元へ戻せるよう、対象内の縦スクロール領域を一時的に全展開する */
+async function expandScrollableScreenshotTarget(target: Locator): Promise<void> {
+  await target.evaluate((root: HTMLElement) => {
+    const descendants = Array.from(root.querySelectorAll<HTMLElement>('*')).reverse()
+    const elements = [...descendants, root]
+
+    for (const element of elements) {
+      const isRoot = element === root
+      const computedStyle = window.getComputedStyle(element)
+      const hasVerticalOverflow = element.scrollHeight > element.clientHeight + 1
+      if (!isRoot && (!hasVerticalOverflow || !['auto', 'scroll', 'hidden'].includes(computedStyle.overflowY))) {
+        continue
+      }
+
+      element.dataset.regressionScrollExpansion = 'true'
+      element.dataset.regressionHadInlineStyle = element.hasAttribute('style') ? 'true' : 'false'
+      element.dataset.regressionInlineStyle = element.getAttribute('style') ?? ''
+      const contentHeight = element.scrollHeight
+      element.style.setProperty('height', `${contentHeight}px`, 'important')
+      element.style.setProperty('min-height', '0', 'important')
+      element.style.setProperty('max-height', 'none', 'important')
+      element.style.setProperty('overflow-x', 'clip', 'important')
+      element.style.setProperty('overflow-y', 'visible', 'important')
+      element.style.setProperty('flex', 'none', 'important')
+      element.style.setProperty('contain', 'none', 'important')
+      element.style.setProperty('content-visibility', 'visible', 'important')
+
+      if (isRoot && computedStyle.position === 'fixed') {
+        element.style.setProperty('bottom', 'auto', 'important')
+      } else if (isRoot) {
+        element.style.setProperty('align-self', 'flex-start', 'important')
+      }
+    }
+  })
+}
+
+/** スクリーンショット用に一時展開したスタイルをDOMへ戻す */
+async function restoreScrollableScreenshotTarget(target: Locator): Promise<void> {
+  await target.evaluate((root: HTMLElement) => {
+    const expandedElements = root.querySelectorAll<HTMLElement>('[data-regression-scroll-expansion="true"]')
+    const elements = [...expandedElements, ...(root.dataset.regressionScrollExpansion ? [root] : [])]
+
+    for (const element of elements) {
+      if (element.dataset.regressionHadInlineStyle === 'true') {
+        element.setAttribute('style', element.dataset.regressionInlineStyle ?? '')
+      } else {
+        element.removeAttribute('style')
+      }
+      delete element.dataset.regressionScrollExpansion
+      delete element.dataset.regressionHadInlineStyle
+      delete element.dataset.regressionInlineStyle
+    }
+  })
+}
+
 /** 撮影前にスクロール枠を先頭へ戻し、比較条件を揃えて画像を取得する */
 async function captureRegressionScreenshot(
   page: Page,
+  scenario: ScenarioDefinition,
   screenshotTarget?: Locator,
-  showMobileBottomNavigation = false,
 ): Promise<Buffer> {
-  await page.evaluate(() => {
+  await page.evaluate((preserveHorizontalScroll: boolean) => {
     window.scrollTo(0, 0)
     for (const element of document.querySelectorAll<HTMLElement>('*')) {
       if (element.scrollHeight > element.clientHeight) element.scrollTop = 0
-      if (element.scrollWidth > element.clientWidth) element.scrollLeft = 0
+      if (!preserveHorizontalScroll && element.scrollWidth > element.clientWidth) element.scrollLeft = 0
     }
-  })
+  }, scenario.preserveHorizontalScroll ?? false)
 
+  const scenarioStyle = [
+    scenario.neutralizeModalBackdrop ? regressionModalPanelStyle : '',
+    scenario.isolateModalOverlay ? regressionModalOverlayStyle : '',
+    scenario.squareScreenshotTarget ? regressionMenuPanelStyle : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
   const options = {
     animations: 'disabled' as const,
     caret: 'hide' as const,
-    style: showMobileBottomNavigation ? regressionScreenshotFontStyle : regressionScreenshotStyle,
+    style: `${scenario.showMobileBottomNavigation ? regressionScreenshotFontStyle : regressionScreenshotStyle}\n${scenarioStyle}`,
   }
-  return screenshotTarget ? screenshotTarget.screenshot(options) : page.screenshot(options)
+  if (screenshotTarget) {
+    if (!scenario.captureScrollableContent) return screenshotTarget.screenshot(options)
+    await expandScrollableScreenshotTarget(screenshotTarget)
+    try {
+      return await screenshotTarget.screenshot(options)
+    } finally {
+      await restoreScrollableScreenshotTarget(screenshotTarget)
+    }
+  }
+  return page.screenshot({ ...options, ...(scenario.fullPageScreenshot ? { fullPage: true } : {}) })
 }
 
 /** 保存済み基準画像がある場合に取得済み画像を比較し、差分を観測値として返す */
@@ -446,7 +696,7 @@ async function saveObservation(
   await mkdir(path.dirname(screenshotPath), { recursive: true })
   await mkdir(path.dirname(observationPath), { recursive: true })
   // 添付画像と差分判定が別の画面状態にならないよう、同じ画像バッファを保存して比較する
-  const screenshot = await captureRegressionScreenshot(page, screenshotTarget, scenario.showMobileBottomNavigation)
+  const screenshot = await captureRegressionScreenshot(page, scenario, screenshotTarget)
   await writeFile(screenshotPath, screenshot)
   const visualComparison = await compareScreenshot(scenario, testInfo, screenshot)
 
@@ -480,6 +730,48 @@ async function openMoreMenu(page: Page): Promise<void> {
 async function openMoreMenuItem(page: Page, label: string): Promise<void> {
   await openMoreMenu(page)
   await page.getByRole('button', { name: label, exact: true }).click()
+}
+
+async function captureAchievementCalculatorTab(
+  page: Page,
+  testInfo: TestInfo,
+  scenarioKey:
+    | 'achievement-calculator-idol-tab'
+    | 'achievement-calculator-production-tab'
+    | 'achievement-calculator-other-tab',
+  tabLabel: string,
+): Promise<void> {
+  await openApp(page)
+  await openMoreMenuItem(page, 'アチーブ計算機')
+  await expect(page.getByRole('heading', { name: 'アチーブ計算機', exact: true })).toBeVisible()
+
+  const tabList = page.getByRole('tablist', { name: 'アチーブメントカテゴリ' })
+  const tab = tabList.getByRole('tab', { name: tabLabel, exact: true })
+  await tab.click()
+  await expect(tab).toHaveAttribute('aria-selected', 'true')
+  const tabPanel = page.getByRole('tabpanel', { name: tabLabel })
+  await expect(tabPanel).toBeVisible()
+  if (scenarioKey === 'achievement-calculator-idol-tab') {
+    const idolSelector = page.getByRole('group', { name: 'アイドル別アチーブメント', exact: true })
+    for (const idolId of addedIdolIds) {
+      const idolButton = idolSelector.locator(`button[data-idol-id="${idolId}"]:not([tabindex="-1"])`)
+      await expect(idolButton).toHaveCount(1)
+      await expect(idolButton).toBeVisible()
+      await idolButton.click()
+      await expect(idolButton).toHaveAttribute('aria-pressed', 'true')
+    }
+    for (const pIdol of addedPIdols) {
+      const idolButton = idolSelector.locator(`button[data-idol-id="${pIdol.idolId}"]:not([tabindex="-1"])`)
+      await expect(idolButton).toHaveCount(1)
+      await idolButton.click()
+      await expect(idolButton).toHaveAttribute('aria-pressed', 'true')
+
+      const pIdolCardName = tabPanel.getByText(pIdol.name, { exact: true })
+      await expect(pIdolCardName).toHaveCount(1)
+      await expect(pIdolCardName).toBeVisible()
+    }
+  }
+  await saveObservation(scenarios[scenarioKey], testInfo, page)
 }
 
 /** 表示合計を数値化し、回帰実行では保存済みの内部計算結果と照合する */
@@ -534,7 +826,7 @@ test.afterEach(async ({ page }, testInfo) => {
     await mkdir(path.dirname(screenshotPath), { recursive: true })
     // 途中までの撮影に失敗したケースでも、画面状態を調査できるよう再取得する
     try {
-      const screenshot = await captureRegressionScreenshot(page, undefined, scenario.showMobileBottomNavigation)
+      const screenshot = await captureRegressionScreenshot(page, scenario)
       await writeFile(screenshotPath, screenshot)
       failureScreenshot = path.relative(regressionOutput, screenshotPath)
     } catch (error) {
@@ -550,7 +842,7 @@ test.afterEach(async ({ page }, testInfo) => {
       {
         id: scenario.id,
         description: scenario.description,
-        semanticInput: scenario.semanticInput,
+        semanticInput: semanticInputForScenario(scenario),
         scenarioHash: scenarioHash(scenario),
         device,
         status: testInfo.status === 'passed' ? 'passed' : testInfo.status === 'skipped' ? 'skipped' : 'failed',
@@ -577,7 +869,17 @@ test('home-default', async ({ page }, testInfo) => {
 /** 名前検索で対象カードだけに絞られ、検索解除で一覧表示へ戻ることを確認する */
 test('support-card-search-basic', async ({ page }, testInfo) => {
   await openApp(page)
-  await page.getByRole('searchbox', { name: 'サポート名 / Pアイテム / スキルカード' }).fill(targetCardName)
+  const searchbox = page.getByRole('searchbox', { name: 'サポート名 / Pアイテム / スキルカード' })
+  for (const cardName of addedSupportCardNames) {
+    await searchbox.fill(cardName)
+    const addedCard = page
+      .getByTestId('support-card')
+      .filter({ has: page.getByRole('heading', { name: cardName, exact: true }) })
+    await expect(addedCard).toHaveCount(1)
+    await expect(addedCard).toBeVisible()
+  }
+
+  await searchbox.fill(targetCardName)
   const card = page
     .getByTestId('support-card')
     .filter({ has: page.getByRole('heading', { name: targetCardName, exact: true }) })
@@ -595,6 +897,20 @@ test('support-card-detail', async ({ page }, testInfo) => {
   const dialog = page.getByRole('dialog', { name: `${targetCardName}の詳細を表示` })
   await expect(dialog).toBeVisible()
   await saveObservation(scenarios['support-card-detail'], testInfo, page, undefined, dialog)
+})
+
+/** 背面ページを隠してモーダルの背景レイヤーだけを比較する */
+test('modal-overlay-appearance', async ({ page }, testInfo) => {
+  await openApp(page)
+  await page.getByRole('searchbox', { name: 'サポート名 / Pアイテム / スキルカード' }).fill(targetCardName)
+  await page.getByRole('heading', { name: targetCardName, exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: `${targetCardName}の詳細を表示` })
+  await expect(dialog).toBeVisible()
+
+  const backdrop = page.getByTestId('modal-backdrop')
+  await expect(backdrop).toBeVisible()
+  await saveObservation(scenarios['modal-overlay-appearance'], testInfo, page, undefined, backdrop)
+  await dialog.getByRole('button', { name: '閉じる', exact: true }).click()
 })
 
 /** 点数行から内訳を開き、合計を表示して閉じられることを確認する */
@@ -1135,7 +1451,11 @@ test('header-more-menu', async ({ page }, testInfo) => {
   ]) {
     await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible()
   }
-  await saveObservation(scenarios['header-more-menu'], testInfo, page)
+  const screenshotTarget =
+    testInfo.project.name === 'desktop'
+      ? page.getByRole('button', { name: 'サポート追加', exact: true }).locator('xpath=..')
+      : page.getByRole('dialog', { name: 'その他' })
+  await saveObservation(scenarios['header-more-menu'], testInfo, page, undefined, screenshotTarget)
   if (testInfo.project.name === 'desktop') {
     await page.keyboard.press('Escape')
   } else {
@@ -1361,11 +1681,24 @@ test('achievement-calculator-actions', async ({ page }, testInfo) => {
   await expect(page.getByRole('searchbox', { name: 'サポート名 / Pアイテム / スキルカード' })).toBeVisible()
 })
 
+test('achievement-calculator-idol-tab', async ({ page }, testInfo) => {
+  await captureAchievementCalculatorTab(page, testInfo, 'achievement-calculator-idol-tab', 'アイドル')
+})
+
+test('achievement-calculator-production-tab', async ({ page }, testInfo) => {
+  await captureAchievementCalculatorTab(page, testInfo, 'achievement-calculator-production-tab', 'プロデュース')
+})
+
+test('achievement-calculator-other-tab', async ({ page }, testInfo) => {
+  await captureAchievementCalculatorTab(page, testInfo, 'achievement-calculator-other-tab', 'その他')
+})
+
 // 最適編成パネルの条件変更と手動のカード選択を確認する
 /** プラン・タイプ・数値・除外設定を変更できることを確認する */
 test('unit-settings-actions', async ({ page }, testInfo) => {
   await openApp(page)
   await openUnitSimulator(page)
+  const screenshotTarget = page.getByTestId('side-panel-content')
   const logicPlan = page.getByRole('button', { name: 'ロジック', exact: true })
   await logicPlan.click()
   await expect(logicPlan).toHaveAttribute('aria-pressed', 'true')
@@ -1385,14 +1718,20 @@ test('unit-settings-actions', async ({ page }, testInfo) => {
   const ignoreExclusions = page.getByRole('checkbox', { name: '除外設定を無視' })
   await ignoreExclusions.check()
   await expect(ignoreExclusions).toBeChecked()
-  await saveObservation(scenarios['unit-settings-actions'], testInfo, page, {
-    ui: {
-      plan: enums.PlanType.Logic,
-      allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
-      spVocal: 1,
-      initialVocal: 100,
+  await saveObservation(
+    scenarios['unit-settings-actions'],
+    testInfo,
+    page,
+    {
+      ui: {
+        plan: enums.PlanType.Logic,
+        allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
+        spVocal: 1,
+        initialVocal: 100,
+      },
     },
-  })
+    screenshotTarget,
+  )
   await page.getByRole('button', { name: '閉じる', exact: true }).click()
   await expect(page.getByRole('button', { name: '最適編成を計算', exact: true })).toBeHidden()
 })
@@ -1418,7 +1757,13 @@ test('unit-manual-selection', async ({ page }, testInfo) => {
   }
   await expect(optimizeButton).toBeVisible()
   await expect(page.getByText(targetCardName, { exact: true })).toHaveCount(2)
-  await saveObservation(scenarios['unit-manual-selection'], testInfo, page)
+  await saveObservation(
+    scenarios['unit-manual-selection'],
+    testInfo,
+    page,
+    undefined,
+    page.getByTestId('side-panel-content'),
+  )
 
   const selectedCard = page
     .getByTestId('unit-result-panel')

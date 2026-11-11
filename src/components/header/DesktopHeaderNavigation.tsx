@@ -88,7 +88,10 @@ export function DesktopHeaderNavigation({
             {/* 背景クリックでその他メニューを閉じる透明レイヤー */}
             <div className="fixed inset-0 z-20" onClick={closeMoreMenu} aria-hidden="true" />
             {/* その他のメニュー項目 */}
-            <div className="absolute right-0 top-full z-[80] mt-1 w-52 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
+            <div
+              data-testid="desktop-more-menu"
+              className="absolute right-0 top-full z-[80] mt-1 w-52 rounded-xl border border-slate-200 bg-white py-2 shadow-lg"
+            >
               <MoreMenuItems actions={moreMenuActions} onAfterAction={closeMoreMenu} />
             </div>
           </>

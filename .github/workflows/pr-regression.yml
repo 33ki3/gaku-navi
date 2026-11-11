@@ -101,6 +101,8 @@ jobs:
           REGRESSION_COMMIT: ${{ github.event.pull_request.head.sha }}
           REGRESSION_OUTPUT: tmp/regression-results/head
           REGRESSION_BASE_SCREENSHOT_DIR: ../base/tmp/regression-results/base/visual
+          REGRESSION_BASE_CARDS_FILE: ../base/src/data/json/cards.json
+          REGRESSION_BASE_PIDOL_FILE: ../base/src/data/json/pIdol.json
           REGRESSION_COMPARE_BASELINE: '1'
       - name: Compare observations, write report, and prepare PR comment
         if: always()
@@ -108,6 +110,8 @@ jobs:
         run: npm run regression -- compare ../base/tmp/regression-results/base tmp/regression-results/head tmp/regression-results/report
         env:
           REGRESSION_VALIDATION_RESULT: ${{ steps.head-build.outcome == 'success' && steps.head-capture.outcome == 'success' && 'success' || 'failure' }}
+          REGRESSION_BASE_CARDS_FILE: ../base/src/data/json/cards.json
+          REGRESSION_BASE_PIDOL_FILE: ../base/src/data/json/pIdol.json
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}

@@ -32,6 +32,7 @@ export function MobileMoreMenu({ open, actions, onClose }: MobileMoreMenuProps) 
       {/* その他の操作をまとめたボトムシート */}
       <div
         role="dialog"
+        data-testid="mobile-more-menu"
         aria-modal={false}
         aria-label={t('ui.navigation.more')}
         className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[70] mx-auto max-w-sm rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl md:hidden"

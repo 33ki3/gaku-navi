@@ -76,6 +76,7 @@ export function SidePanelLayout({
       <div
         ref={panelRef}
         onScroll={handleScroll}
+        data-testid="side-panel-content"
         className={`${secondPanel ? constant.PANEL_PINNED_SECOND : constant.PANEL_PINNED} ${constant.PANEL_SCROLL_STABLE} overscroll-y-contain`}
       >
         {children}
@@ -94,6 +95,7 @@ export function SidePanelLayout({
         ref={panelRef}
         onScroll={handleScroll}
         onClick={(e) => e.stopPropagation()}
+        data-testid="side-panel-content"
         className={`${constant.PANEL_OVERLAY} ${constant.PANEL_SCROLL_STABLE} overscroll-y-contain md:pb-0 ${
           reserveMobileNavSpace ? 'pb-[calc(4.5rem+env(safe-area-inset-bottom))]' : 'pb-[env(safe-area-inset-bottom)]'
         }`}

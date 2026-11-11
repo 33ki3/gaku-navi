@@ -1,4 +1,5 @@
 /** ブランチごとのPlaywright観測を保存し、画面・計算結果を比較する */
+import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -64,6 +65,63 @@ interface ScenarioReport {
   calculation?: JsonObject
 }
 
+/** cards.jsonをアプリ内で使うカード名keyと内容hashへ変換した基準値 */
+interface SupportCardManifestEntry {
+  key: string
+  name: string
+  contentHash: string
+}
+
+/** base/head間で見つかったサポートカードデータの増減・更新 */
+interface SupportCardDataChanges {
+  available: boolean
+  added: string[]
+  removed: string[]
+  updated: string[]
+}
+
+/** PアイドルJSONの一件。キーはアプリ内保存IDと同じidolId:name */
+interface PIdolManifestEntry {
+  id: string
+  idolId: string
+  name: string
+  contentHash: string
+}
+
+/** pIdol.jsonをカード単位とアイドル単位の両方で扱う基準値 */
+interface PIdolManifestData {
+  pIdols: PIdolManifestEntry[]
+  idolIds: string[]
+}
+
+/** Pアイドルの追加・削除・更新としてレポートへ出す表示情報 */
+interface PIdolReference {
+  id: string
+  idolId: string
+  name: string
+}
+
+/** baseとの差から見つかったPアイドルと新規アイドルID */
+interface AddedPIdolData {
+  pIdols: PIdolReference[]
+  idolIds: string[]
+}
+
+/** base/head間で見つかったPアイドルデータの増減・更新 */
+interface PIdolDataChanges {
+  available: boolean
+  added: PIdolReference[]
+  removed: PIdolReference[]
+  updated: PIdolReference[]
+}
+
+/** pIdol.jsonで追加・削除されたアイドルID */
+interface IdolSelectorChanges {
+  available: boolean
+  added: string[]
+  removed: string[]
+}
+
 /** Playwrightの実行結果から取り出す件数 */
 interface TestSummary {
   passed: number
@@ -80,6 +138,9 @@ interface Manifest {
   branch?: string
   commit?: string
   e2e?: TestSummary | null
+  supportCards?: SupportCardManifestEntry[]
+  pIdols?: PIdolManifestEntry[]
+  pIdolIds?: string[]
   scenarios: ScenarioReport[]
 }
 
@@ -125,6 +186,9 @@ interface RegressionReport {
   visualComparisonCount: Record<RegressionDevice, number>
   calculationChanges: Array<{ scenarioId: string; changes: ValueChange[] }>
   uiChanges: Array<{ scenarioId: string; device: RegressionDevice; changes: ValueChange[] }>
+  supportCardDataChanges: SupportCardDataChanges
+  pIdolDataChanges: PIdolDataChanges
+  idolSelectorChanges: IdolSelectorChanges
   captureFailures: { base: number; head: number }
 }
 
@@ -134,6 +198,219 @@ function isFiniteNumber(value: unknown): value is number {
 
 function isStringArray(value: unknown[]): value is string[] {
   return value.every((entry) => typeof entry === 'string')
+}
+
+/** カード内容のプロパティ順に依存しないJSON表現を作る */
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize)
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, entry]) => [key, canonicalize(entry)]),
+    )
+  }
+  return value
+}
+
+/** cards.jsonをカード名keyと内容hashの一覧に変換する */
+function parseSupportCardManifest(value: unknown): SupportCardManifestEntry[] {
+  if (!Array.isArray(value)) throw new Error('Card data must be an array')
+
+  const entries = value.map((card) => {
+    if (!isRecord(card) || typeof card.name !== 'string' || card.name.length === 0) {
+      throw new Error('Every support card must have a non-empty name')
+    }
+    const contentHash = createHash('sha256')
+      .update(JSON.stringify(canonicalize(card)))
+      .digest('hex')
+    return { key: card.name, name: card.name, contentHash }
+  })
+  const keys = entries.map(({ key }) => key)
+  if (new Set(keys).size !== keys.length) throw new Error('Support card names must be unique')
+
+  return entries.sort((left, right) => left.key.localeCompare(right.key))
+}
+
+/** regression manifest内のカード基準値を読み込み、形式を検証する */
+function readSupportCardManifest(value: unknown): SupportCardManifestEntry[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error('Invalid support card data in regression manifest')
+
+  const entries = value.map((entry) => {
+    if (
+      !isRecord(entry) ||
+      typeof entry.key !== 'string' ||
+      typeof entry.name !== 'string' ||
+      typeof entry.contentHash !== 'string'
+    ) {
+      throw new Error('Invalid support card entry in regression manifest')
+    }
+    return { key: entry.key, name: entry.name, contentHash: entry.contentHash }
+  })
+  const keys = entries.map(({ key }) => key)
+  if (new Set(keys).size !== keys.length) throw new Error('Duplicate support card key in regression manifest')
+  return entries
+}
+
+/** cards.jsonを読み込み、カード名をアプリ内の安定keyとして内容hashを作る */
+async function loadSupportCardManifest(filename = path.join(projectRoot, 'src/data/json/cards.json')) {
+  const cards: unknown = JSON.parse(await readFile(filename, 'utf8'))
+  return parseSupportCardManifest(cards)
+}
+
+/** pIdol.jsonを一度読み、カード単位とアイドル単位の基準値へ変換する */
+function parsePIdolManifest(value: unknown): PIdolManifestData {
+  if (!Array.isArray(value)) throw new Error('P-idol data must be an array')
+
+  const idolIds = new Set<string>()
+  const pIdolEntries = value.flatMap((idol) => {
+    if (!isRecord(idol) || typeof idol.idol_id !== 'string' || !Array.isArray(idol.cards)) {
+      throw new Error('P-idol entry must contain an idol_id and cards array')
+    }
+    const idolId = idol.idol_id
+    if (!/^[a-z0-9_-]+$/.test(idolId)) throw new Error(`Invalid P-idol idol_id: ${idolId}`)
+    idolIds.add(idolId)
+    const idolEntries = idol.cards
+    return idolEntries.map((pIdol) => {
+      if (
+        !isRecord(pIdol) ||
+        typeof pIdol.name !== 'string' ||
+        pIdol.name.length === 0 ||
+        typeof pIdol.released_at !== 'string'
+      ) {
+        throw new Error(`Invalid P-idol card for ${idolId}`)
+      }
+      const name = pIdol.name
+      const id = `${idolId}:${name}`
+      const contentHash = createHash('sha256')
+        .update(JSON.stringify(canonicalize({ name, released_at: pIdol.released_at })))
+        .digest('hex')
+      return { id, idolId, name, contentHash }
+    })
+  })
+  const ids = pIdolEntries.map(({ id }) => id)
+  if (new Set(ids).size !== ids.length) throw new Error('P-idol ids must be unique')
+
+  return {
+    pIdols: pIdolEntries.sort((left, right) => left.id.localeCompare(right.id)),
+    idolIds: [...idolIds].sort((left, right) => left.localeCompare(right)),
+  }
+}
+
+/** regression manifest内のPアイドル基準値を読み込み、形式を検証する */
+function readPIdolManifestEntries(value: unknown): PIdolManifestEntry[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error('Invalid P-idol data in regression manifest')
+
+  const entries = value.map((entry) => {
+    if (
+      !isRecord(entry) ||
+      typeof entry.id !== 'string' ||
+      typeof entry.idolId !== 'string' ||
+      typeof entry.name !== 'string' ||
+      typeof entry.contentHash !== 'string'
+    ) {
+      throw new Error('Invalid P-idol entry in regression manifest')
+    }
+    return { id: entry.id, idolId: entry.idolId, name: entry.name, contentHash: entry.contentHash }
+  })
+  const ids = entries.map(({ id }) => id)
+  if (new Set(ids).size !== ids.length) throw new Error('Duplicate P-idol id in regression manifest')
+  return entries
+}
+
+/** regression manifest内のPアイドル由来ID一覧を読み込み、形式と重複を検証する */
+function readPIdolIdManifest(value: unknown): string[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value) || !isStringArray(value)) throw new Error('Invalid P-idol ID data in regression manifest')
+  if (value.some((idolId) => idolId.length === 0)) throw new Error('P-idol IDs must not be empty')
+  if (new Set(value).size !== value.length) throw new Error('Duplicate P-idol ID in regression manifest')
+  return value
+}
+
+/** pIdol.jsonを読み込み、カード追加とアイドル追加で共有する基準値を作る */
+async function loadPIdolManifest(
+  filename = path.join(projectRoot, 'src/data/json/pIdol.json'),
+): Promise<PIdolManifestData> {
+  return parsePIdolManifest(JSON.parse(await readFile(filename, 'utf8')))
+}
+
+/** base JSONを読み、追加されたPアイドルとアイドルIDをまとめて検出する */
+async function findAddedPIdolData(current: PIdolManifestData): Promise<AddedPIdolData> {
+  const basePIdolFile = process.env.REGRESSION_BASE_PIDOL_FILE
+  if (!basePIdolFile) return { pIdols: [], idolIds: [] }
+
+  const base = await loadPIdolManifest(path.resolve(projectRoot, basePIdolFile))
+  const basePIdolIds = new Set(base.pIdols.map(({ id }) => id))
+  const baseIdolIds = new Set(base.idolIds)
+  return {
+    pIdols: current.pIdols
+      .filter(({ id }) => !basePIdolIds.has(id))
+      .map(({ id, idolId, name }) => ({ id, idolId, name })),
+    idolIds: current.idolIds.filter((idolId) => !baseIdolIds.has(idolId)),
+  }
+}
+
+/** headにだけあるカード名をE2Eへ渡し、検索一覧で表示できることを確認する */
+async function findAddedSupportCardNames(currentCards: SupportCardManifestEntry[]): Promise<string[]> {
+  const baseCardsFile = process.env.REGRESSION_BASE_CARDS_FILE
+  if (!baseCardsFile) return []
+
+  const baseCards = await loadSupportCardManifest(path.resolve(projectRoot, baseCardsFile))
+  const baseKeys = new Set(baseCards.map(({ key }) => key))
+  return currentCards.filter(({ key }) => !baseKeys.has(key)).map(({ name }) => name)
+}
+
+/** 両manifestにカード基準値がある場合だけ、追加・削除・内容更新を比較する */
+function compareSupportCardData(
+  before: SupportCardManifestEntry[] | undefined,
+  after: SupportCardManifestEntry[] | undefined,
+): SupportCardDataChanges {
+  if (!before || !after) return { available: false, added: [], removed: [], updated: [] }
+
+  const beforeByKey = new Map(before.map((card) => [card.key, card]))
+  const afterByKey = new Map(after.map((card) => [card.key, card]))
+  return {
+    available: true,
+    added: after.filter((card) => !beforeByKey.has(card.key)).map(({ name }) => name),
+    removed: before.filter((card) => !afterByKey.has(card.key)).map(({ name }) => name),
+    updated: after
+      .filter((card) => beforeByKey.has(card.key) && beforeByKey.get(card.key)?.contentHash !== card.contentHash)
+      .map(({ name }) => name),
+  }
+}
+
+/** 両manifestにPアイドル基準値がある場合だけ、追加・削除・内容更新を比較する */
+function comparePIdolData(
+  before: PIdolManifestEntry[] | undefined,
+  after: PIdolManifestEntry[] | undefined,
+): PIdolDataChanges {
+  if (!before || !after) return { available: false, added: [], removed: [], updated: [] }
+
+  const beforeById = new Map(before.map((pIdol) => [pIdol.id, pIdol]))
+  const afterById = new Map(after.map((pIdol) => [pIdol.id, pIdol]))
+  return {
+    available: true,
+    added: after.filter(({ id }) => !beforeById.has(id)).map(({ id, idolId, name }) => ({ id, idolId, name })),
+    removed: before.filter(({ id }) => !afterById.has(id)).map(({ id, idolId, name }) => ({ id, idolId, name })),
+    updated: after
+      .filter(({ id, contentHash }) => beforeById.has(id) && beforeById.get(id)?.contentHash !== contentHash)
+      .map(({ id, idolId, name }) => ({ id, idolId, name })),
+  }
+}
+
+/** 両manifestにIdolId一覧がある場合だけ、セレクターの追加・削除を比較する */
+function compareIdolSelectorData(before: string[] | undefined, after: string[] | undefined): IdolSelectorChanges {
+  if (!before || !after) return { available: false, added: [], removed: [] }
+
+  const beforeIds = new Set(before)
+  const afterIds = new Set(after)
+  return {
+    available: true,
+    added: after.filter((idolId) => !beforeIds.has(idolId)),
+    removed: before.filter((idolId) => !afterIds.has(idolId)),
+  }
 }
 
 /** 比較対象のIDに、ファイル名として扱えない文字が含まれていないことを確認する */
@@ -231,6 +508,9 @@ function parseManifest(value: unknown): Manifest {
     ...(typeof value.branch === 'string' ? { branch: value.branch } : {}),
     ...(typeof value.commit === 'string' ? { commit: value.commit } : {}),
     e2e: value.e2e === null ? null : parseTestSummary(value.e2e),
+    ...(value.supportCards === undefined ? {} : { supportCards: readSupportCardManifest(value.supportCards) }),
+    ...(value.pIdols === undefined ? {} : { pIdols: readPIdolManifestEntries(value.pIdols) }),
+    ...(value.pIdolIds === undefined ? {} : { pIdolIds: readPIdolIdManifest(value.pIdolIds) }),
     scenarios: value.scenarios.map(parseScenarioReport),
   }
 }
@@ -270,6 +550,10 @@ async function capture() {
   const cliPath = path.join(projectRoot, 'node_modules/@playwright/test/cli.js')
   const typecheckPath = path.join(projectRoot, 'node_modules/typescript/bin/tsc')
   const vitestPath = path.join(projectRoot, 'node_modules/vitest/vitest.mjs')
+  const supportCards = await loadSupportCardManifest()
+  const addedSupportCardNames = await findAddedSupportCardNames(supportCards)
+  const pIdolManifest = await loadPIdolManifest()
+  const addedPIdolData = await findAddedPIdolData(pIdolManifest)
 
   await mkdir(observationsRoot, { recursive: true })
   // 内部計算を先に保存し、後からE2Eが出す画面観測と同じシナリオIDで統合する
@@ -304,7 +588,13 @@ async function capture() {
   const testRun = playwrightStarted
     ? spawnSync(process.execPath, [cliPath, 'test', 'tests/e2e/scenarios.spec.ts'], {
         cwd: projectRoot,
-        env: { ...process.env, REGRESSION_OUTPUT: outputRoot },
+        env: {
+          ...process.env,
+          REGRESSION_OUTPUT: outputRoot,
+          REGRESSION_ADDED_CARD_NAMES: JSON.stringify(addedSupportCardNames),
+          REGRESSION_ADDED_P_IDOLS: JSON.stringify(addedPIdolData.pIdols),
+          REGRESSION_ADDED_IDOL_IDS: JSON.stringify(addedPIdolData.idolIds),
+        },
         stdio: 'inherit',
       })
     : typecheck
@@ -419,6 +709,9 @@ async function capture() {
     commit,
     generatedAt: new Date().toISOString(),
     e2e: e2eSummary,
+    supportCards,
+    pIdols: pIdolManifest.pIdols,
+    pIdolIds: pIdolManifest.idolIds,
     scenarios: [...scenarios.values()].sort((left, right) => left.id.localeCompare(right.id)),
   }
   if (scenarios.size === 0) {
@@ -551,6 +844,56 @@ async function compare(): Promise<void> {
       '',
     ]
 
+    const totalVisualComparisonCount = Object.values(report.visualComparisonCount).reduce(
+      (total, count) => total + count,
+      0,
+    )
+    lines.push('## Visual comparison', '')
+    if (!report.baselineAvailable) {
+      lines.push('⚠️ Visual comparison skipped because base observations are unavailable.', '')
+    } else if (totalVisualComparisonCount === 0) {
+      lines.push('⚠️ No screenshots were compared.', '')
+    } else if (report.visualChanges.length === 0) {
+      lines.push(`✅ No visual differences detected (${totalVisualComparisonCount} screenshots compared).`, '')
+    } else {
+      lines.push(`❌ Visual differences detected: ${report.visualChanges.length} scenario/device pairs.`, '')
+    }
+
+    lines.push('## Support card data', '')
+    if (!report.supportCardDataChanges.available) {
+      lines.push('Card data comparison is unavailable because a base card catalog was not captured.', '')
+    } else {
+      const { added, removed, updated } = report.supportCardDataChanges
+      lines.push(`Added: ${added.length} · Removed: ${removed.length} · Updated: ${updated.length}`, '')
+      for (const name of added) lines.push(`- Added: ${name}`)
+      for (const name of removed) lines.push(`- Removed: ${name}`)
+      for (const name of updated) lines.push(`- Updated: ${name}`)
+      if (added.length || removed.length || updated.length) lines.push('')
+    }
+
+    lines.push('## P-idol achievement data', '')
+    if (!report.pIdolDataChanges.available) {
+      lines.push('P-idol data comparison is unavailable because a base P-idol catalog was not captured.', '')
+    } else {
+      const { added, removed, updated } = report.pIdolDataChanges
+      lines.push(`Added: ${added.length} · Removed: ${removed.length} · Updated: ${updated.length}`, '')
+      for (const pIdol of added) lines.push(`- Added: ${pIdol.idolId} / ${pIdol.name}`)
+      for (const pIdol of removed) lines.push(`- Removed: ${pIdol.idolId} / ${pIdol.name}`)
+      for (const pIdol of updated) lines.push(`- Updated: ${pIdol.idolId} / ${pIdol.name}`)
+      if (added.length || removed.length || updated.length) lines.push('')
+    }
+
+    lines.push('## Idol selector', '')
+    if (!report.idolSelectorChanges.available) {
+      lines.push('Idol selector comparison is unavailable because a base IdolId catalog was not captured.', '')
+    } else {
+      const { added, removed } = report.idolSelectorChanges
+      lines.push(`Added: ${added.length} · Removed: ${removed.length}`, '')
+      for (const idolId of added) lines.push(`- Added: ${idolId}`)
+      for (const idolId of removed) lines.push(`- Removed: ${idolId}`)
+      if (added.length || removed.length) lines.push('')
+    }
+
     if (!report.baselineAvailable) {
       // 比較相手がない初回導入では、headのシナリオ一覧を情報表示する
       lines.push(
@@ -605,7 +948,13 @@ async function compare(): Promise<void> {
         },
       ]
       for (const group of visualGroups) {
-        lines.push(`## ${group.title}`, group.comparisonSummary, '')
+        const status =
+          group.comparisonCount === 0
+            ? '⚠️ comparison unavailable'
+            : group.changes.length === 0
+              ? '✅ no visual differences'
+              : `❌ ${group.changes.length} visual differences`
+        lines.push(`## ${group.title} · ${status}`, group.comparisonSummary, '')
         if (group.comparisonCount === 0) {
           lines.push('No base screenshots were available for comparison.', '')
           continue
@@ -624,7 +973,7 @@ async function compare(): Promise<void> {
               ? `: ${(change.changedRatio * 100).toFixed(2)}% changed (${change.changedPixels} pixels)`
               : ': image dimensions changed'
           const deviceLabel = regressionDeviceLabels[change.device]
-          lines.push(`- ${change.scenarioId} (${deviceLabel})${details}`, '')
+          lines.push(`- ❌ ${change.scenarioId} (${deviceLabel})${details}`, '')
         }
       }
       lines.push('## Calculation changes', '')
@@ -665,6 +1014,17 @@ async function compare(): Promise<void> {
 
   const [baseManifest, headManifest] = await Promise.all([loadManifest(baseRoot), loadManifest(headRoot)])
   if (!headManifest) throw new Error(`Head observation manifest not found under ${headRoot}`)
+  const baseSupportCards =
+    baseManifest?.supportCards ??
+    (process.env.REGRESSION_BASE_CARDS_FILE
+      ? await loadSupportCardManifest(path.resolve(projectRoot, process.env.REGRESSION_BASE_CARDS_FILE))
+      : undefined)
+  const basePIdolManifestFallback =
+    (!baseManifest?.pIdols || !baseManifest.pIdolIds) && process.env.REGRESSION_BASE_PIDOL_FILE
+      ? await loadPIdolManifest(path.resolve(projectRoot, process.env.REGRESSION_BASE_PIDOL_FILE))
+      : undefined
+  const basePIdols = baseManifest?.pIdols ?? basePIdolManifestFallback?.pIdols
+  const basePIdolIds = baseManifest?.pIdolIds ?? basePIdolManifestFallback?.idolIds
 
   await mkdir(outputRoot, { recursive: true })
   const report: RegressionReport = {
@@ -686,6 +1046,9 @@ async function compare(): Promise<void> {
     },
     calculationChanges: [],
     uiChanges: [],
+    supportCardDataChanges: compareSupportCardData(baseSupportCards, headManifest.supportCards),
+    pIdolDataChanges: comparePIdolData(basePIdols, headManifest.pIdols),
+    idolSelectorChanges: compareIdolSelectorData(basePIdolIds, headManifest.pIdolIds),
     captureFailures: { base: countFailures(baseManifest), head: countFailures(headManifest) },
   }
 

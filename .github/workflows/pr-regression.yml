@@ -14,12 +14,11 @@ jobs:
   regression:
     name: Compare base and head and publish PR comment
     runs-on: ubuntu-latest
-    # コメント本文はGITHUB_TOKENで投稿し、画像添付には対応するPATを使う
-    # PRコードも同じジョブで実行されるため、コメント投稿は同一リポジトリのPRに限定する
+    outputs:
+      comment_posted: ${{ steps.publish.outputs.comment_posted }}
+      fallback_body_base64: ${{ steps.publish.outputs.fallback_body_base64 }}
     permissions:
       contents: read
-      issues: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -49,38 +48,26 @@ jobs:
             echo "Noto Sans CJK JP is unavailable on the runner" >&2
             exit 1
           fi
-      # 回帰テスト導入前のbaseにはrunnerがないため、存在するときだけ基準値を取る
-      - name: Check whether base has the regression runner
-        id: base
-        working-directory: base
-        run: |
-          AVAILABLE=false
-          if [[ -f package-lock.json && -f tests/e2e/scenarios.spec.ts ]] && \
-            jq -e '.scripts.regression and .devDependencies["@playwright/test"]' package.json > /dev/null; then
-            AVAILABLE=true
-          fi
-          echo "available=${AVAILABLE}" >> "$GITHUB_OUTPUT"
       - name: Install base dependencies
         id: base-install
-        if: steps.base.outputs.available == 'true'
         continue-on-error: true
         working-directory: base
         run: npm ci
       - name: Build base
         id: base-build
-        if: steps.base.outputs.available == 'true' && steps.base-install.outcome == 'success'
+        if: steps.base-install.outcome == 'success'
         continue-on-error: true
         working-directory: base
         run: npm run build
       - name: Install base browsers
         id: base-browsers
-        if: steps.base.outputs.available == 'true' && steps.base-build.outcome == 'success'
+        if: steps.base-build.outcome == 'success'
         continue-on-error: true
         working-directory: base
         run: npx playwright install --with-deps chromium webkit
       - name: Capture base observations
         id: base-capture
-        if: steps.base.outputs.available == 'true' && steps.base-browsers.outcome == 'success'
+        if: steps.base-browsers.outcome == 'success'
         continue-on-error: true
         working-directory: base
         run: npm run regression -- capture
@@ -97,8 +84,7 @@ jobs:
         id: head-browsers
         if: steps.head-install.outcome == 'success'
         working-directory: head
-        # base/headでPlaywrightの版が異なる場合に備え、各checkoutで対応するbrowserを導入する
-        run: npx playwright install --with-deps chromium webkit
+        run: npx playwright install --with-deps chrome webkit
       - name: Build head
         id: head-build
         if: steps.head-install.outcome == 'success'
@@ -130,39 +116,95 @@ jobs:
         working-directory: head
         run: cat tmp/regression-results/report/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Post PR regression comment
+        id: publish
         if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.PR_REGRESSION_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -uo pipefail
+          COMMENT_POSTED=false
+          COMMENT_ROOT=head/tmp/pr-comment-assets
+          COMMENT_FILE="$COMMENT_ROOT/comment.md"
+          NO_IMAGE_FILE="$COMMENT_ROOT/comment-no-images.md"
+          POST_BODY_FILE="$COMMENT_ROOT/comment-for-post.md"
+          RUN_MARKER="<!-- pr-regression-run-${RUN_ID}-${RUN_ATTEMPT} -->"
+          CAN_PUBLISH=false
+
+          if [[ ! -L head && ! -L head/tmp && ! -L "$COMMENT_ROOT" && ! -L "$COMMENT_ROOT/images" && ! -L "$NO_IMAGE_FILE" && ! -L "$POST_BODY_FILE" ]] && \
+            mkdir -p "$COMMENT_ROOT/images"; then
+            CAN_PUBLISH=true
+          fi
+
+          if [[ "$CAN_PUBLISH" == 'true' && -f "$COMMENT_FILE" && ! -L "$COMMENT_FILE" ]]; then
+            if { printf '%s\n' "$RUN_MARKER" && cat "$COMMENT_FILE"; } > "$POST_BODY_FILE"; then
+              if [[ -n "${GH_TOKEN:-}" ]]; then
+                COMMENT_ARGS=(pr comment "$PR_NUMBER" --repo "$GH_REPO" --body-file "$POST_BODY_FILE")
+                while IFS= read -r -d '' screenshot; do
+                  COMMENT_ARGS+=(--attach "$screenshot")
+                done < <(find "$COMMENT_ROOT/images" -type f -name '*.png' -print0 | sort -z)
+                if gh "${COMMENT_ARGS[@]}"; then
+                  COMMENT_POSTED=true
+                fi
+              fi
+            fi
+          fi
+
+          FALLBACK_BODY_BASE64=""
+          if [[ "$COMMENT_POSTED" != 'true' && "$CAN_PUBLISH" == 'true' && -f "$NO_IMAGE_FILE" && ! -L "$NO_IMAGE_FILE" ]]; then
+            FALLBACK_BODY_SIZE="$(stat -c '%s' "$NO_IMAGE_FILE" 2>/dev/null || printf '0')"
+            if [[ "$FALLBACK_BODY_SIZE" =~ ^[0-9]+$ ]] && (( FALLBACK_BODY_SIZE <= 60000 )); then
+              FALLBACK_BODY_BASE64="$({ printf '%s\n' "$RUN_MARKER"; cat "$NO_IMAGE_FILE"; } | base64 -w0)"
+            fi
+          fi
+
+          {
+            printf 'comment_posted=%s\n' "$COMMENT_POSTED"
+            printf 'fallback_body_base64=%s\n' "$FALLBACK_BODY_BASE64"
+          } >> "$GITHUB_OUTPUT"
+
+  fallback-comment:
+    name: Post text-only fallback comment
+    needs: regression
+    if: ${{ always() && !cancelled() && github.event.pull_request.head.repo.full_name == github.repository && needs.regression.outputs.comment_posted != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post text-only fallback
+        env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          PR_REGRESSION_TOKEN: ${{ secrets.PR_REGRESSION_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          SERVER_URL: ${{ github.server_url }}
+          FALLBACK_BODY_BASE64: ${{ needs.regression.outputs.fallback_body_base64 }}
         run: |
           set -euo pipefail
-          COMMENT_FILE=head/tmp/pr-comment-assets/comment.md
-          COMMENT_WITHOUT_IMAGES_FILE=head/tmp/pr-comment-assets/comment-no-images.md
-          if [[ ! -f "$COMMENT_FILE" ]]; then
-            mkdir -p head/tmp/pr-comment-assets
-            printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n回帰レポートを作成できませんでした。\n' > "$COMMENT_FILE"
-          fi
-          if [[ ! -f "$COMMENT_WITHOUT_IMAGES_FILE" ]]; then
-            printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n回帰レポートを作成できませんでした。\n' > "$COMMENT_WITHOUT_IMAGES_FILE"
-          fi
+          mkdir -p tmp
+          BODY_FILE=tmp/pr-regression-fallback.md
+          RUN_MARKER="<!-- pr-regression-run-${RUN_ID}-${RUN_ATTEMPT} -->"
 
-          mkdir -p head/tmp/pr-comment-assets/images
-          mapfile -d '' SCREENSHOTS < <(find head/tmp/pr-comment-assets/images -type f -name '*.png' -print0 | sort -z)
-          ATTACH_ARGS=()
-          for screenshot in "${SCREENSHOTS[@]}"; do
-            ATTACH_ARGS+=(--attach "$screenshot")
-          done
-
-          # 毎回新しいコメントとして、サマリーと画面差分を一緒に投稿する
-          if (( ${#SCREENSHOTS[@]} > 0 )); then
-            if [[ -n "$PR_REGRESSION_TOKEN" ]]; then
-              GH_TOKEN="$PR_REGRESSION_TOKEN" gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE" "${ATTACH_ARGS[@]}"
-            else
-              echo "::warning::PR_REGRESSION_TOKEN が未設定のため、比較画像を省略してコメントを投稿します。"
-              gh pr comment "$PR_NUMBER" --body-file "$COMMENT_WITHOUT_IMAGES_FILE"
+          if [[ -n "${FALLBACK_BODY_BASE64:-}" ]]; then
+            if ! printf '%s' "$FALLBACK_BODY_BASE64" | base64 --decode > "$BODY_FILE"; then
+              : > "$BODY_FILE"
             fi
-          else
-            gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE"
           fi
+
+          if [[ ! -s "$BODY_FILE" ]]; then
+            printf '%s\n\n## 回帰テスト結果\n画像なしレポートを取得できませんでした。\n実行ログ: %s/%s/actions/runs/%s/attempts/%s\n' \
+              "$RUN_MARKER" "$SERVER_URL" "$GH_REPO" "$RUN_ID" "$RUN_ATTEMPT" > "$BODY_FILE"
+          fi
+
+          EXISTING_COMMENTS="$(gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json comments --jq '[.comments[].body] | join("\n")')"
+          if grep -Fq -- "$RUN_MARKER" <<< "$EXISTING_COMMENTS"; then
+            echo 'A comment for this workflow run already exists; skipping the fallback to avoid a duplicate.'
+            exit 0
+          fi
+
+          gh pr comment "$PR_NUMBER" --repo "$GH_REPO" --body-file "$BODY_FILE"

@@ -546,7 +546,7 @@ async function compare(): Promise<void> {
       '',
       '## Validation',
       `Head build and regression: ${report.validation.head}`,
-      `Head E2E: ${report.e2e ? `${report.e2e.passed} / ${report.e2e.total} passed` : 'not completed'}`,
+      `Head E2E: ${report.e2e ? `${report.e2e.passed} / ${report.e2e.total - report.e2e.skipped} passed · ${report.e2e.skipped} skipped` : 'not completed'}`,
       `Capture failures: base ${report.captureFailures.base}, head ${report.captureFailures.head}`,
       '',
     ]

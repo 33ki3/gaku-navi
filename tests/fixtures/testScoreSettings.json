@@ -86,7 +86,6 @@
       "useScheduleLimits": true,
       "includeSelfTrigger": true,
       "includePItem": true,
-      "useFixedUncap": true,
       "useCustomMode": false,
       "customParamBonusRows": [
         {

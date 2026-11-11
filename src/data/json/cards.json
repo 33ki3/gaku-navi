@@ -59,6 +59,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "次こそ勝つ！"
       }
     ],
@@ -125,6 +126,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "手毬の独壇場……？"
       }
     ],
@@ -191,6 +193,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "かくれんぼ！"
       }
     ],
@@ -257,6 +260,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "街中チェイス"
       }
     ],
@@ -323,6 +327,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "アイスを勝ち取れ！"
       }
     ],
@@ -389,6 +394,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "千奈の寮体験"
       }
     ],
@@ -456,6 +462,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "やる気を出す方法"
       }
     ],
@@ -523,6 +530,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "あくなき探求心"
       }
     ],
@@ -590,6 +598,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "有望な新入生たち"
       }
     ],
@@ -657,6 +666,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "どっちも捨てがたい"
       }
     ],
@@ -724,6 +734,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "ダメダメ三人組出動！"
       }
     ],
@@ -791,6 +802,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "電話"
       }
     ],
@@ -1424,7 +1436,7 @@
       "memory": "non_memorizable",
       "effect": {
         "trigger": {
-          "key": "exam_end"
+          "key": "exam_start"
         },
         "condition": {
           "key": "param_gte",
@@ -1440,7 +1452,7 @@
         ]
       },
       "boost": {
-        "trigger_key": "exam_end",
+        "trigger_key": "exam_start",
         "parameter_type": "vocal",
         "value": 26
       }
@@ -1749,7 +1761,7 @@
       "memory": "non_memorizable",
       "effect": {
         "trigger": {
-          "key": "exam_end"
+          "key": "exam_start"
         },
         "condition": {
           "key": "param_gte",
@@ -1765,7 +1777,7 @@
         ]
       },
       "boost": {
-        "trigger_key": "exam_end",
+        "trigger_key": "exam_start",
         "parameter_type": "visual",
         "value": 26
       }
@@ -2156,7 +2168,7 @@
       "memory": "non_memorizable",
       "effect": {
         "trigger": {
-          "key": "exam_end"
+          "key": "exam_start"
         },
         "condition": {
           "key": "param_gte",
@@ -2172,7 +2184,7 @@
         ]
       },
       "boost": {
-        "trigger_key": "exam_end",
+        "trigger_key": "exam_start",
         "parameter_type": "dance",
         "value": 26
       }
@@ -4417,7 +4429,7 @@
       }
     ],
     "p_item": {
-      "name": "曇りを拭ったタオル",
+      "name": "曇りをぬぐったタオル",
       "rarity": "ssr",
       "memory": "memorizable",
       "effect": {
@@ -5018,6 +5030,7 @@
       {
         "release": "lv20",
         "effect_type": "hp_recovery",
+        "param_value": 7,
         "title": "あさり先生のお説教"
       },
       {
@@ -9211,6 +9224,7 @@
       {
         "release": "lv20",
         "effect_type": "hp_recovery",
+        "param_value": 7,
         "title": "食欲の秋"
       },
       {
@@ -14501,7 +14515,7 @@
       }
     ],
     "p_item": {
-      "name": "居残りの生徒会",
+      "name": "居残りの生徒会室",
       "rarity": "ssr",
       "memory": "memorizable",
       "effect": {
@@ -18467,6 +18481,7 @@
       {
         "release": "lv20",
         "effect_type": "pp_gain",
+        "param_value": 10,
         "title": "試験結果、発表！"
       }
     ],
@@ -18646,7 +18661,8 @@
           "param": "dance"
         },
         "trigger": {
-          "key": "motivation_increase_after"
+          "key": "direct_keyword_increase_after",
+          "keyword": "motivation"
         },
         "body": [
           {
@@ -22169,7 +22185,7 @@
           "param": "visual"
         },
         "trigger": {
-          "key": "direct_keyword_gain",
+          "key": "direct_keyword_increase_after",
           "keyword": "full_power_value"
         },
         "condition": {

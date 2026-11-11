@@ -292,10 +292,10 @@
       "turn_start_after": "ターン開始後、",
       "active_card_use": "アクティブスキルカード使用時、",
       "card_use": "スキルカード使用時、",
-      "motivation_increase_after": "直接効果でやる気が増加後、",
       "card_use_count_in_turn": "ターン内にスキルカードを{{count}}回使用時、",
       "card_cost_hp_decrease": "スキルカードコストで体力減少時、",
-      "direct_keyword_gain": "直接効果で{{keyword}}になった時、"
+      "direct_keyword_gain": "直接効果で{{keyword}}になった時、",
+      "direct_keyword_increase_after": "直接効果で{{keyword}}が増加後、"
     },
     "pitem_condition": {
       "param_gte": "{{param}}が{{threshold}}以上の場合、",

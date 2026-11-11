@@ -164,7 +164,7 @@ const stageData = {
     [AbilityNameKeyType.GoodConditionCardAcquire8]: ['8', '16'],
     [AbilityNameKeyType.GoodImpressionCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.GoodImpressionCardAcquire8]: ['8', '16'],
-    [AbilityNameKeyType.InitialPp]: ['65', '71', '76', '81', '86'],
+    [AbilityNameKeyType.InitialPp]: ['15', '30'],
     [AbilityNameKeyType.InitialStat]: ['37', '40', '43', '46', '49'],
     [AbilityNameKeyType.LessonEnd]: ['2', '4'],
     [AbilityNameKeyType.LessonPpBoost]: ['8.3%', '16.5%'],

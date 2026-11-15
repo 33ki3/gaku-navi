@@ -4,10 +4,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   type RegressionDevice,
-  isMissingFileError,
+  isMissingPathError,
   isRecord,
   isRegressionDevice,
   regressionDeviceLabels,
+  selectRepresentativeDeviceChanges,
 } from './regressionShared.js'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
@@ -29,7 +30,9 @@ interface VisualChangeInput {
   scenarioId: string
   description?: string
   device: RegressionDevice
+  changedPixels?: number
   changedRatio?: number
+  dimensionsMismatch?: boolean
   baseScreenshot?: string
   headScreenshot?: string
 }
@@ -37,6 +40,17 @@ interface VisualChangeInput {
 interface VisualChange extends Omit<VisualChangeInput, 'baseScreenshot' | 'headScreenshot'> {
   baseImage: string | null
   headImage: string | null
+}
+
+/** PRコメントに画像を載せない画面差分と、その理由 */
+interface OmittedVisualChange {
+  change: VisualChangeInput
+  reason: 'representative-device' | 'attachment-limit'
+}
+
+interface VisualChangeSelection {
+  attachedChanges: VisualChangeInput[]
+  omittedVisualChanges: OmittedVisualChange[]
 }
 
 interface TestSummary {
@@ -80,6 +94,7 @@ interface CommentSummary {
   pIdolDataChanges: PIdolDataChanges | null
   idolSelectorChanges: IdolSelectorChanges | null
   visualChanges: VisualChange[]
+  omittedVisualChanges: OmittedVisualChange[]
   totalVisualChangeCount: number
   totalVisualComparisonCount: number
   omittedVisualChangeCount: number
@@ -90,7 +105,7 @@ async function readJson(filename: string): Promise<unknown | null> {
   try {
     return JSON.parse(await readFile(filename, 'utf8'))
   } catch (error) {
-    if (isMissingFileError(error)) return null
+    if (isMissingPathError(error)) return null
     throw error
   }
 }
@@ -121,9 +136,13 @@ function parseVisualChange(value: unknown): VisualChangeInput | null {
     scenarioId: value.scenarioId,
     ...(typeof value.description === 'string' ? { description: value.description } : {}),
     device: value.device,
+    ...(typeof value.changedPixels === 'number' && Number.isFinite(value.changedPixels)
+      ? { changedPixels: value.changedPixels }
+      : {}),
     ...(typeof value.changedRatio === 'number' && Number.isFinite(value.changedRatio)
       ? { changedRatio: value.changedRatio }
       : {}),
+    ...(value.dimensionsMismatch === true ? { dimensionsMismatch: true } : {}),
     ...(typeof value.baseScreenshot === 'string' ? { baseScreenshot: value.baseScreenshot } : {}),
     ...(typeof value.headScreenshot === 'string' ? { headScreenshot: value.headScreenshot } : {}),
   }
@@ -221,7 +240,7 @@ async function copyScreenshot(
     await copyFile(source, destination)
     return path.relative(outputRoot, destination)
   } catch (error) {
-    if (isMissingFileError(error)) return null
+    if (isMissingPathError(error)) return null
     throw error
   }
 }
@@ -241,6 +260,44 @@ function createImageCell(imagePath: string | null, label: string, includeImageAt
   // GitHub CLIがローカル画像参照を添付URLへ置き換えられるよう、workspace相対のMarkdownにする
   const attachmentPath = path.relative(workspaceRoot, path.join(outputRoot, imagePath)).split(path.sep).join('/')
   return `![${escapeMarkdownAlt(label)}](${attachmentPath})`
+}
+
+/** 画像を省略する差分を、端末・差分率・省略理由つきの本文行へ変換する */
+export function formatOmittedVisualChange(change: OmittedVisualChange): string {
+  const { change: visualChange, reason } = change
+  const title = visualChange.description
+    ? `${visualChange.scenarioId} · ${visualChange.description}`
+    : visualChange.scenarioId
+  const details =
+    typeof visualChange.changedRatio === 'number'
+      ? `差分 ${(visualChange.changedRatio * 100).toFixed(2)}%${
+          typeof visualChange.changedPixels === 'number'
+            ? `・${visualChange.changedPixels.toLocaleString('ja-JP')} px`
+            : ''
+        }`
+      : visualChange.dimensionsMismatch
+        ? '画像サイズ変更'
+        : '差分あり'
+  const reasonText =
+    reason === 'representative-device' ? '同じシナリオの代表端末画像に集約' : '画像添付上限のため画像を省略'
+  return `- ${escapeHtml(title)}（${regressionDeviceLabels[visualChange.device]}）: ${details} — ${reasonText}`
+}
+
+/** コメント用の代表画像を上限まで選び、テキストへ回す差分を分類する */
+export function selectVisualChangesForComment(changes: readonly VisualChangeInput[]): VisualChangeSelection {
+  const representativeChanges = selectRepresentativeDeviceChanges(changes)
+  const representativeSet = new Set(representativeChanges)
+  return {
+    attachedChanges: representativeChanges.slice(0, maxVisualChangesInComment),
+    omittedVisualChanges: [
+      ...changes
+        .filter((change) => !representativeSet.has(change))
+        .map((change) => ({ change, reason: 'representative-device' as const })),
+      ...representativeChanges
+        .slice(maxVisualChangesInComment)
+        .map((change) => ({ change, reason: 'attachment-limit' as const })),
+    ],
+  }
 }
 
 function parseTestSummary(value: unknown): TestSummary | null {
@@ -286,13 +343,15 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
   } else if (summary.totalVisualChangeCount === 0) {
     lines.push('✅ 画面差分はありません。', '')
   } else {
-    lines.push(`❌ 画面差分あり: ${summary.totalVisualChangeCount} 件`, '')
+    lines.push(`❌ 画面差分あり: ${summary.totalVisualChangeCount} 件（PC・iOS・Androidの比較はすべて実行）`, '')
 
     if (summary.omittedVisualChangeCount > 0) {
       lines.push(
-        `画像添付の上限に合わせて${summary.visualChanges.length}件を掲載し、残り${summary.omittedVisualChangeCount}件を省略しました。`,
+        `画像は最大${maxAttachedImages}枚（Base/Head各1枚で${maxVisualChangesInComment}組）まで掲載します。\n省略した${summary.omittedVisualChangeCount}件もテキストで記載します。`,
         '',
       )
+      for (const change of summary.omittedVisualChanges) lines.push(formatOmittedVisualChange(change))
+      lines.push('')
     }
   }
 
@@ -415,7 +474,8 @@ export async function writeRegressionSummary(): Promise<void> {
     const change = parseVisualChange(rawChange)
     return change ? [change] : []
   })
-  const limitedChanges = parsedChanges.slice(0, maxVisualChangesInComment)
+  const visualChangeSelection = selectVisualChangesForComment(parsedChanges)
+  const limitedChanges = visualChangeSelection.attachedChanges
 
   for (const change of limitedChanges) {
     const imageDirectory = path.join(imagesRoot, change.scenarioId, change.device)
@@ -466,9 +526,10 @@ export async function writeRegressionSummary(): Promise<void> {
     pIdolDataChanges: isRecord(report) ? parsePIdolDataChanges(report.pIdolDataChanges) : null,
     idolSelectorChanges: isRecord(report) ? parseIdolSelectorChanges(report.idolSelectorChanges) : null,
     visualChanges: commentVisualChanges,
+    omittedVisualChanges: visualChangeSelection.omittedVisualChanges,
     totalVisualChangeCount: parsedChanges.length,
     totalVisualComparisonCount: visualComparisonCount,
-    omittedVisualChangeCount: Math.max(0, parsedChanges.length - commentVisualChanges.length),
+    omittedVisualChangeCount: visualChangeSelection.omittedVisualChanges.length,
   }
 
   // GITHUB_TOKENで画像を添付できない場合も、リンク切れのないコメント本文を用意する

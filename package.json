@@ -9,7 +9,9 @@
       "src/main.tsx",
       "src/appBootstrap.tsx",
       "scripts/regression.ts",
-      "scripts/cpSatSummary.ts"
+      "scripts/cpSatSummary.ts",
+      "scripts/calculationRegression.ts",
+      "scripts/updatePrComment.ts"
     ],
     "ignore": [
       "src/i18n/i18next.d.ts",

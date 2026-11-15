@@ -154,11 +154,10 @@ jobs:
     name: CP-SAT summary
     if: always()
     needs: cp-sat
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
       pull-requests: write
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -182,55 +181,26 @@ jobs:
         run: |
           node node_modules/.tmp/regression/cpSatSummary.js tmp/cp-sat-summary
           cat tmp/cp-sat-summary/report.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Check whether CP-SAT PR report changed
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        id: report_change
+      - name: Ensure a CP-SAT report exists
+        if: always()
+        run: |
+          mkdir -p tmp/cp-sat-summary
+          if [[ ! -s tmp/cp-sat-summary/comment.md ]]; then
+            printf '<!-- cp-sat-optimizer-report -->\n# 最適編成検証サマリー\n\nCP-SATレポートを作成できませんでした。\n' > tmp/cp-sat-summary/comment.md
+          fi
+          if [[ ! -s tmp/cp-sat-summary/report.md ]]; then
+            cp tmp/cp-sat-summary/comment.md tmp/cp-sat-summary/report.md
+          fi
+      - name: Update the CP-SAT PR comment
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          set -o pipefail
-          if [[ ! -s tmp/cp-sat-summary/comment.md ]]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # マーカー付きコメントだけを作成順に取り出し、最後のものを前回結果として比較する。
-          if ! gh api --paginate "repos/$GH_REPO/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("<!-- cp-sat-optimizer-report -->")) | .body | @base64' > tmp/cp-sat-summary/previous-comments.txt; then
-            echo "::warning::Could not read the previous CP-SAT PR report; posting the current report"
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          current_hash=$(sha256sum tmp/cp-sat-summary/comment.md | cut -d ' ' -f 1)
-          previous_report=$(tail -n 1 tmp/cp-sat-summary/previous-comments.txt)
-          if [[ -z "$previous_report" ]]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          previous_hash=$(printf '%s' "$previous_report" | base64 --decode | sha256sum | cut -d ' ' -f 1)
-          if [[ "$current_hash" == "$previous_hash" ]]; then
-            # コメント本文に変化がないときは、新しいPRコメントを増やさない。
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "CP-SAT PR report is unchanged; skipping the comment"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "CP-SAT PR report changed; posting an updated comment"
-          fi
-      - name: Post CP-SAT report as PR comment
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.report_change.outputs.changed != 'false'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          if [[ ! -s tmp/cp-sat-summary/comment.md ]]; then
-            mkdir -p tmp/cp-sat-summary
-            printf '<!-- cp-sat-optimizer-report -->\n## 最適編成検証結果\n検証レポートを作成できませんでした。\n' > tmp/cp-sat-summary/comment.md
-          fi
-          gh pr comment "$PR_NUMBER" --body-file tmp/cp-sat-summary/comment.md
+          PR_COMMENT_MARKER: '<!-- cp-sat-optimizer-report -->'
+          PR_COMMENT_BODY_FILE: tmp/cp-sat-summary/comment.md
+        run: node node_modules/.tmp/regression/updatePrComment.js
 
   check:
     if: always()

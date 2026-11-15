@@ -1,7 +1,7 @@
-/** E2Eで画面操作を確認し、PR比較用の画面観測と計算値をシナリオIDで結び付ける */
+/** E2Eで画面操作を確認し、PR比較用の画面とUI表示をシナリオIDで記録する */
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { type Locator, type Page, type TestInfo, expect, test } from '@playwright/test'
@@ -107,24 +107,6 @@ const regressionMenuPanelStyle = `
   }
 `
 
-/** 内部計算JSONから、指定した計算結果の数値を検証付きで取り出す */
-function readInternalNumber(observation: unknown, key: string): number {
-  if (observation === null || typeof observation !== 'object') {
-    throw new Error('Calculation observation is not an object')
-  }
-  const calculation = 'calculation' in observation ? observation.calculation : observation
-  if (calculation === null || typeof calculation !== 'object' || !('internal' in calculation)) {
-    throw new Error('Calculation observation has no internal result')
-  }
-  const internal = calculation.internal
-  if (internal === null || typeof internal !== 'object') {
-    throw new Error(`Calculation observation has no numeric ${key}`)
-  }
-  const value = (internal as Record<string, unknown>)[key]
-  if (typeof value !== 'number') throw new Error(`Calculation observation has no numeric ${key}`)
-  return value
-}
-
 /** 回帰レポートへ出すシナリオの識別子・説明と、比較対象の入力条件 */
 interface ScenarioDefinition {
   /** Playwrightのテストタイトルと対応し、ブランチ間で固定する識別子 */
@@ -151,7 +133,7 @@ interface ScenarioDefinition {
   semanticInput: Record<string, unknown>
 }
 
-/** 端末別のE2E実行から回帰比較へ渡す画面・計算の観測値 */
+/** 端末別のE2E実行から回帰比較へ渡す画面・UIの観測値 */
 interface ScenarioObservation {
   screenshot?: string
   visualComparison?: {
@@ -160,7 +142,6 @@ interface ScenarioObservation {
     changedRatio?: number
     dimensionsMismatch?: boolean
   }
-  calculation?: Record<string, unknown>
   ui?: Record<string, unknown>
 }
 
@@ -685,7 +666,7 @@ async function saveObservation(
   scenario: ScenarioDefinition,
   testInfo: TestInfo,
   page: Page,
-  details?: Pick<ScenarioObservation, 'calculation' | 'ui'>,
+  details?: Pick<ScenarioObservation, 'ui'>,
   screenshotTarget?: Locator,
 ): Promise<void> {
   if (!regressionOutput) return
@@ -774,20 +755,13 @@ async function captureAchievementCalculatorTab(
   await saveObservation(scenarios[scenarioKey], testInfo, page)
 }
 
-/** 表示合計を数値化し、回帰実行では保存済みの内部計算結果と照合する */
-async function readOptimizerTotal(resultPanel: Locator, scenarioId: string): Promise<number> {
+/** 最適編成パネルに表示された合計を数値化して取得する */
+async function readOptimizerTotal(resultPanel: Locator): Promise<number> {
   const resultText = await resultPanel.innerText()
   const displayedTotalMatch = resultText.match(/合計パラメータ上昇量\s*([\d,]+)/)
   expect(displayedTotalMatch).not.toBeNull()
   const displayedTotal = Number(displayedTotalMatch?.[1].replaceAll(',', ''))
   expect(Number.isFinite(displayedTotal)).toBe(true)
-
-  if (regressionOutput) {
-    // 回帰実行時は、画面表示と内部計算の合計値を照合する
-    const calculationPath = path.join(regressionOutput, 'calculations', `${scenarioId}.json`)
-    const calculation: unknown = JSON.parse(await readFile(calculationPath, 'utf8'))
-    expect(displayedTotal).toBe(readInternalNumber(calculation, 'totalScore'))
-  }
 
   return displayedTotal
 }
@@ -997,12 +971,6 @@ test('support-card-score-basic', async ({ page }, testInfo) => {
   const displayedTotal = Number(displayedText.replace(/[^\d-]/g, ''))
   expect(Number.isFinite(displayedTotal)).toBe(true)
 
-  if (regressionOutput) {
-    const calculationPath = path.join(regressionOutput, 'calculations', 'support-card-score-basic.json')
-    const calculation: unknown = JSON.parse(await readFile(calculationPath, 'utf8'))
-    expect(displayedTotal).toBe(readInternalNumber(calculation, 'total'))
-  }
-
   await saveObservation(scenarios['support-card-score-basic'], testInfo, page, { ui: { displayedTotal } }, card)
 })
 
@@ -1187,12 +1155,6 @@ test('score-settings-custom', async ({ page }, testInfo) => {
   const displayedTotal = Number((await card.getByTestId('support-card-score').innerText()).replace(/[^\d-]/g, ''))
   expect(Number.isFinite(displayedTotal)).toBe(true)
 
-  if (regressionOutput) {
-    const calculationPath = path.join(regressionOutput, 'calculations', 'score-settings-custom.json')
-    const calculation: unknown = JSON.parse(await readFile(calculationPath, 'utf8'))
-    expect(displayedTotal).toBe(readInternalNumber(calculation, 'total'))
-  }
-
   const displayedCustomValues = await customInputs.evaluateAll(
     (inputs, count) => inputs.slice(0, count).map((input) => Number((input as HTMLInputElement).value)),
     customValues.length,
@@ -1235,7 +1197,7 @@ test('optimization-basic', async ({ page }, testInfo) => {
   const resultPanel = page.getByTestId('unit-result-panel')
   await expect(resultPanel).toBeVisible({ timeout: 120_000 })
   await expectOptimizerReady(optimizeButton)
-  const displayedTotal = await readOptimizerTotal(resultPanel, 'optimization-basic')
+  const displayedTotal = await readOptimizerTotal(resultPanel)
   await saveObservation(scenarios['optimization-basic'], testInfo, page, { ui: { displayedTotal } }, resultPanel)
 
   // 計算結果の観測後に、内訳表示とカード固定の操作も確認する
@@ -1313,7 +1275,7 @@ test('optimization-filtered', async ({ page }, testInfo) => {
   const resultPanel = page.getByTestId('unit-result-panel')
   await expect(resultPanel).toBeVisible({ timeout: 120_000 })
   await expectOptimizerReady(optimizeButton)
-  const displayedTotal = await readOptimizerTotal(resultPanel, 'optimization-filtered')
+  const displayedTotal = await readOptimizerTotal(resultPanel)
 
   await saveObservation(
     scenarios['optimization-filtered'],
@@ -1337,7 +1299,7 @@ test('optimization-logic', async ({ page }, testInfo) => {
   const resultPanel = page.getByTestId('unit-result-panel')
   await expect(resultPanel).toBeVisible({ timeout: 120_000 })
   await expectOptimizerReady(optimizeButton)
-  const displayedTotal = await readOptimizerTotal(resultPanel, 'optimization-logic')
+  const displayedTotal = await readOptimizerTotal(resultPanel)
   await saveObservation(
     scenarios['optimization-logic'],
     testInfo,
@@ -1360,7 +1322,7 @@ test('optimization-anomaly', async ({ page }, testInfo) => {
   const resultPanel = page.getByTestId('unit-result-panel')
   await expect(resultPanel).toBeVisible({ timeout: 120_000 })
   await expectOptimizerReady(optimizeButton)
-  const displayedTotal = await readOptimizerTotal(resultPanel, 'optimization-anomaly')
+  const displayedTotal = await readOptimizerTotal(resultPanel)
   await saveObservation(
     scenarios['optimization-anomaly'],
     testInfo,
@@ -1384,7 +1346,7 @@ test('optimization-dance-bonus', async ({ page }, testInfo) => {
   const resultPanel = page.getByTestId('unit-result-panel')
   await expect(resultPanel).toBeVisible({ timeout: 120_000 })
   await expectOptimizerReady(optimizeButton)
-  const displayedTotal = await readOptimizerTotal(resultPanel, 'optimization-dance-bonus')
+  const displayedTotal = await readOptimizerTotal(resultPanel)
   await saveObservation(
     scenarios['optimization-dance-bonus'],
     testInfo,
@@ -1412,7 +1374,7 @@ test('optimization-type-balance', async ({ page }, testInfo) => {
   const resultPanel = page.getByTestId('unit-result-panel')
   await expect(resultPanel).toBeVisible({ timeout: 120_000 })
   await expectOptimizerReady(optimizeButton)
-  const displayedTotal = await readOptimizerTotal(resultPanel, 'optimization-type-balance')
+  const displayedTotal = await readOptimizerTotal(resultPanel)
 
   const memberCards = resultPanel.locator('div.border-l-4')
   await expect(memberCards).toHaveCount(6)

@@ -11,32 +11,211 @@ permissions:
   contents: read
 
 jobs:
-  regression:
-    name: Compare base and head and publish PR comment
+  node-setup:
+    name: Regression Node dependencies
     runs-on: ubuntu-latest
-    outputs:
-      comment_posted: ${{ steps.publish.outputs.comment_posted }}
-      fallback_body_base64: ${{ steps.publish.outputs.fallback_body_base64 }}
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out base revision
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: base
           persist-credentials: false
-      - uses: actions/checkout@v7
+      - name: Check out head revision
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - name: Set up Node.js and npm cache
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22'
           cache: npm
           cache-dependency-path: |
             base/package-lock.json
             head/package-lock.json
+      - name: Restore regression dependencies cache
+        id: node-modules-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            base/node_modules
+            head/node_modules
+          key: regression-node-modules-${{ runner.os }}-node-22-${{ hashFiles('base/package-lock.json', 'head/package-lock.json') }}
+      - name: Install base dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        working-directory: base
+        run: npm ci
+      - name: Install head dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        working-directory: head
+        run: npm ci
+      - name: Save regression dependencies cache
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            base/node_modules
+            head/node_modules
+          key: regression-node-modules-${{ runner.os }}-node-22-${{ hashFiles('base/package-lock.json', 'head/package-lock.json') }}
+
+  calculations:
+    name: Calculation regression
+    needs: [node-setup]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out base revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - name: Check out head revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+      - name: Set up Node.js and npm cache
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            base/package-lock.json
+            head/package-lock.json
+      - name: Restore regression dependencies cache
+        id: node-modules-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            base/node_modules
+            head/node_modules
+          key: regression-node-modules-${{ runner.os }}-node-22-${{ hashFiles('base/package-lock.json', 'head/package-lock.json') }}
+      - name: Verify regression dependencies
+        id: dependencies
+        env:
+          NODE_MODULES_CACHE_HIT: ${{ steps.node-modules-cache.outputs.cache-hit }}
+        run: |
+          if [[ "$NODE_MODULES_CACHE_HIT" != "true" ]]; then
+            echo "::error::Regression dependencies were not restored from node-setup"
+            exit 1
+          fi
+      - name: Run calculation scenarios on base
+        id: base-calculation
+        if: always() && steps.dependencies.outcome == 'success'
+        continue-on-error: true
+        working-directory: head
+        env:
+          REGRESSION_PROJECT_ROOT: ../base
+          REGRESSION_OUTPUT: tmp/pr-calculations/base
+          REGRESSION_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: npm run regression -- calculation
+      - name: Run calculation scenarios on head
+        id: head-calculation
+        if: always() && steps.dependencies.outcome == 'success'
+        continue-on-error: true
+        working-directory: head
+        env:
+          REGRESSION_OUTPUT: tmp/pr-calculations/head
+          REGRESSION_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: npm run regression -- calculation
+      - name: Compare calculation results
+        id: compare-calculations
+        if: always() && steps.dependencies.outcome == 'success'
+        working-directory: head
+        env:
+          REGRESSION_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
+          REGRESSION_BASE_TEST_RESULT: ${{ steps.base-calculation.outcome }}
+          REGRESSION_HEAD_TEST_RESULT: ${{ steps.head-calculation.outcome }}
+        run: npm run regression -- compare calculation ../base/tmp/pr-calculations/base/calculations tmp/pr-calculations/head/calculations tmp/pr-calculations/report
+      - name: Ensure and publish the calculation report
+        if: always()
+        working-directory: head
+        env:
+          REGRESSION_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
+          REGRESSION_BASE_TEST_RESULT: ${{ steps.base-calculation.outcome }}
+          REGRESSION_HEAD_TEST_RESULT: ${{ steps.head-calculation.outcome }}
+        run: |
+          mkdir -p tmp/pr-calculations/report
+          if [[ ! -s tmp/pr-calculations/report/report.md ]]; then
+            printf '<!-- gaku-navi-calculation-regression -->\n# 計算回帰テスト\n\n- seed: `%s`\n- base tests: %s\n- head tests: %s\n\n比較レポートを作成できませんでした。\n' \
+              "$REGRESSION_RANDOM_SEED" "${REGRESSION_BASE_TEST_RESULT:-unknown}" "${REGRESSION_HEAD_TEST_RESULT:-unknown}" \
+              > tmp/pr-calculations/report/report.md
+          fi
+          cat tmp/pr-calculations/report/report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Update the calculation PR comment
+        if: always() && hashFiles('head/node_modules/.tmp/regression/updatePrComment.js') != '' && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        working-directory: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_COMMENT_MARKER: '<!-- gaku-navi-calculation-regression -->'
+          PR_COMMENT_BODY_FILE: tmp/pr-calculations/report/report.md
+        run: node node_modules/.tmp/regression/updatePrComment.js
+      - name: Validate calculation regression
+        if: always()
+        env:
+          BASE_RESULT: ${{ steps.base-calculation.outcome }}
+          HEAD_RESULT: ${{ steps.head-calculation.outcome }}
+          COMPARE_RESULT: ${{ steps.compare-calculations.outcome }}
+        run: |
+          if [[ "$BASE_RESULT" != "success" || "$HEAD_RESULT" != "success" || "$COMPARE_RESULT" != "success" ]]; then
+            echo "::error::Calculation regression did not complete successfully"
+            exit 1
+          fi
+
+  visual:
+    name: Screenshot comparison
+    needs: [node-setup]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out base revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - name: Check out head revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+      - name: Set up Node.js and npm cache
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            base/package-lock.json
+            head/package-lock.json
+      - name: Restore regression dependencies cache
+        id: node-modules-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            base/node_modules
+            head/node_modules
+          key: regression-node-modules-${{ runner.os }}-node-22-${{ hashFiles('base/package-lock.json', 'head/package-lock.json') }}
+      - name: Verify regression dependencies
+        id: dependencies
+        env:
+          NODE_MODULES_CACHE_HIT: ${{ steps.node-modules-cache.outputs.cache-hit }}
+        run: |
+          if [[ "$NODE_MODULES_CACHE_HIT" != "true" ]]; then
+            echo "::error::Regression dependencies were not restored from node-setup"
+            exit 1
+          fi
       # Linux上の画面比較で日本語の字形を使うため、Noto CJKフォントを導入する
       - name: Install Japanese fonts
         run: |
@@ -48,14 +227,9 @@ jobs:
             echo "Noto Sans CJK JP is unavailable on the runner" >&2
             exit 1
           fi
-      - name: Install base dependencies
-        id: base-install
-        continue-on-error: true
-        working-directory: base
-        run: npm ci
       - name: Build base
         id: base-build
-        if: steps.base-install.outcome == 'success'
+        if: steps.dependencies.outcome == 'success'
         continue-on-error: true
         working-directory: base
         run: npm run build
@@ -65,32 +239,30 @@ jobs:
         continue-on-error: true
         working-directory: base
         run: npx playwright install --with-deps chromium webkit
-      - name: Capture base observations
-        id: base-capture
-        if: steps.base-browsers.outcome == 'success'
-        continue-on-error: true
-        working-directory: base
-        run: npm run regression -- capture
-        env:
-          E2E_PREVIEW: '1'
-          REGRESSION_BRANCH: base
-          REGRESSION_COMMIT: ${{ github.event.pull_request.base.sha }}
-          REGRESSION_OUTPUT: tmp/regression-results/base
-      - name: Install head dependencies
-        id: head-install
-        working-directory: head
-        run: npm ci
       - name: Install head browsers
         id: head-browsers
-        if: steps.head-install.outcome == 'success'
+        if: steps.dependencies.outcome == 'success'
+        continue-on-error: true
         working-directory: head
         run: npx playwright install --with-deps chrome webkit
       - name: Build head
         id: head-build
-        if: steps.head-install.outcome == 'success'
+        if: steps.dependencies.outcome == 'success'
         working-directory: head
         run: npm run build
-      - name: Capture and compare head observations
+      - name: Capture base screenshots and UI observations
+        id: base-capture
+        if: steps.base-browsers.outcome == 'success' && steps.dependencies.outcome == 'success'
+        continue-on-error: true
+        working-directory: head
+        run: npm run regression -- capture
+        env:
+          REGRESSION_PROJECT_ROOT: ../base
+          E2E_PREVIEW: '1'
+          REGRESSION_BRANCH: base
+          REGRESSION_COMMIT: ${{ github.event.pull_request.base.sha }}
+          REGRESSION_OUTPUT: tmp/regression-results/base
+      - name: Capture head screenshots and compare with base
         id: head-capture
         if: always() && steps.head-build.outcome == 'success' && steps.head-browsers.outcome == 'success'
         working-directory: head
@@ -104,111 +276,89 @@ jobs:
           REGRESSION_BASE_CARDS_FILE: ../base/src/data/json/cards.json
           REGRESSION_BASE_PIDOL_FILE: ../base/src/data/json/pIdol.json
           REGRESSION_COMPARE_BASELINE: '1'
-      - name: Compare observations, write report, and prepare PR comment
+      - name: Compare visual and UI observations
+        id: visual-compare
         if: always()
         working-directory: head
-        run: npm run regression -- compare ../base/tmp/regression-results/base tmp/regression-results/head tmp/regression-results/report
+        run: npm run regression -- compare capture ../base/tmp/regression-results/base tmp/regression-results/head tmp/regression-results/report
         env:
-          REGRESSION_VALIDATION_RESULT: ${{ steps.head-build.outcome == 'success' && steps.head-capture.outcome == 'success' && 'success' || 'failure' }}
+          REGRESSION_VALIDATION_RESULT: ${{ steps.base-build.outcome == 'success' && steps.base-capture.outcome == 'success' && steps.head-build.outcome == 'success' && steps.head-capture.outcome == 'success' && 'success' || 'failure' }}
           REGRESSION_BASE_CARDS_FILE: ../base/src/data/json/cards.json
           REGRESSION_BASE_PIDOL_FILE: ../base/src/data/json/pIdol.json
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-      - name: Add report to Actions summary
+      - name: Ensure a visual report exists
+        if: always()
+        run: |
+          mkdir -p head/tmp/pr-comment-assets/images
+          if [[ ! -s head/tmp/pr-comment-assets/comment.md ]]; then
+            printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n\n画面比較レポートを作成できませんでした。\n' > head/tmp/pr-comment-assets/comment.md
+          fi
+          if [[ ! -s head/tmp/pr-comment-assets/comment-no-images.md ]]; then
+            cp head/tmp/pr-comment-assets/comment.md head/tmp/pr-comment-assets/comment-no-images.md
+          fi
+      - name: Add visual report to Actions summary
         if: always() && hashFiles('head/tmp/regression-results/report/report.md') != ''
-        working-directory: head
-        run: cat tmp/regression-results/report/report.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Post PR regression comment
-        id: publish
-        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        run: cat head/tmp/regression-results/report/report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: List visual comment images
+        if: always()
+        run: find head/tmp/pr-comment-assets/images -type f -name '*.png' -print | sort > head/tmp/pr-comment-assets/attachments.txt
+      - name: Prepare the visual PR comment
+        id: update-visual-comment
+        if: always() && hashFiles('head/node_modules/.tmp/regression/updatePrComment.js') != '' && github.event.pull_request.head.repo.full_name == github.repository
         continue-on-error: true
         env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          GH_TOKEN: ${{ secrets.PR_REGRESSION_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
-        run: |
-          set -uo pipefail
-          COMMENT_POSTED=false
-          COMMENT_ROOT=head/tmp/pr-comment-assets
-          COMMENT_FILE="$COMMENT_ROOT/comment.md"
-          NO_IMAGE_FILE="$COMMENT_ROOT/comment-no-images.md"
-          POST_BODY_FILE="$COMMENT_ROOT/comment-for-post.md"
-          RUN_MARKER="<!-- pr-regression-run-${RUN_ID}-${RUN_ATTEMPT} -->"
-          CAN_PUBLISH=false
-
-          if [[ ! -L head && ! -L head/tmp && ! -L "$COMMENT_ROOT" && ! -L "$COMMENT_ROOT/images" && ! -L "$NO_IMAGE_FILE" && ! -L "$POST_BODY_FILE" ]] && \
-            mkdir -p "$COMMENT_ROOT/images"; then
-            CAN_PUBLISH=true
-          fi
-
-          if [[ "$CAN_PUBLISH" == 'true' && -f "$COMMENT_FILE" && ! -L "$COMMENT_FILE" ]]; then
-            if { printf '%s\n' "$RUN_MARKER" && cat "$COMMENT_FILE"; } > "$POST_BODY_FILE"; then
-              if [[ -n "${GH_TOKEN:-}" ]]; then
-                COMMENT_ARGS=(pr comment "$PR_NUMBER" --repo "$GH_REPO" --body-file "$POST_BODY_FILE")
-                while IFS= read -r -d '' screenshot; do
-                  COMMENT_ARGS+=(--attach "$screenshot")
-                done < <(find "$COMMENT_ROOT/images" -type f -name '*.png' -print0 | sort -z)
-                if gh "${COMMENT_ARGS[@]}"; then
-                  COMMENT_POSTED=true
-                fi
-              fi
-            fi
-          fi
-
-          FALLBACK_BODY_BASE64=""
-          if [[ "$COMMENT_POSTED" != 'true' && "$CAN_PUBLISH" == 'true' && -f "$NO_IMAGE_FILE" && ! -L "$NO_IMAGE_FILE" ]]; then
-            FALLBACK_BODY_SIZE="$(stat -c '%s' "$NO_IMAGE_FILE" 2>/dev/null || printf '0')"
-            if [[ "$FALLBACK_BODY_SIZE" =~ ^[0-9]+$ ]] && (( FALLBACK_BODY_SIZE <= 60000 )); then
-              FALLBACK_BODY_BASE64="$({ printf '%s\n' "$RUN_MARKER"; cat "$NO_IMAGE_FILE"; } | base64 -w0)"
-            fi
-          fi
-
-          {
-            printf 'comment_posted=%s\n' "$COMMENT_POSTED"
-            printf 'fallback_body_base64=%s\n' "$FALLBACK_BODY_BASE64"
-          } >> "$GITHUB_OUTPUT"
-
-  fallback-comment:
-    name: Post text-only fallback comment
-    needs: regression
-    if: ${{ always() && !cancelled() && github.event.pull_request.head.repo.full_name == github.repository && needs.regression.outputs.comment_posted != 'true' }}
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Post text-only fallback
+          PR_COMMENT_MARKER: '<!-- pr-regression-visual-report -->'
+          PR_COMMENT_BODY_FILE: head/tmp/pr-comment-assets/comment.md
+          PR_COMMENT_ATTACHMENTS_FILE: head/tmp/pr-comment-assets/attachments.txt
+          PR_COMMENT_OUTPUT_FILE: head/tmp/pr-comment-assets/comment-with-uploaded-images.md
+        run: node head/node_modules/.tmp/regression/updatePrComment.js
+      - name: Fall back to text-only visual comment
+        if: always() && hashFiles('head/node_modules/.tmp/regression/updatePrComment.js') != '' && github.event.pull_request.head.repo.full_name == github.repository && steps.update-visual-comment.outcome != 'success'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
-          SERVER_URL: ${{ github.server_url }}
-          FALLBACK_BODY_BASE64: ${{ needs.regression.outputs.fallback_body_base64 }}
+          PR_COMMENT_MARKER: '<!-- pr-regression-visual-report -->'
+          PR_COMMENT_BODY_FILE: head/tmp/pr-comment-assets/comment-no-images.md
         run: |
-          set -euo pipefail
-          mkdir -p tmp
-          BODY_FILE=tmp/pr-regression-fallback.md
-          RUN_MARKER="<!-- pr-regression-run-${RUN_ID}-${RUN_ATTEMPT} -->"
-
-          if [[ -n "${FALLBACK_BODY_BASE64:-}" ]]; then
-            if ! printf '%s' "$FALLBACK_BODY_BASE64" | base64 --decode > "$BODY_FILE"; then
-              : > "$BODY_FILE"
-            fi
+          if [[ -s head/tmp/pr-comment-assets/comment-with-uploaded-images.md ]]; then
+            PR_COMMENT_BODY_FILE=head/tmp/pr-comment-assets/comment-with-uploaded-images.md \
+              node head/node_modules/.tmp/regression/updatePrComment.js
+          else
+            node head/node_modules/.tmp/regression/updatePrComment.js
+          fi
+      - name: Validate head visual capture
+        if: always()
+        env:
+          BASE_BUILD_RESULT: ${{ steps.base-build.outcome }}
+          BASE_CAPTURE_RESULT: ${{ steps.base-capture.outcome }}
+          HEAD_BUILD_RESULT: ${{ steps.head-build.outcome }}
+          HEAD_CAPTURE_RESULT: ${{ steps.head-capture.outcome }}
+          VISUAL_COMPARE_RESULT: ${{ steps.visual-compare.outcome }}
+        run: |
+          if [[ "$BASE_BUILD_RESULT" != "success" || "$BASE_CAPTURE_RESULT" != "success" || "$HEAD_BUILD_RESULT" != "success" || "$HEAD_CAPTURE_RESULT" != "success" || "$VISUAL_COMPARE_RESULT" != "success" ]]; then
+            echo "::error::Visual regression did not complete successfully for both base and head"
+            exit 1
           fi
 
-          if [[ ! -s "$BODY_FILE" ]]; then
-            printf '%s\n\n## 回帰テスト結果\n画像なしレポートを取得できませんでした。\n実行ログ: %s/%s/actions/runs/%s/attempts/%s\n' \
-              "$RUN_MARKER" "$SERVER_URL" "$GH_REPO" "$RUN_ID" "$RUN_ATTEMPT" > "$BODY_FILE"
+  regression-check:
+    name: Regression check
+    if: always()
+    needs: [node-setup, calculations, visual]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          NODE_SETUP_RESULT: ${{ needs.node-setup.result }}
+          CALCULATIONS_RESULT: ${{ needs.calculations.result }}
+          VISUAL_RESULT: ${{ needs.visual.result }}
+        run: |
+          if [[ "$NODE_SETUP_RESULT" != "success" || "$CALCULATIONS_RESULT" != "success" || "$VISUAL_RESULT" != "success" ]]; then
+            echo "::error::Regression checks did not pass"
+            exit 1
           fi
-
-          EXISTING_COMMENTS="$(gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json comments --jq '[.comments[].body] | join("\n")')"
-          if grep -Fq -- "$RUN_MARKER" <<< "$EXISTING_COMMENTS"; then
-            echo 'A comment for this workflow run already exists; skipping the fallback to avoid a duplicate.'
-            exit 0
-          fi
-
-          gh pr comment "$PR_NUMBER" --repo "$GH_REPO" --body-file "$BODY_FILE"

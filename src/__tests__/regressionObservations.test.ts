@@ -48,6 +48,16 @@ interface CalculationObservation {
   description?: string
   semanticInput?: Record<string, unknown>
   scenarioHash?: string
+  lineup?: {
+    totalScore: number
+    members: Array<{
+      name: string
+      parameterType?: string
+      uncap: enums.UncapType
+      isRental: boolean
+      cardScore: number
+    }>
+  }
 }
 
 /** プロパティの順序差でscenario hashが変わらないよう再帰的にキーを整列する */
@@ -131,6 +141,16 @@ async function observeOptimizer(
           .sort((left, right) => left.localeCompare(right)),
       },
     },
+    lineup: {
+      totalScore: result.totalScore,
+      members: result.members.map(({ card, uncap, isRental, result: cardResult, supportSynergy }) => ({
+        name: card.name,
+        parameterType: card.parameter_type,
+        uncap,
+        isRental,
+        cardScore: cardResult.totalIncrease - cardResult.parameterBonus + supportSynergy,
+      })),
+    },
   })
 }
 
@@ -151,7 +171,7 @@ function createSeededRandom(seed: string): () => number {
   }
 }
 
-/** CP-SATと同じ5 profile × 3プランの形でseed付きの入力条件を作る */
+/** 5 profile × 3プランの形でseed付きの入力条件を作る */
 function createRandomizedOptimizerProfiles(seed: string) {
   return Array.from({ length: randomizedOptimizerProfileCount }, (_, index) => {
     const sample = index + 1
@@ -260,11 +280,30 @@ regressionObservationTest('score-settings-custom: custom score observation', asy
 regressionObservationTest(
   'optimization-basic: default optimizer observation',
   async () => {
-    await observeOptimizer(
-      'optimization-basic',
-      'テスト用JSONの点数設定・編成条件で最適編成する',
-      createTestOptimizerScenarioInput(),
-    )
+    await observeOptimizer('optimization-basic', 'HIF / Da8 / Sense', createTestOptimizerScenarioInput())
+  },
+  optimizerObservationTimeoutMs,
+)
+
+regressionObservationTest(
+  'optimization-hif-vo7-da1: HIF Vo7 Da1 optimizer observation',
+  async () => {
+    const baseInput = createTestOptimizerScenarioInput()
+    const semanticInput: TestOptimizerScenarioInput = {
+      ...baseInput,
+      scoreSettings: {
+        ...baseInput.scoreSettings,
+        useScheduleLimits: false,
+        actionCounts: {
+          ...baseInput.scoreSettings.actionCounts,
+          [enums.ActionIdType.SpLessonVo]: 7,
+          [enums.ActionIdType.SpLessonDa]: 1,
+          [enums.ActionIdType.SpLessonVi]: 0,
+        },
+      },
+    }
+
+    await observeOptimizer('optimization-hif-vo7-da1', 'HIF / Vo7・Da1 / Sense', semanticInput)
   },
   optimizerObservationTimeoutMs,
 )
@@ -274,7 +313,7 @@ regressionObservationTest(
   async () => {
     await observeOptimizer(
       'optimization-filtered',
-      'アシストを候補から除外して最適編成する',
+      'HIF / Da8 / Sense / アシスト除外',
       createTestOptimizerScenarioInput({
         allowedTypes: [enums.CardType.Vocal, enums.CardType.Dance, enums.CardType.Visual],
       }),
@@ -288,7 +327,7 @@ regressionObservationTest(
   async () => {
     await observeOptimizer(
       'optimization-logic',
-      'ロジックプランの全タイプから最適編成する',
+      'HIF / Da8 / Logic',
       createTestOptimizerScenarioInput({ plan: enums.PlanType.Logic }),
     )
   },
@@ -300,7 +339,7 @@ regressionObservationTest(
   async () => {
     await observeOptimizer(
       'optimization-anomaly',
-      'アノマリープランの全タイプから最適編成する',
+      'HIF / Da8 / Anomaly',
       createTestOptimizerScenarioInput({ plan: enums.PlanType.Anomaly }),
     )
   },
@@ -312,7 +351,7 @@ regressionObservationTest(
   async () => {
     await observeOptimizer(
       'optimization-dance-bonus',
-      'テスト用JSONの設定からDaパラメータボーナスを40%に変えて最適編成する',
+      'HIF / Da8 / Sense / Daパラボ40%',
       createTestOptimizerScenarioInput({
         paramBonusPercent: parameterValues(30, 40, 30),
       }),
@@ -326,7 +365,7 @@ regressionObservationTest(
   async () => {
     await observeOptimizer(
       'optimization-type-balance',
-      'Vo・Da・Viを各2枚に制限して最適編成する',
+      'HIF / Da8 / Sense / Vo・Da・Vi各2枚',
       createTestOptimizerScenarioInput({
         typeCountMin: parameterValues(2, 2, 2),
         typeCountMax: parameterValues(2, 2, 2),
@@ -358,7 +397,7 @@ for (const profile of createRandomizedOptimizerProfiles(regressionRandomSeed)) {
       async () => {
         await observeOptimizer(
           id,
-          `seed付きランダム条件で最適編成する（${regressionRandomSeed} / profile ${profile.sample} / ${plan.value}）`,
+          `HIF / Da8 / ${plan.value} / ランダム条件 ${profile.sample}`,
           semanticInput,
           profile.cardUncaps,
         )

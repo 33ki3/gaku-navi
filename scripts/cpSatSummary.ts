@@ -2,16 +2,15 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { gunzipSync } from 'node:zlib'
+import {
+  escapeLineupCell as escapeCell,
+  parameterTypeLabels,
+  renderLineupTable,
+  parameterTypeLabel as typeLabel,
+  uncapLabel,
+} from './lineupSummary.js'
 
 type JsonRecord = Record<string, unknown>
-
-// summaryはJSONでシリアライズされた値を読む独立スクリプトなので、表示名と属性キーをここで対応付ける
-const parameterTypeLabels = {
-  vocal: 'Vo',
-  dance: 'Da',
-  visual: 'Vi',
-} as const
-const parameterTypeSortOrder: Record<string, number> = { vocal: 0, dance: 1, visual: 2 }
 
 interface ReportCases {
   reportCount: number
@@ -94,20 +93,6 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function firstNumber(...values: unknown[]): number | undefined {
   return values.find((value): value is number => typeof value === 'number' && Number.isFinite(value))
-}
-
-function typeLabel(value: unknown): string {
-  return typeof value === 'string' && Object.hasOwn(parameterTypeLabels, value)
-    ? parameterTypeLabels[value as keyof typeof parameterTypeLabels]
-    : ''
-}
-
-function escapeCell(value: unknown): string {
-  return String(value)
-    .replaceAll('|', '\\|')
-    .replace(/[\r\n]/g, ' ')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
 }
 
 function lessonCountLabel(value: unknown): string {
@@ -229,44 +214,6 @@ function renderCardFrequency(results: JsonRecord[], includeRentalCount: boolean)
     return `| ${cells.join(' | ')} |`
   })
   return [header, divider, ...markdownRows].join('\n')
-}
-
-function uncapLabel(value: unknown): string {
-  if (value === -1) return '未所持'
-  if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 4) return `${value}凸`
-  return '不明'
-}
-
-function renderLineupTable(value: unknown, totalScore?: number): string {
-  if (!Array.isArray(value)) return '編成データがありません。'
-  const members = value.filter(isRecord)
-  if (members.length === 0) return '編成データがありません。'
-  const sortedMembers = [...members].sort((left, right) => {
-    const leftTypeOrder = typeof left.parameterType === 'string' ? (parameterTypeSortOrder[left.parameterType] ?? 3) : 3
-    const rightTypeOrder =
-      typeof right.parameterType === 'string' ? (parameterTypeSortOrder[right.parameterType] ?? 3) : 3
-    if (leftTypeOrder !== rightTypeOrder) return leftTypeOrder - rightTypeOrder
-    const leftName = typeof left.name === 'string' ? left.name : '名称不明'
-    const rightName = typeof right.name === 'string' ? right.name : '名称不明'
-    return leftName.localeCompare(rightName, 'ja')
-  })
-  const cardScores = sortedMembers.map((member) => firstNumber(member.cardScore))
-  const cardScoreTotal = cardScores.every((score): score is number => score !== undefined)
-    ? cardScores.reduce((total, score) => total + score, 0)
-    : undefined
-
-  return [
-    '| タイプ | カード | 凸数 | カード点（連携込み） |',
-    '| --- | --- | ---: | ---: |',
-    ...sortedMembers.map((member) => {
-      const type = typeLabel(member.parameterType) || '—'
-      const rentalLabel = member.isRental === true ? '（レンタル）' : ''
-      const cardScore = firstNumber(member.cardScore)
-      return `| ${type} | ${escapeCell(typeof member.name === 'string' ? member.name : '名称不明')} | ${uncapLabel(member.uncap)}${rentalLabel} | ${cardScore ?? '—'} |`
-    }),
-    `|  | カード点合計 |  | ${cardScoreTotal ?? '未集計'} |`,
-    `|  | 総合点 |  | ${totalScore ?? '未確定'} |`,
-  ].join('\n')
 }
 
 /** 折り返しの多い編成名は点数表から分離し、ケースごとの詳細にまとめる */

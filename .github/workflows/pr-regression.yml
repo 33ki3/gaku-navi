@@ -143,7 +143,7 @@ jobs:
         run: |
           mkdir -p tmp/pr-calculations/report
           if [[ ! -s tmp/pr-calculations/report/report.md ]]; then
-            printf '<!-- gaku-navi-calculation-regression -->\n# 計算回帰テスト\n\n- seed: `%s`\n- base tests: %s\n- head tests: %s\n\n比較レポートを作成できませんでした。\n' \
+            printf '<!-- gaku-navi-calculation-regression -->\n# 計算回帰テスト\n\n実行: seed `%s`\nVitest: base %s / head %s\n\n比較レポートを作成できませんでした。\n' \
               "$REGRESSION_RANDOM_SEED" "${REGRESSION_BASE_TEST_RESULT:-unknown}" "${REGRESSION_HEAD_TEST_RESULT:-unknown}" \
               > tmp/pr-calculations/report/report.md
           fi
@@ -172,7 +172,7 @@ jobs:
           fi
 
   visual:
-    name: Screenshot comparison
+    name: Capture regression
     needs: [node-setup]
     runs-on: ubuntu-latest
     permissions:
@@ -293,7 +293,7 @@ jobs:
         run: |
           mkdir -p head/tmp/pr-comment-assets/images
           if [[ ! -s head/tmp/pr-comment-assets/comment.md ]]; then
-            printf '<!-- pr-regression-visual-report -->\n## 回帰テスト結果\n\n画面比較レポートを作成できませんでした。\n' > head/tmp/pr-comment-assets/comment.md
+            printf '<!-- pr-regression-visual-report -->\n# 画面回帰テスト\n\n画面比較レポートを作成できませんでした。\n' > head/tmp/pr-comment-assets/comment.md
           fi
           if [[ ! -s head/tmp/pr-comment-assets/comment-no-images.md ]]; then
             cp head/tmp/pr-comment-assets/comment.md head/tmp/pr-comment-assets/comment-no-images.md

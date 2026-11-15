@@ -331,7 +331,7 @@ function getRunLabel(): string {
 }
 
 function createCommentBody(summary: CommentSummary, includeImageAttachments: boolean): string {
-  const lines = [summaryMarker, '## 回帰テスト結果', '', `実行: ${getRunLabel()}`, '']
+  const lines = [summaryMarker, '# 画面回帰テスト', '', `実行: ${getRunLabel()}`, '']
   const runUrl = getRunUrl()
 
   if (!summary.reportAvailable) {

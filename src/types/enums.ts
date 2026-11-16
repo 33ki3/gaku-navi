@@ -2066,6 +2066,8 @@ export const IdolId = {
   Ume: 'ume',
   /** 姫崎莉波 */
   Rinami: 'rinami',
+  /** 氷渡香名江 */
+  Hiwatari: 'hiwatari',
 } as const
 
 export type IdolId = (typeof IdolId)[keyof typeof IdolId]
@@ -2210,6 +2212,24 @@ export const IdolAchievementMetric = {
   RankS4: 'rank_s4',
   /** クリア時評価S4+以上 */
   RankS4Plus: 'rank_s4_plus',
+  /** Pアイドルの所持種類数 */
+  PIdolTypesOwned: 'p_idol_types_owned',
+  /** 衣装の所持種類数 */
+  CostumesOwned: 'costumes_owned',
+  /** 髪型の所持種類数 */
+  HairstylesOwned: 'hairstyles_owned',
+  /** 楽曲の解放種類数 */
+  MusicUnlocked: 'music_unlocked',
+  /** Trueライブの視聴種類数 */
+  TrueLivesViewed: 'true_lives_viewed',
+  /** 写真の撮影数 */
+  PhotosTaken: 'photos_taken',
+  /** お仕事の累計時間 */
+  WorkHours: 'work_hours',
+  /** コンテストへの挑戦回数 */
+  ContestAttempts: 'contest_attempts',
+  /** プロデューサーランキング2000位以内の入賞シーズン数 */
+  ProducerRankingTop2000Seasons: 'producer_ranking_top_2000_seasons',
 } as const
 
 export type IdolAchievementMetric = (typeof IdolAchievementMetric)[keyof typeof IdolAchievementMetric]

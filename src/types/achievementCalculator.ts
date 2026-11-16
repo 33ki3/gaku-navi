@@ -210,7 +210,7 @@ export interface IdolAchievementSelectorItem {
   id: string
   /** 選択ボタンに表示するアイドル名 */
   name: string
-  /** True End・基本・Pアイドルで獲得済みのEXP */
+  /** 親愛度・True End・基本・Pアイドルで獲得済みのEXP */
   earnedExp: number
   /** 同じアイドルに登録されたEXP報酬の総量 */
   totalExp: number

@@ -603,5 +603,18 @@
       }
     ],
     "idol_id": "rinami"
+  },
+  {
+    "idol_id": "hiwatari",
+    "cards": [
+      {
+        "name": "メタモルフォーゼ",
+        "released_at": "2026-11-16"
+      },
+      {
+        "name": "憧れを抱いて一歩ずつ",
+        "released_at": "2026-11-16"
+      }
+    ]
   }
 ]

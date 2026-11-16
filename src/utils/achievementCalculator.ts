@@ -1,6 +1,7 @@
 /** 段階報酬の集計と、獲得済み累計EXPからのPLv・目標進捗計算を担当する */
 import * as constant from '../constant'
 import * as data from '../data'
+import * as enums from '../types/enums'
 import type {
   AchievementMilestone,
   AchievementProgressSummary,
@@ -18,6 +19,14 @@ const finalProducerLevelRequirementBoundary = Math.max(...Object.keys(data.PRODU
  */
 export function isIdolTrueEndMetric(metric: IdolAchievementMetric): boolean {
   return data.IDOL_ACHIEVEMENT_RULES[metric].isTrueEnd
+}
+
+/** 親愛度セクションに表示する項目かを識別子から判定する
+ * @param metric アイドル固有の達成条件の識別子
+ * @returns 親愛度の場合はtrue
+ */
+export function isIdolAffectionMetric(metric: IdolAchievementMetric): boolean {
+  return metric === enums.IdolAchievementMetric.Affection
 }
 
 /**

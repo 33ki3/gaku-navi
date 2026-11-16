@@ -161,6 +161,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.saki.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.saki.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 月村手毬
@@ -319,6 +364,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
       {
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.temari.fan_votes',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.temari.producer_ranking_top_2000_seasons',
       },
     ],
   },
@@ -479,6 +569,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.kotone.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.kotone.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 雨夜燕
@@ -627,6 +762,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
       {
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.tsubame.fan_votes',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.tsubame.producer_ranking_top_2000_seasons',
       },
     ],
   },
@@ -787,6 +967,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.mao.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.mao.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 葛城リーリヤ
@@ -945,6 +1170,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
       {
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.lilja.fan_votes',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.lilja.producer_ranking_top_2000_seasons',
       },
     ],
   },
@@ -1105,6 +1375,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.china.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.china.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 紫雲清夏
@@ -1263,6 +1578,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
       {
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.sumika.fan_votes',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.sumika.producer_ranking_top_2000_seasons',
       },
     ],
   },
@@ -1423,6 +1783,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.hiro.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiro.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 十王星南
@@ -1582,6 +1987,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.sena.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.sena.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 秦谷美鈴
@@ -1735,6 +2185,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
       {
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.misuzu.fan_votes',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.misuzu.producer_ranking_top_2000_seasons',
       },
     ],
   },
@@ -1895,6 +2390,51 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.ume.fan_votes',
       },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.ume.producer_ranking_top_2000_seasons',
+      },
     ],
   },
   // 姫崎莉波
@@ -2053,6 +2593,198 @@ export const IDOL_ACHIEVEMENTS: readonly IdolAchievementDefinition[] = [
       {
         metric: enums.IdolAchievementMetric.FanVotes,
         titleKey: 'achievement_calculator.achievement_name.idol.rinami.fan_votes',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.rinami.producer_ranking_top_2000_seasons',
+      },
+    ],
+  },
+  // 氷渡香名江
+  {
+    id: enums.IdolId.Hiwatari,
+    nameKey: 'idol_names.hiwatari',
+    trackers: [
+      {
+        metric: enums.IdolAchievementMetric.TrueEndHatsu,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.true_end_hatsu',
+      },
+      {
+        metric: enums.IdolAchievementMetric.SkillCardsUsed,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.skill_cards_used',
+      },
+      {
+        metric: enums.IdolAchievementMetric.LessonsCleared,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.lessons_cleared',
+      },
+      {
+        metric: enums.IdolAchievementMetric.SpLessonsCleared,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.sp_lessons_cleared',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankB,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.b',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankA,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.a',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankS,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.s',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankSPlus,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.s_plus',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankSs,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.ss',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankSsPlus,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.ss_plus',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankSss,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.sss',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankSssPlus,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.sss_plus',
+      },
+      {
+        metric: enums.IdolAchievementMetric.RankS4,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.produce_rank.s4',
+      },
+      {
+        metric: enums.IdolAchievementMetric.Productions,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.productions',
+      },
+      {
+        metric: enums.IdolAchievementMetric.SpecialTrainingStages1To6,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.special_training_stage',
+      },
+      {
+        metric: enums.IdolAchievementMetric.FinalExamsPassed,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.final_exams_passed',
+      },
+      {
+        metric: enums.IdolAchievementMetric.Fans,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.fans',
+      },
+      {
+        metric: enums.IdolAchievementMetric.Affection,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.affection',
+        milestones: [{ threshold: 9, exp: 400 }],
+      },
+      {
+        metric: enums.IdolAchievementMetric.Evaluation,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.evaluation',
+      },
+      {
+        metric: enums.IdolAchievementMetric.SkillCardsEnhanced,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.skill_cards_enhanced',
+      },
+      {
+        metric: enums.IdolAchievementMetric.Status,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.status',
+        metricKey: 'achievement_calculator.metric.idol.status_visual',
+        milestones: [{ threshold: 1000, exp: 300 }],
+      },
+      {
+        metric: enums.IdolAchievementMetric.MasterFinalExam,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.master_final_exam',
+      },
+      {
+        metric: enums.IdolAchievementMetric.SpecialTraining,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.special_training',
+      },
+      // Pアイドルの所持種類数
+      {
+        metric: enums.IdolAchievementMetric.PIdolTypesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.p_idol_types_owned',
+      },
+      // 衣装の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.CostumesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.costumes_owned',
+      },
+      // 髪型の所持種類数
+      {
+        metric: enums.IdolAchievementMetric.HairstylesOwned,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.hairstyles_owned',
+      },
+      // 楽曲の解放種類数
+      {
+        metric: enums.IdolAchievementMetric.MusicUnlocked,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.music_unlocked',
+      },
+      // Trueライブの視聴種類数
+      {
+        metric: enums.IdolAchievementMetric.TrueLivesViewed,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.true_lives_viewed',
+      },
+      // 写真の撮影数
+      {
+        metric: enums.IdolAchievementMetric.PhotosTaken,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.photos_taken',
+      },
+      // お仕事の累計時間
+      {
+        metric: enums.IdolAchievementMetric.WorkHours,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.work_hours',
+      },
+      // コンテストへの挑戦回数
+      {
+        metric: enums.IdolAchievementMetric.ContestAttempts,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.contest_attempts',
+      },
+      // プロデューサーランキング2000位以内の入賞シーズン数
+      {
+        metric: enums.IdolAchievementMetric.ProducerRankingTop2000Seasons,
+        titleKey: 'achievement_calculator.achievement_name.idol.hiwatari.producer_ranking_top_2000_seasons',
       },
     ],
   },

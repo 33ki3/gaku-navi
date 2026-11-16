@@ -1,4 +1,4 @@
-/** 選択アイドルのTrue End・基本・Pアイドルの達成項目を表示する */
+/** 選択アイドルの親愛度・True End・基本・Pアイドルの達成項目を表示する */
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as constant from '../../constant'
@@ -7,6 +7,7 @@ import type { AchievementCalculatorTabProps } from '../../types/achievementCalcu
 import {
   calculateAchievementProgress,
   getIdolAchievementMilestones,
+  isIdolAffectionMetric,
   isIdolTrueEndMetric,
 } from '../../utils/achievementCalculator'
 
@@ -16,14 +17,16 @@ import { AchievementTrackerCard } from './AchievementTrackerCard'
 import { PIdolAchievementCard } from './PIdolAchievementCard'
 
 /**
- * 選択アイドルの達成記録を、True End・基本・Pアイドルの3領域へ接続する
+ * 選択アイドルの達成記録を、親愛度・True End・基本・Pアイドルの領域へ接続する
  * @param props 選択アイドルの集計と、独立した条件の更新操作
- * @returns True End・基本・Pアイドルの入力領域。対象がない場合はnull
+ * @returns 親愛度・True End・基本・Pアイドルの入力領域。対象がない場合はnull
  */
 export function IdolAchievementsTab({ summary, controls, oneStepSpinner }: AchievementCalculatorTabProps) {
   const { t } = useTranslation()
   const {
     selectedIdol,
+    selectedAffectionProgress,
+    selectedAffectionTrackers,
     selectedPIdolCards,
     selectedPIdolEarnedExp,
     selectedPIdolTotalExp,
@@ -47,6 +50,28 @@ export function IdolAchievementsTab({ summary, controls, oneStepSpinner }: Achie
   return (
     <section id="achievement-panel-idol" role="tabpanel" aria-labelledby="achievement-tab-idol">
       <div className="space-y-6">
+        {/* ゲーム内の並びに合わせ、親愛度を基本項目から分けて表示する */}
+        <section className="min-w-0">
+          <AchievementSectionHeader
+            title={t('achievement_calculator.section.affection')}
+            earnedExp={selectedAffectionProgress.earnedExp}
+            totalExp={selectedAffectionProgress.totalExp}
+          />
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {selectedAffectionTrackers.map((tracker) => (
+              <AchievementTrackerCard
+                key={tracker.metric}
+                title={t(tracker.titleKey)}
+                metric={t(tracker.metricKey ?? data.IDOL_ACHIEVEMENT_RULES[tracker.metric].metricKey)}
+                value={progress.idols[selectedIdol.id]?.[tracker.metric] ?? 0}
+                milestones={getIdolAchievementMilestones(tracker)}
+                allowZeroExpProgression
+                oneStepSpinner={oneStepSpinner}
+                onValueChange={valueChangeByMetric.get(tracker.metric)}
+              />
+            ))}
+          </div>
+        </section>
         {/* True Endは編ごとの単発条件として独立したトグルで記録する */}
         <section className="min-w-0">
           <AchievementSectionHeader
@@ -96,7 +121,7 @@ export function IdolAchievementsTab({ summary, controls, oneStepSpinner }: Achie
           <div className="min-w-0">
             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {selectedIdol.trackers
-                .filter((tracker) => !isIdolTrueEndMetric(tracker.metric))
+                .filter((tracker) => !isIdolTrueEndMetric(tracker.metric) && !isIdolAffectionMetric(tracker.metric))
                 .map((tracker) => (
                   <AchievementTrackerCard
                     key={tracker.metric}

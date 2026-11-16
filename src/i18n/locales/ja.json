@@ -1378,6 +1378,7 @@
     "section": {
       "production": "プロデュースアチーブメント",
       "idol": "アイドル別アチーブメント",
+      "affection": "親愛度",
       "basic": "基本",
       "p_idol": "Pアイドル",
       "road": "アイドルへの道",
@@ -1521,7 +1522,16 @@
         "hif_final_exams": "H.I.F最終試験合格回数",
         "true_end_hatsu": "定期公演『初』True End",
         "true_end_nia": "N.I.A True End",
-        "true_end_hif": "H.I.F True End"
+        "true_end_hif": "H.I.F True End",
+        "p_idol_types_owned": "Pアイドルの所持種類数",
+        "costumes_owned": "衣装の所持種類数",
+        "hairstyles_owned": "髪型の所持種類数",
+        "music_unlocked": "楽曲の解放種類数",
+        "true_lives_viewed": "Trueライブの視聴種類数",
+        "photos_taken": "写真の撮影数",
+        "work_hours": "お仕事の累計時間",
+        "contest_attempts": "コンテストへの挑戦回数",
+        "producer_ranking_top_2000_seasons": "プロデューサーランキング2000位以内の入賞シーズン数"
       }
     },
     "achievement_name": {
@@ -1599,7 +1609,16 @@
           },
           "true_end_hatsu": "無敵のトップアイドル",
           "true_end_nia": "わたしのベストパートナー",
-          "true_end_hif": "わたしは不屈のトップアイドル"
+          "true_end_hif": "わたしは不屈のトップアイドル",
+          "p_idol_types_owned": "手札の多さが武器",
+          "costumes_owned": "咲季を彩る衣装たち",
+          "hairstyles_owned": "咲季を魅せるアレンジ",
+          "music_unlocked": "共に戦い抜いた楽曲たち",
+          "true_lives_viewed": "熱く優しい炎",
+          "photos_taken": "ファインダー越しの咲季",
+          "work_hours": "どんな仕事も任せなさい！",
+          "contest_attempts": "闘いの数だけ強く",
+          "producer_ranking_top_2000_seasons": "目指すは頂点のみ！"
         },
         "temari": {
           "skill_cards_used": "体質改善",
@@ -1631,7 +1650,16 @@
           "hif_final_exams": "目標に向かって走る毎日",
           "true_end_hatsu": "私だけのプロデューサー",
           "true_end_nia": "本物よりも高く飛べる",
-          "true_end_hif": "今日の私が一番好き"
+          "true_end_hif": "今日の私が一番好き",
+          "p_idol_types_owned": "高く飛び続ける翼",
+          "costumes_owned": "手毬を彩る衣装たち",
+          "hairstyles_owned": "手毬を魅せるアレンジ",
+          "music_unlocked": "私の持ち歌",
+          "true_lives_viewed": "正真正銘の思い",
+          "photos_taken": "ファインダー越しの手毬",
+          "work_hours": "良い仕事をしました",
+          "contest_attempts": "腕が鳴る闘い",
+          "producer_ranking_top_2000_seasons": "圧倒してこそ"
         },
         "kotone": {
           "skill_cards_used": "QOL",
@@ -1663,7 +1691,16 @@
           "hif_final_exams": "積み上げてきた成果",
           "true_end_hatsu": "アイドルになったんだ",
           "true_end_nia": "生涯一度きりみたいな",
-          "true_end_hif": "あなたを幸せにします"
+          "true_end_hif": "あなたを幸せにします",
+          "p_idol_types_owned": "かわいいは無限大",
+          "costumes_owned": "ことねを彩る衣装たち",
+          "hairstyles_owned": "ことねを魅せるアレンジ",
+          "music_unlocked": "あたしのための曲",
+          "true_lives_viewed": "大好きがいっぱい",
+          "photos_taken": "ファインダー越しのことね",
+          "work_hours": "お仕事、だ～いすきっ♡",
+          "contest_attempts": "勝っても負けてもかわいい！",
+          "producer_ranking_top_2000_seasons": "賞賛はあたしのもの♡"
         },
         "tsubame": {
           "skill_cards_used": "現状把握",
@@ -1694,7 +1731,16 @@
           },
           "hif_final_exams": "星に届くまでの距離",
           "true_end_hatsu": "価値の証明",
-          "true_end_nia": "貴様がいなければ、私は"
+          "true_end_nia": "貴様がいなければ、私は",
+          "p_idol_types_owned": "私の在り方",
+          "costumes_owned": "燕を彩る衣装たち",
+          "hairstyles_owned": "燕を魅せるアレンジ",
+          "music_unlocked": "想いを込めた歌",
+          "true_lives_viewed": "理想の体現",
+          "photos_taken": "ファインダー越しの燕",
+          "work_hours": "どんな仕事もこなしてみせる",
+          "contest_attempts": "百錬成鋼",
+          "producer_ranking_top_2000_seasons": "頂は譲らない"
         },
         "mao": {
           "skill_cards_used": "カッコよさだけじゃない",
@@ -1726,7 +1772,16 @@
           "hif_final_exams": "共に夢に翔けた日々",
           "true_end_hatsu": "本当のボク",
           "true_end_nia": "The Little Prince",
-          "true_end_hif": "ボクを、見ていて"
+          "true_end_hif": "ボクを、見ていて",
+          "p_idol_types_owned": "可愛いもカッコイイも",
+          "costumes_owned": "麻央を彩る衣装たち",
+          "hairstyles_owned": "麻央を魅せるアレンジ",
+          "music_unlocked": "ボクらしい曲",
+          "true_lives_viewed": "王子様の舞台",
+          "photos_taken": "ファインダー越しの麻央",
+          "work_hours": "ボクの仕事を観てください",
+          "contest_attempts": "幾多の舞台に立って",
+          "producer_ranking_top_2000_seasons": "目指す場所はひとつだけ"
         },
         "lilja": {
           "skill_cards_used": "笑顔の練習",
@@ -1758,7 +1813,16 @@
           "hif_final_exams": "楽しい旅路",
           "true_end_hatsu": "光",
           "true_end_nia": "トップアイドルになります！",
-          "true_end_hif": "ずっと一緒にいてくれますか？"
+          "true_end_hif": "ずっと一緒にいてくれますか？",
+          "p_idol_types_owned": "身に付けた能力",
+          "costumes_owned": "リーリヤを彩る衣装たち",
+          "hairstyles_owned": "リーリヤを魅せるアレンジ",
+          "music_unlocked": "一途に紡いできた曲",
+          "true_lives_viewed": "惹き込まれる世界観",
+          "photos_taken": "ファインダー越しのリーリヤ",
+          "work_hours": "お仕事、がんばります！",
+          "contest_attempts": "挑んだ数だけ力になる",
+          "producer_ranking_top_2000_seasons": "戦いはこれから"
         },
         "china": {
           "skill_cards_used": "練習、練習、また練習",
@@ -1790,7 +1854,16 @@
           "hif_final_exams": "背を押されながらの歩み",
           "true_end_hatsu": "レベル1の駆け出しアイドル",
           "true_end_nia": "世界で一番未熟な一流アイドル",
-          "true_end_hif": "わたくしのトッププロデューサー"
+          "true_end_hif": "わたくしのトッププロデューサー",
+          "p_idol_types_owned": "大きな成長の証",
+          "costumes_owned": "千奈を彩る衣装たち",
+          "hairstyles_owned": "千奈を魅せるアレンジ",
+          "music_unlocked": "かけがえのない楽曲たち",
+          "true_lives_viewed": "あたたかなひだまり",
+          "photos_taken": "ファインダー越しの千奈",
+          "work_hours": "お仕事はやり遂げますわ！",
+          "contest_attempts": "転んでも前進！",
+          "producer_ranking_top_2000_seasons": "期待を背負って"
         },
         "sumika": {
           "skill_cards_used": "まずは遊びから",
@@ -1822,7 +1895,16 @@
           "hif_final_exams": "ふたりで進んだ一歩一歩",
           "true_end_hatsu": "踏み出した一歩",
           "true_end_nia": "あたしの居場所",
-          "true_end_hif": "幸せなアイドル"
+          "true_end_hif": "幸せなアイドル",
+          "p_idol_types_owned": "嘘を本当に変えて",
+          "costumes_owned": "清夏を彩る衣装たち",
+          "hairstyles_owned": "清夏を魅せるアレンジ",
+          "music_unlocked": "あたしの成長の証",
+          "true_lives_viewed": "崩れない幻想",
+          "photos_taken": "ファインダー越しの清夏",
+          "work_hours": "仕事も楽しも～♪",
+          "contest_attempts": "挑戦の足跡",
+          "producer_ranking_top_2000_seasons": "もっと強く！"
         },
         "hiro": {
           "skill_cards_used": "課題達成",
@@ -1854,7 +1936,16 @@
           "hif_final_exams": "辛くて、幸せで、楽しい毎日",
           "true_end_hatsu": "ずっと、楽しいね",
           "true_end_nia": "わたしたちの夢",
-          "true_end_hif": "最後まで、一緒だよ"
+          "true_end_hif": "最後まで、一緒だよ",
+          "p_idol_types_owned": "広がる可能性",
+          "costumes_owned": "広を彩る衣装たち",
+          "hairstyles_owned": "広を魅せるアレンジ",
+          "music_unlocked": "乗り越えてきた試練",
+          "true_lives_viewed": "女神様の灼熱",
+          "photos_taken": "ファインダー越しの広",
+          "work_hours": "お仕事って楽しい、ね",
+          "contest_attempts": "たのしい挑戦",
+          "producer_ranking_top_2000_seasons": "勝利のため息"
         },
         "sena": {
           "skill_cards_used": "新しい一面",
@@ -1886,7 +1977,16 @@
           "hif_final_exams": "私たちの物語",
           "true_end_hatsu": "真のトップアイドル",
           "true_end_nia": "頂点のその先へ",
-          "true_end_hif": "私のモノになりなさい"
+          "true_end_hif": "私のモノになりなさい",
+          "p_idol_types_owned": "輝きを増す星",
+          "costumes_owned": "星南を彩る衣装たち",
+          "hairstyles_owned": "星南を魅せるアレンジ",
+          "music_unlocked": "特別な楽曲たち",
+          "true_lives_viewed": "物語の1ページ",
+          "photos_taken": "ファインダー越しの星南",
+          "work_hours": "やりがいのある仕事ね",
+          "contest_attempts": "一戦一戦を糧に",
+          "producer_ranking_top_2000_seasons": "頂点は私のもの"
         },
         "misuzu": {
           "skill_cards_used": "あの手この手で",
@@ -1918,7 +2018,16 @@
           "hif_final_exams": "幸福な道のり",
           "true_end_hatsu": "人生最高の日",
           "true_end_nia": "一緒にあくびをする準備を",
-          "true_end_hif": "ふわぁ〜……ぁ"
+          "true_end_hif": "ふわぁ〜……ぁ",
+          "p_idol_types_owned": "深まる夜空",
+          "costumes_owned": "美鈴を彩る衣装たち",
+          "hairstyles_owned": "美鈴を魅せるアレンジ",
+          "music_unlocked": "わたしが望むままの歌",
+          "true_lives_viewed": "順調な啓蒙活動",
+          "photos_taken": "ファインダー越しの美鈴",
+          "work_hours": "お仕事はほどほどに",
+          "contest_attempts": "頂への足がかり",
+          "producer_ranking_top_2000_seasons": "わたしが上です"
         },
         "ume": {
           "skill_cards_used": "姉への挑戦",
@@ -1950,7 +2059,16 @@
           "hif_final_exams": "信じて突き進んだ道",
           "true_end_hatsu": "人生最高のファインプレー",
           "true_end_nia": "アイドルが大好きです！",
-          "true_end_hif": "あたしこそは世界最強のアイドル"
+          "true_end_hif": "あたしこそは世界最強のアイドル",
+          "p_idol_types_owned": "アイドル博士",
+          "costumes_owned": "佑芽を彩る衣装たち",
+          "hairstyles_owned": "佑芽を魅せるアレンジ",
+          "music_unlocked": "仲良しな友達がいっぱい！",
+          "true_lives_viewed": "バチバチでわくわく！",
+          "photos_taken": "ファインダー越しの佑芽",
+          "work_hours": "お仕事がんばるぞぉ～！",
+          "contest_attempts": "わくわくの腕試し",
+          "producer_ranking_top_2000_seasons": "誰にも負けない！"
         },
         "rinami": {
           "skill_cards_used": "理想の姉へ",
@@ -1982,7 +2100,52 @@
           "hif_final_exams": "きみと駆け抜けた時間",
           "true_end_hatsu": "本当のきもち",
           "true_end_nia": "きみが手を引いてくれた",
-          "true_end_hif": "病めるときも、健やかなるときも"
+          "true_end_hif": "病めるときも、健やかなるときも",
+          "p_idol_types_owned": "引き出された素質",
+          "costumes_owned": "莉波を彩る衣装たち",
+          "hairstyles_owned": "莉波を魅せるアレンジ",
+          "music_unlocked": "私の気持ちの結晶たち",
+          "true_lives_viewed": "お姉さんのステージ",
+          "photos_taken": "ファインダー越しの莉波",
+          "work_hours": "お仕事、一生懸命頑張るね",
+          "contest_attempts": "挑戦を自信に変えて",
+          "producer_ranking_top_2000_seasons": "諦めずに何度でも"
+        },
+        "hiwatari": {
+          "true_end_hatsu": "ふたつの夢",
+          "skill_cards_used": "アイドルという認識",
+          "lessons_cleared": "減点なしのパフォーマンス",
+          "sp_lessons_cleared": "『魅』せる動き",
+          "produce_rank": {
+            "b": "すべてはお嬢様のため",
+            "a": "光の当たった私",
+            "s": "新しい旅路の始まり",
+            "s_plus": "輝きも近侍も欲張って",
+            "ss": "ステージのおもてなし",
+            "ss_plus": "光の下で、咲きます",
+            "sss": "噂の才媛",
+            "sss_plus": "私というアイドル",
+            "s4": "主役の心得"
+          },
+          "productions": "影と光の狭間で",
+          "special_training_stage": "憧れのその先へ",
+          "final_exams_passed": "夢に向かって",
+          "fans": "夢と想いを抱いて",
+          "affection": "あなた様と共に",
+          "evaluation": "アイドルの資質",
+          "skill_cards_enhanced": "従者の心得",
+          "status": "メイドであり、アイドル",
+          "master_final_exam": "氷渡香名江マスター",
+          "special_training": "夢への道筋",
+          "p_idol_types_owned": "新しい私との出会い",
+          "costumes_owned": "香名江を彩る衣装たち",
+          "hairstyles_owned": "香名江を魅せるアレンジ",
+          "music_unlocked": "私のための歌",
+          "true_lives_viewed": "たくさんの光の海",
+          "photos_taken": "ファインダー越しの香名江",
+          "work_hours": "私の務めを果たします",
+          "contest_attempts": "知見を活かして",
+          "producer_ranking_top_2000_seasons": "お嬢様に恥じない戦いを"
         }
       }
     }
@@ -2000,6 +2163,7 @@
     "sena": "十王星南",
     "misuzu": "秦谷美鈴",
     "ume": "花海佑芽",
-    "rinami": "姫崎莉波"
+    "rinami": "姫崎莉波",
+    "hiwatari": "氷渡香名江"
   }
 }

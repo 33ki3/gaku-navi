@@ -366,6 +366,18 @@ export const IDOL_ACHIEVEMENT_RULES: Record<enums.IdolAchievementMetric, IdolAch
         threshold: 9,
         exp: 400,
       },
+      {
+        threshold: 20,
+        exp: 1000,
+      },
+      {
+        threshold: 27,
+        exp: 1300,
+      },
+      {
+        threshold: 37,
+        exp: 1600,
+      },
     ],
     isTrueEnd: false,
   },
@@ -577,6 +589,100 @@ export const IDOL_ACHIEVEMENT_RULES: Record<enums.IdolAchievementMetric, IdolAch
         exp: 0,
       },
     ],
+    isTrueEnd: false,
+  },
+  // Pアイドルの所持種類数
+  [enums.IdolAchievementMetric.PIdolTypesOwned]: {
+    metricKey: 'achievement_calculator.metric.idol.p_idol_types_owned',
+    milestones: [
+      { threshold: 2, exp: 100 },
+      { threshold: 5, exp: 300 },
+      { threshold: 10, exp: 500 },
+    ],
+    isTrueEnd: false,
+  },
+  // 衣装の所持種類数
+  [enums.IdolAchievementMetric.CostumesOwned]: {
+    metricKey: 'achievement_calculator.metric.idol.costumes_owned',
+    milestones: [
+      { threshold: 2, exp: 50 },
+      { threshold: 5, exp: 100 },
+      { threshold: 10, exp: 300 },
+      { threshold: 20, exp: 500 },
+    ],
+    isTrueEnd: false,
+  },
+  // 髪型の所持種類数
+  [enums.IdolAchievementMetric.HairstylesOwned]: {
+    metricKey: 'achievement_calculator.metric.idol.hairstyles_owned',
+    milestones: [
+      { threshold: 2, exp: 50 },
+      { threshold: 5, exp: 100 },
+      { threshold: 10, exp: 300 },
+      { threshold: 20, exp: 500 },
+    ],
+    isTrueEnd: false,
+  },
+  // 楽曲の解放種類数
+  [enums.IdolAchievementMetric.MusicUnlocked]: {
+    metricKey: 'achievement_calculator.metric.idol.music_unlocked',
+    milestones: [
+      { threshold: 2, exp: 50 },
+      { threshold: 5, exp: 100 },
+      { threshold: 10, exp: 300 },
+      { threshold: 20, exp: 500 },
+    ],
+    isTrueEnd: false,
+  },
+  // Trueライブの視聴種類数
+  [enums.IdolAchievementMetric.TrueLivesViewed]: {
+    metricKey: 'achievement_calculator.metric.idol.true_lives_viewed',
+    milestones: [
+      { threshold: 2, exp: 500 },
+      { threshold: 5, exp: 500 },
+      { threshold: 10, exp: 500 },
+      { threshold: 20, exp: 500 },
+    ],
+    isTrueEnd: false,
+  },
+  // 写真の撮影数
+  [enums.IdolAchievementMetric.PhotosTaken]: {
+    metricKey: 'achievement_calculator.metric.idol.photos_taken',
+    milestones: [
+      { threshold: 1, exp: 50 },
+      { threshold: 5, exp: 100 },
+      { threshold: 10, exp: 300 },
+    ],
+    isTrueEnd: false,
+  },
+  // お仕事の累計時間
+  [enums.IdolAchievementMetric.WorkHours]: {
+    metricKey: 'achievement_calculator.metric.idol.work_hours',
+    milestones: [
+      { threshold: 5, exp: 250 },
+      { threshold: 20, exp: 250 },
+      { threshold: 100, exp: 250 },
+      { threshold: 300, exp: 250 },
+      { threshold: 500, exp: 250 },
+    ],
+    isTrueEnd: false,
+  },
+  // コンテストへの挑戦回数
+  [enums.IdolAchievementMetric.ContestAttempts]: {
+    metricKey: 'achievement_calculator.metric.idol.contest_attempts',
+    milestones: [
+      { threshold: 10, exp: 250 },
+      { threshold: 30, exp: 250 },
+      { threshold: 150, exp: 250 },
+      { threshold: 450, exp: 250 },
+      { threshold: 1000, exp: 250 },
+    ],
+    isTrueEnd: false,
+  },
+  // プロデューサーランキング2000位以内の入賞シーズン数
+  [enums.IdolAchievementMetric.ProducerRankingTop2000Seasons]: {
+    metricKey: 'achievement_calculator.metric.idol.producer_ranking_top_2000_seasons',
+    milestones: [{ threshold: 1, exp: 1000 }],
     isTrueEnd: false,
   },
 }

@@ -27,20 +27,14 @@ const optimizerObservationTimeoutMs = 120_000
 // 通常のVitestでは重い最適化を実行せず、回帰コマンドが指定した場合だけ観測する
 const regressionObservationTest = it.skipIf(!env.REGRESSION_OUTPUT)
 
+const regressionRandomSeed = env.REGRESSION_RANDOM_SEED ?? 'local-regression-seed'
 const optimizerPlans = [
   { id: 'sense', value: enums.PlanType.Sense },
   { id: 'logic', value: enums.PlanType.Logic },
   { id: 'anomaly', value: enums.PlanType.Anomaly },
 ]
 const randomizedOptimizerProfileCount = 5
-const randomizedUncaps = [
-  enums.UncapType.NotOwned,
-  enums.UncapType.Zero,
-  enums.UncapType.One,
-  enums.UncapType.Two,
-  enums.UncapType.Three,
-  enums.UncapType.Four,
-]
+const allFourCardUncaps = Object.fromEntries(data.AllCards.map(({ name }) => [name, enums.UncapType.Four]))
 
 interface CalculationObservation {
   id: string
@@ -77,6 +71,12 @@ function createScenarioHash(input: Record<string, unknown>): string {
   return createHash('sha256')
     .update(JSON.stringify(canonicalize(input)))
     .digest('hex')
+}
+
+/** 属性ごとにseedを分け、他の点数設定の追加で既存プロファイルがずれないようにする */
+function getRandomizedParameterBonus(seed: string, sample: number, parameter: 'vocal' | 'dance' | 'visual'): number {
+  const hash = createHash('sha256').update(`${seed}:optimizer-profile:${sample}:parameter-bonus:${parameter}`).digest()
+  return 20 + (hash.readUInt32BE(0) % 5) * 5
 }
 
 async function saveCalculationObservation(observation: CalculationObservation): Promise<void> {
@@ -151,56 +151,6 @@ async function observeOptimizer(
         cardScore: cardResult.totalIncrease - cardResult.parameterBonus + supportSynergy,
       })),
     },
-  })
-}
-
-/** 同じ実行のbase/headで再現できる乱数を作る */
-function createSeededRandom(seed: string): () => number {
-  let state = 2166136261
-  for (const character of seed) {
-    state ^= character.charCodeAt(0)
-    state = Math.imul(state, 16777619)
-  }
-
-  return () => {
-    state += 0x6d2b79f5
-    let value = state
-    value = Math.imul(value ^ (value >>> 15), value | 1)
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61)
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/** 5 profile × 3プランの形でseed付きの入力条件を作る */
-function createRandomizedOptimizerProfiles(seed: string) {
-  return Array.from({ length: randomizedOptimizerProfileCount }, (_, index) => {
-    const sample = index + 1
-    const sampleSeed = `${seed}:optimizer-profile-${sample}`
-    const random = createSeededRandom(sampleSeed)
-    const bonusValue = () => 20 + Math.floor(random() * 5) * 5
-    const paramBonusPercent = parameterValues(bonusValue(), bonusValue(), bonusValue())
-    const uncapSeed = `${sampleSeed}:uncaps`
-    const nextUncap = createSeededRandom(uncapSeed)
-    const cardUncaps = Object.fromEntries(
-      [...data.AllCards]
-        .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))
-        .map(({ name }) => {
-          const uncap = randomizedUncaps[Math.floor(nextUncap() * randomizedUncaps.length)]
-          if (uncap === undefined) throw new Error(`No random uncap was selected for ${name}`)
-          return [name, uncap]
-        }),
-    )
-    const uncapDistribution = Object.fromEntries(
-      randomizedUncaps.map((uncap) => [uncap, Object.values(cardUncaps).filter((value) => value === uncap).length]),
-    )
-    return {
-      sample,
-      paramBonusPercent,
-      uncapSeed,
-      cardUncapsHash: createScenarioHash(cardUncaps),
-      uncapDistribution,
-      cardUncaps,
-    }
   })
 }
 
@@ -375,31 +325,34 @@ regressionObservationTest(
   optimizerObservationTimeoutMs,
 )
 
-const regressionRandomSeed = env.REGRESSION_RANDOM_SEED ?? 'local-regression-seed'
-for (const profile of createRandomizedOptimizerProfiles(regressionRandomSeed)) {
+for (let sample = 1; sample <= randomizedOptimizerProfileCount; sample += 1) {
+  const paramBonusPercent = parameterValues(
+    getRandomizedParameterBonus(regressionRandomSeed, sample, 'vocal'),
+    getRandomizedParameterBonus(regressionRandomSeed, sample, 'dance'),
+    getRandomizedParameterBonus(regressionRandomSeed, sample, 'visual'),
+  )
+
   for (const plan of optimizerPlans) {
-    const id = `optimization-random-${String(profile.sample).padStart(2, '0')}-${plan.id}`
+    const id = `optimization-random-${String(sample).padStart(2, '0')}-${plan.id}`
     const semanticInput = {
-      ...createTestOptimizerScenarioInput({ plan: plan.value, paramBonusPercent: profile.paramBonusPercent }),
+      ...createTestOptimizerScenarioInput({ plan: plan.value, paramBonusPercent }),
       randomProfile: {
         seed: regressionRandomSeed,
-        sample: profile.sample,
+        sample,
         plan: plan.value,
-        paramBonusPercent: profile.paramBonusPercent,
-        uncapSeed: profile.uncapSeed,
-        cardUncapsHash: profile.cardUncapsHash,
-        uncapDistribution: profile.uncapDistribution,
+        paramBonusPercent,
+        uncapProfile: 'all-four',
       },
     }
 
     regressionObservationTest(
-      `${id}: seeded randomized optimizer observation`,
+      `${id}: seeded optimizer observation with all cards at 4凸`,
       async () => {
         await observeOptimizer(
           id,
-          `HIF / Da8 / ${plan.value} / ランダム条件 ${profile.sample}`,
+          `HIF / ${plan.value} / ランダム条件${sample} / 全カード4凸`,
           semanticInput,
-          profile.cardUncaps,
+          allFourCardUncaps,
         )
       },
       optimizerObservationTimeoutMs,

@@ -4,7 +4,6 @@ import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { fileURLToPath } from 'node:url'
 import { writeRegressionSummary } from './regressionSummary.js'
 import {
   type JsonObject,
@@ -18,9 +17,7 @@ import {
   selectRepresentativeDeviceChanges,
 } from './regressionShared.js'
 
-const projectRoot = path.resolve(
-  process.env.REGRESSION_PROJECT_ROOT ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..'),
-)
+const projectRoot = process.cwd()
 
 /** Playwrightの画像比較で得られる差分量 */
 interface VisualComparison {

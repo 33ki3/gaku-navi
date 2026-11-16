@@ -2,9 +2,9 @@
 
 export type OptimizerCaseKind = 'all-four-control' | 'randomized'
 
-export const expandedCandidateLimit = 45
+export const expandedCandidateLimit = 50
 
-/** run #199で候補不足が出た条件。期待スコアは固定せず、最新カードデータから毎回計算する */
+/** 候補不足が見つかった固定条件。期待スコアは最新カードデータから毎回計算する */
 export const historicalCandidateLimitRegressions = [
   { variant: 'Vo5_授業Da', plan: 'Sense' },
   { variant: 'Vo5_授業Da', plan: 'Anomaly' },

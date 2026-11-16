@@ -109,9 +109,8 @@ jobs:
         id: base-calculation
         if: always() && steps.dependencies.outcome == 'success'
         continue-on-error: true
-        working-directory: head
+        working-directory: base
         env:
-          REGRESSION_PROJECT_ROOT: ../base
           REGRESSION_OUTPUT: tmp/pr-calculations/base
           REGRESSION_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
         run: npm run regression -- calculation
@@ -254,10 +253,9 @@ jobs:
         id: base-capture
         if: steps.base-browsers.outcome == 'success' && steps.dependencies.outcome == 'success'
         continue-on-error: true
-        working-directory: head
+        working-directory: base
         run: npm run regression -- capture
         env:
-          REGRESSION_PROJECT_ROOT: ../base
           E2E_PREVIEW: '1'
           REGRESSION_BRANCH: base
           REGRESSION_COMMIT: ${{ github.event.pull_request.base.sha }}
@@ -301,38 +299,80 @@ jobs:
       - name: Add visual report to Actions summary
         if: always() && hashFiles('head/tmp/regression-results/report/report.md') != ''
         run: cat head/tmp/regression-results/report/report.md >> "$GITHUB_STEP_SUMMARY"
-      - name: List visual comment images
-        if: always()
-        run: find head/tmp/pr-comment-assets/images -type f -name '*.png' -print | sort > head/tmp/pr-comment-assets/attachments.txt
-      - name: Prepare the visual PR comment
-        id: update-visual-comment
-        if: always() && hashFiles('head/node_modules/.tmp/regression/updatePrComment.js') != '' && github.event.pull_request.head.repo.full_name == github.repository
+      - name: Post visual regression comment with images
+        id: post-visual-comment
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.PR_REGRESSION_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_COMMENT_MARKER: '<!-- pr-regression-visual-report -->'
-          PR_COMMENT_BODY_FILE: head/tmp/pr-comment-assets/comment.md
-          PR_COMMENT_ATTACHMENTS_FILE: head/tmp/pr-comment-assets/attachments.txt
-          PR_COMMENT_OUTPUT_FILE: head/tmp/pr-comment-assets/comment-with-uploaded-images.md
-        run: node head/node_modules/.tmp/regression/updatePrComment.js
-      - name: Fall back to text-only visual comment
-        if: always() && hashFiles('head/node_modules/.tmp/regression/updatePrComment.js') != '' && github.event.pull_request.head.repo.full_name == github.repository && steps.update-visual-comment.outcome != 'success'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_COMMENT_MARKER: '<!-- pr-regression-visual-report -->'
-          PR_COMMENT_BODY_FILE: head/tmp/pr-comment-assets/comment-no-images.md
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
-          if [[ -s head/tmp/pr-comment-assets/comment-with-uploaded-images.md ]]; then
-            PR_COMMENT_BODY_FILE=head/tmp/pr-comment-assets/comment-with-uploaded-images.md \
-              node head/node_modules/.tmp/regression/updatePrComment.js
-          else
-            node head/node_modules/.tmp/regression/updatePrComment.js
+          set -euo pipefail
+          COMMENT_ROOT=head/tmp/pr-comment-assets
+          COMMENT_FILE="$COMMENT_ROOT/comment.md"
+          POST_BODY_FILE="$COMMENT_ROOT/comment-for-post.md"
+          RUN_MARKER="<!-- pr-regression-run-${RUN_ID}-${RUN_ATTEMPT} -->"
+
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo '::error::PR_REGRESSION_TOKEN is unavailable; the text-only fallback will be posted.'
+            exit 1
           fi
+
+          if [[ -L head || -L head/tmp || -L "$COMMENT_ROOT" || -L "$COMMENT_ROOT/images" || -L "$COMMENT_FILE" || -L "$POST_BODY_FILE" ]]; then
+            echo '::error::The visual comment path contains a symbolic link.'
+            exit 1
+          fi
+
+          # gh resolves body-file image paths relative to the body file, while --attach paths use the workspace root.
+          if ! { printf '%s\n' "$RUN_MARKER"; sed 's#](head/tmp/pr-comment-assets/#](images/#g' "$COMMENT_FILE"; } > "$POST_BODY_FILE"; then
+            echo '::error::The visual comment body could not be prepared.'
+            exit 1
+          fi
+
+          COMMENT_ARGS=(pr comment "$PR_NUMBER" --repo "$GH_REPO" --body-file "$POST_BODY_FILE")
+          while IFS= read -r -d '' screenshot; do
+            COMMENT_ARGS+=(--attach "$screenshot")
+          done < <(find "$COMMENT_ROOT/images" -type f -name '*.png' -print0 | sort -z)
+          gh "${COMMENT_ARGS[@]}"
+      - name: Post text-only visual fallback
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository && steps.post-visual-comment.outcome != 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+          COMMENT_ROOT=head/tmp/pr-comment-assets
+          NO_IMAGE_FILE="$COMMENT_ROOT/comment-no-images.md"
+          FALLBACK_BODY_FILE="$COMMENT_ROOT/comment-fallback-for-post.md"
+          RUN_MARKER="<!-- pr-regression-run-${RUN_ID}-${RUN_ATTEMPT} -->"
+
+          if [[ -L head || -L head/tmp || -L "$COMMENT_ROOT" || -L "$NO_IMAGE_FILE" || -L "$FALLBACK_BODY_FILE" ]]; then
+            echo '::error::The text-only fallback path contains a symbolic link.'
+            exit 1
+          fi
+
+          if [[ -s "$NO_IMAGE_FILE" ]]; then
+            { printf '%s\n' "$RUN_MARKER"; cat "$NO_IMAGE_FILE"; } > "$FALLBACK_BODY_FILE"
+          else
+            printf '%s\n\n## 回帰テスト結果\n画像なしレポートを取得できませんでした。\n実行ログ: %s/%s/actions/runs/%s/attempts/%s\n' \
+              "$RUN_MARKER" "$SERVER_URL" "$GH_REPO" "$RUN_ID" "$RUN_ATTEMPT" > "$FALLBACK_BODY_FILE"
+          fi
+
+          EXISTING_COMMENTS="$(gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json comments --jq '[.comments[].body] | join("\n")')"
+          if grep -Fq -- "$RUN_MARKER" <<< "$EXISTING_COMMENTS"; then
+            echo 'A comment for this workflow run already exists; skipping the fallback to avoid a duplicate.'
+            exit 0
+          fi
+
+          gh pr comment "$PR_NUMBER" --repo "$GH_REPO" --body-file "$FALLBACK_BODY_FILE"
       - name: Validate head visual capture
         if: always()
         env:

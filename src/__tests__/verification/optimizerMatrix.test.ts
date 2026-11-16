@@ -318,14 +318,14 @@ interface OptimizerMatrixCase {
 
 describe('CP-SAT候補上限ポリシー', () => {
   it.each(historicalCandidateLimitRegressions)(
-    'run #199の固定回帰 $variant / $plan を45枚で検証する',
+    '候補不足が見つかった固定回帰 $variant / $plan を50枚で検証する',
     ({ variant, plan }) => {
       expect(getInitialCandidateLimit('all-four-control', 'hajime', variant, plan, 30)).toBe(expandedCandidateLimit)
       expect(getInitialCandidateLimit('randomized', 'hajime', variant, plan, 30)).toBe(30)
     },
   )
 
-  it('ランダムケースだけ、CP-SATが上回った場合に45枚で再試行する', () => {
+  it('ランダムケースだけ、CP-SATが上回った場合に50枚で再試行する', () => {
     expect(getCandidateRetryLimit('randomized', 30, 6074, 6076)).toBe(expandedCandidateLimit)
     expect(getCandidateRetryLimit('randomized', 30, 6074, 6074)).toBeUndefined()
     expect(getCandidateRetryLimit('randomized', 30, 6074, undefined)).toBeUndefined()
@@ -1960,7 +1960,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
                 nonBlocking: isNonBlockingRandomizedResult(kind, retryAttempt.status),
               }
               finalAttempt = retryAttempt
-              status = recovered ? 'recovered_at_45' : retryAttempt.status
+              status = recovered ? 'recovered' : retryAttempt.status
             } catch (error) {
               const message = error instanceof Error ? error.message : String(error)
               candidateLimitRetry = {
@@ -1977,7 +1977,7 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
             }
           }
           const nonBlocking = isNonBlockingRandomizedResult(kind, status)
-          if (!candidatePreviewEnabled && status !== 'optimal' && status !== 'recovered_at_45' && !nonBlocking) {
+          if (!candidatePreviewEnabled && status !== 'optimal' && status !== 'recovered' && !nonBlocking) {
             failures.push(`${resultKey}: ${JSON.stringify(finalAttempt.output)}`)
           }
           const { payload, verificationResult, evaluatedCombos, output, outputWithUncaps } = finalAttempt

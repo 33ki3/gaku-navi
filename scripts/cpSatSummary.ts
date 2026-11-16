@@ -131,7 +131,7 @@ function scoreFor(result: JsonRecord): number {
 function statusLabel(value: unknown, nonBlocking = false): string {
   if (nonBlocking) return `⚠️ non-blocking (${typeof value === 'string' ? value : 'unknown'})`
   if (value === 'optimal') return '✅ optimal'
-  if (value === 'recovered_at_45') return '⚠️ recovered'
+  if (value === 'recovered') return '⚠️ recovered'
   if (value === 'non_optimal') return '❌ non_optimal'
   if (value === 'unknown') return '❓ unknown'
   return `❌ ${typeof value === 'string' ? value : 'unknown status'}`
@@ -413,7 +413,7 @@ function renderCandidateLimitRetries(results: JsonRecord[]): string[] {
   for (const { result, initial, retry, recovered, nonBlocking } of retries) {
     const { label, plan } = conditionLabel(result)
     const seed = typeof initial.runSeed === 'string' ? initial.runSeed : 'unknown'
-    const retryStatus = recovered ? 'recovered_at_45' : String(retry.status ?? 'unknown')
+    const retryStatus = recovered ? 'recovered' : String(retry.status ?? 'unknown')
     lines.push(
       `| ${escapeCell(label)} | ${escapeCell(plan)} | ${escapeCell(seed)} | ${initial.candidateLimit ?? '—'}枚 / ${candidatePoolLabel(initial)} / ${candidateScoreLabel(initial)} | ${statusLabel(initial.status)} | ${retry.candidateLimit ?? '—'}枚 / ${candidatePoolLabel(retry)} / ${candidateScoreLabel(retry)} | ${statusLabel(retryStatus, nonBlocking)} |`,
     )

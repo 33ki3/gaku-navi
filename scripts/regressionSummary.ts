@@ -45,13 +45,43 @@ interface TestSummary {
   total: number
 }
 
+interface SupportCardDataChanges {
+  available: boolean
+  added: string[]
+  removed: string[]
+  updated: string[]
+}
+
+interface PIdolReference {
+  id: string
+  idolId: string
+  name: string
+}
+
+interface PIdolDataChanges {
+  available: boolean
+  added: PIdolReference[]
+  removed: PIdolReference[]
+  updated: PIdolReference[]
+}
+
+interface IdolSelectorChanges {
+  available: boolean
+  added: string[]
+  removed: string[]
+}
+
 interface CommentSummary {
   reportAvailable: boolean
   baselineAvailable: boolean
   validation: string
   e2e: TestSummary | null
+  supportCardDataChanges: SupportCardDataChanges | null
+  pIdolDataChanges: PIdolDataChanges | null
+  idolSelectorChanges: IdolSelectorChanges | null
   visualChanges: VisualChange[]
   totalVisualChangeCount: number
+  totalVisualComparisonCount: number
   omittedVisualChangeCount: number
 }
 
@@ -96,6 +126,79 @@ function parseVisualChange(value: unknown): VisualChangeInput | null {
       : {}),
     ...(typeof value.baseScreenshot === 'string' ? { baseScreenshot: value.baseScreenshot } : {}),
     ...(typeof value.headScreenshot === 'string' ? { headScreenshot: value.headScreenshot } : {}),
+  }
+}
+
+/** 比較JSONからサポートカードデータの追加・削除・更新を取り出す */
+function parseSupportCardDataChanges(value: unknown): SupportCardDataChanges | null {
+  if (
+    !isRecord(value) ||
+    typeof value.available !== 'boolean' ||
+    !Array.isArray(value.added) ||
+    !value.added.every((name: unknown) => typeof name === 'string') ||
+    !Array.isArray(value.removed) ||
+    !value.removed.every((name: unknown) => typeof name === 'string') ||
+    !Array.isArray(value.updated) ||
+    !value.updated.every((name: unknown) => typeof name === 'string')
+  ) {
+    return null
+  }
+
+  return {
+    available: value.available,
+    added: value.added.filter((name: unknown): name is string => typeof name === 'string'),
+    removed: value.removed.filter((name: unknown): name is string => typeof name === 'string'),
+    updated: value.updated.filter((name: unknown): name is string => typeof name === 'string'),
+  }
+}
+
+/** 比較JSONからPアイドルの追加・削除・更新を取り出す */
+function parsePIdolDataChanges(value: unknown): PIdolDataChanges | null {
+  if (!isRecord(value) || typeof value.available !== 'boolean') return null
+  const parseReferences = (entries: unknown): PIdolReference[] | null => {
+    if (
+      !Array.isArray(entries) ||
+      !entries.every(
+        (entry: unknown) =>
+          isRecord(entry) &&
+          typeof entry.id === 'string' &&
+          typeof entry.idolId === 'string' &&
+          typeof entry.name === 'string',
+      )
+    ) {
+      return null
+    }
+    return entries.map((entry: unknown) => ({
+      id: (entry as Record<string, string>).id,
+      idolId: (entry as Record<string, string>).idolId,
+      name: (entry as Record<string, string>).name,
+    }))
+  }
+
+  const added = parseReferences(value.added)
+  const removed = parseReferences(value.removed)
+  const updated = parseReferences(value.updated)
+  if (!added || !removed || !updated) return null
+  return { available: value.available, added, removed, updated }
+}
+
+/** 比較JSONからアイドル選択対象の追加・削除を取り出す */
+function parseIdolSelectorChanges(value: unknown): IdolSelectorChanges | null {
+  if (
+    !isRecord(value) ||
+    typeof value.available !== 'boolean' ||
+    !Array.isArray(value.added) ||
+    !value.added.every((idolId: unknown) => typeof idolId === 'string') ||
+    !Array.isArray(value.removed) ||
+    !value.removed.every((idolId: unknown) => typeof idolId === 'string')
+  ) {
+    return null
+  }
+
+  return {
+    available: value.available,
+    added: value.added.filter((idolId: unknown): idolId is string => typeof idolId === 'string'),
+    removed: value.removed.filter((idolId: unknown): idolId is string => typeof idolId === 'string'),
   }
 }
 
@@ -175,19 +278,70 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
   const runUrl = getRunUrl()
 
   if (!summary.reportAvailable) {
-    lines.push('回帰レポートを作成できませんでした。', '')
+    lines.push('❌ 回帰レポートを作成できませんでした。', '')
   } else if (!summary.baselineAvailable) {
-    lines.push('ベースブランチに基準画像がないため、新旧の画面比較は行われていません。', '')
+    lines.push('⚠️ ベースブランチに基準画像がないため、画面比較は行われていません。', '')
+  } else if (summary.totalVisualComparisonCount === 0) {
+    lines.push('⚠️ 比較できる基準画像がありません。', '')
   } else if (summary.totalVisualChangeCount === 0) {
-    lines.push('画面差分は検出されませんでした。', '')
+    lines.push('✅ 画面差分はありません。', '')
   } else {
-    lines.push(`差分を検出した画面・端末の組み合わせ: ${summary.totalVisualChangeCount} 件`, '')
+    lines.push(`❌ 画面差分あり: ${summary.totalVisualChangeCount} 件`, '')
 
     if (summary.omittedVisualChangeCount > 0) {
       lines.push(
         `画像添付の上限に合わせて${summary.visualChanges.length}件を掲載し、残り${summary.omittedVisualChangeCount}件を省略しました。`,
         '',
       )
+    }
+  }
+
+  const cardDataChanges = summary.supportCardDataChanges
+  if (cardDataChanges?.available) {
+    const changedCardCount =
+      cardDataChanges.added.length + cardDataChanges.removed.length + cardDataChanges.updated.length
+    if (changedCardCount > 0) {
+      lines.push(
+        `サポカデータ: 追加 ${cardDataChanges.added.length}件・削除 ${cardDataChanges.removed.length}件・更新 ${cardDataChanges.updated.length}件`,
+      )
+      for (const name of cardDataChanges.added) lines.push(`- 追加: ${escapeHtml(name)}`)
+      for (const name of cardDataChanges.removed) lines.push(`- 削除: ${escapeHtml(name)}`)
+      for (const name of cardDataChanges.updated) lines.push(`- 更新: ${escapeHtml(name)}`)
+      lines.push('')
+    }
+  }
+
+  const pIdolDataChanges = summary.pIdolDataChanges
+  if (pIdolDataChanges?.available) {
+    const changedPIdolCount =
+      pIdolDataChanges.added.length + pIdolDataChanges.removed.length + pIdolDataChanges.updated.length
+    if (changedPIdolCount > 0) {
+      lines.push(
+        `Pアイドルアチーブ: 追加 ${pIdolDataChanges.added.length}件・削除 ${pIdolDataChanges.removed.length}件・更新 ${pIdolDataChanges.updated.length}件`,
+      )
+      for (const pIdol of pIdolDataChanges.added) {
+        lines.push(`- 追加: ${escapeHtml(pIdol.idolId)} / ${escapeHtml(pIdol.name)}`)
+      }
+      for (const pIdol of pIdolDataChanges.removed) {
+        lines.push(`- 削除: ${escapeHtml(pIdol.idolId)} / ${escapeHtml(pIdol.name)}`)
+      }
+      for (const pIdol of pIdolDataChanges.updated) {
+        lines.push(`- 更新: ${escapeHtml(pIdol.idolId)} / ${escapeHtml(pIdol.name)}`)
+      }
+      lines.push('')
+    }
+  }
+
+  const idolSelectorChanges = summary.idolSelectorChanges
+  if (idolSelectorChanges?.available) {
+    const changedIdolCount = idolSelectorChanges.added.length + idolSelectorChanges.removed.length
+    if (changedIdolCount > 0) {
+      lines.push(
+        `アイドル選択: 追加 ${idolSelectorChanges.added.length}件・削除 ${idolSelectorChanges.removed.length}件`,
+      )
+      for (const idolId of idolSelectorChanges.added) lines.push(`- 追加: ${escapeHtml(idolId)}`)
+      for (const idolId of idolSelectorChanges.removed) lines.push(`- 削除: ${escapeHtml(idolId)}`)
+      lines.push('')
     }
   }
 
@@ -204,11 +358,19 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
     lines.push('比較画像は添付されていません。Actions の設定を確認してください。', '')
   }
 
-  lines.push('<details>', '<summary>画面差分</summary>', '', '## 画面差分', '')
+  const visualStatus =
+    !summary.reportAvailable || !summary.baselineAvailable || summary.totalVisualComparisonCount === 0
+      ? '⚠️ 未比較'
+      : summary.totalVisualChangeCount === 0
+        ? '✅ なし'
+        : '❌ あり'
+  lines.push('<details>', `<summary>画面差分 ${visualStatus}</summary>`, '', '## 画面差分', '')
   if (!summary.reportAvailable || !summary.baselineAvailable) {
     lines.push('比較画像はありません。', '')
+  } else if (summary.totalVisualComparisonCount === 0) {
+    lines.push('比較できる基準画像はありません。', '')
   } else if (summary.totalVisualChangeCount === 0) {
-    lines.push('画面差分は検出されませんでした。', '')
+    lines.push('✅ 画面差分はありません。', '')
   } else {
     for (const change of summary.visualChanges) {
       const title = `${change.scenarioId}${change.description ? ` · ${change.description}` : ''}`
@@ -220,7 +382,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
       const imageTitle = `${title} · ${deviceLabel}`
 
       lines.push(
-        `### ${escapeHtml(title)}`,
+        `### ❌ ${escapeHtml(title)}`,
         `端末: ${deviceLabel}${changedRatio}`,
         '',
         '| Base | Head |',
@@ -288,13 +450,24 @@ export async function writeRegressionSummary(): Promise<void> {
       : isRecord(report) && isRecord(report.validation) && typeof report.validation.head === 'string'
         ? report.validation.head
         : 'unknown'
+  const visualComparisonCount =
+    isRecord(report) && isRecord(report.visualComparisonCount)
+      ? Object.values(report.visualComparisonCount).reduce<number>(
+          (total, count) => total + (typeof count === 'number' && Number.isFinite(count) ? count : 0),
+          0,
+        )
+      : 0
   const summary: CommentSummary = {
     reportAvailable: report !== null,
     baselineAvailable: isRecord(report) && report.baselineAvailable === true,
     validation,
     e2e: isRecord(report) ? parseTestSummary(report.e2e) : null,
+    supportCardDataChanges: isRecord(report) ? parseSupportCardDataChanges(report.supportCardDataChanges) : null,
+    pIdolDataChanges: isRecord(report) ? parsePIdolDataChanges(report.pIdolDataChanges) : null,
+    idolSelectorChanges: isRecord(report) ? parseIdolSelectorChanges(report.idolSelectorChanges) : null,
     visualChanges: commentVisualChanges,
     totalVisualChangeCount: parsedChanges.length,
+    totalVisualComparisonCount: visualComparisonCount,
     omittedVisualChangeCount: Math.max(0, parsedChanges.length - commentVisualChanges.length),
   }
 

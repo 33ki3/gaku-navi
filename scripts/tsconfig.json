@@ -10,5 +10,11 @@
     "rootDir": ".",
     "outDir": "../node_modules/.tmp/regression"
   },
-  "include": ["regression.ts", "regressionSummary.ts", "cpSatSummary.ts"]
+  "include": [
+    "regression.ts",
+    "regressionSummary.ts",
+    "cpSatSummary.ts",
+    "calculationRegression.ts",
+    "updatePrComment.ts"
+  ]
 }

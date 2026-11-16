@@ -4,27 +4,20 @@ import { spawnSync } from 'node:child_process'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { fileURLToPath } from 'node:url'
 import { writeRegressionSummary } from './regressionSummary.js'
 import {
   type JsonObject,
   RegressionDevice,
-  isMissingFileError,
+  isFiniteNumber,
+  isMissingPathError,
   isRecord,
+  isStringArray,
   regressionDeviceLabels,
   regressionDevices,
+  selectRepresentativeDeviceChanges,
 } from './regressionShared.js'
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
-
-/** Vitestが保存する、入力条件と内部計算結果を含むシナリオ観測 */
-interface CalculationObservation {
-  id: string
-  description?: string
-  semanticInput?: JsonObject
-  scenarioHash?: string
-  calculation?: JsonObject
-}
+const projectRoot = process.cwd()
 
 /** Playwrightの画像比較で得られる差分量 */
 interface VisualComparison {
@@ -52,17 +45,15 @@ interface ScenarioObservation {
   screenshot?: string
   visualComparison?: VisualComparison
   ui?: JsonObject
-  calculation?: JsonObject
 }
 
-/** 計算観測と、端末ごとの画面観測を統合した比較単位 */
+/** シナリオの入力条件と、端末ごとの画面観測をまとめる単位 */
 interface ScenarioReport {
   id: string
   description?: string
   semanticInput?: JsonObject
   scenarioHash?: string
   devices: Partial<Record<RegressionDevice, DeviceObservation>>
-  calculation?: JsonObject
 }
 
 /** cards.jsonをアプリ内で使うカード名keyと内容hashへ変換した基準値 */
@@ -155,12 +146,6 @@ interface ValueChange {
   reordered?: boolean
 }
 
-/** 画面差分の対象となったシナリオと端末 */
-interface DeviceChange {
-  scenarioId: string
-  device: RegressionDevice
-}
-
 /** PRコメントで新旧画像を並べるための画面差分 */
 interface VisualChange extends VisualComparison {
   scenarioId: string
@@ -184,20 +169,11 @@ interface RegressionReport {
   definitionChanges: Array<{ id: string; baseHash?: string; headHash?: string }>
   visualChanges: VisualChange[]
   visualComparisonCount: Record<RegressionDevice, number>
-  calculationChanges: Array<{ scenarioId: string; changes: ValueChange[] }>
   uiChanges: Array<{ scenarioId: string; device: RegressionDevice; changes: ValueChange[] }>
   supportCardDataChanges: SupportCardDataChanges
   pIdolDataChanges: PIdolDataChanges
   idolSelectorChanges: IdolSelectorChanges
   captureFailures: { base: number; head: number }
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
-}
-
-function isStringArray(value: unknown[]): value is string[] {
-  return value.every((entry) => typeof entry === 'string')
 }
 
 /** カード内容のプロパティ順に依存しないJSON表現を作る */
@@ -323,7 +299,7 @@ function readPIdolManifestEntries(value: unknown): PIdolManifestEntry[] | undefi
 /** regression manifest内のPアイドル由来ID一覧を読み込み、形式と重複を検証する */
 function readPIdolIdManifest(value: unknown): string[] | undefined {
   if (value === undefined) return undefined
-  if (!Array.isArray(value) || !isStringArray(value)) throw new Error('Invalid P-idol ID data in regression manifest')
+  if (!isStringArray(value)) throw new Error('Invalid P-idol ID data in regression manifest')
   if (value.some((idolId) => idolId.length === 0)) throw new Error('P-idol IDs must not be empty')
   if (new Set(value).size !== value.length) throw new Error('Duplicate P-idol ID in regression manifest')
   return value
@@ -429,22 +405,6 @@ function readVisualComparison(value: unknown): VisualComparison | undefined {
   }
 }
 
-/** 計算観測JSONを読み込み、必須IDと任意項目の型を確認する */
-function parseCalculationObservation(value: unknown): CalculationObservation {
-  if (!isRecord(value) || typeof value.id !== 'string') {
-    throw new Error('Invalid calculation observation')
-  }
-  if (!isValidScenarioId(value.id)) throw new Error(`Invalid calculation scenarioId: ${value.id}`)
-
-  return {
-    id: value.id,
-    ...(typeof value.description === 'string' ? { description: value.description } : {}),
-    ...(isRecord(value.semanticInput) ? { semanticInput: value.semanticInput } : {}),
-    ...(typeof value.scenarioHash === 'string' ? { scenarioHash: value.scenarioHash } : {}),
-    ...(isRecord(value.calculation) ? { calculation: value.calculation } : {}),
-  }
-}
-
 /** 端末別のE2E観測JSONから、レポート作成に使う項目を取り出す */
 function parseScenarioObservation(value: unknown): ScenarioObservation {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.status !== 'string') {
@@ -462,7 +422,6 @@ function parseScenarioObservation(value: unknown): ScenarioObservation {
     ...(typeof value.screenshot === 'string' ? { screenshot: value.screenshot } : {}),
     ...(visualComparison ? { visualComparison } : {}),
     ...(isRecord(value.ui) ? { ui: value.ui } : {}),
-    ...(isRecord(value.calculation) ? { calculation: value.calculation } : {}),
   }
 }
 
@@ -492,7 +451,6 @@ function parseScenarioReport(value: unknown): ScenarioReport {
     ...(isRecord(value.semanticInput) ? { semanticInput: value.semanticInput } : {}),
     ...(typeof value.scenarioHash === 'string' ? { scenarioHash: value.scenarioHash } : {}),
     devices: scenarioDevices,
-    ...(isRecord(value.calculation) ? { calculation: value.calculation } : {}),
   }
 }
 
@@ -537,52 +495,28 @@ function parseTestSummary(value: unknown): TestSummary | null {
   }
 }
 
-/**
- * 計算観測とPlaywright観測を順番に採取し、シナリオIDごとのmanifestへまとめる
- * 前段階が失敗したら後続を止め、その終了状態をプロセス終了コードへ引き継ぐ
- */
+/** Playwrightの画面観測を採取し、シナリオIDごとのmanifestへまとめる */
 async function capture() {
   const branch = process.env.REGRESSION_BRANCH ?? 'local'
   const outputDirectory = process.env.REGRESSION_OUTPUT ?? `tmp/regression-results/local-${Date.now()}`
   const outputRoot = path.resolve(projectRoot, outputDirectory)
   const observationsRoot = path.join(outputRoot, 'observations')
-  const calculationRoot = path.join(outputRoot, 'calculations')
   const cliPath = path.join(projectRoot, 'node_modules/@playwright/test/cli.js')
   const typecheckPath = path.join(projectRoot, 'node_modules/typescript/bin/tsc')
-  const vitestPath = path.join(projectRoot, 'node_modules/vitest/vitest.mjs')
   const supportCards = await loadSupportCardManifest()
   const addedSupportCardNames = await findAddedSupportCardNames(supportCards)
   const pIdolManifest = await loadPIdolManifest()
   const addedPIdolData = await findAddedPIdolData(pIdolManifest)
 
   await mkdir(observationsRoot, { recursive: true })
-  // 内部計算を先に保存し、後からE2Eが出す画面観測と同じシナリオIDで統合する
-  const calculationStartedAt = performance.now()
-  const calculationRun = spawnSync(
-    process.execPath,
-    [vitestPath, 'run', 'src/__tests__/regressionObservations.test.ts'],
-    {
-      cwd: projectRoot,
-      env: { ...process.env, REGRESSION_OUTPUT: outputRoot },
-      stdio: 'inherit',
-    },
-  )
-  console.log(
-    `[regression] Calculation observations (Vitest): ${((performance.now() - calculationStartedAt) / 1000).toFixed(1)}s`,
-  )
-  // ブラウザー起動前にE2E設定を型検査し、前段の失敗時はPlaywrightを実行しない
+  // 数値計算の比較とは独立して、E2E設定の型検査とPlaywright画面観測を実行する
   const typecheckStartedAt = performance.now()
-  const typecheck =
-    calculationRun.status === 0
-      ? spawnSync(process.execPath, [typecheckPath, '-p', 'tests/tsconfig.e2e.json', '--noEmit'], {
-          cwd: projectRoot,
-          env: { ...process.env, REGRESSION_OUTPUT: outputRoot },
-          stdio: 'inherit',
-        })
-      : calculationRun
-  if (calculationRun.status === 0) {
-    console.log(`[regression] E2E TypeScript check: ${((performance.now() - typecheckStartedAt) / 1000).toFixed(1)}s`)
-  }
+  const typecheck = spawnSync(process.execPath, [typecheckPath, '-p', 'tests/tsconfig.e2e.json', '--noEmit'], {
+    cwd: projectRoot,
+    env: { ...process.env, REGRESSION_OUTPUT: outputRoot },
+    stdio: 'inherit',
+  })
+  console.log(`[regression] E2E TypeScript check: ${((performance.now() - typecheckStartedAt) / 1000).toFixed(1)}s`)
   const playwrightStarted = typecheck.status === 0
   const playwrightStartedAt = performance.now()
   const testRun = playwrightStarted
@@ -603,37 +537,11 @@ async function capture() {
   }
 
   const scenarios = new Map<string, ScenarioReport>()
-  const calculations = new Map<string, CalculationObservation>()
-  let calculationFiles: string[] = []
-  // 計算テストが未実行でも、後続のE2E観測だけでmanifestを組み立てられるようにする
-  try {
-    calculationFiles = await readdir(calculationRoot)
-  } catch {
-    calculationFiles = []
-  }
-  for (const filename of calculationFiles.filter((entry) => entry.endsWith('.json'))) {
-    const observation = parseCalculationObservation(
-      JSON.parse(await readFile(path.join(calculationRoot, filename), 'utf8')),
-    )
-    calculations.set(observation.id, observation)
-  }
-  for (const [id, observation] of calculations) {
-    // 入力条件やhashが欠けた結果は、再現可能な比較対象として扱わない
-    if (!observation.description || !observation.semanticInput || !observation.scenarioHash) continue
-    scenarios.set(id, {
-      id,
-      description: observation.description,
-      semanticInput: observation.semanticInput,
-      scenarioHash: observation.scenarioHash,
-      devices: {},
-      calculation: observation.calculation,
-    })
-  }
 
   let e2eSummary: TestSummary | null = null
   if (playwrightStarted) {
     try {
-      // Playwright設定の固定パスから件数を読み、画面・計算観測はREGRESSION_OUTPUT配下から別に集める
+      // Playwright設定の固定パスから画面テスト件数を読み取る
       const playwrightReport: unknown = JSON.parse(
         await readFile(path.join(projectRoot, 'tmp/test-results/e2e/report.json'), 'utf8'),
       )
@@ -672,26 +580,19 @@ async function capture() {
       const observation = parseScenarioObservation(
         JSON.parse(await readFile(path.join(deviceDirectory, filename), 'utf8')),
       )
-      // 計算とE2Eは別々に出力するため、シナリオIDで既存結果へ端末別の値を追加する
+      // 同じシナリオIDへ端末別の画面とUI表示をまとめる
       const scenario = scenarios.get(observation.id) ?? {
         id: observation.id,
         ...(observation.description ? { description: observation.description } : {}),
         ...(observation.semanticInput ? { semanticInput: observation.semanticInput } : {}),
         ...(observation.scenarioHash ? { scenarioHash: observation.scenarioHash } : {}),
         devices: {},
-        ...(calculations.get(observation.id)?.calculation
-          ? { calculation: calculations.get(observation.id)?.calculation }
-          : {}),
       }
       scenario.devices[device] = {
         status: observation.status,
         ...(observation.screenshot ? { screenshot: observation.screenshot } : {}),
         ...(observation.visualComparison ? { visualComparison: observation.visualComparison } : {}),
         ...(observation.ui ? { ui: observation.ui } : {}),
-      }
-      // E2E側に計算の補足値がある場合は、先に採取した内部結果へ統合する
-      if (observation.calculation) {
-        scenario.calculation = { ...(scenario.calculation ?? {}), ...observation.calculation }
       }
       scenarios.set(observation.id, scenario)
     }
@@ -780,28 +681,12 @@ function collectValueChanges(
   return changes
 }
 
-/** 同じシナリオに複数端末の差分がある場合、PC・iOS・Androidの順で代表を残す */
-function selectRepresentativeDeviceChanges<T extends DeviceChange>(changes: readonly T[]): T[] {
-  const scenariosWithDesktopChange = new Set(
-    changes.filter((change) => change.device === RegressionDevice.Desktop).map((change) => change.scenarioId),
-  )
-  const scenariosWithIphoneChange = new Set(
-    changes.filter((change) => change.device === RegressionDevice.IPhone).map((change) => change.scenarioId),
-  )
-  return changes.filter((change) => {
-    if (change.device === RegressionDevice.Desktop) return true
-    if (scenariosWithDesktopChange.has(change.scenarioId)) return false
-    if (change.device === RegressionDevice.IPhone) return true
-    return !scenariosWithIphoneChange.has(change.scenarioId)
-  })
-}
-
 /**
  * base/headのmanifestを比較し、JSONとActions Summary用Markdownを保存する
  * base観測がない場合はheadの検証情報を出し、比較差分を省略する
  */
-async function compare(): Promise<void> {
-  const [baseArgument, headArgument, outputArgument] = process.argv.slice(3)
+async function compareCapture(): Promise<void> {
+  const [baseArgument, headArgument, outputArgument] = process.argv.slice(4)
   const baseRoot = baseArgument ? path.resolve(projectRoot, baseArgument) : null
   const headRoot = path.resolve(projectRoot, headArgument ?? 'tmp/regression-results/head')
   const outputRoot = path.resolve(projectRoot, outputArgument ?? 'tmp/regression-results/diff')
@@ -813,7 +698,7 @@ async function compare(): Promise<void> {
       return parseManifest(contents)
     } catch (error) {
       // 初回導入時のbase manifest欠落は許容し、JSON破損などは比較エラーとして伝える
-      if (isMissingFileError(error)) return null
+      if (isMissingPathError(error)) return null
       throw error
     }
   }
@@ -976,23 +861,6 @@ async function compare(): Promise<void> {
           lines.push(`- ❌ ${change.scenarioId} (${deviceLabel})${details}`, '')
         }
       }
-      lines.push('## Calculation changes', '')
-      if (report.calculationChanges.length === 0) lines.push('No calculation changes detected.', '')
-      for (const change of report.calculationChanges) {
-        lines.push(`### ${change.scenarioId}`, '')
-        for (const field of change.changes) {
-          if (field.removed || field.added) {
-            if (field.removed?.length) lines.push(`- ${field.path} removed: ${field.removed.join(', ')}`)
-            if (field.added?.length) lines.push(`- ${field.path} added: ${field.added.join(', ')}`)
-            continue
-          }
-          const before = JSON.stringify(field.before) ?? 'undefined'
-          const after = JSON.stringify(field.after) ?? 'undefined'
-          const delta = typeof field.delta === 'number' ? ` (${field.delta >= 0 ? '+' : ''}${field.delta})` : ''
-          lines.push(`- ${field.path}: ${before} → ${after}${delta}`)
-        }
-        lines.push('')
-      }
       lines.push('## UI display changes', '')
       const displayedUiChanges = selectRepresentativeDeviceChanges(report.uiChanges)
       if (displayedUiChanges.length === 0) lines.push('No UI observation changes detected.', '')
@@ -1044,7 +912,6 @@ async function compare(): Promise<void> {
       [RegressionDevice.IPhone]: 0,
       [RegressionDevice.Android]: 0,
     },
-    calculationChanges: [],
     uiChanges: [],
     supportCardDataChanges: compareSupportCardData(baseSupportCards, headManifest.supportCards),
     pIdolDataChanges: comparePIdolData(basePIdols, headManifest.pIdols),
@@ -1107,10 +974,6 @@ async function compare(): Promise<void> {
       const uiChanges = collectValueChanges(baseDevice.ui, headDevice.ui)
       if (uiChanges.length > 0) report.uiChanges.push({ scenarioId: id, device, changes: uiChanges })
     }
-
-    // 内部計算値は端末幅で変わらないため、端末ごとではなくシナリオごとに一度比較する
-    const calculationChanges = collectValueChanges(baseScenario.calculation, headScenario.calculation)
-    if (calculationChanges.length > 0) report.calculationChanges.push({ scenarioId: id, changes: calculationChanges })
   }
 
   // JSONは後続処理用、MarkdownはActions Summary表示用に同じ比較結果を保存する
@@ -1120,11 +983,40 @@ async function compare(): Promise<void> {
   await writeRegressionSummary()
 }
 
+/** Vitestの計算観測だけを実行し、終了状態をnpmの終了コードへ引き継ぐ */
+function calculation(): void {
+  const vitestPath = path.join(projectRoot, 'node_modules/vitest/vitest.mjs')
+  // base/headごとの依存とテストを使うため、Vitestは選択されたprojectRootから起動する
+  const testRun = spawnSync(process.execPath, [vitestPath, 'run', 'src/__tests__/regressionObservations.test.ts'], {
+    cwd: projectRoot,
+    stdio: 'inherit',
+  })
+  if (testRun.error) throw testRun.error
+  process.exitCode = testRun.status ?? 1
+}
+
+/** 共通CLIから計算比較スクリプトへ引数を渡し、比較処理の終了状態を引き継ぐ */
+function compareCalculation(): void {
+  const comparisonScript = path.join(projectRoot, 'node_modules/.tmp/regression/calculationRegression.js')
+  const comparisonRun = spawnSync(process.execPath, [comparisonScript, 'compare', ...process.argv.slice(4)], {
+    cwd: projectRoot,
+    stdio: 'inherit',
+  })
+  if (comparisonRun.error) throw comparisonRun.error
+  process.exitCode = comparisonRun.status ?? 1
+}
+
 const command = process.argv[2]
 if (command === 'capture') {
   await capture()
-} else if (command === 'compare') {
-  await compare()
+} else if (command === 'calculation') {
+  calculation()
+} else if (command === 'compare' && process.argv[3] === 'capture') {
+  await compareCapture()
+} else if (command === 'compare' && process.argv[3] === 'calculation') {
+  compareCalculation()
 } else {
-  throw new Error('Usage: npm run regression -- <capture|compare> [arguments]')
+  throw new Error(
+    'Usage: npm run regression -- capture | calculation | compare capture <base> <head> <report> | compare calculation <base> <head> <report>',
+  )
 }

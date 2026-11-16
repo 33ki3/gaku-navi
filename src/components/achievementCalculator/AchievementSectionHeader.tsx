@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import { getExpTotalClass } from '../../utils/display/achievement'
 
-/** True End・基本・Pアイドル・プロデュース・課題／パネルの見出し集計 */
+/** 親愛度・True End・基本・Pアイドル・プロデュース・課題／パネルの見出し集計 */
 interface AchievementSectionHeaderProps {
   /** 翻訳済みのセクション名 */
   title: string

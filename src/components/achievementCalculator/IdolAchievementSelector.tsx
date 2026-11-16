@@ -15,7 +15,7 @@ interface IdolAchievementSelectorProps {
   items: readonly IdolAchievementSelectorItem[]
   /** 詳細を表示しているアイドル */
   selectedId: string
-  /** 選択アイドルを変更し、下のTrue End・基本・Pアイドルを切り替える */
+  /** 選択アイドルを変更し、下の親愛度・True End・基本・Pアイドルを切り替える */
   onSelect: (id: string) => void
 }
 

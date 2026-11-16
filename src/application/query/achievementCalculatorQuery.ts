@@ -9,6 +9,7 @@ import {
   calculateProducerLevelProgress,
   getAchievementRewardTarget,
   getIdolAchievementMilestones,
+  isIdolAffectionMetric,
   isIdolTrueEndMetric,
   sumAchievementProgress,
 } from '../../utils/achievementCalculator'
@@ -117,13 +118,24 @@ export function calculateAchievementSummary(progress: AchievementCalculatorProgr
     currentProducerLevel.remainingExpToNextLevel,
     progress.producerLevel,
   )
-  // 詳細タブではTrue End・基本・Pアイドルの見出しごとに分母と獲得済みEXPを分ける
+  // 詳細タブでは親愛度・True End・基本・Pアイドルの見出しごとにEXPを分ける
   const selectedIdol = data.IDOL_ACHIEVEMENTS.find((idol) => idol.id === selectedIdolId)
-  // 詳細の基本セクションではTrue Endを除き、独立した見出しの合計にする
-  const selectedIdolNormalProgress = selectedIdol
+  // 親愛度だけを基本項目から分けて独立した見出しに集計する
+  const selectedAffectionTrackers =
+    selectedIdol?.trackers.filter((tracker) => isIdolAffectionMetric(tracker.metric)) ?? []
+  const selectedAffectionProgress = sumAchievementProgress(
+    selectedAffectionTrackers.map((tracker) =>
+      calculateAchievementProgress(
+        getIdolAchievementMilestones(tracker),
+        progress.idols[selectedIdolId]?.[tracker.metric] ?? 0,
+      ),
+    ),
+  )
+  // 詳細の基本セクションでは親愛度とTrue Endを除いて合計する
+  const selectedIdolBasicProgress = selectedIdol
     ? sumAchievementProgress(
         selectedIdol.trackers
-          .filter((tracker) => !isIdolTrueEndMetric(tracker.metric))
+          .filter((tracker) => !isIdolTrueEndMetric(tracker.metric) && !isIdolAffectionMetric(tracker.metric))
           .map((tracker) =>
             calculateAchievementProgress(
               getIdolAchievementMilestones(tracker),
@@ -158,9 +170,9 @@ export function calculateAchievementSummary(progress: AchievementCalculatorProgr
     ),
   )
   // 基本セクションの見出しに表示する獲得済みEXP
-  const selectedBasicEarnedExp = selectedIdolNormalProgress?.earnedExp ?? 0
+  const selectedBasicEarnedExp = selectedIdolBasicProgress?.earnedExp ?? 0
   // 基本セクションの見出しに表示するEXP報酬の総量
-  const selectedBasicTotalExp = selectedIdolNormalProgress?.totalExp ?? 0
+  const selectedBasicTotalExp = selectedIdolBasicProgress?.totalExp ?? 0
   // 選択ボタンの全達成判定には、EXPがない評価ランクなどの記録も含める
   const idolSelectorItems = data.IDOL_ACHIEVEMENTS.map((idol) => {
     const trackers = sumAchievementProgress(
@@ -215,13 +227,14 @@ export function calculateAchievementSummary(progress: AchievementCalculatorProgr
     currentProducerLevel,
     levelProgress,
     selectedIdol,
-    selectedIdolNormalProgress,
     selectedPIdolCards,
     selectedPIdolEarnedExp,
     pIdolCardTotalExp,
     selectedPIdolTotalExp,
     selectedTrueEndTrackers,
     selectedTrueEndProgress,
+    selectedAffectionTrackers,
+    selectedAffectionProgress,
     selectedBasicEarnedExp,
     selectedBasicTotalExp,
     idolSelectorItems,

@@ -25407,5 +25407,276 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "お仕え前の準備運動",
+    "rarity": "r",
+    "plan": "free",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "gacha",
+    "release_date": "2026/11/16",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "initial_pp",
+        "trigger_key": "initial_pp",
+        "values": {},
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "lesson_end",
+        "trigger_key": "vi_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "consult",
+        "trigger_key": "consult",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 10,
+        "title": "隣を走ってくれたから"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "pp_gain",
+        "param_value": 10,
+        "title": "今日もがんばりましょう♪"
+      }
+    ],
+    "p_item": null,
+    "skill_card": null
+  },
+  {
+    "name": "どたばた、おそうじ",
+    "rarity": "sr",
+    "plan": "sense",
+    "type": "visual",
+    "parameter_type": "visual",
+    "source": "gacha",
+    "release_date": "2026/11/16",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vi_parameter_bonus",
+        "parameter_type": "visual",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "class_work_end",
+        "trigger_key": "class_work_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vi_sp_lesson_end",
+        "parameter_type": "visual",
+        "values": {}
+      },
+      {
+        "name_key": "concentration_card_acquire_8",
+        "trigger_key": "concentration_card_acquire_8",
+        "parameter_type": "visual",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "千奈流お掃除"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "visual",
+        "param_value": 15,
+        "title": "メイドの極意とは！？"
+      }
+    ],
+    "p_item": {
+      "name": "お掃除の成果",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "class_work_end"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "visual",
+          "threshold": 700
+        },
+        "body": [
+          {
+            "key": "select_enhance"
+          },
+          {
+            "key": "param_up",
+            "param": "visual",
+            "value": 15
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 1
+        }
+      },
+      "actions": [
+        "enhance"
+      ]
+    },
+    "skill_card": null
+  },
+  {
+    "name": "お嬢様、失礼いたします",
+    "rarity": "ssr",
+    "plan": "sense",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "gacha",
+    "release_date": "2026/11/16",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "vo_initial_stat",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "vo_sp_lesson_rate",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "concentration_card_acquire_8",
+        "trigger_key": "concentration_card_acquire_8",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": "特大ハンバーガーに挑戦"
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": "お揃いハンバーガー"
+      },
+      {
+        "release": "lv40",
+        "effect_type": "select_enhance",
+        "title": "ここは高級レストラン？"
+      }
+    ],
+    "p_item": {
+      "name": "お嬢様おでかけセット",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_acquire",
+          "keyword": "concentration"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "vocal",
+          "threshold": 900
+        },
+        "body": [
+          {
+            "key": "pp_gain",
+            "value": 20
+          },
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 20
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 3
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

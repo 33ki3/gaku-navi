@@ -14,7 +14,7 @@ export function useAchievementCalculatorSummary(progress: AchievementCalculatorP
   const { t } = useTranslation()
   // タブ切替だけでは達成値が変わらないため、全アイドル分の集計を使い回す
   const summary = useMemo(() => calculateAchievementSummary(progress, selectedIdolId), [progress, selectedIdolId])
-  // アイドル選択ボタン用の名称と、各アイドルのTrue End・基本・PアイドルのEXP集計
+  // アイドル選択ボタン用の名称と、各アイドルの親愛度・True End・基本・PアイドルのEXP集計
   const idolSelectorItems = useMemo<IdolAchievementSelectorItem[]>(
     () => summary.idolSelectorItems.map((item) => ({ ...item, name: t(item.nameKey) })),
     [summary.idolSelectorItems, t],

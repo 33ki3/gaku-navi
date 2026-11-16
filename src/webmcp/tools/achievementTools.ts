@@ -203,6 +203,10 @@ export function createAchievementTools(context: WebMcpToolFactoryContext): WebMc
                   earnedExp: summary.selectedTrueEndProgress.earnedExp,
                   totalExp: summary.selectedTrueEndProgress.totalExp,
                 },
+                affection: {
+                  earnedExp: summary.selectedAffectionProgress.earnedExp,
+                  totalExp: summary.selectedAffectionProgress.totalExp,
+                },
                 basic: {
                   earnedExp: summary.selectedBasicEarnedExp,
                   totalExp: summary.selectedBasicTotalExp,

@@ -317,7 +317,7 @@ export default function AchievementCalculatorPage({
 
         {/* 選択中の入力カテゴリだけ描画し、達成記録はページ共通の状態に保持する */}
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          {/* 選択アイドルのTrue End・基本・Pアイドルの入力 */}
+          {/* 選択アイドルの親愛度・True End・基本・Pアイドルの入力 */}
           {activeTab === enums.CalculatorTab.Idol && (
             <IdolAchievementsTab summary={summary} controls={controls} oneStepSpinner={oneStepSpinner} />
           )}

@@ -60,7 +60,7 @@ describe('achievementCalculator data', () => {
     const roadTotal = data.IDOL_ROAD_REWARD_MILESTONES.reduce((total, milestone) => total + milestone.exp, 0)
 
     expect(data.PRODUCTION_ACHIEVEMENTS).toHaveLength(33)
-    expect(data.IDOL_ACHIEVEMENTS).toHaveLength(13)
+    expect(data.IDOL_ACHIEVEMENTS).toHaveLength(14)
     expect(data.P_IDOL_CARD_ACHIEVEMENTS).toHaveLength(6)
     expect(data.P_IDOL_CARD_ACHIEVEMENTS.reduce((total, tracker) => total + tracker.exp, 0)).toBe(7_750)
     expect(
@@ -70,7 +70,7 @@ describe('achievementCalculator data', () => {
       2_600,
     )
     expect(productionTotal).toBe(1_163_650)
-    expect(idolTotal).toBe(1_182_950)
+    expect(idolTotal).toBe(1_451_600)
     expect(roadTotal).toBe(329_000)
   })
 

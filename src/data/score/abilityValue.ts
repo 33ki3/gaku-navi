@@ -211,6 +211,7 @@ const stageData = {
     [AbilityNameKeyType.NormalLessonEnd]: ['5', '9'],
     [AbilityNameKeyType.Outing]: ['4', '7'],
     [AbilityNameKeyType.ParameterBonus]: ['2.8%', '3.2%', '3.6%', '4.0%', '4.3%'],
+    [AbilityNameKeyType.Consult]: ['5', '9'],
     [AbilityNameKeyType.Rest]: ['6', '11'],
     [AbilityNameKeyType.SpecialTraining]: ['7', '13'],
     [AbilityNameKeyType.ActivitySupplyGift]: ['4', '8'],

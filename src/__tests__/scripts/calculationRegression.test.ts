@@ -40,27 +40,58 @@ function observation(
 
 describe('計算回帰レポート', () => {
   it('一致したランダム条件もseedとprofileを記録する', () => {
-    const profile = { seed: 'run-seed', sample: 1, plan: 'sense' }
+    const profile = {
+      seed: 'run-seed',
+      sample: 1,
+      plan: 'sense',
+      lessonCounts: { vocal: 7, dance: 1, visual: 0 },
+      scheduleSelections: { 2: 'vo_lesson' },
+      paramBonusPercent: { vocal: 30, dance: 25, visual: 40 },
+    }
+    const lineup = {
+      totalScore: 100,
+      members: [
+        { name: 'ダンスカード', parameterType: 'dance', uncap: 4, isRental: false, cardScore: 240 },
+        { name: 'ボーカルカード', parameterType: 'vocal', uncap: 4, isRental: false, cardScore: 210 },
+      ],
+    }
     const report = compareCalculationObservations(
-      new Map([['optimization-random-01', observation('optimization-random-01', 100, { randomProfile: profile })]]),
-      new Map([['optimization-random-01', observation('optimization-random-01', 100, { randomProfile: profile })]]),
+      new Map([
+        ['optimization-random-01', observation('optimization-random-01', 100, { randomProfile: profile, lineup })],
+      ]),
+      new Map([
+        ['optimization-random-01', observation('optimization-random-01', 100, { randomProfile: profile, lineup })],
+      ]),
       { seed: 'run-seed', baseStatus: 'success', headStatus: 'success' },
     )
 
     const markdown = renderCalculationRegressionReport(report)
 
     expect(report.changes).toHaveLength(0)
-    expect(report.randomizedProfiles).toEqual([
-      {
-        id: 'optimization-random-01',
-        description: 'condition optimization-random-01',
-        profile,
-        baselinePresent: true,
-        changed: false,
-      },
-    ])
+    expect(report.comparedScenarios[0]?.plan).toBe('Sense')
+    expect(report.randomizedProfiles[0]).toMatchObject({
+      id: 'optimization-random-01',
+      description: 'condition optimization-random-01',
+      profile,
+      plan: 'Sense',
+      baseScore: 100,
+      headScore: 100,
+      baseLineup: lineup,
+      headLineup: lineup,
+      inputChanged: false,
+      baselinePresent: true,
+      changed: false,
+    })
     expect(markdown).toContain('run-seed')
-    expect(markdown).toContain('base/headの計算結果は一致しました。')
+    expect(markdown).toContain('| 状態 | 条件 | プラン | Base総合点 | Head総合点 | 差 |')
+    expect(markdown).toContain('✅ 一致')
+    expect(markdown).toContain('Base / Head共通の最適編成（アプリの結果）')
+    expect(markdown).toContain('| Vo | ボーカルカード | 4凸 | 210 |')
+    expect(markdown).toContain('条件設定:')
+    expect(markdown).toContain('レッスン配分 Vo7・Da1')
+    expect(markdown).toContain('パラメータボーナス Vo 30%・Da 25%・Vi 40%')
+    expect(markdown).toContain('"scheduleSelections"')
+    expect(markdown).toContain('<summary>再現用プロフィール（JSON）</summary>')
   })
 
   it('計算値の差分と入力条件の変更を別々に記録する', () => {
@@ -152,10 +183,10 @@ describe('計算回帰レポート', () => {
     const markdown = renderCalculationRegressionReport(report)
 
     expect(markdown).toContain('# 計算回帰テスト')
-    expect(markdown).toContain('### HIF / Vo7・Da1 / Sense')
-    expect(markdown).toContain('最適編成（Base）')
+    expect(markdown).toContain('| HIF / Vo7・Da1 | Sense |')
+    expect(markdown).toContain('最適編成（Base / アプリの結果）')
     expect(markdown).toContain('| Vo | Base Vo | 2凸 | 240 |')
-    expect(markdown).toContain('最適編成（Head）')
+    expect(markdown).toContain('最適編成（Head / アプリの結果）')
     expect(markdown).toContain('| Vo | Voカード | 4凸 | 320 |')
     expect(markdown).toContain('| Da | Daカード | 3凸（レンタル） | 280 |')
   })
@@ -172,7 +203,7 @@ describe('計算回帰レポート', () => {
     const markdown = renderCalculationRegressionReport(report)
 
     expect(report.randomizedProfiles[0]).toMatchObject({ baselinePresent: false, changed: true })
-    expect(markdown).toContain('baseに比較条件がなく、head側の結果のみです。')
-    expect(markdown).not.toContain('base/headの計算結果は一致しました。')
+    expect(markdown).toContain('Baseに比較条件がありません。Headの結果を表示します。')
+    expect(markdown).not.toContain('BaseとHeadの計算結果は一致しました。')
   })
 })

@@ -1,9 +1,27 @@
 /** 端末別差分の代表選択と、画像を省略した場合のテキスト表示を検証する */
 import { describe, expect, it } from 'vitest'
-import { formatOmittedVisualChange, selectVisualChangesForComment } from '../../../scripts/regressionSummary'
+import {
+  describeValidationOutcome,
+  describeVisualOutcome,
+  formatOmittedVisualChange,
+  selectVisualChangesForComment,
+} from '../../../scripts/regressionSummary'
 import { RegressionDevice, selectRepresentativeDeviceChanges } from '../../../scripts/regressionShared'
 
 describe('回帰差分のPRコメント表示', () => {
+  it('画面差分と検証結果を独立して表示する', () => {
+    expect(
+      describeVisualOutcome({
+        reportAvailable: true,
+        baselineAvailable: true,
+        totalVisualComparisonCount: 78,
+        totalVisualChangeCount: 13,
+      }),
+    ).toBe('⚠️ 差分あり: 13件')
+    expect(describeValidationOutcome('success')).toBe('✅ 成功')
+    expect(describeValidationOutcome('failure')).toBe('❌ 失敗')
+  })
+
   it('PC差分があるシナリオではPCを代表にし、それ以外はiOSを代表にする', () => {
     const changes = [
       { scenarioId: 'shared', device: RegressionDevice.Desktop },

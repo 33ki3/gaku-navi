@@ -257,7 +257,7 @@ function createImageCell(imagePath: string | null, label: string, includeImageAt
   if (!includeImageAttachments) return '画像を添付できませんでした'
   if (!imagePath) return '画像を用意できませんでした'
 
-  // GitHub CLIがローカル画像参照を添付URLへ置き換えられるよう、workspace相対のMarkdownにする
+  // 投稿スクリプトがGitHub添付URLへ置き換えられるよう、workspace相対のMarkdownにする
   const attachmentPath = path.relative(workspaceRoot, path.join(outputRoot, imagePath)).split(path.sep).join('/')
   return `![${escapeMarkdownAlt(label)}](${attachmentPath})`
 }
@@ -330,20 +330,50 @@ function getRunLabel(): string {
   return attempt ? `Run #${process.env.GITHUB_RUN_ID}（試行 ${attempt}）` : `Run #${process.env.GITHUB_RUN_ID}`
 }
 
+/** 画面比較の状態を検証の成否と別に表示する */
+export function describeVisualOutcome(
+  summary: Pick<
+    CommentSummary,
+    'reportAvailable' | 'baselineAvailable' | 'totalVisualComparisonCount' | 'totalVisualChangeCount'
+  >,
+): string {
+  if (!summary.reportAvailable) return '⚠️ 未比較（レポートなし）'
+  if (!summary.baselineAvailable) return '⚠️ 未比較（基準画像なし）'
+  if (summary.totalVisualComparisonCount === 0) return '⚠️ 未比較（比較対象なし）'
+  if (summary.totalVisualChangeCount === 0) return '✅ 差分なし'
+  return `⚠️ 差分あり: ${summary.totalVisualChangeCount}件`
+}
+
+/** 検証の成否を画面差分の有無と分けて表示する */
+export function describeValidationOutcome(validation: string): string {
+  if (validation === 'success') return '✅ 成功'
+  if (validation === 'failure') return '❌ 失敗'
+  return validation ? `⚠️ ${escapeHtml(validation)}` : '⚠️ 未実行'
+}
+
 function createCommentBody(summary: CommentSummary, includeImageAttachments: boolean): string {
-  const lines = [summaryMarker, '# 画面回帰テスト', '', `実行: ${getRunLabel()}`, '']
+  const lines = [
+    summaryMarker,
+    '# 画面回帰テスト',
+    '',
+    `実行: ${getRunLabel()}`,
+    '',
+    `画面比較: ${describeVisualOutcome(summary)}`,
+    `検証結果: ${describeValidationOutcome(summary.validation)}`,
+    '',
+  ]
   const runUrl = getRunUrl()
 
   if (!summary.reportAvailable) {
-    lines.push('❌ 回帰レポートを作成できませんでした。', '')
+    lines.push('回帰レポートを作成できませんでした。', '')
   } else if (!summary.baselineAvailable) {
-    lines.push('⚠️ ベースブランチに基準画像がないため、画面比較は行われていません。', '')
+    lines.push('ベースブランチに基準画像がないため、画面比較は行われていません。', '')
   } else if (summary.totalVisualComparisonCount === 0) {
-    lines.push('⚠️ 比較できる基準画像がありません。', '')
+    lines.push('比較できる基準画像がありません。', '')
   } else if (summary.totalVisualChangeCount === 0) {
-    lines.push('✅ 画面差分はありません。', '')
+    lines.push('画面差分はありません。', '')
   } else {
-    lines.push(`❌ 画面差分あり: ${summary.totalVisualChangeCount} 件（PC・iOS・Androidの比較はすべて実行）`, '')
+    lines.push(`画面差分あり: ${summary.totalVisualChangeCount} 件（PC・iOS・Androidの比較はすべて実行）`, '')
 
     if (summary.omittedVisualChangeCount > 0) {
       lines.push(
@@ -407,9 +437,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
   if (summary.e2e) {
     const executed = summary.e2e.total - summary.e2e.skipped
     const skipped = summary.e2e.skipped > 0 ? ` · ${summary.e2e.skipped} 件スキップ` : ''
-    lines.push(`E2E: ${summary.e2e.passed}/${executed} 件成功${skipped} · 検証 ${escapeHtml(summary.validation)}`, '')
-  } else if (summary.validation) {
-    lines.push(`検証: ${escapeHtml(summary.validation)}`, '')
+    lines.push(`E2E: ${summary.e2e.passed}/${executed} 件成功${skipped}`, '')
   }
   if (runUrl) lines.push(`[Actionsの実行結果](${runUrl})`, '')
 
@@ -422,7 +450,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
       ? '⚠️ 未比較'
       : summary.totalVisualChangeCount === 0
         ? '✅ なし'
-        : '❌ あり'
+        : '⚠️ あり'
   lines.push('<details>', `<summary>画面差分 ${visualStatus}</summary>`, '', '## 画面差分', '')
   if (!summary.reportAvailable || !summary.baselineAvailable) {
     lines.push('比較画像はありません。', '')
@@ -441,7 +469,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
       const imageTitle = `${title} · ${deviceLabel}`
 
       lines.push(
-        `### ❌ ${escapeHtml(title)}`,
+        `### 差分あり · ${escapeHtml(title)}`,
         `端末: ${deviceLabel}${changedRatio}`,
         '',
         '| Base | Head |',

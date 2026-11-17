@@ -22,9 +22,8 @@ const outputRoot = path.join(projectRoot, 'tmp/pr-comment-assets')
 const imagesRoot = path.join(outputRoot, 'images')
 const commentWithoutImagesPath = path.join(outputRoot, 'comment-no-images.md')
 const summaryMarker = '<!-- pr-regression-visual-report -->'
-// GitHub CLIの1コメントあたりの画像添付上限に合わせ、Base/Head比較は最大25件にする。
+// GitHub CLIの1コメントあたりの画像添付上限に合わせ、Base/Head/差分画像を最大50枚にする。
 const maxAttachedImages = 50
-const maxVisualChangesInComment = Math.floor(maxAttachedImages / 2)
 
 interface VisualChangeInput {
   scenarioId: string
@@ -35,11 +34,13 @@ interface VisualChangeInput {
   dimensionsMismatch?: boolean
   baseScreenshot?: string
   headScreenshot?: string
+  diffScreenshot?: string
 }
 
 interface VisualChange extends Omit<VisualChangeInput, 'baseScreenshot' | 'headScreenshot'> {
   baseImage: string | null
   headImage: string | null
+  diffImage: string | null
 }
 
 /** PRコメントに画像を載せない画面差分と、その理由 */
@@ -145,6 +146,7 @@ function parseVisualChange(value: unknown): VisualChangeInput | null {
     ...(value.dimensionsMismatch === true ? { dimensionsMismatch: true } : {}),
     ...(typeof value.baseScreenshot === 'string' ? { baseScreenshot: value.baseScreenshot } : {}),
     ...(typeof value.headScreenshot === 'string' ? { headScreenshot: value.headScreenshot } : {}),
+    ...(typeof value.diffScreenshot === 'string' ? { diffScreenshot: value.diffScreenshot } : {}),
   }
 }
 
@@ -253,13 +255,13 @@ function escapeMarkdownAlt(value: string): string {
     .replace(/[\r\n]+/g, ' ')
 }
 
-function createImageCell(imagePath: string | null, label: string, includeImageAttachments: boolean): string {
+export function createImageCell(imagePath: string | null, label: string, includeImageAttachments: boolean): string {
   if (!includeImageAttachments) return '画像を添付できませんでした'
   if (!imagePath) return '画像を用意できませんでした'
 
-  // 投稿スクリプトがGitHub添付URLへ置き換えられるよう、workspace相対のMarkdownにする
-  const attachmentPath = path.relative(workspaceRoot, path.join(outputRoot, imagePath)).split(path.sep).join('/')
-  return `![${escapeMarkdownAlt(label)}](${attachmentPath})`
+  // 本文ファイルの場所を起点に --attach と同じ画像を参照し、コメント内の位置へ添付画像を表示する
+  const relativeImagePath = imagePath.split(path.sep).join('/')
+  return `![${escapeMarkdownAlt(label)}](${relativeImagePath})`
 }
 
 /** 画像を省略する差分を、端末・差分率・省略理由つきの本文行へ変換する */
@@ -287,15 +289,26 @@ export function formatOmittedVisualChange(change: OmittedVisualChange): string {
 export function selectVisualChangesForComment(changes: readonly VisualChangeInput[]): VisualChangeSelection {
   const representativeChanges = selectRepresentativeDeviceChanges(changes)
   const representativeSet = new Set(representativeChanges)
+  const attachedChanges: VisualChangeInput[] = []
+  const attachmentLimitedChanges: VisualChangeInput[] = []
+  let attachedImageCount = 0
+  for (const change of representativeChanges) {
+    const imageCount = 2 + (change.diffScreenshot ? 1 : 0)
+    if (attachedImageCount + imageCount > maxAttachedImages) {
+      attachmentLimitedChanges.push(change)
+      continue
+    }
+    attachedChanges.push(change)
+    attachedImageCount += imageCount
+  }
+
   return {
-    attachedChanges: representativeChanges.slice(0, maxVisualChangesInComment),
+    attachedChanges,
     omittedVisualChanges: [
       ...changes
         .filter((change) => !representativeSet.has(change))
         .map((change) => ({ change, reason: 'representative-device' as const })),
-      ...representativeChanges
-        .slice(maxVisualChangesInComment)
-        .map((change) => ({ change, reason: 'attachment-limit' as const })),
+      ...attachmentLimitedChanges.map((change) => ({ change, reason: 'attachment-limit' as const })),
     ],
   }
 }
@@ -377,7 +390,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
 
     if (summary.omittedVisualChangeCount > 0) {
       lines.push(
-        `画像は最大${maxAttachedImages}枚（Base/Head各1枚で${maxVisualChangesInComment}組）まで掲載します。\n省略した${summary.omittedVisualChangeCount}件もテキストで記載します。`,
+        `画像は最大${maxAttachedImages}枚まで掲載し、差分画像がある場合はBase／Headの隣に表示します。\n省略した${summary.omittedVisualChangeCount}件もテキストで記載します。`,
         '',
       )
       for (const change of summary.omittedVisualChanges) lines.push(formatOmittedVisualChange(change))
@@ -472,11 +485,11 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
         `### 差分あり · ${escapeHtml(title)}`,
         `端末: ${deviceLabel}${changedRatio}`,
         '',
-        '| Base | Head |',
-        '| --- | --- |',
+        '| Base | Head | 差分（赤） |',
+        '| --- | --- | --- |',
       )
       lines.push(
-        `| ${createImageCell(change.baseImage, `${imageTitle} base`, includeImageAttachments)} | ${createImageCell(change.headImage, `${imageTitle} head`, includeImageAttachments)} |`,
+        `| ${createImageCell(change.baseImage, `${imageTitle} base`, includeImageAttachments)} | ${createImageCell(change.headImage, `${imageTitle} head`, includeImageAttachments)} | ${createImageCell(change.diffImage, `${imageTitle} diff`, includeImageAttachments)} |`,
         '',
       )
     }
@@ -521,6 +534,12 @@ export async function writeRegressionSummary(): Promise<void> {
       expectedPath,
       path.join(imageDirectory, 'head.png'),
     )
+    const diffImage = await copyScreenshot(
+      path.join(checkoutRoots.head, 'tmp/regression-results/head'),
+      change.diffScreenshot,
+      `visual-diff/${change.device}/${change.scenarioId}.png`,
+      path.join(imageDirectory, 'diff.png'),
+    )
 
     commentVisualChanges.push({
       scenarioId: change.scenarioId,
@@ -529,6 +548,7 @@ export async function writeRegressionSummary(): Promise<void> {
       ...(change.changedRatio !== undefined ? { changedRatio: change.changedRatio } : {}),
       baseImage,
       headImage,
+      diffImage,
     })
   }
 

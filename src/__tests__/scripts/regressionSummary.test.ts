@@ -1,6 +1,7 @@
 /** 端末別差分の代表選択と、画像を省略した場合のテキスト表示を検証する */
 import { describe, expect, it } from 'vitest'
 import {
+  createImageCell,
   describeValidationOutcome,
   describeVisualOutcome,
   formatOmittedVisualChange,
@@ -20,6 +21,15 @@ describe('回帰差分のPRコメント表示', () => {
     ).toBe('⚠️ 差分あり: 13件')
     expect(describeValidationOutcome('success')).toBe('✅ 成功')
     expect(describeValidationOutcome('failure')).toBe('❌ 失敗')
+  })
+
+  it('コメント本文ファイル相対の添付画像パスを生成する', () => {
+    expect(createImageCell('images/scenario/desktop/base.png', 'Base', true)).toBe(
+      '![Base](images/scenario/desktop/base.png)',
+    )
+    expect(createImageCell('images/scenario/desktop/diff.png', '差分（赤）', true)).toBe(
+      '![差分（赤）](images/scenario/desktop/diff.png)',
+    )
   })
 
   it('PC差分があるシナリオではPCを代表にし、それ以外はiOSを代表にする', () => {
@@ -66,5 +76,19 @@ describe('回帰差分のPRコメント表示', () => {
     expect(selection.attachedChanges).toHaveLength(25)
     expect(selection.omittedVisualChanges).toHaveLength(2)
     expect(selection.omittedVisualChanges.every(({ reason }) => reason === 'attachment-limit')).toBe(true)
+  })
+
+  it('差分画像がある場合はBase/Headを含めた添付枚数を50枚以内に収める', () => {
+    const changes = Array.from({ length: 17 }, (_, index) => ({
+      scenarioId: `scenario-${index + 1}`,
+      device: RegressionDevice.Desktop,
+      diffScreenshot: `visual-diff/desktop/scenario-${index + 1}.png`,
+    }))
+
+    const selection = selectVisualChangesForComment(changes)
+
+    expect(selection.attachedChanges).toHaveLength(16)
+    expect(selection.omittedVisualChanges).toHaveLength(1)
+    expect(selection.omittedVisualChanges[0]?.reason).toBe('attachment-limit')
   })
 })

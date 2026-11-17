@@ -6,7 +6,7 @@ import type { SeededHifVariant } from './seededOptimizerRandom'
 import { createSeededRandom } from './seededOptimizerRandom'
 
 /** 初のレッスン配分と授業属性 */
-export interface SeededHajimeVariant {
+interface SeededHajimeVariant {
   mainType: enums.ParameterType
   lessonCounts: Partial<Record<enums.ParameterType, number>>
   classType: enums.ParameterType

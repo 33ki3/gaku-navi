@@ -24,10 +24,10 @@ const profileCount = 5
 const hifLessonAllocations: readonly HifLessonAllocation[] = ['hif-7-1', 'hif-6-2', 'hif-8']
 const hajimeLessonAllocations = ['hajime-4-1', 'hajime-5'] as const
 
-export type SeededOptimizerScenario = typeof enums.ScenarioType.Hif | typeof enums.ScenarioType.Hajime
+type SeededOptimizerScenario = typeof enums.ScenarioType.Hif | typeof enums.ScenarioType.Hajime
 
 /** シナリオ別の配分と共通の点数設定を含むOptimizer入力 */
-export interface SeededOptimizerProfile {
+interface SeededOptimizerProfile {
   scenario: SeededOptimizerScenario
   difficulty: enums.DifficultyType
   lessonCounts: ParameterValues

@@ -25,7 +25,7 @@ export interface SeededHifVariant {
 }
 
 /** HIFと初のランダム条件で共通して使う属性設定 */
-export interface SeededOptimizerRandomSettings {
+interface SeededOptimizerRandomSettings {
   mainType: enums.ParameterType
   minorType: enums.ParameterType
   classType: enums.ParameterType

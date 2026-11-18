@@ -1,4 +1,4 @@
-/** PRコメントを固有マーカーで更新し、画像を同じコメントへ添付する */
+/** PRのテキストコメントを固有マーカーで作成・更新する */
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -7,7 +7,7 @@ import { isRecord } from './regressionShared.js'
 interface IssueComment {
   /** Existing commentをPATCHするURLに含めるGitHub側のcomment ID */
   id: number
-  /** マーカーと添付画像を含むコメント本文 */
+  /** マーカーを含むコメント本文 */
   body: string
   /** 同じマーカーのコメントが複数ある場合に新旧を判定する作成日時 */
   created_at: string
@@ -17,7 +17,7 @@ interface IssueComment {
 interface GitHubApiConfig {
   /** GitHub.comまたはGitHub EnterpriseのREST API root */
   apiUrl: string
-  /** issue comment更新と画像アップロードに使うtoken */
+  /** issue commentの取得・作成・更新に使うtoken */
   token: string
   /** `owner/repository`形式の対象リポジトリ */
   repository: string
@@ -46,33 +46,6 @@ export function findMarkedComment(comments: readonly IssueComment[], marker: str
   return comments
     .filter((comment) => comment.body.includes(marker))
     .sort((left, right) => right.created_at.localeCompare(left.created_at))[0]
-}
-
-/**
- * 本文内のローカル画像リンクを、アップロード後のGitHub asset URLへ差し替える
- *
- * @param body PR commentのMarkdown本文
- * @param attachmentPath 本文内のローカル画像path
- * @param assetUrl GitHub user attachment uploadが返したURL
- * @returns ローカル参照をasset URLへ置き換えた本文
- */
-export function replaceAttachmentReference(body: string, attachmentPath: string, assetUrl: string): string {
-  const localReference = `](${attachmentPath})`
-  if (!body.includes(localReference))
-    throw new Error(`Comment body does not reference the attachment: ${attachmentPath}`)
-  return body.replaceAll(localReference, `](${assetUrl})`)
-}
-
-/** 画像アップロードに失敗した添付を、壊れたローカルリンクを残さず代替テキストに置き換える */
-function replaceUnavailableAttachmentReference(body: string, attachmentPath: string): string {
-  const localReference = `](${attachmentPath})`
-  const referenceStart = body.indexOf(localReference)
-  if (referenceStart < 0) throw new Error(`Comment body does not reference the attachment: ${attachmentPath}`)
-  const imageStart = body.lastIndexOf('![', referenceStart)
-  if (imageStart < 0) throw new Error(`Comment body does not contain an image for the attachment: ${attachmentPath}`)
-  const altText = body.slice(imageStart + 2, referenceStart)
-  const referenceEnd = referenceStart + localReference.length
-  return `${body.slice(0, imageStart)}${altText}（画像を添付できませんでした）${body.slice(referenceEnd)}`
 }
 
 /**
@@ -171,165 +144,6 @@ async function listIssueComments(config: GitHubApiConfig): Promise<IssueComment[
 }
 
 /**
- * 拡張子からGitHub attachment endpointへ送るMIME typeを決める
- *
- * @param filename 添付画像のpath
- * @returns GitHubへ送信するContent-Type
- * @throws 対応していない拡張子の場合
- */
-function imageContentType(filename: string): string {
-  const contentTypeByExtension: Record<string, string> = {
-    '.gif': 'image/gif',
-    '.jpeg': 'image/jpeg',
-    '.jpg': 'image/jpeg',
-    '.png': 'image/png',
-    '.svg': 'image/svg+xml',
-    '.webp': 'image/webp',
-  }
-  const contentType = contentTypeByExtension[path.extname(filename).toLowerCase()]
-  if (!contentType) throw new Error(`Unsupported image attachment type: ${filename}`)
-  return contentType
-}
-
-/**
- * GitHub.com / GHE用のユーザー添付アップロードURLを作る
- *
- * @returns 画像添付用のHTTPS URL
- * @throws GitHub.com / GHE以外のserver URLの場合
- */
-function userAssetUploadUrl(): URL {
-  const serverUrl = process.env.GITHUB_SERVER_URL ?? 'https://github.com'
-  const hostname = new URL(serverUrl).hostname
-  if (hostname !== 'github.com' && !hostname.endsWith('.ghe.com')) {
-    throw new Error(`GitHub image attachments are not supported on ${hostname}`)
-  }
-  const uploadHostname = hostname === 'github.com' ? 'uploads.github.com' : `uploads.${hostname}`
-  return new URL('/user-attachments/assets', `https://${uploadHostname}`)
-}
-
-/**
- * 画像をGitHub user attachmentへbinary uploadし、返された公開URLを検証して返す
- *
- * @param config 対象repositoryと認証情報
- * @param repositoryId GitHub repository APIが返す数値ID
- * @param filename workspace内の画像path
- * @param contentType 拡張子から検証済みのMIME type
- * @returns Markdownに使用できるasset URL
- * @throws 画像が10 MiBを超える、uploadに失敗する、responseにURLがない場合
- */
-async function uploadImage(
-  config: GitHubApiConfig,
-  repositoryId: number,
-  filename: string,
-  contentType: string,
-): Promise<string> {
-  const contents = await readFile(filename)
-  // 大きすぎる添付を送信する前に止め、APIの上限超過応答をそのまま受けないようにする
-  if (contents.byteLength > 10 * 1024 * 1024) throw new Error(`Image attachment exceeds 10 MiB: ${filename}`)
-
-  const uploadUrl = userAssetUploadUrl()
-  uploadUrl.searchParams.set('name', path.basename(filename))
-  uploadUrl.searchParams.set('content_type', contentType)
-  uploadUrl.searchParams.set('repository_id', String(repositoryId))
-
-  // 添付upload endpointはbinary bodyを受け取るため、JSON request helperを通さずContent-Typeを直接指定する
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${config.token}`,
-      'Content-Type': 'application/octet-stream',
-    },
-    body: Uint8Array.from(contents),
-  })
-  const responseText = await response.text()
-  if (!response.ok) {
-    // upload endpointはJSON APIと別hostなので、エラーには本文の先頭だけを残す
-    throw new Error(`GitHub image upload failed with ${response.status}: ${responseText.slice(0, 500)}`)
-  }
-
-  const uploadedAsset: unknown = JSON.parse(responseText)
-  if (!isRecord(uploadedAsset) || typeof uploadedAsset.url !== 'string') {
-    throw new Error('GitHub returned an invalid image upload URL')
-  }
-  return uploadedAsset.url
-}
-
-/**
- * 添付一覧を検証し、画像を順番にuploadして本文のローカル参照をasset URLへ置き換える
- *
- * @param config 対象repositoryと認証情報
- * @param body PR commentのMarkdown本文
- * @param attachmentsFile 1行ごとにworkspace相対pathを記載した添付一覧
- * @returns upload後URLまたは添付失敗時の代替テキストを含む本文
- * @throws 添付数・path・本文参照が不正、またはrepository情報を検証できない場合
- */
-async function addImageAttachments(config: GitHubApiConfig, body: string, attachmentsFile: string): Promise<string> {
-  // Workflowが画像一覧stepで作る1行1pathのファイルを読み、空行は無視する
-  const attachments = (await readFile(path.resolve(attachmentsFile), 'utf8'))
-    .split(/\r?\n/)
-    .map((filename) => filename.trim())
-    .filter(Boolean)
-  if (attachments.length === 0) return body
-  // GitHubのPR comment 1件に添付できる枚数を超える場合、部分更新せず送信前に止める
-  if (attachments.length > 50) throw new Error('A PR comment can include at most 50 image attachments')
-
-  const repository = await requestGitHub(config, repositoryPath(config.repository))
-  if (!isRecord(repository) || typeof repository.id !== 'number' || !Number.isInteger(repository.id)) {
-    throw new Error('GitHub returned an invalid repository ID for image upload')
-  }
-
-  const workspaceRoot = await realpath(process.cwd())
-  const localAttachments = await Promise.all(
-    attachments.map(async (attachment) => {
-      const requestedPath = path.resolve(workspaceRoot, attachment)
-      const requestedRelativePath = path.relative(workspaceRoot, requestedPath)
-      if (
-        requestedRelativePath === '..' ||
-        requestedRelativePath.startsWith(`..${path.sep}`) ||
-        path.isAbsolute(requestedRelativePath)
-      ) {
-        throw new Error(`Image attachment is outside the workflow workspace: ${attachment}`)
-      }
-      // symlinkを解決した実pathも確認し、workspace外のファイルを添付として読まない
-      const localPath = await realpath(requestedPath)
-      const localRelativePath = path.relative(workspaceRoot, localPath)
-      if (
-        localRelativePath === '..' ||
-        localRelativePath.startsWith(`..${path.sep}`) ||
-        path.isAbsolute(localRelativePath)
-      ) {
-        throw new Error(`Image attachment is outside the workflow workspace: ${attachment}`)
-      }
-      const contentType = imageContentType(localPath)
-      const markdownPath = requestedRelativePath.split(path.sep).join('/')
-      // 本文に参照されない画像はuploadせず、pathとMarkdown参照の組み合わせを事前に確認する
-      if (!body.includes(`](${markdownPath})`)) {
-        throw new Error(`Comment body does not reference the attachment: ${markdownPath}`)
-      }
-      return { localPath, markdownPath, contentType }
-    }),
-  )
-
-  let commentBody = body
-  // 順番にuploadし、各成功直後に本文を更新する。途中失敗時も成功分のURLを保持できる
-  for (const [index, attachment] of localAttachments.entries()) {
-    try {
-      const assetUrl = await uploadImage(config, repository.id, attachment.localPath, attachment.contentType)
-      commentBody = replaceAttachmentReference(commentBody, attachment.markdownPath, assetUrl)
-    } catch (error) {
-      console.warn(`Image upload stopped after ${index} successful files: ${String(error)}`)
-      // 未upload分のローカルpathはPRから参照できないため、画像alt textと失敗表示に置換する
-      for (const unavailable of localAttachments.slice(index)) {
-        commentBody = replaceUnavailableAttachmentReference(commentBody, unavailable.markdownPath)
-      }
-      return `${commentBody}\n\n⚠️ 画像のアップロードに失敗しました。添付できた画像とテキストで結果を記載します。\n`
-    }
-  }
-  return commentBody
-}
-
-/**
  * マーカー付き本文を作成または更新し、並行runでもコメントが増殖しないよう既存コメントを優先する
  *
  * @throws 必須設定・本文・GitHub APIのいずれかが不正な場合
@@ -340,11 +154,8 @@ async function upsertComment(): Promise<void> {
   const bodyFile = process.env.PR_COMMENT_BODY_FILE
   if (!marker || !bodyFile) throw new Error('PR_COMMENT_MARKER and PR_COMMENT_BODY_FILE are required')
 
-  const rawBody = await readFile(path.resolve(bodyFile), 'utf8')
-  if (!rawBody.includes(marker)) throw new Error(`Comment body does not contain its marker: ${marker}`)
-  const body = process.env.PR_COMMENT_ATTACHMENTS_FILE
-    ? await addImageAttachments(config, rawBody, process.env.PR_COMMENT_ATTACHMENTS_FILE)
-    : rawBody
+  const body = await readFile(path.resolve(bodyFile), 'utf8')
+  if (!body.includes(marker)) throw new Error(`Comment body does not contain its marker: ${marker}`)
   const outputFile = process.env.PR_COMMENT_OUTPUT_FILE
   if (outputFile) {
     // APIへ送る最終本文をCI workspaceにも保存し、Step Summaryや失敗時の確認に使えるようにする

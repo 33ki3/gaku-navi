@@ -31,6 +31,7 @@ interface VisualComparison {
 interface DeviceObservation {
   status: string
   screenshot?: string
+  diffScreenshot?: string
   visualComparison?: VisualComparison
   ui?: JsonObject
 }
@@ -43,6 +44,7 @@ interface ScenarioObservation {
   scenarioHash?: string
   status: string
   screenshot?: string
+  diffScreenshot?: string
   visualComparison?: VisualComparison
   ui?: JsonObject
 }
@@ -153,6 +155,7 @@ interface VisualChange extends VisualComparison {
   device: RegressionDevice
   baseScreenshot?: string
   headScreenshot?: string
+  diffScreenshot?: string
 }
 
 /** base/headのcapture結果を比較して作るPRレポート */
@@ -420,6 +423,7 @@ function parseScenarioObservation(value: unknown): ScenarioObservation {
     ...(typeof value.scenarioHash === 'string' ? { scenarioHash: value.scenarioHash } : {}),
     status: value.status,
     ...(typeof value.screenshot === 'string' ? { screenshot: value.screenshot } : {}),
+    ...(typeof value.diffScreenshot === 'string' ? { diffScreenshot: value.diffScreenshot } : {}),
     ...(visualComparison ? { visualComparison } : {}),
     ...(isRecord(value.ui) ? { ui: value.ui } : {}),
   }
@@ -440,6 +444,7 @@ function parseScenarioReport(value: unknown): ScenarioReport {
     scenarioDevices[device] = {
       status: observation.status,
       ...(typeof observation.screenshot === 'string' ? { screenshot: observation.screenshot } : {}),
+      ...(typeof observation.diffScreenshot === 'string' ? { diffScreenshot: observation.diffScreenshot } : {}),
       ...(visualComparison ? { visualComparison } : {}),
       ...(isRecord(observation.ui) ? { ui: observation.ui } : {}),
     }
@@ -591,6 +596,7 @@ async function capture() {
       scenario.devices[device] = {
         status: observation.status,
         ...(observation.screenshot ? { screenshot: observation.screenshot } : {}),
+        ...(observation.diffScreenshot ? { diffScreenshot: observation.diffScreenshot } : {}),
         ...(observation.visualComparison ? { visualComparison: observation.visualComparison } : {}),
         ...(observation.ui ? { ui: observation.ui } : {}),
       }
@@ -967,6 +973,7 @@ async function compareCapture(): Promise<void> {
             ...visualComparison,
             ...(baseDevice.screenshot ? { baseScreenshot: baseDevice.screenshot } : {}),
             ...(headDevice.screenshot ? { headScreenshot: headDevice.screenshot } : {}),
+            ...(headDevice.diffScreenshot ? { diffScreenshot: headDevice.diffScreenshot } : {}),
           })
         }
       }

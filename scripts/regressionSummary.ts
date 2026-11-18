@@ -267,9 +267,7 @@ export function createImageCell(imagePath: string | null, label: string, include
 /** 画像を省略する差分を、端末・差分率・省略理由つきの本文行へ変換する */
 export function formatOmittedVisualChange(change: OmittedVisualChange): string {
   const { change: visualChange, reason } = change
-  const title = visualChange.description
-    ? `${visualChange.scenarioId} · ${visualChange.description}`
-    : visualChange.scenarioId
+  const title = visualChange.description ?? '画面シナリオ'
   const details =
     typeof visualChange.changedRatio === 'number'
       ? `差分 ${(visualChange.changedRatio * 100).toFixed(2)}%${
@@ -473,7 +471,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
     lines.push('✅ 画面差分はありません。', '')
   } else {
     for (const change of summary.visualChanges) {
-      const title = `${change.scenarioId}${change.description ? ` · ${change.description}` : ''}`
+      const title = change.description ?? '画面シナリオ'
       const deviceLabel = regressionDeviceLabels[change.device]
       const changedRatio =
         typeof change.changedRatio === 'number' && Number.isFinite(change.changedRatio)

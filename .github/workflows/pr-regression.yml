@@ -105,6 +105,16 @@ jobs:
             echo "::error::Regression dependencies were not restored from node-setup"
             exit 1
           fi
+      # 共通の条件manifestへ移行するまで、両revisionにhead側の計算テストと乱数生成を適用する暫定対応
+      - name: Use identical calculation scenarios for both revisions
+        if: steps.dependencies.outcome == 'success'
+        run: |
+          cp head/src/__tests__/regressionObservations.test.ts base/src/__tests__/regressionObservations.test.ts
+          cp head/tests/fixtures/testScoreSettings.ts base/tests/fixtures/testScoreSettings.ts
+          cp head/tests/fixtures/testScoreSettings.json base/tests/fixtures/testScoreSettings.json
+          cp head/tests/fixtures/seededOptimizerProfile.ts base/tests/fixtures/seededOptimizerProfile.ts
+          cp head/tests/fixtures/seededOptimizerRandom.ts base/tests/fixtures/seededOptimizerRandom.ts
+          cp head/tests/fixtures/seededOptimizerSchedule.ts base/tests/fixtures/seededOptimizerSchedule.ts
       - name: Run calculation scenarios on base
         id: base-calculation
         if: always() && steps.dependencies.outcome == 'success'
@@ -249,6 +259,7 @@ jobs:
         if: steps.dependencies.outcome == 'success'
         working-directory: head
         run: npm run build
+      # 共通の画面回帰ハーネスへ移行するまで、base/headの操作手順と撮影設定を揃える暫定対応
       - name: Share the head screenshot harness with the base capture
         if: steps.base-build.outcome == 'success'
         run: cp head/tests/e2e/scenarios.spec.ts base/tests/e2e/scenarios.spec.ts

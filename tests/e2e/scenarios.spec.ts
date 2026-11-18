@@ -1551,6 +1551,8 @@ test('options-modal-actions', async ({ page }, testInfo) => {
 /** JSONファイルと文字列の出力・取込を行い、不正形式のエラーを確認する */
 test('data-management-actions', async ({ page }, testInfo) => {
   await openApp(page)
+  // JSONへ出る exportedAt を固定し、base/headで撮影時刻だけの差分が出ないようにする
+  await page.clock.setFixedTime(new Date('2026-01-01T00:00:00.000Z'))
   await openMoreMenuItem(page, 'データ管理')
   const dialog = page.getByRole('dialog', { name: 'データ管理' })
   await expect(dialog).toBeVisible()
@@ -1581,6 +1583,7 @@ test('data-management-actions', async ({ page }, testInfo) => {
   await dialog.getByRole('button', { name: 'JSONを反映', exact: true }).click()
   await expect(dialog.getByText(/JSON全体の構文が正しくありません/)).toBeVisible()
   await dialog.getByRole('button', { name: '現在値に戻す', exact: true }).click()
+  await expect(jsonInput).toHaveValue(/"exportedAt": "2026-01-01T09:00:00\.000\+09:00"/)
   await saveObservation(scenarios['data-management-actions'], testInfo, page, undefined, dialog)
   await dialog.getByRole('button', { name: '閉じる', exact: true }).click()
 })

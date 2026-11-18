@@ -57,7 +57,8 @@ describe('回帰差分のPRコメント表示', () => {
       reason: 'representative-device',
     })
 
-    expect(line).toContain('filter-sort-actions')
+    expect(line).toContain('一覧の並び順とフィルターを切り替える')
+    expect(line).not.toContain('filter-sort-actions')
     expect(line).toContain('iOS')
     expect(line).toContain('4.00%')
     expect(line).toContain('1,234 px')

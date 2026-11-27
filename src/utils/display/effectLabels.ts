@@ -200,6 +200,7 @@ function buildSkillInterpolation(action: SkillCardEffectAction, t: TFunction): R
   if (action.rate) result.rate = action.rate
   // 回数（「{count}回」等）
   if (action.count !== undefined && action.count !== 0) result.count = action.count
+  if (action.count2 !== undefined && action.count2 !== 0) result.count2 = action.count2
   // カードゾーン（「手札」「捨て札」等を翻訳して設定）
   if (action.card_zone) result.card_zone = t(data.getCardZoneLabel(action.card_zone))
   // スキルカード種別（「メンタル」「アクティブ」等を翻訳して設定）

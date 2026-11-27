@@ -25,6 +25,7 @@ export const TriggerActionMap: Record<TriggerKeyType, ActionIdType> = {
   [TriggerKeyType.SkillEnhance]: ActionIdType.SkillEnhance,
   [TriggerKeyType.MSkillEnhance]: ActionIdType.MSkillEnhance,
   [TriggerKeyType.ASkillEnhance]: ActionIdType.ASkillEnhance,
+  [TriggerKeyType.TSkillEnhance]: ActionIdType.TSkillEnhance,
   [TriggerKeyType.Delete]: ActionIdType.Delete,
   [TriggerKeyType.DeleteCount]: ActionIdType.Delete,
   [TriggerKeyType.MSkillDelete]: ActionIdType.MSkillDelete,

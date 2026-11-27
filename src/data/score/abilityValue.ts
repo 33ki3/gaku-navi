@@ -133,6 +133,7 @@ const stageData = {
     [AbilityNameKeyType.ConcentrationCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.MotivationCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.ReserveCardAcquire]: ['2', '3'],
+    [AbilityNameKeyType.ReserveCardAcquire8]: ['11', '16'],
     [AbilityNameKeyType.AggressiveCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.FullPowerCardAcquire]: ['2', '3'],
     [AbilityNameKeyType.SpLesson20]: ['15', '21'],

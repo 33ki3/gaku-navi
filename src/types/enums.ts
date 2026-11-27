@@ -320,6 +320,8 @@ export const AbilityNameKeyType = {
   MSkillEnhance: 'm_skill_enhance',
   /** アクティブスキル強化 */
   ASkillEnhance: 'a_skill_enhance',
+  /** トラブルカードを1枚以上所持中のスキルカード強化 */
+  TSkillEnhance: 't_skill_enhance',
   /** スキルカード削除 */
   Delete: 'delete',
   /** スキルカード削除（回数制限） */
@@ -821,6 +823,8 @@ export const ActionIdType = {
   MSkillEnhance: 'm_skill_enhance',
   /** アクティブスキル強化 */
   ASkillEnhance: 'a_skill_enhance',
+  /** トラブルカードを1枚以上所持中のスキルカード強化 */
+  TSkillEnhance: 't_skill_enhance',
   /** スキルカード削除 */
   Delete: 'delete',
   /** メンタルスキル削除 */
@@ -1070,6 +1074,8 @@ export const TriggerKeyType = {
   MSkillEnhance: 'm_skill_enhance',
   /** アクティブスキル強化 */
   ASkillEnhance: 'a_skill_enhance',
+  /** トラブルカードを1枚以上所持中のスキルカード強化 */
+  TSkillEnhance: 't_skill_enhance',
   /** カード削除 */
   Delete: 'delete',
   /** カード削除（回数制限） */
@@ -1685,6 +1691,8 @@ export const EffectTemplateKeyType = {
   UpToNTimes: 'up_to_n_times',
   /** N回まで使用 */
   UpToNCardUse: 'up_to_n_card_use',
+  /** N回まで、N回カードを使うごと */
+  UpToEveryNCardUse: 'up_to_every_n_card_use',
   /** 次のターン */
   NextTurn: 'next_turn',
   /** 永続 */

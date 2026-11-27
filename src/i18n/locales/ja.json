@@ -111,6 +111,7 @@
       "skill_enhance": "スキルカード強化時、{{param}}上昇+{{value}}",
       "m_skill_enhance": "メンタルスキルカード強化時、{{param}}上昇+{{value}}",
       "a_skill_enhance": "アクティブスキルカード強化時、{{param}}上昇+{{value}}",
+      "t_skill_enhance": "スキルカード強化時、所持しているトラブルカードが1枚以上の場合、{{param}}上昇+{{value}}（プロデュース中{{count}}回）",
       "delete": "スキルカード削除時、{{param}}上昇+{{value}}",
       "delete_count": "スキルカード削除時、{{param}}上昇+{{value}}（プロデュース中{{count}}回）",
       "m_skill_delete": "メンタルスキルカード削除時、{{param}}上昇+{{value}}（プロデュース中{{count}}回）",
@@ -410,7 +411,8 @@
         "ongoing": "以降の{{turns}}ターンの間、",
         "every_n_card_use": "以降、スキルカードを{{count}}回使用するごとに、",
         "up_to_n_times": "以降{{count}}回まで、",
-        "up_to_n_card_use": "以降{{count}}回まで、{{skill_type}}スキルカード使用時、"
+        "up_to_n_card_use": "以降{{count}}回まで、{{skill_type}}スキルカード使用時、",
+        "up_to_every_n_card_use": "以降{{count}}回まで、{{skill_type}}スキルカードを{{count2}}回使用するごとに、"
       },
       "trigger": {
         "turn_end": "ターン終了時、",
@@ -578,6 +580,7 @@
       "skill_enhance": "スキルカード強化",
       "active_enhance": "アクティブスキル強化",
       "mental_enhance": "メンタルスキル強化",
+      "trouble_enhance": "トラブル1枚以上所持時スキル強化",
       "skill_delete": "スキルカード削除",
       "active_delete": "アクティブスキル削除",
       "mental_delete": "メンタルスキル削除",

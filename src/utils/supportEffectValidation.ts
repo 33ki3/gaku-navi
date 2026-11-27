@@ -98,6 +98,7 @@ function isSkillEffectAction(value: unknown): boolean {
     isOptional(value.pct, isFiniteNumber) &&
     isOptional(value.rate, (item) => typeof item === 'string') &&
     isOptional(value.count, isFiniteNumber) &&
+    isOptional(value.count2, isFiniteNumber) &&
     isOptional(value.card_zone, (item) => isEnumValue(item, enums.CardZoneType)) &&
     isOptional(value.skill_type, (item) => isEnumValue(item, enums.SkillCardType)) &&
     isOptional(value.stage, isFiniteNumber)

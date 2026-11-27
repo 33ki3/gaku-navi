@@ -22,9 +22,8 @@ const outputRoot = path.join(projectRoot, 'tmp/pr-comment-assets')
 const imagesRoot = path.join(outputRoot, 'images')
 const commentWithoutImagesPath = path.join(outputRoot, 'comment-no-images.md')
 const summaryMarker = '<!-- pr-regression-visual-report -->'
-// GitHub CLIの1コメントあたりの画像添付上限に合わせ、Base/Head比較は最大25件にする。
+// GitHub CLIの1コメントあたりの画像添付上限に合わせ、Base/Head/差分画像を最大50枚にする。
 const maxAttachedImages = 50
-const maxVisualChangesInComment = Math.floor(maxAttachedImages / 2)
 
 interface VisualChangeInput {
   scenarioId: string
@@ -35,11 +34,13 @@ interface VisualChangeInput {
   dimensionsMismatch?: boolean
   baseScreenshot?: string
   headScreenshot?: string
+  diffScreenshot?: string
 }
 
 interface VisualChange extends Omit<VisualChangeInput, 'baseScreenshot' | 'headScreenshot'> {
   baseImage: string | null
   headImage: string | null
+  diffImage: string | null
 }
 
 /** PRコメントに画像を載せない画面差分と、その理由 */
@@ -145,6 +146,7 @@ function parseVisualChange(value: unknown): VisualChangeInput | null {
     ...(value.dimensionsMismatch === true ? { dimensionsMismatch: true } : {}),
     ...(typeof value.baseScreenshot === 'string' ? { baseScreenshot: value.baseScreenshot } : {}),
     ...(typeof value.headScreenshot === 'string' ? { headScreenshot: value.headScreenshot } : {}),
+    ...(typeof value.diffScreenshot === 'string' ? { diffScreenshot: value.diffScreenshot } : {}),
   }
 }
 
@@ -253,21 +255,19 @@ function escapeMarkdownAlt(value: string): string {
     .replace(/[\r\n]+/g, ' ')
 }
 
-function createImageCell(imagePath: string | null, label: string, includeImageAttachments: boolean): string {
+export function createImageCell(imagePath: string | null, label: string, includeImageAttachments: boolean): string {
   if (!includeImageAttachments) return '画像を添付できませんでした'
   if (!imagePath) return '画像を用意できませんでした'
 
-  // GitHub CLIがローカル画像参照を添付URLへ置き換えられるよう、workspace相対のMarkdownにする
-  const attachmentPath = path.relative(workspaceRoot, path.join(outputRoot, imagePath)).split(path.sep).join('/')
-  return `![${escapeMarkdownAlt(label)}](${attachmentPath})`
+  // 本文ファイルの場所を起点に --attach と同じ画像を参照し、コメント内の位置へ添付画像を表示する
+  const relativeImagePath = imagePath.split(path.sep).join('/')
+  return `![${escapeMarkdownAlt(label)}](${relativeImagePath})`
 }
 
 /** 画像を省略する差分を、端末・差分率・省略理由つきの本文行へ変換する */
 export function formatOmittedVisualChange(change: OmittedVisualChange): string {
   const { change: visualChange, reason } = change
-  const title = visualChange.description
-    ? `${visualChange.scenarioId} · ${visualChange.description}`
-    : visualChange.scenarioId
+  const title = visualChange.description ?? '画面シナリオ'
   const details =
     typeof visualChange.changedRatio === 'number'
       ? `差分 ${(visualChange.changedRatio * 100).toFixed(2)}%${
@@ -287,15 +287,26 @@ export function formatOmittedVisualChange(change: OmittedVisualChange): string {
 export function selectVisualChangesForComment(changes: readonly VisualChangeInput[]): VisualChangeSelection {
   const representativeChanges = selectRepresentativeDeviceChanges(changes)
   const representativeSet = new Set(representativeChanges)
+  const attachedChanges: VisualChangeInput[] = []
+  const attachmentLimitedChanges: VisualChangeInput[] = []
+  let attachedImageCount = 0
+  for (const change of representativeChanges) {
+    const imageCount = 2 + (change.diffScreenshot ? 1 : 0)
+    if (attachedImageCount + imageCount > maxAttachedImages) {
+      attachmentLimitedChanges.push(change)
+      continue
+    }
+    attachedChanges.push(change)
+    attachedImageCount += imageCount
+  }
+
   return {
-    attachedChanges: representativeChanges.slice(0, maxVisualChangesInComment),
+    attachedChanges,
     omittedVisualChanges: [
       ...changes
         .filter((change) => !representativeSet.has(change))
         .map((change) => ({ change, reason: 'representative-device' as const })),
-      ...representativeChanges
-        .slice(maxVisualChangesInComment)
-        .map((change) => ({ change, reason: 'attachment-limit' as const })),
+      ...attachmentLimitedChanges.map((change) => ({ change, reason: 'attachment-limit' as const })),
     ],
   }
 }
@@ -330,24 +341,54 @@ function getRunLabel(): string {
   return attempt ? `Run #${process.env.GITHUB_RUN_ID}（試行 ${attempt}）` : `Run #${process.env.GITHUB_RUN_ID}`
 }
 
+/** 画面比較の状態を検証の成否と別に表示する */
+export function describeVisualOutcome(
+  summary: Pick<
+    CommentSummary,
+    'reportAvailable' | 'baselineAvailable' | 'totalVisualComparisonCount' | 'totalVisualChangeCount'
+  >,
+): string {
+  if (!summary.reportAvailable) return '⚠️ 未比較（レポートなし）'
+  if (!summary.baselineAvailable) return '⚠️ 未比較（基準画像なし）'
+  if (summary.totalVisualComparisonCount === 0) return '⚠️ 未比較（比較対象なし）'
+  if (summary.totalVisualChangeCount === 0) return '✅ 差分なし'
+  return `⚠️ 差分あり: ${summary.totalVisualChangeCount}件`
+}
+
+/** 検証の成否を画面差分の有無と分けて表示する */
+export function describeValidationOutcome(validation: string): string {
+  if (validation === 'success') return '✅ 成功'
+  if (validation === 'failure') return '❌ 失敗'
+  return validation ? `⚠️ ${escapeHtml(validation)}` : '⚠️ 未実行'
+}
+
 function createCommentBody(summary: CommentSummary, includeImageAttachments: boolean): string {
-  const lines = [summaryMarker, '# 画面回帰テスト', '', `実行: ${getRunLabel()}`, '']
+  const lines = [
+    summaryMarker,
+    '# 画面回帰テスト',
+    '',
+    `実行: ${getRunLabel()}`,
+    '',
+    `画面比較: ${describeVisualOutcome(summary)}`,
+    `検証結果: ${describeValidationOutcome(summary.validation)}`,
+    '',
+  ]
   const runUrl = getRunUrl()
 
   if (!summary.reportAvailable) {
-    lines.push('❌ 回帰レポートを作成できませんでした。', '')
+    lines.push('回帰レポートを作成できませんでした。', '')
   } else if (!summary.baselineAvailable) {
-    lines.push('⚠️ ベースブランチに基準画像がないため、画面比較は行われていません。', '')
+    lines.push('ベースブランチに基準画像がないため、画面比較は行われていません。', '')
   } else if (summary.totalVisualComparisonCount === 0) {
-    lines.push('⚠️ 比較できる基準画像がありません。', '')
+    lines.push('比較できる基準画像がありません。', '')
   } else if (summary.totalVisualChangeCount === 0) {
-    lines.push('✅ 画面差分はありません。', '')
+    lines.push('画面差分はありません。', '')
   } else {
-    lines.push(`❌ 画面差分あり: ${summary.totalVisualChangeCount} 件（PC・iOS・Androidの比較はすべて実行）`, '')
+    lines.push(`画面差分あり: ${summary.totalVisualChangeCount} 件（PC・iOS・Androidの比較はすべて実行）`, '')
 
     if (summary.omittedVisualChangeCount > 0) {
       lines.push(
-        `画像は最大${maxAttachedImages}枚（Base/Head各1枚で${maxVisualChangesInComment}組）まで掲載します。\n省略した${summary.omittedVisualChangeCount}件もテキストで記載します。`,
+        `画像は最大${maxAttachedImages}枚まで掲載し、差分画像がある場合はBase／Headの隣に表示します。\n省略した${summary.omittedVisualChangeCount}件もテキストで記載します。`,
         '',
       )
       for (const change of summary.omittedVisualChanges) lines.push(formatOmittedVisualChange(change))
@@ -407,9 +448,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
   if (summary.e2e) {
     const executed = summary.e2e.total - summary.e2e.skipped
     const skipped = summary.e2e.skipped > 0 ? ` · ${summary.e2e.skipped} 件スキップ` : ''
-    lines.push(`E2E: ${summary.e2e.passed}/${executed} 件成功${skipped} · 検証 ${escapeHtml(summary.validation)}`, '')
-  } else if (summary.validation) {
-    lines.push(`検証: ${escapeHtml(summary.validation)}`, '')
+    lines.push(`E2E: ${summary.e2e.passed}/${executed} 件成功${skipped}`, '')
   }
   if (runUrl) lines.push(`[Actionsの実行結果](${runUrl})`, '')
 
@@ -422,7 +461,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
       ? '⚠️ 未比較'
       : summary.totalVisualChangeCount === 0
         ? '✅ なし'
-        : '❌ あり'
+        : '⚠️ あり'
   lines.push('<details>', `<summary>画面差分 ${visualStatus}</summary>`, '', '## 画面差分', '')
   if (!summary.reportAvailable || !summary.baselineAvailable) {
     lines.push('比較画像はありません。', '')
@@ -432,7 +471,7 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
     lines.push('✅ 画面差分はありません。', '')
   } else {
     for (const change of summary.visualChanges) {
-      const title = `${change.scenarioId}${change.description ? ` · ${change.description}` : ''}`
+      const title = change.description ?? '画面シナリオ'
       const deviceLabel = regressionDeviceLabels[change.device]
       const changedRatio =
         typeof change.changedRatio === 'number' && Number.isFinite(change.changedRatio)
@@ -441,14 +480,14 @@ function createCommentBody(summary: CommentSummary, includeImageAttachments: boo
       const imageTitle = `${title} · ${deviceLabel}`
 
       lines.push(
-        `### ❌ ${escapeHtml(title)}`,
+        `### 差分あり · ${escapeHtml(title)}`,
         `端末: ${deviceLabel}${changedRatio}`,
         '',
-        '| Base | Head |',
-        '| --- | --- |',
+        '| Base | Head | 差分（赤） |',
+        '| --- | --- | --- |',
       )
       lines.push(
-        `| ${createImageCell(change.baseImage, `${imageTitle} base`, includeImageAttachments)} | ${createImageCell(change.headImage, `${imageTitle} head`, includeImageAttachments)} |`,
+        `| ${createImageCell(change.baseImage, `${imageTitle} base`, includeImageAttachments)} | ${createImageCell(change.headImage, `${imageTitle} head`, includeImageAttachments)} | ${createImageCell(change.diffImage, `${imageTitle} diff`, includeImageAttachments)} |`,
         '',
       )
     }
@@ -493,6 +532,12 @@ export async function writeRegressionSummary(): Promise<void> {
       expectedPath,
       path.join(imageDirectory, 'head.png'),
     )
+    const diffImage = await copyScreenshot(
+      path.join(checkoutRoots.head, 'tmp/regression-results/head'),
+      change.diffScreenshot,
+      `visual-diff/${change.device}/${change.scenarioId}.png`,
+      path.join(imageDirectory, 'diff.png'),
+    )
 
     commentVisualChanges.push({
       scenarioId: change.scenarioId,
@@ -501,6 +546,7 @@ export async function writeRegressionSummary(): Promise<void> {
       ...(change.changedRatio !== undefined ? { changedRatio: change.changedRatio } : {}),
       baseImage,
       headImage,
+      diffImage,
     })
   }
 

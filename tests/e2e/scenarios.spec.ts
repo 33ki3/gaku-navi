@@ -1,7 +1,7 @@
 /** E2Eで画面操作を確認し、PR比較用の画面とUI表示をシナリオIDで記録する */
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { type Locator, type Page, type TestInfo, expect, test } from '@playwright/test'
@@ -136,6 +136,7 @@ interface ScenarioDefinition {
 /** 端末別のE2E実行から回帰比較へ渡す画面・UIの観測値 */
 interface ScenarioObservation {
   screenshot?: string
+  diffScreenshot?: string
   visualComparison?: {
     matches: boolean
     changedPixels?: number
@@ -624,7 +625,10 @@ async function captureRegressionScreenshot(
       await restoreScrollableScreenshotTarget(screenshotTarget)
     }
   }
-  return page.screenshot({ ...options, ...(scenario.fullPageScreenshot ? { fullPage: true } : {}) })
+  return page.screenshot({
+    ...options,
+    ...(scenario.fullPageScreenshot ? { fullPage: true, scale: 'css' as const } : {}),
+  })
 }
 
 /** 保存済み基準画像がある場合に取得済み画像を比較し、差分を観測値として返す */
@@ -680,9 +684,19 @@ async function saveObservation(
   const screenshot = await captureRegressionScreenshot(page, scenario, screenshotTarget)
   await writeFile(screenshotPath, screenshot)
   const visualComparison = await compareScreenshot(scenario, testInfo, screenshot)
+  const playwrightDiffPath =
+    visualComparison?.matches === false ? testInfo.outputPath(`${scenario.id}-diff.png`) : undefined
+  let diffScreenshot: string | undefined
+  if (playwrightDiffPath && existsSync(playwrightDiffPath)) {
+    const diffOutputPath = path.join(regressionOutput, 'visual-diff', device, `${scenario.id}.png`)
+    await mkdir(path.dirname(diffOutputPath), { recursive: true })
+    await writeFile(diffOutputPath, await readFile(playwrightDiffPath))
+    diffScreenshot = path.relative(regressionOutput, diffOutputPath)
+  }
 
   observations.set(`${device}/${scenario.id}`, {
     screenshot: path.relative(regressionOutput, screenshotPath),
+    ...(diffScreenshot ? { diffScreenshot } : {}),
     ...(visualComparison ? { visualComparison } : {}),
     ...details,
   })
@@ -1537,6 +1551,8 @@ test('options-modal-actions', async ({ page }, testInfo) => {
 /** JSONファイルと文字列の出力・取込を行い、不正形式のエラーを確認する */
 test('data-management-actions', async ({ page }, testInfo) => {
   await openApp(page)
+  // JSONへ出る exportedAt を固定し、base/headで撮影時刻だけの差分が出ないようにする
+  await page.clock.setFixedTime(new Date('2026-01-01T00:00:00.000Z'))
   await openMoreMenuItem(page, 'データ管理')
   const dialog = page.getByRole('dialog', { name: 'データ管理' })
   await expect(dialog).toBeVisible()
@@ -1567,6 +1583,7 @@ test('data-management-actions', async ({ page }, testInfo) => {
   await dialog.getByRole('button', { name: 'JSONを反映', exact: true }).click()
   await expect(dialog.getByText(/JSON全体の構文が正しくありません/)).toBeVisible()
   await dialog.getByRole('button', { name: '現在値に戻す', exact: true }).click()
+  await expect(jsonInput).toHaveValue(/"exportedAt": "2026-01-01T09:00:00\.000\+09:00"/)
   await saveObservation(scenarios['data-management-actions'], testInfo, page, undefined, dialog)
   await dialog.getByRole('button', { name: '閉じる', exact: true }).click()
 })

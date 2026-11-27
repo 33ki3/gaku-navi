@@ -237,6 +237,8 @@ export interface SkillCardEffectAction {
   rate?: string
   /** 回数（例: 2, 3） */
   count?: number
+  /** 第2回数（例: 上限回数と発動間隔） */
+  count2?: number
   /** カードゾーン（"hand" / "discard"）（例: "hand"） */
   card_zone?: CardZoneType
   /** スキルカード種別（"active" / "mental"）（例: "mental"） */

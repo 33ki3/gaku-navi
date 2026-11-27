@@ -218,6 +218,7 @@ const randomCaseValueRanges: {
       [enums.ActionIdType.SkillEnhance]: { min: 0, max: 8 },
       [enums.ActionIdType.ASkillEnhance]: { min: 0, max: 8 },
       [enums.ActionIdType.MSkillEnhance]: { min: 0, max: 8 },
+      [enums.ActionIdType.TSkillEnhance]: { min: 0, max: 8 },
       [enums.ActionIdType.Delete]: { min: 0, max: 8 },
       [enums.ActionIdType.ASkillDelete]: {
         min: 0,

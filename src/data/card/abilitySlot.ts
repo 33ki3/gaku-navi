@@ -43,6 +43,7 @@ export const ABILITY_MAX_COUNT: Partial<Record<enums.AbilityNameKeyType, number>
   [enums.AbilityNameKeyType.PItemAcquire]: 6,
   [enums.AbilityNameKeyType.SpLesson20]: 4,
   [enums.AbilityNameKeyType.SpecialTraining]: 3,
+  [enums.AbilityNameKeyType.TSkillEnhance]: 3,
 }
 
 /**

@@ -95,7 +95,12 @@ const entries: AbilityKeywordEntry[] = [
     label: 'card.ability.card_enhance',
     badge: 'card.badge.card_enhance',
     isParamCategory: false,
-    triggers: [TriggerKeyType.SkillEnhance, TriggerKeyType.ASkillEnhance, TriggerKeyType.MSkillEnhance],
+    triggers: [
+      TriggerKeyType.SkillEnhance,
+      TriggerKeyType.ASkillEnhance,
+      TriggerKeyType.MSkillEnhance,
+      TriggerKeyType.TSkillEnhance,
+    ],
   },
   {
     id: AbilityKeywordType.CardDelete,

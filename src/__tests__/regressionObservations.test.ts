@@ -13,6 +13,7 @@ import {
   testCustomScoreSettingsValues,
 } from '../../tests/fixtures/testScoreSettings'
 import { readValidatedTestScoreSettingsOptions } from '../../tests/fixtures/testScoreSettingsVitest'
+import { createSeededOptimizerProfile, seededOptimizerProfileCount } from '../../tests/fixtures/seededOptimizerProfile'
 import * as constant from '../constant'
 import * as data from '../data'
 import * as enums from '../types/enums'
@@ -33,7 +34,7 @@ const optimizerPlans = [
   { id: 'logic', value: enums.PlanType.Logic },
   { id: 'anomaly', value: enums.PlanType.Anomaly },
 ]
-const randomizedOptimizerProfileCount = 5
+const randomizedOptimizerProfileCount = seededOptimizerProfileCount
 const allFourCardUncaps = Object.fromEntries(data.AllCards.map(({ name }) => [name, enums.UncapType.Four]))
 
 interface CalculationObservation {
@@ -71,12 +72,6 @@ function createScenarioHash(input: Record<string, unknown>): string {
   return createHash('sha256')
     .update(JSON.stringify(canonicalize(input)))
     .digest('hex')
-}
-
-/** 属性ごとにseedを分け、他の点数設定の追加で既存プロファイルがずれないようにする */
-function getRandomizedParameterBonus(seed: string, sample: number, parameter: 'vocal' | 'dance' | 'visual'): number {
-  const hash = createHash('sha256').update(`${seed}:optimizer-profile:${sample}:parameter-bonus:${parameter}`).digest()
-  return 20 + (hash.readUInt32BE(0) % 5) * 5
 }
 
 async function saveCalculationObservation(observation: CalculationObservation): Promise<void> {
@@ -325,37 +320,77 @@ regressionObservationTest(
   optimizerObservationTimeoutMs,
 )
 
-for (let sample = 1; sample <= randomizedOptimizerProfileCount; sample += 1) {
-  const paramBonusPercent = parameterValues(
-    getRandomizedParameterBonus(regressionRandomSeed, sample, 'vocal'),
-    getRandomizedParameterBonus(regressionRandomSeed, sample, 'dance'),
-    getRandomizedParameterBonus(regressionRandomSeed, sample, 'visual'),
-  )
+for (const scenario of [enums.ScenarioType.Hif, enums.ScenarioType.Hajime] as const) {
+  const scenarioLabel = scenario === enums.ScenarioType.Hif ? 'HIF' : '初レジェンド'
+  for (let sample = 1; sample <= randomizedOptimizerProfileCount; sample += 1) {
+    const profile = createSeededOptimizerProfile(regressionRandomSeed, sample, scenario)
+    const {
+      difficulty,
+      lessonCounts,
+      scheduleSelections,
+      initialParams,
+      paramBonusPercent,
+      mainType,
+      classType,
+      hifSubType,
+      hifLessonSplitSub,
+    } = profile
+    const lessonAllocationLabel = [
+      lessonCounts.vocal > 0 ? `Vo${lessonCounts.vocal}` : '',
+      lessonCounts.dance > 0 ? `Da${lessonCounts.dance}` : '',
+      lessonCounts.visual > 0 ? `Vi${lessonCounts.visual}` : '',
+    ]
+      .filter(Boolean)
+      .join('・')
 
-  for (const plan of optimizerPlans) {
-    const id = `optimization-random-${String(sample).padStart(2, '0')}-${plan.id}`
-    const semanticInput = {
-      ...createTestOptimizerScenarioInput({ plan: plan.value, paramBonusPercent }),
-      randomProfile: {
-        seed: regressionRandomSeed,
-        sample,
-        plan: plan.value,
-        paramBonusPercent,
-        uncapProfile: 'all-four',
-      },
+    for (const plan of optimizerPlans) {
+      const sampleId = String(sample).padStart(2, '0')
+      const id =
+        scenario === enums.ScenarioType.Hif
+          ? `optimization-random-${sampleId}-${plan.id}`
+          : `optimization-random-hajime-${sampleId}-${plan.id}`
+      const semanticInput = {
+        ...createTestOptimizerScenarioInput({
+          plan: plan.value,
+          initialParams,
+          paramBonusPercent,
+          scoreSettings: {
+            scenario,
+            difficulty,
+            scheduleSelections,
+            ...(hifLessonSplitSub !== undefined ? { hifLessonSplitSub } : {}),
+          },
+        }),
+        randomProfile: {
+          seed: regressionRandomSeed,
+          sample,
+          scenario,
+          difficulty,
+          plan: plan.value,
+          lessonCounts,
+          scheduleSelections,
+          initialParams,
+          paramBonusPercent,
+          mainType,
+          classType,
+          ...(hifSubType !== undefined ? { hifSubType } : {}),
+          ...(hifLessonSplitSub !== undefined ? { hifLessonSplitSub } : {}),
+          uncapProfile: 'all-four',
+        },
+      }
+
+      regressionObservationTest(
+        `${id}: seeded optimizer observation with all cards at 4凸`,
+        async () => {
+          await observeOptimizer(
+            id,
+            `${scenarioLabel} / ${lessonAllocationLabel} / ${plan.value} / ランダム条件${sample} / 全カード4凸`,
+            semanticInput,
+            allFourCardUncaps,
+          )
+        },
+        optimizerObservationTimeoutMs,
+      )
     }
-
-    regressionObservationTest(
-      `${id}: seeded optimizer observation with all cards at 4凸`,
-      async () => {
-        await observeOptimizer(
-          id,
-          `HIF / ${plan.value} / ランダム条件${sample} / 全カード4凸`,
-          semanticInput,
-          allFourCardUncaps,
-        )
-      },
-      optimizerObservationTimeoutMs,
-    )
   }
 }

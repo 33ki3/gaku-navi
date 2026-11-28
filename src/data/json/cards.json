@@ -25678,5 +25678,385 @@
       }
     },
     "skill_card": null
+  },
+  {
+    "name": "足を引っ張るなよ",
+    "rarity": "ssr",
+    "plan": "anomaly",
+    "type": "dance",
+    "parameter_type": "dance",
+    "source": "event",
+    "is_event_source": true,
+    "source_detail": "乖轟",
+    "release_date": "2026/11/27",
+    "abilities": [
+      {
+        "name_key": "initial_stat",
+        "trigger_key": "da_initial_stat",
+        "parameter_type": "dance",
+        "values": {},
+        "is_initial_stat": true
+      },
+      {
+        "name_key": "sp_lesson_rate",
+        "trigger_key": "da_sp_lesson_rate",
+        "parameter_type": "dance",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "reserve_card_acquire_8",
+        "trigger_key": "reserve_card_acquire_8",
+        "parameter_type": "dance",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "activity_supply_gift",
+        "trigger_key": "activity_supply_gift",
+        "parameter_type": "dance",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "dance",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "協力シューティング",
+      "rarity": "ssr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "consult_selection"
+        },
+        "condition": {
+          "key": "param_gte",
+          "param": "dance",
+          "threshold": 400
+        },
+        "body": [
+          {
+            "key": "param_up",
+            "param": "dance",
+            "value": 20
+          },
+          {
+            "key": "hp_recovery",
+            "value": 3
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      }
+    },
+    "skill_card": null
+  },
+  {
+    "name": "次はボクの番や！",
+    "rarity": "ssr",
+    "plan": "sense",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "unit_limited",
+    "release_date": "2026/11/27",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "t_skill_enhance",
+        "trigger_key": "t_skill_enhance",
+        "parameter_type": "vocal",
+        "values": { "4": "28" },
+        "max_count": 3
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "activity_supply_gift",
+        "trigger_key": "activity_supply_gift",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "skill_card",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 20,
+        "title": ""
+      },
+      {
+        "release": "lv40",
+        "effect_type": "card_enhance",
+        "title": ""
+      }
+    ],
+    "p_item": null,
+    "skill_card": {
+      "name": "勝たしてもらうで！",
+      "rarity": "ssr",
+      "type": "mental",
+      "lesson_limit": 1,
+      "no_duplicate": true,
+      "effects": [
+        {
+          "level": "base",
+          "cost_type": "vitality",
+          "cost_value": 3,
+          "effect": {
+            "groups": [
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 5,
+                  "keyword": "concentration"
+                }
+              },
+              {
+                "temporal": {
+                  "key": "up_to_every_n_card_use",
+                  "count": 3,
+                  "count2": 2,
+                  "skill_type": "mental"
+                },
+                "action": {
+                  "key": "keyword_enhance_boost",
+                  "turns": 2,
+                  "keyword": "concentration",
+                  "pct": 10
+                },
+                "temporal_first": true
+              }
+            ]
+          }
+        },
+        {
+          "level": "plus",
+          "cost_type": "vitality",
+          "cost_value": 1,
+          "effect": {
+            "groups": [
+              {
+                "action": {
+                  "key": "keyword_up",
+                  "value": 5,
+                  "keyword": "concentration"
+                }
+              },
+              {
+                "temporal": {
+                  "key": "up_to_every_n_card_use",
+                  "count": 3,
+                  "count2": 2,
+                  "skill_type": "mental"
+                },
+                "action": {
+                  "key": "keyword_enhance_boost",
+                  "turns": 2,
+                  "keyword": "concentration",
+                  "pct": 10
+                },
+                "temporal_first": true
+              }
+            ]
+          }
+        }
+      ],
+      "custom_cap": 1,
+      "custom_slot": [
+        {
+          "name": {
+            "key": "extra_card_use"
+          },
+          "stages": [
+            {
+              "stage": 1,
+              "cost": 100,
+              "effect": {
+                "template": "extra_card_use",
+                "params": {
+                  "value": "1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "key": "keyword_plus",
+            "keyword": "concentration"
+          },
+          "stages": [
+            {
+              "stage": 1,
+              "cost": 70,
+              "effect": {
+                "template": "keyword_up",
+                "params": {
+                  "keyword": "concentration",
+                  "value": "7"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ヒーロー参上",
+    "rarity": "sr",
+    "plan": "anomaly",
+    "type": "vocal",
+    "parameter_type": "vocal",
+    "source": "unit_limited",
+    "release_date": "2026/11/27",
+    "abilities": [
+      {
+        "name_key": "parameter_bonus",
+        "trigger_key": "vo_parameter_bonus",
+        "parameter_type": "vocal",
+        "values": {},
+        "is_percentage": true,
+        "is_parameter_bonus": true
+      },
+      {
+        "name_key": "class_work_end",
+        "trigger_key": "class_work_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "support_rate",
+        "trigger_key": "support_rate",
+        "values": {},
+        "is_percentage": true,
+        "skip_calculation": true
+      },
+      {
+        "name_key": "sp_lesson_end",
+        "trigger_key": "vo_sp_lesson_end",
+        "parameter_type": "vocal",
+        "values": {}
+      },
+      {
+        "name_key": "reserve_card_acquire_8",
+        "trigger_key": "reserve_card_acquire_8",
+        "parameter_type": "vocal",
+        "values": {},
+        "max_count": 4
+      },
+      {
+        "name_key": "event_boost",
+        "trigger_key": "event_boost",
+        "values": {},
+        "is_percentage": true,
+        "is_event_boost": true
+      }
+    ],
+    "events": [
+      {
+        "release": "initial",
+        "effect_type": "p_item",
+        "title": ""
+      },
+      {
+        "release": "lv20",
+        "effect_type": "param_boost",
+        "param_type": "vocal",
+        "param_value": 15,
+        "title": ""
+      }
+    ],
+    "p_item": {
+      "name": "変身ヒーローズ",
+      "rarity": "sr",
+      "memory": "non_memorizable",
+      "effect": {
+        "trigger": {
+          "key": "keyword_card_acquire",
+          "keyword": "reserve"
+        },
+        "body": [
+          {
+            "key": "pp_gain",
+            "value": 20
+          },
+          {
+            "key": "param_up",
+            "param": "vocal",
+            "value": 5
+          }
+        ],
+        "limit": {
+          "key": "per_produce",
+          "count": 2
+        }
+      }
+    },
+    "skill_card": null
   }
 ]

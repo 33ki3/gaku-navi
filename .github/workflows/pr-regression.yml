@@ -326,8 +326,8 @@ jobs:
             exit 1
           fi
 
-          # gh resolves body-file image paths relative to the body file, while --attach paths use the workspace root.
-          if ! { printf '%s\n' "$RUN_MARKER"; sed 's#](head/tmp/pr-comment-assets/#](images/#g' "$COMMENT_FILE"; } > "$POST_BODY_FILE"; then
+          # コメント本文は同じディレクトリのimagesを参照し、添付画像を本文内の位置へ置換する
+          if ! { printf '%s\n' "$RUN_MARKER"; cat "$COMMENT_FILE"; } > "$POST_BODY_FILE"; then
             echo '::error::The visual comment body could not be prepared.'
             exit 1
           fi

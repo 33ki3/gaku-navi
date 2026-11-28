@@ -14,13 +14,28 @@ import {
   LinkedActionGroups,
   ScheduleControlledIds,
   getScheduleData,
-  isScheduleActivityAllowed,
 } from '../../data'
 import { initializeCards } from '../../data/card/cards'
 import type { ActionCounts, ParameterValues, ScoreSettings, SupportCard } from '../../types/card'
 import * as enums from '../../types/enums'
 import type { UnitSimulatorSettings } from '../../types/unit'
 import type { OptimizeInput } from '../../types/unitOptimizer'
+import {
+  type IntegerRange,
+  buildSeededOptimizerRandomSettings,
+  createSeededHifLessonSplitSub,
+  createSeededRandom,
+  createSeededSharedInitialParams,
+  createSeededSharedParamBonusPercent,
+  randomIntegerInRange,
+  seededOptimizerSettingRanges,
+} from '../../../tests/fixtures/seededOptimizerRandom'
+import {
+  applyHifScheduleVariant,
+  isClassActivity,
+  isLessonActivity,
+  randomizeOtherScheduleActivities,
+} from '../../../tests/fixtures/seededOptimizerSchedule'
 import {
   type OptimizerCaseKind,
   expandedCandidateLimit,
@@ -125,12 +140,6 @@ const typeLabels: Record<enums.ParameterType, string> = {
   [enums.ParameterType.Visual]: 'Vi',
 }
 
-/** 整数値のランダム範囲 */
-interface IntegerRange {
-  min: number
-  max: number
-}
-
 /** アビリティ上限を必須値として読み、上限定義の不足を設定ミスとして検出する */
 function getAbilityMaximumCount(abilityName: enums.AbilityNameKeyType): number {
   const maximum = ABILITY_MAX_COUNT[abilityName]
@@ -138,20 +147,14 @@ function getAbilityMaximumCount(abilityName: enums.AbilityNameKeyType): number {
   return maximum
 }
 
-/** シナリオ別に持つVo・Da・Viの基準値 */
-type ScenarioParameterValues = Record<Variant['scenario'], ParameterValues>
-
 /** CP-SATのランダム条件で使う値の範囲。値を散らす幅はここだけを編集する */
 const randomCaseValueRanges: {
   randomizeOtherScheduleActivities: boolean
   manualActionCounts: {
     byAction: Partial<Record<enums.ActionIdType, IntegerRange>>
   }
-  initialParams: {
-    baselineByScenario: ScenarioParameterValues
-    variation: number
-  }
-  paramBonusPercent: { baselineByScenario: ScenarioParameterValues; variationPercentagePoints: number; step: number }
+  initialParams: typeof seededOptimizerSettingRanges.initialParams
+  paramBonusPercent: typeof seededOptimizerSettingRanges.paramBonusPercent
 } = {
   /** レッスン・授業以外の変更可能な週を、その週の候補からseed付きで選び直す */
   randomizeOtherScheduleActivities: true,
@@ -215,6 +218,7 @@ const randomCaseValueRanges: {
       [enums.ActionIdType.SkillEnhance]: { min: 0, max: 8 },
       [enums.ActionIdType.ASkillEnhance]: { min: 0, max: 8 },
       [enums.ActionIdType.MSkillEnhance]: { min: 0, max: 8 },
+      [enums.ActionIdType.TSkillEnhance]: { min: 0, max: 8 },
       [enums.ActionIdType.Delete]: { min: 0, max: 8 },
       [enums.ActionIdType.ASkillDelete]: {
         min: 0,
@@ -239,23 +243,9 @@ const randomCaseValueRanges: {
       },
     },
   },
-  /** 初期パラメータの基準値と、前後に散らす幅 */
-  initialParams: {
-    baselineByScenario: {
-      [enums.ScenarioType.Hif]: { vocal: 300, dance: 300, visual: 300 },
-      [enums.ScenarioType.Hajime]: { vocal: 200, dance: 200, visual: 200 },
-    },
-    variation: 100,
-  },
-  /** 初期パラメータボーナスの基準値と、前後に散らすポイント数 */
-  paramBonusPercent: {
-    baselineByScenario: {
-      [enums.ScenarioType.Hif]: { vocal: 30, dance: 30, visual: 30 },
-      [enums.ScenarioType.Hajime]: { vocal: 20, dance: 20, visual: 20 },
-    },
-    variationPercentagePoints: 10,
-    step: constant.PARAMETER_BONUS_PERCENT_STEP,
-  },
+  /** 両シナリオで共通して使える初期パラメータとボーナスの範囲 */
+  initialParams: seededOptimizerSettingRanges.initialParams,
+  paramBonusPercent: seededOptimizerSettingRanges.paramBonusPercent,
 }
 
 /** Variantのスケジュールでレッスン週を数えるため、通常レッスンの内訳は追加しない */
@@ -348,18 +338,8 @@ describe('CP-SAT候補上限ポリシー', () => {
 
 /** 全シャードで属性・授業条件を共有し、レッスン配分だけを変えたランダム条件を作る */
 function buildSharedRandomVariants(seed: string): Record<OptimizerShard, Variant> {
-  const mainTypeIndex = Math.floor(createSeededRandom(`${seed}:random-lesson-main`)() * parameterTypes.length)
-  const mainType = parameterTypes[mainTypeIndex]
-  if (!mainType) throw new Error('No randomized main lesson type was selected')
-
-  const otherTypes = parameterTypes.filter((type) => type !== mainType)
-  const classTypeIndex = Math.floor(createSeededRandom(`${seed}:random-class-type`)() * otherTypes.length)
-  const classType = otherTypes[classTypeIndex]
-  if (!classType) throw new Error('No randomized class type was selected')
-  const minorType = otherTypes.find((type) => type !== classType)
-  if (!minorType) throw new Error(`No secondary lesson type matches ${mainType}/${classType}`)
-
-  const hifLessonSplitSub = createSeededRandom(`${seed}:random-hif-split`)() >= 0.5
+  const { mainType, minorType, classType } = buildSeededOptimizerRandomSettings(seed)
+  const hifLessonSplitSub = createSeededHifLessonSplitSub(seed)
   const hifModeLabel = hifLessonSplitSub ? '半分割' : 'サブ指定'
 
   return {
@@ -582,27 +562,6 @@ const scenarioLabels: Record<typeof enums.ScenarioType.Hajime | typeof enums.Sce
   [enums.ScenarioType.Hif]: 'HIF',
 }
 
-/** スケジュールからレッスン週を特定し、指定条件のレッスンへ置き換える */
-const lessonActivities = new Set<enums.ActivityIdType>([
-  enums.ActivityIdType.VoLesson,
-  enums.ActivityIdType.DaLesson,
-  enums.ActivityIdType.ViLesson,
-  enums.ActivityIdType.VoLessonDa,
-  enums.ActivityIdType.VoLessonVi,
-  enums.ActivityIdType.DaLessonVo,
-  enums.ActivityIdType.DaLessonVi,
-  enums.ActivityIdType.ViLessonVo,
-  enums.ActivityIdType.ViLessonDa,
-])
-
-/** スケジュールから授業週を特定し、指定条件の授業へ置き換える */
-const classActivities = new Set<enums.ActivityIdType>([
-  enums.ActivityIdType.Class,
-  enums.ActivityIdType.ClassVo,
-  enums.ActivityIdType.ClassDa,
-  enums.ActivityIdType.ClassVi,
-])
-
 /** パラメータ属性を、予定表に保存する単属性授業IDへ対応付ける
  *
  * @param type 授業で選択するパラメータ属性
@@ -614,33 +573,6 @@ function classActivity(type: enums.ParameterType): enums.ActivityIdType {
     [enums.ParameterType.Dance]: enums.ActivityIdType.ClassDa,
     [enums.ParameterType.Visual]: enums.ActivityIdType.ClassVi,
   }[type]
-}
-
-/** HIFの主属性と副属性を、予定表に保存する複合レッスンIDへ対応付ける
- *
- * @param main レッスンで主に上げる属性
- * @param sub 同じレッスンで追加する副属性
- * @returns 対応する複合レッスン予定ID
- * @throws アプリに存在しない属性の組み合わせの場合
- */
-function hifLessonActivity(main: enums.ParameterType, sub: enums.ParameterType): enums.ActivityIdType {
-  const activities: Record<enums.ParameterType, Partial<Record<enums.ParameterType, enums.ActivityIdType>>> = {
-    [enums.ParameterType.Vocal]: {
-      [enums.ParameterType.Dance]: enums.ActivityIdType.VoLessonDa,
-      [enums.ParameterType.Visual]: enums.ActivityIdType.VoLessonVi,
-    },
-    [enums.ParameterType.Dance]: {
-      [enums.ParameterType.Vocal]: enums.ActivityIdType.DaLessonVo,
-      [enums.ParameterType.Visual]: enums.ActivityIdType.DaLessonVi,
-    },
-    [enums.ParameterType.Visual]: {
-      [enums.ParameterType.Vocal]: enums.ActivityIdType.ViLessonVo,
-      [enums.ParameterType.Dance]: enums.ActivityIdType.ViLessonDa,
-    },
-  }
-  const activity = activities[main][sub]
-  if (!activity) throw new Error(`HIF lesson pair is not supported: ${main}/${sub}`)
-  return activity
 }
 
 /** パラメータ属性を、予定表に保存する単属性レッスンIDへ対応付ける
@@ -757,41 +689,6 @@ function buildVariants(): Variant[] {
     }
   }
   return [...hif, ...hajime]
-}
-
-/** seedの文字列から、呼び出すたびに次の再現可能な乱数を作る */
-function createSeededRandom(seed: string): () => number {
-  // FNV-1aの初期値から始め、seedの全文字を32bitの状態へ畳み込む
-  let state = 2166136261
-  for (const character of seed) {
-    // 文字コードを現在のハッシュへ混ぜ、FNV素数との積で次の状態へ進める
-    state ^= character.charCodeAt(0)
-    state = Math.imul(state, 16777619)
-  }
-
-  return () => {
-    // Mulberry32の定数を加えて、この呼び出し専用の状態を作る
-    state += 0x6d2b79f5
-    // 後続のビット演算で次回用の状態を壊さないよう作業値へコピーする
-    let value = state
-    // 15bit右へずらした値をXORし、奇数との乗算でビットを拡散する
-    value = Math.imul(value ^ (value >>> 15), value | 1)
-    // 7bit右シフト後の値をXORし、61とのORで乗算用の値を作る
-    const shiftedValue = value ^ (value >>> 7)
-    const multiplier = value | 61
-    // 混合値との積を元の値へ加算してからXORし、さらにビットを拡散する
-    value ^= value + Math.imul(shiftedValue, multiplier)
-    // 最後に14bit右シフト値をXORし、符号なし整数を0以上1未満へ変換する
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/** 範囲の欠落や逆転を拒否し、両端を含む整数をseed付きで選ぶ */
-function randomIntegerInRange(range: IntegerRange, nextRandom: () => number, label: string): number {
-  if (!Number.isSafeInteger(range.min) || !Number.isSafeInteger(range.max) || range.min < 0 || range.max < range.min) {
-    throw new Error(`${label} range must have non-negative safe integer bounds`)
-  }
-  return range.min + Math.floor(nextRandom() * (range.max - range.min + 1))
 }
 
 /** 設定範囲を、アビリティ上限とスケジュール上限の範囲に収める */
@@ -936,108 +833,6 @@ function createRandomizedManualActionCounts(nextRandom: () => number, scheduleCo
   return actionCounts
 }
 
-/** HIFと初レジェンドの設定範囲が重なる値から、全シャード共通の初期パラメータを作る */
-function createSharedRandomizedInitialParams(seed: string): ParameterValues {
-  const scenarioBaselines = Object.values(randomCaseValueRanges.initialParams.baselineByScenario)
-  const variation = randomCaseValueRanges.initialParams.variation
-  if (!Number.isSafeInteger(variation) || variation < 0) {
-    throw new Error('initialParams.variation must be a non-negative integer')
-  }
-
-  const randomValue = (type: enums.ParameterType) => {
-    const minimum = Math.max(0, ...scenarioBaselines.map((baseline) => baseline[type] - variation))
-    const maximum = Math.min(
-      constant.INITIAL_PARAMETER_MAX,
-      ...scenarioBaselines.map((baseline) => baseline[type] + variation),
-    )
-    return randomIntegerInRange(
-      { min: minimum, max: maximum },
-      createSeededRandom(`${seed}:${type}`),
-      `initialParams.${type}`,
-    )
-  }
-
-  return {
-    [enums.ParameterType.Vocal]: randomValue(enums.ParameterType.Vocal),
-    [enums.ParameterType.Dance]: randomValue(enums.ParameterType.Dance),
-    [enums.ParameterType.Visual]: randomValue(enums.ParameterType.Visual),
-  }
-}
-
-/** HIFと初レジェンドの設定範囲が重なる値から、全シャード共通のパラメータボーナスを作る */
-function createSharedRandomizedParamBonusPercent(seed: string): ParameterValues {
-  const scenarioBaselines = Object.values(randomCaseValueRanges.paramBonusPercent.baselineByScenario)
-  const variation = randomCaseValueRanges.paramBonusPercent.variationPercentagePoints
-  const step = randomCaseValueRanges.paramBonusPercent.step
-  if (!Number.isFinite(variation) || variation < 0) {
-    throw new Error('paramBonusPercent.variationPercentagePoints must be non-negative')
-  }
-
-  const randomValue = (type: enums.ParameterType) => {
-    const minimum = Math.max(0, ...scenarioBaselines.map((baseline) => baseline[type] - variation))
-    const maximum = Math.min(
-      constant.PARAMETER_BONUS_PERCENT_MAX,
-      ...scenarioBaselines.map((baseline) => baseline[type] + variation),
-    )
-    const stepCount = (maximum - minimum) / step
-    if (
-      !Number.isFinite(step) ||
-      maximum < minimum ||
-      maximum > constant.PARAMETER_BONUS_PERCENT_MAX ||
-      step < constant.PARAMETER_BONUS_PERCENT_STEP ||
-      Math.abs(stepCount - Math.round(stepCount)) > 1e-8 ||
-      Math.abs(minimum / step - Math.round(minimum / step)) > 1e-8
-    ) {
-      throw new Error(`paramBonusPercent.${type} common range must fit the supported step and bounds`)
-    }
-    const stepIndex = randomIntegerInRange(
-      { min: 0, max: Math.round(stepCount) },
-      createSeededRandom(`${seed}:${type}`),
-      `paramBonusPercent.${type}`,
-    )
-    return Number((minimum + stepIndex * step).toPrecision(12))
-  }
-
-  return {
-    [enums.ParameterType.Vocal]: randomValue(enums.ParameterType.Vocal),
-    [enums.ParameterType.Dance]: randomValue(enums.ParameterType.Dance),
-    [enums.ParameterType.Visual]: randomValue(enums.ParameterType.Visual),
-  }
-}
-
-/** 変更可能なレッスン・授業以外の週から、候補内の活動をseed付きで選ぶ */
-function randomizeOtherScheduleActivities(
-  selections: Record<number, enums.ActivityIdType>,
-  scenario: Variant['scenario'],
-  difficulty: enums.DifficultyType,
-  hifLessonSplitSub: boolean,
-  seed: string,
-): Record<number, enums.ActivityIdType> {
-  const updated = { ...selections }
-  for (const week of getScheduleData(scenario, difficulty)) {
-    const current = updated[week.week]
-    const isSelectionFixed = week.fixed && !week.canRest
-    if (isSelectionFixed || current === undefined || lessonActivities.has(current) || classActivities.has(current))
-      continue
-
-    const candidates = [
-      ...week.activities.map(({ id }) => id),
-      ...(week.canRest ? [enums.ActivityIdType.Rest] : []),
-    ].filter(
-      (activity) =>
-        !lessonActivities.has(activity) &&
-        !classActivities.has(activity) &&
-        isScheduleActivityAllowed(week, activity, scenario, hifLessonSplitSub),
-    )
-    if (candidates.length === 0) throw new Error(`No random activity is available for week ${week.week}`)
-    const nextRandom = createSeededRandom(`${seed}:week:${week.week}`)
-    const selected = candidates[Math.floor(nextRandom() * candidates.length)]
-    if (selected === undefined) throw new Error(`No random activity was selected for week ${week.week}`)
-    updated[week.week] = selected
-  }
-  return updated
-}
-
 /** seedからカードごとの凸数を再現可能に割り当てる */
 function createSeededCardUncaps(seed: string): Record<string, enums.UncapType> {
   const nextRandom = createSeededRandom(seed)
@@ -1074,11 +869,22 @@ function applyScheduleVariant(
   selections: Record<number, enums.ActivityIdType>,
   variant: Variant,
 ): Record<number, enums.ActivityIdType> {
+  if (variant.scenario === enums.ScenarioType.Hif) {
+    if (!variant.hifSubType) throw new Error(`${variant.label} is missing an HIF sub type`)
+    return applyHifScheduleVariant(selections, {
+      mainType: variant.mainType,
+      lessonCounts: variant.lessonCounts,
+      classType: variant.classType,
+      hifSubType: variant.hifSubType,
+      hifLessonSplitSub: variant.hifLessonSplitSub ?? false,
+    })
+  }
+
   const updated = { ...selections }
   const lessonWeeks = Object.entries(updated)
-    .filter(([, activity]) => lessonActivities.has(activity))
+    .filter(([, activity]) => isLessonActivity(activity))
     .map(([week]) => week)
-  const expectedLessonCount = variant.scenario === enums.ScenarioType.Hif ? 8 : 5
+  const expectedLessonCount = 5
   if (lessonWeeks.length !== expectedLessonCount) {
     throw new Error(`${variant.scenario} schedule expected ${expectedLessonCount} lessons, got ${lessonWeeks.length}`)
   }
@@ -1094,17 +900,10 @@ function applyScheduleVariant(
   lessonWeeks.forEach((week, index) => {
     const mainType = lessonTypes[index]
     if (!mainType) throw new Error(`${variant.label} is missing lesson type ${index + 1}`)
-    if (variant.scenario === enums.ScenarioType.Hif) {
-      if (!variant.hifSubType) throw new Error(`${variant.label} is missing an HIF sub type`)
-      // 7+1と6+2では主属性どうしを互いの副属性にし、同属性ペアを避ける
-      const subType = mainType === variant.hifSubType ? variant.mainType : variant.hifSubType
-      updated[Number(week)] = hifLessonActivity(mainType, subType)
-      return
-    }
     updated[Number(week)] = singleLessonActivity(mainType)
   })
   for (const [week, activity] of Object.entries(updated)) {
-    if (classActivities.has(activity)) updated[Number(week)] = classActivity(variant.classType)
+    if (isClassActivity(activity)) updated[Number(week)] = classActivity(variant.classType)
   }
   return updated
 }
@@ -1725,8 +1524,8 @@ describeOptimizerMatrix('実データの最適編成をCP-SATで検証', () => {
         createSeededRandom(`${sharedSettingsSeed}:action-counts`),
         commonScheduleMaximumCounts,
       )
-      const sharedInitialParams = createSharedRandomizedInitialParams(`${sharedSettingsSeed}:initial-params`)
-      const sharedParamBonusPercent = createSharedRandomizedParamBonusPercent(`${sharedSettingsSeed}:param-bonus`)
+      const sharedInitialParams = createSeededSharedInitialParams(`${sharedSettingsSeed}:initial-params`)
+      const sharedParamBonusPercent = createSeededSharedParamBonusPercent(`${sharedSettingsSeed}:param-bonus`)
       const sharedRandomProfile = {
         runSeed: matrixRunSeed,
         settingsSeed: sharedSettingsSeed,

@@ -3,7 +3,7 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isMissingPathError, isRecord, isStringArray } from './regressionShared.js'
-import { renderLineupTable } from './lineupSummary.js'
+import { parameterTypeLabels, renderLineupTable } from './lineupSummary.js'
 
 /** パース済みJSONのうち、名前付きプロパティを持つオブジェクト */
 type JsonRecord = Record<string, unknown>
@@ -63,6 +63,8 @@ interface ScenarioChange {
   id: string
   /** 条件の説明 */
   description?: string
+  /** 計算条件に設定されているプラン */
+  plan?: string
   /** 入力hashがbase/headで異なるか */
   inputChanged: boolean
   /** base側の総合点 */
@@ -95,6 +97,20 @@ interface RandomizedProfileChange {
   description?: string
   /** 条件の生成に使ったprofile。互換性確認用にコメントへ展開する */
   profile?: JsonRecord
+  /** 計算条件に設定されているプラン */
+  plan?: string
+  /** base側の総合点 */
+  baseScore?: number
+  /** head側の総合点 */
+  headScore?: number
+  /** base側の最適編成 */
+  baseLineup?: CalculationLineup
+  /** head側の最適編成 */
+  headLineup?: CalculationLineup
+  /** base/headの計算入力が異なるか */
+  inputChanged: boolean
+  /** 内部計算結果の差分一覧 */
+  changes: ValueChange[]
   /** baseにも同じシナリオIDの観測があるか */
   baselinePresent: boolean
   /** baseがない、または入力・計算値に差分があったか */
@@ -117,6 +133,8 @@ export interface CalculationRegressionReport {
   headScenarioCount: number
   /** base/headの両方に存在するシナリオ数 */
   comparedScenarioCount: number
+  /** base/head両方に存在する全シナリオの結果 */
+  comparedScenarios: ScenarioChange[]
   /** baseに存在せずheadに追加されたシナリオID */
   newScenarioIds: string[]
   /** headで追加されたシナリオの結果 */
@@ -278,6 +296,18 @@ function randomProfile(observation: CalculationObservation | undefined): JsonRec
   return input && isRecord(input.randomProfile) ? input.randomProfile : undefined
 }
 
+/** 意味的入力またはランダムprofileから最適化プランを取り出す */
+function scenarioPlan(observation: CalculationObservation | undefined): string | undefined {
+  const settings = observation?.semanticInput?.settings
+  if (isRecord(settings) && typeof settings.plan === 'string') return planLabel(settings.plan)
+  const profile = randomProfile(observation)
+  if (typeof profile?.plan === 'string') return planLabel(profile.plan)
+  const descriptionPlan = observation?.description
+    ?.split(' / ')
+    .find((part) => ['sense', 'logic', 'anomaly'].includes(part.toLowerCase()))
+  return descriptionPlan ? planLabel(descriptionPlan) : undefined
+}
+
 /**
  * base/headの観測をシナリオIDで対応付け、入力hashと内部計算値の差分を集計する
  *
@@ -296,6 +326,7 @@ export function compareCalculationObservations(
   const removedScenarioIds = ids.filter((id) => !head.has(id))
   const randomizedScenarioIds = [...head.keys()].filter((id) => id.startsWith('optimization-random-')).sort()
   const changes: ScenarioChange[] = []
+  const comparedScenarios: ScenarioChange[] = []
 
   // base/head両方に存在する条件だけを値比較し、新規・削除条件は別の一覧へ記録する
   for (const id of ids) {
@@ -304,23 +335,26 @@ export function compareCalculationObservations(
     if (!before || !after) continue
 
     const changed = collectValueChanges(calculationInternal(before.calculation), calculationInternal(after.calculation))
-    if (changed.length === 0 && before.scenarioHash === after.scenarioHash) continue
-
+    const inputChanged = before.scenarioHash !== after.scenarioHash
     const baseScore = calculationScore(before.calculation)
     const headScore = calculationScore(after.calculation)
     const baseLineup = lineupForObservation(before)
     const headLineup = lineupForObservation(after)
-    changes.push({
+    const plan = scenarioPlan(after) ?? scenarioPlan(before)
+    const comparison: ScenarioChange = {
       id,
       ...((after.description ?? before.description) ? { description: after.description ?? before.description } : {}),
-      inputChanged: before.scenarioHash !== after.scenarioHash,
+      ...(plan ? { plan } : {}),
+      inputChanged,
       ...(baseScore !== undefined ? { baseScore } : {}),
       ...(headScore !== undefined ? { headScore } : {}),
       ...(baseLineup ? { baseLineup } : {}),
       ...(headLineup ? { headLineup } : {}),
       changes: changed,
       ...(randomProfile(after) ? { randomProfile: randomProfile(after) } : {}),
-    })
+    }
+    comparedScenarios.push(comparison)
+    if (changed.length > 0 || inputChanged) changes.push(comparison)
   }
 
   return {
@@ -329,6 +363,7 @@ export function compareCalculationObservations(
     baseScenarioCount: base.size,
     headScenarioCount: head.size,
     comparedScenarioCount: [...base.keys()].filter((id) => head.has(id)).length,
+    comparedScenarios,
     newScenarioIds,
     newScenarioResults: newScenarioIds.flatMap((id) => {
       const observation = head.get(id)
@@ -349,15 +384,31 @@ export function compareCalculationObservations(
     randomizedScenarioIds,
     // 入力が同じで出力だけ変わった場合も、ランダム条件の一覧で個別に確認できるようにする
     randomizedProfiles: randomizedScenarioIds.flatMap((id) => {
-      const observation = head.get(id)
-      const profile = randomProfile(observation)
+      const baseObservation = base.get(id)
+      const headObservation = head.get(id)
+      const profile = randomProfile(headObservation) ?? randomProfile(baseObservation)
       const baselinePresent = base.has(id)
+      const comparison = comparedScenarios.find((candidate) => candidate.id === id)
+      const baseScore = comparison ? comparison.baseScore : calculationScore(baseObservation?.calculation)
+      const headScore = comparison ? comparison.headScore : calculationScore(headObservation?.calculation)
+      const baseLineup = comparison ? comparison.baseLineup : lineupForObservation(baseObservation)
+      const headLineup = comparison ? comparison.headLineup : lineupForObservation(headObservation)
+      const plan = comparison?.plan ?? scenarioPlan(headObservation) ?? scenarioPlan(baseObservation)
       const changed = !baselinePresent || changes.some((change) => change.id === id)
       return [
         {
           id,
-          ...(observation?.description ? { description: observation.description } : {}),
+          ...((headObservation?.description ?? baseObservation?.description)
+            ? { description: headObservation?.description ?? baseObservation?.description }
+            : {}),
           ...(profile ? { profile } : {}),
+          ...(plan ? { plan } : {}),
+          ...(baseScore !== undefined ? { baseScore } : {}),
+          ...(headScore !== undefined ? { headScore } : {}),
+          ...(baseLineup ? { baseLineup } : {}),
+          ...(headLineup ? { headLineup } : {}),
+          inputChanged: comparison?.inputChanged ?? false,
+          changes: comparison?.changes ?? [],
           baselinePresent,
           changed,
         },
@@ -394,34 +445,172 @@ function renderLineup(
   score: number | undefined,
   side: 'Base' | 'Head',
 ): string[] {
-  const title = `**最適編成（${side}）**`
+  const title = `**最適編成（${side} / アプリの結果）**`
   if (!lineup) return [title, '', '編成データがありません。']
 
   const totalScore = lineup.totalScore ?? score
   return [title, '', renderLineupTable(lineup.members, totalScore)]
 }
 
-/** 条件ごとの差分とbase/headそれぞれの編成を、同じ順序で表示する */
-function renderScenarioChange(change: ScenarioChange, includeHeading = true): string[] {
-  const title = change.description ?? change.id
-  const lines = includeHeading ? [`### ${title}`, '', `ID: \`${change.id}\``, ''] : [`ID: \`${change.id}\``, '']
+/** プラン値を表示用のラベルへ変換する */
+function planLabel(value: unknown): string {
+  if (typeof value !== 'string' || value.length === 0) return '—'
+  const labels: Record<string, string> = { sense: 'Sense', logic: 'Logic', anomaly: 'Anomaly' }
+  return labels[value.toLowerCase()] ?? value
+}
 
-  if (change.inputChanged) lines.push('- 入力条件のhashがbase/headで異なります。')
-  if (change.baseScore !== undefined || change.headScore !== undefined) {
-    lines.push(`- 総合点: ${change.baseScore ?? 'なし'} → ${change.headScore ?? 'なし'}`)
+/** 条件説明からプランと凸数表記を分離し、比較表の条件欄を簡潔にする */
+function conditionLabel(description: string | undefined, id: string, plan: string | undefined): string {
+  const planValue = plan?.toLowerCase()
+  const parts = (description ?? id)
+    .split(' / ')
+    .filter((part) => part.toLowerCase() !== planValue && part !== '全カード4凸')
+  return parts.join(' / ')
+}
+
+/** ランダム設定を人が読める短い条件に整える */
+function randomProfileLabel(profile: JsonRecord | undefined): string {
+  if (!profile) return ''
+  const parts: string[] = []
+  if (typeof profile.sample === 'number' && Number.isInteger(profile.sample) && profile.sample > 0) {
+    parts.push(`ランダム条件${profile.sample}`)
   }
-  if (change.changes.length === 0) lines.push('- 計算値の差分はありません。')
-  else lines.push(...change.changes.map(formatChange))
+  if (typeof profile.plan === 'string') parts.push(`プラン ${planLabel(profile.plan)}`)
 
-  if (change.baseLineup || change.headLineup) {
+  const lessonCounts = profile.lessonCounts
+  if (isRecord(lessonCounts)) {
+    const values = Object.entries(parameterTypeLabels).flatMap(([type, label]) => {
+      const value = lessonCounts[type]
+      return typeof value === 'number' && Number.isInteger(value) && value > 0 ? [`${label}${value}`] : []
+    })
+    if (values.length > 0) parts.push(`レッスン配分 ${values.join('・')}`)
+  }
+
+  const parameterBonus = profile.paramBonusPercent
+  if (isRecord(parameterBonus)) {
+    const values = Object.entries(parameterTypeLabels).flatMap(([type, label]) => {
+      const value = parameterBonus[type]
+      return typeof value === 'number' && Number.isFinite(value) ? [`${label} ${value}%`] : []
+    })
+    if (values.length > 0) parts.push(`パラメータボーナス ${values.join('・')}`)
+  }
+
+  if (profile.uncapProfile === 'all-four') parts.push('凸数 全カード4凸')
+  else if (typeof profile.uncapProfile === 'string') parts.push(`凸数 ${profile.uncapProfile}`)
+  return parts.join(' / ')
+}
+
+/** 条件ごとの総合点を一覧する */
+function renderScoreComparisonTable(
+  rows: Array<{
+    id: string
+    description?: string
+    plan?: string
+    profile?: JsonRecord
+    baseScore?: number
+    headScore?: number
+    inputChanged: boolean
+    changes: ValueChange[]
+    baselinePresent: boolean
+  }>,
+): string {
+  const lines = ['| 状態 | 条件 | プラン | Base総合点 | Head総合点 | 差 |', '| --- | --- | --- | ---: | ---: | ---: |']
+
+  for (const row of rows) {
+    const status = !row.baselinePresent
+      ? '➕ 比較元なし'
+      : row.inputChanged
+        ? '⚠️ 入力差分'
+        : row.changes.length > 0
+          ? '⚠️ 計算差分'
+          : '✅ 一致'
+    const difference =
+      row.baseScore !== undefined && row.headScore !== undefined ? row.headScore - row.baseScore : undefined
+    const differenceLabel = difference === undefined ? '—' : difference > 0 ? `+${difference}` : String(difference)
+    const label = conditionLabel(row.description, row.id, row.plan)
     lines.push(
+      `| ${status} | ${label} | ${planLabel(row.plan ?? row.profile?.plan)} | ${row.baseScore ?? '—'} | ${row.headScore ?? '—'} | ${differenceLabel} |`,
+    )
+  }
+
+  return lines.join('\n')
+}
+
+/** base/headで同じ編成なら1つにまとめ、差があれば両方を表示する */
+function renderLineupComparison(
+  baseLineup: CalculationLineup | undefined,
+  headLineup: CalculationLineup | undefined,
+  baseScore: number | undefined,
+  headScore: number | undefined,
+): string[] {
+  const baseTable = baseLineup ? renderLineupTable(baseLineup.members, baseLineup.totalScore ?? baseScore) : undefined
+  const headTable = headLineup ? renderLineupTable(headLineup.members, headLineup.totalScore ?? headScore) : undefined
+
+  if (!baseLineup && !headLineup) return []
+  if (baseTable && headTable && baseTable === headTable) {
+    return ['**Base / Head共通の最適編成（アプリの結果）**', '', baseTable]
+  }
+
+  return [
+    ...(baseLineup || baseScore !== undefined ? renderLineup(baseLineup, baseScore, 'Base') : []),
+    ...(headLineup || headScore !== undefined ? ['', ...renderLineup(headLineup, headScore, 'Head')] : []),
+  ]
+}
+
+/** 条件の点数、変更内容、編成を折りたたみの中で確認できるようにする */
+function renderScenarioDetails(row: {
+  id: string
+  description?: string
+  plan?: string
+  profile?: JsonRecord
+  baseScore?: number
+  headScore?: number
+  baseLineup?: CalculationLineup
+  headLineup?: CalculationLineup
+  inputChanged: boolean
+  changes: ValueChange[]
+  baselinePresent: boolean
+}): string[] {
+  const condition = conditionLabel(row.description, row.id, row.plan)
+  const status = !row.baselinePresent
+    ? '比較元なし'
+    : row.inputChanged
+      ? '入力差分あり'
+      : row.changes.length > 0
+        ? '計算差分あり'
+        : 'Base / Head一致'
+  const lines = [
+    '<details>',
+    `<summary>${condition} / ${planLabel(row.plan ?? row.profile?.plan)} / ${status}</summary>`,
+    '',
+  ]
+  const profileLabel = randomProfileLabel(row.profile)
+  if (profileLabel) lines.push(`条件設定: ${profileLabel}`, '')
+  if (row.inputChanged) lines.push('入力条件がBaseとHeadで異なります。', '')
+
+  if (row.changes.length > 0) {
+    lines.push('**計算値の差分**', '', ...row.changes.map(formatChange), '')
+  } else if (row.baselinePresent) {
+    lines.push('BaseとHeadの計算結果は一致しました。', '')
+  } else {
+    lines.push('Baseに比較条件がありません。Headの結果を表示します。', '')
+  }
+
+  lines.push(...renderLineupComparison(row.baseLineup, row.headLineup, row.baseScore, row.headScore), '')
+  if (row.profile) {
+    lines.push(
+      '<details>',
+      '<summary>再現用プロフィール（JSON）</summary>',
       '',
-      ...renderLineup(change.baseLineup, change.baseScore, 'Base'),
+      '```json',
+      JSON.stringify(row.profile, null, 2),
+      '```',
       '',
-      ...renderLineup(change.headLineup, change.headScore, 'Head'),
+      '</details>',
       '',
     )
   }
+  lines.push('</details>', '')
   return lines
 }
 
@@ -445,8 +634,9 @@ export function renderCalculationRegressionReport(report: CalculationRegressionR
     '<details>',
     '<summary>結果の見方</summary>',
     '',
-    '- 計算値に差分があった最適編成条件は、base/headの総合点と編成を並べて表示します。',
-    '- seed付きランダム条件は同じseedでbase/headを実行し、入力profileと差分を記録します。',
+    '- 条件ごとの総合点・プラン・差を一覧し、カード編成も確認できます。',
+    '- Base / Headで編成と点数が同じ場合も、共通編成を1つ表示します。',
+    '- seed付きランダム条件は読みやすい設定概要を表示し、再現用JSONは折りたたんでいます。',
     '- 計算差分は情報表示です。Vitestの計算失敗はCIチェックで検出します。',
     '</details>',
     '',
@@ -455,15 +645,16 @@ export function renderCalculationRegressionReport(report: CalculationRegressionR
   // 比較元がない初回実行では差分を捏造せず、headの観測が用意できたことを説明する
   if (!report.baselineAvailable) lines.push('baseの計算結果がないため、headの結果を基準として保存しました。', '')
 
-  if (report.newScenarioResults.length > 0) {
+  const newFixedScenarios = report.newScenarioResults.filter(({ id }) => !id.startsWith('optimization-random-'))
+  if (newFixedScenarios.length > 0) {
     lines.push(
       '<details>',
-      `<summary>headで追加された条件（${report.newScenarioResults.length}件）</summary>`,
+      `<summary>headで追加された固定条件（${newFixedScenarios.length}件）</summary>`,
       '',
       '## 新規条件',
       '',
     )
-    for (const scenario of report.newScenarioResults) {
+    for (const scenario of newFixedScenarios) {
       lines.push(`### ${scenario.description ?? scenario.id}`, '', `ID: \`${scenario.id}\``, '')
       if (scenario.headLineup) lines.push(...renderLineup(scenario.headLineup, scenario.headScore, 'Head'), '')
     }
@@ -472,16 +663,19 @@ export function renderCalculationRegressionReport(report: CalculationRegressionR
 
   if (report.removedScenarioIds.length) lines.push(`headで削除された条件: ${report.removedScenarioIds.join('、')}`, '')
 
-  const nonRandomChanges = report.changes.filter((change) => !change.id.startsWith('optimization-random-'))
-  if (nonRandomChanges.length > 0) {
+  const fixedComparisons = report.comparedScenarios.filter(({ id }) => !id.startsWith('optimization-random-'))
+  if (fixedComparisons.length > 0) {
     lines.push(
       '<details>',
-      `<summary>固定条件の結果（計算差分 ${nonRandomChanges.length}件）</summary>`,
+      `<summary>固定条件の比較（${fixedComparisons.length}件 / 差分 ${report.changes.filter(({ id }) => !id.startsWith('optimization-random-')).length}件）</summary>`,
       '',
       '## 固定条件',
       '',
+      renderScoreComparisonTable(fixedComparisons.map((comparison) => ({ ...comparison, baselinePresent: true }))),
+      '',
     )
-    for (const change of nonRandomChanges) lines.push(...renderScenarioChange(change))
+    for (const comparison of fixedComparisons)
+      lines.push(...renderScenarioDetails({ ...comparison, baselinePresent: true }))
     lines.push('</details>', '')
   }
 
@@ -493,17 +687,10 @@ export function renderCalculationRegressionReport(report: CalculationRegressionR
       '',
       '## seed付きランダム条件',
       '',
+      renderScoreComparisonTable(report.randomizedProfiles),
+      '',
     )
-    for (const { id, description, profile, baselinePresent, changed } of report.randomizedProfiles) {
-      const change = report.changes.find((entry) => entry.id === id)
-      lines.push(`### ${description ?? change?.description ?? id}`, '')
-      if (profile) {
-        lines.push('```json', JSON.stringify(profile, null, 2), '```', '')
-      }
-      if (change) lines.push(...renderScenarioChange(change, false))
-      else if (!baselinePresent) lines.push('baseに比較条件がなく、head側の結果のみです。', '')
-      else if (!changed) lines.push('base/headの計算結果は一致しました。', '')
-    }
+    for (const comparison of report.randomizedProfiles) lines.push(...renderScenarioDetails(comparison))
     lines.push('</details>', '')
   }
 

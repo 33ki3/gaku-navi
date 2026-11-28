@@ -83,6 +83,7 @@ const data: ActionGroupEntry[] = [
       { id: ActionIdType.SkillEnhance, label: 'score.action.skill_enhance' },
       { id: ActionIdType.ASkillEnhance, label: 'score.action.active_enhance' },
       { id: ActionIdType.MSkillEnhance, label: 'score.action.mental_enhance' },
+      { id: ActionIdType.TSkillEnhance, label: 'score.action.trouble_enhance' },
     ],
   },
   {

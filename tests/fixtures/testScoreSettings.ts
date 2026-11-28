@@ -30,7 +30,9 @@ export interface TestOptimizerScenarioInput extends Record<string, unknown> {
 }
 
 /** 最適編成の比較条件として上書きできる設定。候補上限はJSONの値を使う */
-type TestOptimizerScenarioOverrides = Omit<Partial<UnitSimulatorSettings>, 'exhaustiveCandidateLimit'>
+type TestOptimizerScenarioOverrides = Omit<Partial<UnitSimulatorSettings>, 'exhaustiveCandidateLimit'> & {
+  scoreSettings?: Partial<ScoreSettings>
+}
 
 /** Nodeから直接読み、PlaywrightでもアプリのVite依存を読み込まずに使うテストJSON */
 export const testScoreSettingsJsonText = readFileSync(
@@ -82,7 +84,12 @@ export function parameterValues(vocal: number, dance: number, visual: number): T
 export function createTestOptimizerScenarioInput(
   overrides: TestOptimizerScenarioOverrides = {},
 ): TestOptimizerScenarioInput {
-  const settings = { ...testScoreSettingsOptions.unitSettings, ...overrides }
+  const { scoreSettings: scoreSettingsOverrides, ...unitSettingsOverrides } = overrides
+  const settings = { ...testScoreSettingsOptions.unitSettings, ...unitSettingsOverrides }
+  const scenario = scoreSettingsOverrides?.scenario ?? testOptimizerScoreSettingsInput.scenario
+  // 初の計算条件にはHIF用の保存スケジュールを混ぜず、scenario別の入力を使う
+  const baseScheduleSelections =
+    scenario === enums.ScenarioType.Hif ? testOptimizerScoreSettingsInput.scheduleSelections : {}
 
   return {
     settings: {
@@ -99,6 +106,13 @@ export function createTestOptimizerScenarioInput(
         : {}),
       ...(settings.initialParams ? { initialParams: { ...settings.initialParams } } : {}),
     },
-    scoreSettings: testOptimizerScoreSettingsInput,
+    scoreSettings: {
+      ...testOptimizerScoreSettingsInput,
+      ...scoreSettingsOverrides,
+      scheduleSelections: {
+        ...baseScheduleSelections,
+        ...scoreSettingsOverrides?.scheduleSelections,
+      },
+    },
   }
 }
